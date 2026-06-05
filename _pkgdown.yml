@@ -1,0 +1,28 @@
+url: https://ms609.github.io/MaxMin/
+
+development:
+  mode: auto
+
+template:
+  bootstrap: 5
+
+authors:
+  Martin R. Smith:
+    href: https://smithlabdurham.github.io/
+
+reference:
+  - title: Greedy selection
+    desc: Farthest-first (Gonzalez) selection and its seeding strategies.
+    contents:
+      - Gonzalez
+      - GonzalezColumn
+      - MaxMinSeed
+  - title: Heuristic and exact solvers
+    contents:
+      - DropAddTS
+      - DropAddTSPoints
+      - ExactMaxMin
+  - title: Refinement and scoring
+    contents:
+      - PolishSelection
+      - TkScore

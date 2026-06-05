@@ -1,0 +1,49 @@
+Package: MaxMin
+Title: Maximum-Minimum Diversity and Dispersion Subset Selection
+Version: 0.0.0.9000
+Authors@R:
+    person("Martin R.", "Smith",
+           email = "martin.smith@durham.ac.uk",
+           role = c("aut", "cre", "cph"),
+           comment = c(ORCID = "0000-0001-5660-1727"))
+Description: Selects a maximally dispersed subset of a fixed set of candidate
+    items under the Max-Min Diversity Problem (MMDP, the discrete p-dispersion
+    objective): maximise the minimum pairwise distance within the chosen
+    subset. Provides a tiered toolbox that operates on a distance matrix, on
+    Euclidean coordinates without materialising the distance matrix, or on an
+    on-demand distance-column oracle for spaces with no coordinate embedding:
+    deterministic Gonzalez farthest-first selection (Gonzalez 1985)
+    <doi:10.1016/0304-3975(85)90224-5> with a choice of peripheral seeding
+    strategies and a robust ensemble default, the DropAdd tabu-search heuristic
+    (Porumbel, Hao & Glover 2011) <doi:10.1007/s10479-011-0898-z>, an exact
+    node-packing integer program (Sayyady & Fathi 2016)
+    <doi:10.1016/j.ejor.2016.02.026>, and a local-search polish. Distinct from
+    the 'maximin' package, which constructs continuous space-filling designs.
+License: GPL (>= 3)
+Encoding: UTF-8
+Language: en-GB
+Depends:
+    R (>= 4.1)
+Imports:
+    Rcpp,
+    stats
+Suggests:
+    highs,
+    spelling,
+    testthat (>= 3.0.0)
+LinkingTo:
+    Rcpp
+URL: https://github.com/ms609/MaxMin
+BugReports: https://github.com/ms609/MaxMin/issues
+Config/Needs/check: rcmdcheck, testthat
+Config/Needs/coverage: covr
+Config/Needs/memcheck: testthat
+Config/Needs/metadata: codemeta
+Config/Needs/revdeps: revdepcheck
+Config/Needs/website: pkgdown
+Config/testthat/edition: 3
+Config/testthat/parallel: false
+Config/roxygen2/version: 8.0.0
+ByteCompile: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 8.0.0
