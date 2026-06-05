@@ -34,7 +34,7 @@
 test_that("DropAddTSPoints objective equals recomputed min-pairwise distance", {
   set.seed(7)
   pts <- matrix(rnorm(80 * 5), ncol = 5)
-  res <- DropAddTSPoints(pts, m = 8L, time_budget_s = 1)
+  res <- DropAddTSPoints(pts, m = 8L, max_no_improve = 500L)
   expect_length(res$indices, 8L)
   expect_equal(length(unique(res$indices)), 8L)
   expect_true(all(res$indices %in% seq_len(80L)))
@@ -59,8 +59,10 @@ test_that("DropAddTSPoints matches matrix path when seeds coincide", {
   expect_equal(.centroid_seed(pts), .rowsum_seed(pts))   # documents the regime
 
   dmat <- as.matrix(stats::dist(pts))
-  rm <- DropAddTSPoints(pts, m = 12L, time_budget_s = 1)
-  rx <- DropAddTS(dmat, m = 12L, time_budget_s = 1)
+  # Deterministic convergence (stagnation) on both paths: with a coincident
+  # seed the trajectories are bit-identical and stop at the same iteration.
+  rm <- DropAddTSPoints(pts, m = 12L, max_no_improve = 1000L)
+  rx <- DropAddTS(dmat, m = 12L, max_no_improve = 1000L)
   # Identical objective (bit-identical under a matched-FP toolchain; a hair of
   # tolerance guards against an aggressive-FP build where dist contracts FMAs).
   expect_equal(rm$objective, rx$objective, tolerance = 1e-9)
@@ -83,8 +85,8 @@ test_that("DropAddTSPoints is within tolerance when seeds diverge", {
   expect_true(.centroid_seed(pts) != .rowsum_seed(pts))  # confirms divergence
 
   tol <- 0.05    # documented comparability tolerance (5%)
-  rm <- DropAddTSPoints(pts, m = 15L, time_budget_s = 1)
-  rx <- DropAddTS(dmat, m = 15L, time_budget_s = 1)
+  rm <- DropAddTSPoints(pts, m = 15L, max_no_improve = 1000L)
+  rx <- DropAddTS(dmat, m = 15L, max_no_improve = 1000L)
   expect_gte(rm$objective, rx$objective * (1 - tol))
   expect_equal(rm$objective, .maxmin_pts(rm$indices, pts), tolerance = 1e-12)
 })
@@ -96,7 +98,8 @@ test_that("DropAddTSPoints respects time_budget_s within reasonable slack", {
   set.seed(99)
   pts <- matrix(runif(2000 * 8), ncol = 8)
   t0 <- Sys.time()
-  res <- DropAddTSPoints(pts, m = 20L, time_budget_s = 1)
+  # Disable stagnation so the wall-clock ceiling is the binding criterion.
+  res <- DropAddTSPoints(pts, m = 20L, time_budget_s = 1, max_no_improve = 100000000L)
   elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
   expect_lte(res$time_s, 1.5)
   expect_lte(elapsed, 2.0)
@@ -110,7 +113,7 @@ test_that("DropAddTSPoints respects time_budget_s within reasonable slack", {
 test_that("DropAddTSPoints construction-only result matches its MaxMin score", {
   set.seed(11)
   pts <- matrix(rnorm(60 * 4), ncol = 4)
-  res <- DropAddTSPoints(pts, m = 6L, time_budget_s = 0, max_iter = 0L)
+  res <- DropAddTSPoints(pts, m = 6L, max_iter = 0L)
   expect_length(res$indices, 6L)
   expect_equal(res$iters, 0L)
   expect_equal(res$objective, .maxmin_pts(res$indices, pts), tolerance = 1e-12)
@@ -126,7 +129,9 @@ test_that("DropAddTSPoints construction-only result matches its MaxMin score", {
 test_that("DropAddTSPoints returns a meaningful result at n = 5000", {
   set.seed(5000)
   pts <- matrix(rnorm(5000 * 12), ncol = 12)
-  res <- DropAddTSPoints(pts, m = 10L, time_budget_s = 2)
+  # Scale smoke: wall-clock-bounded run (stagnation disabled) confirming the
+  # matrix-free path stays responsive at n = 5000 within a short budget.
+  res <- DropAddTSPoints(pts, m = 10L, time_budget_s = 2, max_no_improve = 100000000L)
   expect_length(res$indices, 10L)
   expect_equal(length(unique(res$indices)), 10L)
   expect_gt(res$objective, 0)

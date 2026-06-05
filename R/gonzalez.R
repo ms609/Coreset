@@ -232,6 +232,9 @@ Gonzalez <- function(d = NULL, n, first = NULL, points = NULL,
 #'   (default) to use a deterministic peripheral seed computed from two oracle
 #'   sweeps: the element furthest from element 1, then the element furthest
 #'   from that (a diameter-endpoint approximation).
+#' @param progress Logical; show a progress bar during greedy selection.
+#'   Default: `TRUE` in interactive sessions, `FALSE` otherwise
+#'   (`getOption("MaxMin.progress", interactive())`).
 #' @return Integer vector of length `min(n, N)` of selected indices.
 #' @examples
 #' set.seed(1)
@@ -242,7 +245,8 @@ Gonzalez <- function(d = NULL, n, first = NULL, points = NULL,
 #'           Gonzalez(d, 5L, first = 1L))
 #' @seealso [Gonzalez()] for the matrix and coordinate paths.
 #' @export
-GonzalezColumn <- function(colFn, N, n, first = NULL) {
+GonzalezColumn <- function(colFn, N, n, first = NULL,
+                            progress = getOption("MaxMin.progress", interactive())) {
   if (!is.function(colFn)) {
     stop("`colFn` must be a function of one index returning numeric(N)")
   }
@@ -264,7 +268,7 @@ GonzalezColumn <- function(colFn, N, n, first = NULL) {
     stop("`first` must be a single index in [1, N]")
   }
   if (n == 1L) return(first)
-  .MaximinFromColumn(colFn, N, n, first)
+  .MaximinFromColumn(colFn, N, n, first, progress = progress)
 }
 
 #' Gonzalez maximin from a distance-column oracle (worker)
@@ -279,7 +283,7 @@ GonzalezColumn <- function(colFn, N, n, first = NULL) {
 #' @param first Integer seed index.
 #' @return Integer vector of selected indices.
 #' @keywords internal
-.MaximinFromColumn <- function(colFn, N, n, first) {
+.MaximinFromColumn <- function(colFn, N, n, first, progress = FALSE) {
   selected <- integer(n)
   selected[1L] <- first
   min_dist <- as.numeric(colFn(first))
@@ -288,12 +292,16 @@ GonzalezColumn <- function(colFn, N, n, first = NULL) {
          "; got length ", length(min_dist))
   }
   min_dist[first] <- -Inf                 # mask seed before the loop
+  if (progress) {
+    .pb <- cli::cli_progress_bar("GonzalezColumn", total = n - 1L)
+  }
   for (k in seq_len(n - 1L) + 1L) {
     best <- which.max(min_dist)           # first global max (ties -> first)
     selected[k] <- best
     min_dist[best] <- -Inf                # mask before pmin so self-dist 0
                                           # cannot overwrite -Inf
     min_dist <- pmin.int(min_dist, as.numeric(colFn(best)))
+    if (progress) cli::cli_progress_update(id = .pb)
   }
   selected
 }

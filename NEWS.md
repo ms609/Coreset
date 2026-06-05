@@ -13,6 +13,9 @@
   2011), matrix and matrix-free coordinate paths.
 - `ExactMaxMin()`: exact node-packing optimum (Sayyady & Fathi 2016) via the
   `highs` MILP backend.
+- `GraspPR()`: GRASP with path relinking (Resende et al. 2010), a
+  dense-matrix-only refinement metaheuristic that attains the highest `T_k`
+  of the package's methods on small to medium instances.
 - `PolishSelection()`: critical-edge-anchored 1-swap local search.
 - `TkScore()`: the k-centre objective (minimum pairwise distance).
 - `MaxMinSeed()`: exposes the peripheral seed indices directly.

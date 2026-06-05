@@ -62,7 +62,7 @@ static inline double EuclidCol(const double* P, int nPts, int dim,
 
 // [[Rcpp::export]]
 List DropAddTS_points_cpp(NumericMatrix points, int m, double time_budget_s,
-                          int max_iter, bool want_trace) {
+                          int max_iter, int max_no_improve, bool want_trace) {
   const int n   = points.nrow();
   const int dim = points.ncol();
   if (m < 2 || m > n) stop("m must satisfy 2 <= m <= nrow(points)");
@@ -181,6 +181,7 @@ List DropAddTS_points_cpp(NumericMatrix points, int m, double time_budget_s,
   // -- Drop-Add tabu search (Algorithm 2) ---------------------------------
   int head = 0;                       // 0-based: drop position
   int iters_done = 0;
+  int no_improve = 0;                 // consecutive non-improving iterations
 
   std::vector<double> d_xhash(n);     // cached column for x_hash row recompute
   std::vector<int> need_recompute;
@@ -203,6 +204,9 @@ List DropAddTS_points_cpp(NumericMatrix points, int m, double time_budget_s,
   // m == n leaves Add X(k) = Z - X(k) empty once x_hash is excluded, so no
   // drop-add move exists; the construction already selected every point.
   while (iters_done < max_iter && m < n) {
+    // Primary stopping rule: stagnation (deterministic; matrix-free path is
+    // RNG-free, index tie-breaks). With time_budget_s = Inf, reproducible.
+    if (no_improve >= max_no_improve) break;
     --countdown;
     if (countdown == 0) {
       auto now = std::chrono::steady_clock::now();
@@ -358,6 +362,9 @@ List DropAddTS_points_cpp(NumericMatrix points, int m, double time_budget_s,
       best_maxmin  = cm;
       best_sumpair = cs;
       best_score   = cur_score;
+      no_improve   = 0;
+    } else {
+      ++no_improve;
     }
 
     ++iters_done;

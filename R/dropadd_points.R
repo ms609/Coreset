@@ -55,14 +55,24 @@
 #'   object coercible to one via `as.matrix`). Must be complete (no `NA`); the
 #'   coordinate path is defined only for complete Euclidean data.
 #' @param m Integer; subset size, \eqn{2 \le m \le n}.
-#' @param time_budget_s Wall-clock budget in seconds; checked periodically at
-#'   iteration boundaries. Default `10`.
+#' @param max_no_improve Integer; stop after this many consecutive drop-add
+#'   iterations that do not improve the best objective. The primary,
+#'   deterministic stopping criterion. The search is RNG-free (ties broken by
+#'   smallest index), so the result is reproducible and machine-independent.
+#'   Default 5000.
+#' @param max_iter Optional integer hard cap on main-loop iterations (excluding
+#'   construction). `NULL` (default) leaves `max_no_improve` in sole control.
+#' @param time_budget_s Optional wall-clock ceiling in seconds, checked
+#'   periodically at iteration boundaries. Default `Inf` (no ceiling, fully
+#'   reproducible). A finite value caps runtime but makes the result
+#'   machine-dependent.
 #' @param seed Optional integer; if non-`NULL`, `set.seed(seed)` is called at
 #'   entry. The algorithm is deterministic up to ties (broken by smallest
 #'   index), so the seed has no observable effect on the solution; it is exposed
-#'   for API parity with stochastic competitors and with [DropAddTS()].
-#' @param max_iter Optional integer cap on main-loop iterations (excluding
-#'   construction). If `NULL`, only `time_budget_s` governs termination.
+#'   for API parity with stochastic methods and with [DropAddTS()].
+#' @param progress Logical; show a start/done status line. Default: `TRUE` in
+#'   interactive sessions, `FALSE` otherwise
+#'   (`getOption("MaxMin.progress", interactive())`).
 #'
 #' @return List with elements
 #'   \describe{
@@ -83,8 +93,9 @@
 #'
 #' @seealso [DropAddTS()] for the matrix-based path used on smaller instances.
 #' @export
-DropAddTSPoints <- function(points, m, time_budget_s = 10, seed = NULL,
-                            max_iter = NULL) {
+DropAddTSPoints <- function(points, m, max_no_improve = 5000L, max_iter = NULL,
+                            time_budget_s = Inf, seed = NULL,
+                            progress = getOption("MaxMin.progress", interactive())) {
   if (!is.null(seed)) {
     set.seed(seed)
   }
@@ -94,6 +105,11 @@ DropAddTSPoints <- function(points, m, time_budget_s = 10, seed = NULL,
   if (length(m) != 1L || is.na(m) || m < 2L || m > n) {
     stop("`m` must be a single integer with 2 <= m <= nrow(points)")
   }
+  max_no_improve <- as.integer(max_no_improve)
+  if (length(max_no_improve) != 1L || is.na(max_no_improve) ||
+      max_no_improve < 1L) {
+    stop("`max_no_improve` must be a single positive integer")
+  }
   if (!is.null(max_iter)) {
     max_iter <- as.integer(max_iter)
     if (length(max_iter) != 1L || is.na(max_iter) || max_iter < 0L) {
@@ -101,15 +117,28 @@ DropAddTSPoints <- function(points, m, time_budget_s = 10, seed = NULL,
     }
   }
   if (!is.numeric(time_budget_s) || length(time_budget_s) != 1L ||
-      is.na(time_budget_s) || time_budget_s < 0) {
-    stop("`time_budget_s` must be a single non-negative numeric")
+      is.na(time_budget_s) || time_budget_s <= 0) {
+    stop("`time_budget_s` must be a single positive numeric (or Inf)")
   }
 
   t0 <- Sys.time()
   cpp_max_iter <- if (is.null(max_iter)) .Machine$integer.max else max_iter
+  if (progress) {
+    cli::cli_process_start(
+      "DropAdd tabu search (n = {n}, m = {m}, budget = {time_budget_s}s)",
+      .auto_close = FALSE
+    )
+  }
   out <- DropAddTS_points_cpp(points, m, as.double(time_budget_s),
-                              cpp_max_iter, FALSE)
+                              cpp_max_iter, max_no_improve, FALSE)
   time_s <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+  if (progress) {
+    .iters <- as.integer(out$iters)
+    .tk    <- as.numeric(out$objective)
+    cli::cli_process_done(
+      msg = "DropAdd: {.iters} iters, T_k = {signif(.tk, 4)}, {round(time_s, 1)}s"
+    )
+  }
 
   # Return:
   list(

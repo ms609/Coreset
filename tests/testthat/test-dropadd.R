@@ -54,7 +54,7 @@ test_that("DropAddTS construction-only result matches its MaxMin score", {
   set.seed(11)
   pts <- matrix(rnorm(30 * 4), ncol = 4)
   dmat <- as.matrix(dist(pts))
-  res <- DropAddTS(dmat, m = 6L, time_budget_s = 0, max_iter = 0L)
+  res <- DropAddTS(dmat, m = 6L, max_iter = 0L)
   expect_length(res$indices, 6L)
   expect_equal(res$iters, 0L)
   # Objective stored equals the actual MaxMin over the returned indices.
@@ -72,8 +72,8 @@ test_that("DropAddTS never worsens the constructive solution", {
   geo <- geo_env$read_mdplib_geo(path)
   dmat <- geo_env$mdplib_geo_dist(geo)
 
-  cons <- DropAddTS(dmat, m = 10L, time_budget_s = 0, max_iter = 0L)
-  full <- DropAddTS(dmat, m = 10L, time_budget_s = 5)
+  cons <- DropAddTS(dmat, m = 10L, max_iter = 0L)
+  full <- DropAddTS(dmat, m = 10L, max_no_improve = 2000L)
   expect_gte(full$objective, cons$objective - 1e-9)
 })
 
@@ -96,7 +96,10 @@ test_that("DropAddTS reaches the Geo 100 1 m=10 optimum (89.37)", {
   geo <- geo_env$read_mdplib_geo(path)
   dmat <- geo_env$mdplib_geo_dist(geo)
 
-  res <- DropAddTS(dmat, m = 10L, time_budget_s = 10)
+  # Time-budgeted oracle: run the full 10 s, as before, to confirm the search
+  # reaches the proven optimum (this is a correctness oracle, not a frozen
+  # result, so a wall-clock budget is appropriate here).
+  res <- DropAddTS(dmat, m = 10L, time_budget_s = 10, max_no_improve = 100000000L)
   best_known <- 89.37
   expect_gte(res$objective, 0.999 * best_known)
   # Returned indices truly achieve the reported objective.
@@ -168,7 +171,8 @@ test_that("DropAddTS respects time_budget_s within reasonable slack", {
   pts <- matrix(runif(200 * 5), ncol = 5)
   dmat <- as.matrix(dist(pts))
   t0 <- Sys.time()
-  res <- DropAddTS(dmat, m = 20L, time_budget_s = 1)
+  # Disable stagnation so the wall-clock ceiling is the binding criterion.
+  res <- DropAddTS(dmat, m = 20L, time_budget_s = 1, max_no_improve = 100000000L)
   elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
   expect_lte(res$time_s, 1.5)
   expect_lte(elapsed, 2.0)
@@ -189,10 +193,20 @@ test_that("DropAddTS R reference loop and C++ port are bit-identical", {
   dmat <- as.matrix(dist(pts))
 
   for (max_iter in c(0L, 1L, 5L, 50L, 200L)) {
-    out_R <- DropAddTS(dmat, m = 8L, time_budget_s = 1e9,
-                       max_iter = max_iter, .verify = TRUE)
-    out_C <- DropAddTS(dmat, m = 8L, time_budget_s = 1e9,
-                       max_iter = max_iter)
+    out_R <- DropAddTS(dmat, m = 8L, max_iter = max_iter, .verify = TRUE)
+    out_C <- DropAddTS(dmat, m = 8L, max_iter = max_iter)
+    expect_identical(out_R$indices,   out_C$indices)
+    expect_identical(out_R$objective, out_C$objective)
+    expect_identical(out_R$secondary, out_C$secondary)
+    expect_identical(out_R$iters,     out_C$iters)
+  }
+
+  # Same parity under the stagnation stopping rule (max_no_improve binds, no
+  # iteration cap): the run-length is itself an output, so identical iters
+  # confirms both paths take the deterministic criterion identically.
+  for (mni in c(5L, 25L, 100L)) {
+    out_R <- DropAddTS(dmat, m = 8L, max_no_improve = mni, .verify = TRUE)
+    out_C <- DropAddTS(dmat, m = 8L, max_no_improve = mni)
     expect_identical(out_R$indices,   out_C$indices)
     expect_identical(out_R$objective, out_C$objective)
     expect_identical(out_R$secondary, out_C$secondary)

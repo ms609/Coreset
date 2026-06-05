@@ -7,9 +7,11 @@
 DropAddTS(
   d,
   m,
-  time_budget_s = 10,
+  max_no_improve = 5000L,
   max_iter = NULL,
+  time_budget_s = Inf,
   seed = NULL,
+  progress = getOption("MaxMin.progress", interactive()),
   .verify = FALSE,
   .trace = NULL
 )
@@ -19,16 +21,29 @@ DropAddTS(
 
 \item{m}{Integer; subset size, \eqn{2 \le m \le n}.}
 
-\item{time_budget_s}{Wall-clock budget in seconds; checked at every
-iteration boundary.}
+\item{max_no_improve}{Integer; stop after this many consecutive drop-add
+iterations that do not improve the best objective. The primary,
+deterministic stopping criterion. The search is RNG-free (ties broken by
+smallest index), so for a given instance the result is reproducible and
+machine-independent. Default 5000.}
 
-\item{max_iter}{Optional integer cap on iterations (excluding construction).
-If \code{NULL}, only \code{time_budget_s} governs termination.}
+\item{max_iter}{Optional integer hard cap on iterations (excluding
+construction). \code{NULL} (default) leaves \code{max_no_improve} in sole
+control.}
+
+\item{time_budget_s}{Optional wall-clock ceiling in seconds, checked at
+iteration boundaries. Default \code{Inf} (no ceiling, fully reproducible).
+A finite value caps runtime but makes the result machine-dependent.}
 
 \item{seed}{Optional integer; if non-NULL, \code{set.seed(seed)} is called
-at entry. The algorithm itself is deterministic up to ties; ties are
-broken by smallest index so the seed has no observable effect on the
-solution, but it is exposed for API parity with stochastic competitors.}
+at entry. The algorithm is deterministic up to ties (broken by smallest
+index), so the seed has no observable effect on the solution; it is
+exposed for API parity with stochastic methods.}
+
+\item{progress}{Logical; show a start/done status line. Default: \code{TRUE} in
+interactive sessions, \code{FALSE} otherwise
+(\code{getOption("MaxMin.progress", interactive())}). No effect when
+\code{.verify = TRUE} (testing path).}
 
 \item{.verify}{Logical (testing only); if \code{TRUE}, routes to the R reference
 loop and brute-force asserts the streamlined records at every iteration.

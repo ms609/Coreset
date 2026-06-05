@@ -4,7 +4,13 @@
 \alias{GonzalezColumn}
 \title{Gonzalez maximin from a distance-column oracle (matrix-free, any metric)}
 \usage{
-GonzalezColumn(colFn, N, n, first = NULL)
+GonzalezColumn(
+  colFn,
+  N,
+  n,
+  first = NULL,
+  progress = getOption("MaxMin.progress", interactive())
+)
 }
 \arguments{
 \item{colFn}{A function of a single 1-based index \code{i} returning a length-\code{N}
@@ -22,6 +28,10 @@ returned.}
 (default) to use a deterministic peripheral seed computed from two oracle
 sweeps: the element furthest from element 1, then the element furthest
 from that (a diameter-endpoint approximation).}
+
+\item{progress}{Logical; show a progress bar during greedy selection.
+Default: \code{TRUE} in interactive sessions, \code{FALSE} otherwise
+(\code{getOption("MaxMin.progress", interactive())}).}
 }
 \value{
 Integer vector of length \code{min(n, N)} of selected indices.

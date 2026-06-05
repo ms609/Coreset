@@ -26,6 +26,9 @@
 #' @param max_passes Integer: hard cap on outer iterations (safety guard;
 #'   theoretical termination is guaranteed by the lex-monotone objective).
 #'   Default `200L`.
+#' @param progress Logical; show a start/done status line. Default: `TRUE` in
+#'   interactive sessions, `FALSE` otherwise
+#'   (`getOption("MaxMin.progress", interactive())`).
 #' @return Integer vector of the same length as `idx`, with attributes
 #'   `"passes"` and `"swaps"` (both equal to the number of accepted swaps).
 #' @examples
@@ -36,11 +39,26 @@
 #' s1  <- PolishSelection(d, s0)
 #' TkScore(d, s1) >= TkScore(d, s0)
 #' @export
-PolishSelection <- function(d, idx, limit = 20L, max_passes = 200L) {
+PolishSelection <- function(d, idx, limit = 20L, max_passes = 200L,
+                            progress = getOption("MaxMin.progress", interactive())) {
   d   <- .AsDistMatrix(d)
   idx <- as.integer(idx)
   if (length(idx) < 2L) return(idx)
-  PolishMaximin_cpp(d, idx,
-                    as.integer(limit),
-                    as.integer(max_passes))
+  if (progress) {
+    cli::cli_process_start(
+      "Polishing selection (k = {length(idx)})",
+      .auto_close = FALSE
+    )
+  }
+  t0  <- Sys.time()
+  out <- PolishMaximin_cpp(d, idx, as.integer(limit), as.integer(max_passes))
+  if (progress) {
+    time_s <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+    .passes <- attr(out, "passes")
+    .swaps  <- attr(out, "swaps")
+    cli::cli_process_done(
+      msg = "Polish: {.passes} passes, {.swaps} swaps, {round(time_s, 2)}s"
+    )
+  }
+  out
 }

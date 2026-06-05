@@ -4,7 +4,7 @@
 \alias{.MaximinFromColumn}
 \title{Gonzalez maximin from a distance-column oracle (worker)}
 \usage{
-.MaximinFromColumn(colFn, N, n, first)
+.MaximinFromColumn(colFn, N, n, first, progress = FALSE)
 }
 \arguments{
 \item{colFn}{Column oracle; see \code{\link[=GonzalezColumn]{GonzalezColumn()}}.}

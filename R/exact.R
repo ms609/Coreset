@@ -135,6 +135,9 @@
 #'   (shared across all internal IP solves). If the budget expires before the
 #'   optimum is proven, the largest threshold proven feasible so far is
 #'   returned with `proven = FALSE`.
+#' @param progress Logical; show a progress bar during the binary search.
+#'   Default: `TRUE` in interactive sessions, `FALSE` otherwise
+#'   (`getOption("MaxMin.progress", interactive())`).
 #' @return A list with fields
 #'   \describe{
 #'     \item{indices}{Integer vector of length `m`, sorted ascending: the
@@ -153,7 +156,8 @@
 #'   approach for solving the p-dispersion problem. *European Journal of
 #'   Operational Research* 253(1):216-225.
 #' @export
-ExactMaxMin <- function(d, m, solver = NULL, time_budget_s = 60) {
+ExactMaxMin <- function(d, m, solver = NULL, time_budget_s = 60,
+                        progress = getOption("MaxMin.progress", interactive())) {
   t0 <- Sys.time()
   if (is.null(solver)) solver <- "highs"
   if (!identical(solver, "highs")) {
@@ -181,6 +185,11 @@ ExactMaxMin <- function(d, m, solver = NULL, time_budget_s = 60) {
   # any IP solve.
   cand <- sort(unique(d[upper.tri(d)]))
   n_cand <- length(cand)
+
+  if (progress && n_cand > 1L) {
+    .pb <- cli::cli_progress_bar("ExactMaxMin", total = n_cand - 1L,
+                                 .auto_close = FALSE)
+  }
 
   # Helper to package a result for a proven-feasible candidate index.
   recover <- function(witness, lambda, proven) {
@@ -232,14 +241,24 @@ ExactMaxMin <- function(d, m, solver = NULL, time_budget_s = 60) {
       best_idx <- mid
       best_witness <- v$witness
       lo <- mid + 1L
+      if (progress && n_cand > 1L) {
+        cli::cli_progress_update(id = .pb, set = (lo - 2L) + (n_cand - hi))
+      }
     } else if (identical(v$verdict, "infeasible")) {
       hi <- mid - 1L
+      if (progress && n_cand > 1L) {
+        cli::cli_progress_update(id = .pb, set = (lo - 2L) + (n_cand - hi))
+      }
     } else {
       # Budget expired mid-solve: cannot place this candidate. Stop and
       # return the best threshold proven feasible so far.
       inconclusive <- TRUE
       break
     }
+  }
+
+  if (progress && n_cand > 1L) {
+    cli::cli_progress_done(id = .pb)
   }
 
   # Optimality is proven iff the search closed the interval (lo > hi) without

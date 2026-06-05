@@ -4,7 +4,13 @@
 \alias{ExactMaxMin}
 \title{Exact Max-Min Diversity (MMDP) optimum on small instances}
 \usage{
-ExactMaxMin(d, m, solver = NULL, time_budget_s = 60)
+ExactMaxMin(
+  d,
+  m,
+  solver = NULL,
+  time_budget_s = 60,
+  progress = getOption("MaxMin.progress", interactive())
+)
 }
 \arguments{
 \item{d}{A \code{dist} object or a square symmetric numeric distance matrix.}
@@ -18,6 +24,10 @@ ExactMaxMin(d, m, solver = NULL, time_budget_s = 60)
 (shared across all internal IP solves). If the budget expires before the
 optimum is proven, the largest threshold proven feasible so far is
 returned with \code{proven = FALSE}.}
+
+\item{progress}{Logical; show a progress bar during the binary search.
+Default: \code{TRUE} in interactive sessions, \code{FALSE} otherwise
+(\code{getOption("MaxMin.progress", interactive())}).}
 }
 \value{
 A list with fields

@@ -4,7 +4,15 @@
 \alias{DropAddTSPoints}
 \title{Matrix-free DropAdd Tabu Search for the Max-Min Diversity Problem}
 \usage{
-DropAddTSPoints(points, m, time_budget_s = 10, seed = NULL, max_iter = NULL)
+DropAddTSPoints(
+  points,
+  m,
+  max_no_improve = 5000L,
+  max_iter = NULL,
+  time_budget_s = Inf,
+  seed = NULL,
+  progress = getOption("MaxMin.progress", interactive())
+)
 }
 \arguments{
 \item{points}{A numeric \eqn{n \times \mathrm{dim}} coordinate matrix (or an
@@ -13,16 +21,28 @@ coordinate path is defined only for complete Euclidean data.}
 
 \item{m}{Integer; subset size, \eqn{2 \le m \le n}.}
 
-\item{time_budget_s}{Wall-clock budget in seconds; checked periodically at
-iteration boundaries. Default \code{10}.}
+\item{max_no_improve}{Integer; stop after this many consecutive drop-add
+iterations that do not improve the best objective. The primary,
+deterministic stopping criterion. The search is RNG-free (ties broken by
+smallest index), so the result is reproducible and machine-independent.
+Default 5000.}
+
+\item{max_iter}{Optional integer hard cap on main-loop iterations (excluding
+construction). \code{NULL} (default) leaves \code{max_no_improve} in sole control.}
+
+\item{time_budget_s}{Optional wall-clock ceiling in seconds, checked
+periodically at iteration boundaries. Default \code{Inf} (no ceiling, fully
+reproducible). A finite value caps runtime but makes the result
+machine-dependent.}
 
 \item{seed}{Optional integer; if non-\code{NULL}, \code{set.seed(seed)} is called at
 entry. The algorithm is deterministic up to ties (broken by smallest
 index), so the seed has no observable effect on the solution; it is exposed
-for API parity with stochastic competitors and with \code{\link[=DropAddTS]{DropAddTS()}}.}
+for API parity with stochastic methods and with \code{\link[=DropAddTS]{DropAddTS()}}.}
 
-\item{max_iter}{Optional integer cap on main-loop iterations (excluding
-construction). If \code{NULL}, only \code{time_budget_s} governs termination.}
+\item{progress}{Logical; show a start/done status line. Default: \code{TRUE} in
+interactive sessions, \code{FALSE} otherwise
+(\code{getOption("MaxMin.progress", interactive())}).}
 }
 \value{
 List with elements

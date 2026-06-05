@@ -25,16 +25,19 @@ Language: en-GB
 Depends:
     R (>= 4.1)
 Imports:
+    cli (>= 3.0.0),
     Rcpp,
     stats
 Suggests:
     highs,
+    rprojroot,
     spelling,
     testthat (>= 3.0.0)
 LinkingTo:
     Rcpp
 URL: https://github.com/ms609/MaxMin
 BugReports: https://github.com/ms609/MaxMin/issues
+Config/Needs/benchmark: bench, highs
 Config/Needs/check: rcmdcheck, testthat
 Config/Needs/coverage: covr
 Config/Needs/memcheck: testthat

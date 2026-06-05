@@ -144,14 +144,25 @@
 #'
 #' @param d A \code{dist} object or square symmetric numeric matrix.
 #' @param m Integer; subset size, \eqn{2 \le m \le n}.
-#' @param time_budget_s Wall-clock budget in seconds; checked at every
-#'   iteration boundary.
-#' @param max_iter Optional integer cap on iterations (excluding construction).
-#'   If \code{NULL}, only \code{time_budget_s} governs termination.
+#' @param max_no_improve Integer; stop after this many consecutive drop-add
+#'   iterations that do not improve the best objective. The primary,
+#'   deterministic stopping criterion. The search is RNG-free (ties broken by
+#'   smallest index), so for a given instance the result is reproducible and
+#'   machine-independent. Default 5000.
+#' @param max_iter Optional integer hard cap on iterations (excluding
+#'   construction). \code{NULL} (default) leaves \code{max_no_improve} in sole
+#'   control.
+#' @param time_budget_s Optional wall-clock ceiling in seconds, checked at
+#'   iteration boundaries. Default \code{Inf} (no ceiling, fully reproducible).
+#'   A finite value caps runtime but makes the result machine-dependent.
 #' @param seed Optional integer; if non-NULL, \code{set.seed(seed)} is called
-#'   at entry. The algorithm itself is deterministic up to ties; ties are
-#'   broken by smallest index so the seed has no observable effect on the
-#'   solution, but it is exposed for API parity with stochastic competitors.
+#'   at entry. The algorithm is deterministic up to ties (broken by smallest
+#'   index), so the seed has no observable effect on the solution; it is
+#'   exposed for API parity with stochastic methods.
+#' @param progress Logical; show a start/done status line. Default: `TRUE` in
+#'   interactive sessions, `FALSE` otherwise
+#'   (`getOption("MaxMin.progress", interactive())`). No effect when
+#'   `.verify = TRUE` (testing path).
 #' @param .verify Logical (testing only); if `TRUE`, routes to the R reference
 #'   loop and brute-force asserts the streamlined records at every iteration.
 #'   Default `FALSE` (the C++ fast path).
@@ -176,7 +187,9 @@
 #' 186:275-293.
 #'
 #' @export
-DropAddTS <- function(d, m, time_budget_s = 10, max_iter = NULL, seed = NULL,
+DropAddTS <- function(d, m, max_no_improve = 5000L, max_iter = NULL,
+                      time_budget_s = Inf, seed = NULL,
+                      progress = getOption("MaxMin.progress", interactive()),
                       .verify = FALSE, .trace = NULL) {
   # .verify: if TRUE, brute-force recompute and assert all streamlined
   #   records (min_dist, sum_dist, min_dist_count) at every iteration.
@@ -193,6 +206,11 @@ DropAddTS <- function(d, m, time_budget_s = 10, max_iter = NULL, seed = NULL,
   if (length(m) != 1L || is.na(m) || m < 2L || m > n) {
     stop("`m` must be a single integer with 2 <= m <= nrow(d)")
   }
+  max_no_improve <- as.integer(max_no_improve)
+  if (length(max_no_improve) != 1L || is.na(max_no_improve) ||
+      max_no_improve < 1L) {
+    stop("`max_no_improve` must be a single positive integer")
+  }
   if (!is.null(max_iter)) {
     max_iter <- as.integer(max_iter)
     if (length(max_iter) != 1L || is.na(max_iter) || max_iter < 0L) {
@@ -200,8 +218,8 @@ DropAddTS <- function(d, m, time_budget_s = 10, max_iter = NULL, seed = NULL,
     }
   }
   if (!is.numeric(time_budget_s) || length(time_budget_s) != 1L ||
-      is.na(time_budget_s) || time_budget_s < 0) {
-    stop("`time_budget_s` must be a single non-negative numeric")
+      is.na(time_budget_s) || time_budget_s <= 0) {
+    stop("`time_budget_s` must be a single positive numeric (or Inf)")
   }
 
   t0 <- Sys.time()
@@ -211,13 +229,26 @@ DropAddTS <- function(d, m, time_budget_s = 10, max_iter = NULL, seed = NULL,
   if (!.verify) {
     cpp_max_iter <- if (is.null(max_iter)) .Machine$integer.max else max_iter
     want_trace <- !is.null(.trace)
+    if (progress) {
+      cli::cli_process_start(
+        "DropAdd tabu search (n = {n}, m = {m}, budget = {time_budget_s}s)",
+        .auto_close = FALSE
+      )
+    }
     out <- DropAddTS_cpp(dmat, m, as.double(time_budget_s),
-                         cpp_max_iter, want_trace)
+                         cpp_max_iter, max_no_improve, want_trace)
     if (want_trace) {
       .trace$drops <- out$drops
       .trace$adds  <- out$adds
     }
     time_s <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+    if (progress) {
+      .iters <- as.integer(out$iters)
+      .tk    <- as.numeric(out$objective)
+      cli::cli_process_done(
+        msg = "DropAdd: {.iters} iters, T_k = {signif(.tk, 4)}, {round(time_s, 1)}s"
+      )
+    }
     return(list(
       indices   = sort(as.integer(out$indices)),
       objective = as.numeric(out$objective),
@@ -254,6 +285,7 @@ DropAddTS <- function(d, m, time_budget_s = 10, max_iter = NULL, seed = NULL,
   # invariant — head IS the FIFO head.
   head        <- 1L
   iters_done  <- 0L
+  no_improve  <- 0L
   t0_num      <- unclass(t0)
   check_every <- 64L
   countdown   <- check_every
@@ -284,6 +316,7 @@ DropAddTS <- function(d, m, time_budget_s = 10, max_iter = NULL, seed = NULL,
     # throttled to once per `check_every` iterations because POSIXct
     # creation + difftime dispatch was ~15% of per-iter cost.
     if (iters_done >= effective_max) break
+    if (no_improve >= max_no_improve) break
     countdown <- countdown - 1L
     if (countdown == 0L) {
       if (unclass(Sys.time()) - t0_num >= time_budget_s) break
@@ -394,6 +427,9 @@ DropAddTS <- function(d, m, time_budget_s = 10, max_iter = NULL, seed = NULL,
       best_maxmin  <- cur_maxmin
       best_sumpair <- cur_sumpair
       best_score   <- cur_score
+      no_improve   <- 0L
+    } else {
+      no_improve   <- no_improve + 1L
     }
 
     iters_done <- iters_done + 1L

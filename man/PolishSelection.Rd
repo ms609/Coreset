@@ -4,7 +4,13 @@
 \alias{PolishSelection}
 \title{Local-search polish for a max-min diversity selection}
 \usage{
-PolishSelection(d, idx, limit = 20L, max_passes = 200L)
+PolishSelection(
+  d,
+  idx,
+  limit = 20L,
+  max_passes = 200L,
+  progress = getOption("MaxMin.progress", interactive())
+)
 }
 \arguments{
 \item{d}{A \code{dist} object or square symmetric numeric matrix of pairwise
@@ -18,6 +24,10 @@ Default \code{20L}. Smaller values are faster but may miss improving swaps.}
 \item{max_passes}{Integer: hard cap on outer iterations (safety guard;
 theoretical termination is guaranteed by the lex-monotone objective).
 Default \code{200L}.}
+
+\item{progress}{Logical; show a start/done status line. Default: \code{TRUE} in
+interactive sessions, \code{FALSE} otherwise
+(\code{getOption("MaxMin.progress", interactive())}).}
 }
 \value{
 Integer vector of the same length as \code{idx}, with attributes
