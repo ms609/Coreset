@@ -17,7 +17,9 @@ Description: Selects a maximally dispersed subset of a fixed set of candidate
     strategies and a robust ensemble default, the DropAdd tabu-search heuristic
     (Porumbel, Hao & Glover 2011) <doi:10.1007/s10479-011-0898-z>, an exact
     node-packing integer program (Sayyady & Fathi 2016)
-    <doi:10.1016/j.ejor.2016.02.026>, and a local-search polish. Distinct from
+    <doi:10.1016/j.ejor.2016.02.026>, a GRASP with path-relinking heuristic
+    (Resende, Marti, Gallego & Duarte 2010)
+    <doi:10.1016/j.ejor.2009.11.035>, and a local-search polish. Distinct from
     the 'maximin' package, which constructs continuous space-filling designs.
 License: GPL (>= 3)
 Encoding: UTF-8
@@ -30,9 +32,11 @@ Imports:
     stats
 Suggests:
     highs,
+    quarto,
     rprojroot,
     spelling,
     testthat (>= 3.0.0)
+VignetteBuilder: quarto
 LinkingTo:
     Rcpp
 URL: https://github.com/ms609/MaxMin
@@ -44,9 +48,8 @@ Config/Needs/memcheck: testthat
 Config/Needs/metadata: codemeta
 Config/Needs/revdeps: revdepcheck
 Config/Needs/website: pkgdown
+Config/roxygen2/version: 8.0.0
 Config/testthat/edition: 3
 Config/testthat/parallel: false
-Config/roxygen2/version: 8.0.0
 ByteCompile: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 8.0.0

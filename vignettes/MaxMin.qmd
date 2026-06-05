@@ -1,0 +1,344 @@
+---
+title: "Introduction to MaxMin"
+author: "Martin R. Smith"
+date: today
+format: html
+vignette: >
+  %\VignetteIndexEntry{Introduction to MaxMin}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+library("MaxMin")
+```
+
+The **Max-Min Diversity Problem** (MMDP) asks: given a fixed set of *N* candidate
+items and a distance between every pair, choose *m* items so that the
+closest pair in the selection is as far apart as possible.
+The objective — often written T~k~ — is the minimum pairwise distance within
+the chosen subset; a larger T~k~ means a more spread-out, representative
+selection.
+
+This problem arises naturally wherever you want a diverse sample from a fixed
+pool: selecting field-survey sites to cover a landscape, picking biological
+specimens for sequencing that span the available genetic diversity, or choosing
+a representative subset of protein structures from a database.
+MaxMin differs from the CRAN package **maximin**, which constructs
+*continuous* space-filling designs by generating new points;
+MaxMin selects from a *fixed candidate set* under an arbitrary distance.
+
+## Installation
+
+```{r}
+#| label: install
+#| eval: false
+install.packages("MaxMin")
+```
+
+For the exact solver demonstrated later, also install **highs**:
+
+```{r}
+#| label: install-highs
+#| eval: false
+install.packages("highs")
+```
+
+## Quick start
+
+`eurodist` is a built-in R `dist` object containing road distances (km)
+between 21 European cities.
+It can be passed straight to MaxMin — no conversion needed.
+
+```{r}
+#| label: quickstart
+data(eurodist)
+
+# Select 6 maximally dispersed cities
+idx <- Gonzalez(eurodist, n = 6L)
+
+labels(eurodist)[idx]
+TkScore(eurodist, idx)
+```
+
+`Gonzalez()` returned the indices of the six cities whose nearest-neighbour
+distance within the selection is largest.
+`TkScore()` reports that value explicitly.
+
+## Methods at a glance
+
+MaxMin provides four solvers and two utilities:
+
+| Function | Quality | Speed | Stochastic? |
+|---|---|---|---|
+| `Gonzalez()` | Good (2-approximation) | Very fast | No |
+| `DropAddTS()` | High (≈ 99 % optimal) | Fast | No |
+| `GraspPR()` | Highest | Moderate | Yes (`seed =`) |
+| `ExactMaxMin()` | Optimal (NP-hard) | Slow | No |
+| `PolishSelection()` | Post-processing only | Very fast | No |
+| `TkScore()` | Scoring only | Instant | No |
+
+The rest of this vignette walks through each in turn.
+
+---
+
+## Gonzalez: fast greedy selection
+
+The **Gonzalez** (1985) algorithm builds the selection greedily:
+start from a seed point, then repeatedly add whichever unselected point is
+farthest from the current selection.
+This greedy rule guarantees a 2-approximation to the optimal T~k~ and runs
+in O(*N* · *m*) time.
+
+The default `seed = "ensemble"` runs four peripheral seeding strategies and
+returns whichever produced the highest T~k~:
+
+```{r}
+#| label: gonzalez-ensemble
+idx_ens <- Gonzalez(eurodist, n = 6L)   # ensemble is the default
+
+# Which seeding strategy won?
+attr(idx_ens, "winning_strategy")
+```
+
+You can also request a specific seeding strategy, or pass `first` to fix the
+starting index manually:
+
+```{r}
+#| label: gonzalez-seeds
+idx_diam <- Gonzalez(eurodist, n = 6L, seed = "diameter")
+TkScore(eurodist, idx_diam)
+
+idx_anti <- Gonzalez(eurodist, n = 6L, seed = "anti_medoid")
+TkScore(eurodist, idx_anti)
+```
+
+When your items live in a space with no coordinate embedding — for example,
+phylogenetic trees with patristic distances — `GonzalezColumn()` accepts an
+*on-demand distance-column oracle* and avoids materialising the full matrix
+entirely.
+
+---
+
+## DropAdd tabu search
+
+The **DropAdd** heuristic (Porumbel, Hao & Glover 2011) refines an initial
+selection by alternating *drop* and *add* moves guided by a FIFO tabu list
+that prevents short cycles.
+It is fully deterministic and reproducible, and typically reaches ≈ 99 % of
+the optimal T~k~.
+
+```{r}
+#| label: dropadd
+res_da <- DropAddTS(eurodist, m = 6L, max_no_improve = 500L)
+
+labels(eurodist)[res_da$indices]
+res_da$objective     # T_k achieved
+res_da$iters         # iterations completed
+res_da$time_s        # wall-clock seconds
+```
+
+`max_no_improve` is the main stopping knob: the algorithm terminates after
+this many consecutive iterations without an improvement in T~k~.
+For coordinate data where *N* is large enough to make the distance matrix
+infeasible (roughly N > 46 000), use `DropAddTSPoints()`, which accepts a
+coordinate matrix directly.
+
+---
+
+## GRASP with path relinking
+
+**GRASP + path relinking** (Resende et al. 2010) combines a *randomised*
+greedy construction phase with extended local search and then refines an elite
+set of good solutions by interpolating between elite-pair trajectories
+(*path relinking*).
+It achieves the highest T~k~ of the three heuristics, at a proportionally
+higher cost.
+Because the construction phase is stochastic, always set `seed` for
+reproducibility:
+
+```{r}
+#| label: grasp
+res_gr <- GraspPR(eurodist, m = 6L, max_no_improve = 50L, seed = 42L)
+
+labels(eurodist)[res_gr$indices]
+res_gr$objective
+res_gr$pr_calls   # path-relinking calls performed
+```
+
+`max_no_improve` controls how many consecutive non-improving GRASP iterations
+trigger termination; `time_budget_s` is available as an absolute time cap for
+interactive or batch use.
+
+---
+
+## Comparing methods on a simulated example
+
+To see how the methods relate visually, we generate 50 points in two
+dimensions and select *m* = 8 from each.
+
+```{r}
+#| label: sim-data
+set.seed(42)
+pts <- matrix(rnorm(100), ncol = 2)   # 50 points, 2 dimensions
+d50 <- dist(pts)
+m   <- 8L
+```
+
+```{r}
+#| label: compare-run
+idx_gonz <- Gonzalez(d50, n = m)
+res_da50 <- DropAddTS(d50, m = m, max_no_improve = 500L)
+res_gr50 <- GraspPR(d50, m = m, max_no_improve = 50L, seed = 42L)
+```
+
+Even a small difference in T~k~ can correspond to a meaningfully more
+dispersed selection.
+
+```{r}
+#| label: compare-scores
+scores <- c(
+  Gonzalez  = TkScore(d50, idx_gonz),
+  DropAddTS = res_da50$objective,
+  GraspPR   = res_gr50$objective
+)
+round(scores, 3)
+```
+
+Plotting the selections against the point cloud makes the differences
+concrete.
+When two methods select the same index, their symbols overlap; the T~k~ table
+above captures the quality distinction even when the visual overlap is high.
+
+```{r}
+#| label: compare-plot
+#| fig-width: 6.5
+#| fig-height: 6
+#| fig-cap: "Selections returned by each method on 50 random 2-D points
+#|   (m = 8). Coloured symbols mark selected points; grey circles are the
+#|   full candidate set. A small jitter separates symbols at shared indices."
+
+methods <- list(
+  Gonzalez  = idx_gonz,
+  DropAddTS = res_da50$indices,
+  GraspPR   = res_gr50$indices
+)
+cols <- c(Gonzalez = "#E41A1C", DropAddTS = "#377EB8", GraspPR = "#4DAF4A")
+pchs <- c(Gonzalez = 24L, DropAddTS = 21L, GraspPR = 22L)
+# Small per-method shift so coincident selections remain distinguishable
+dx   <- c(Gonzalez = 0, DropAddTS =  0.04, GraspPR = -0.04)
+dy   <- c(Gonzalez = 0, DropAddTS = -0.04, GraspPR =  0.04)
+
+plot(pts, pch = 1L, col = "grey75", asp = 1L,
+     xlab = "x", ylab = "y",
+     main = "MaxMin method comparison")
+
+for (nm in names(methods)) {
+  sel <- methods[[nm]]
+  points(
+    pts[sel, 1L] + dx[nm],
+    pts[sel, 2L] + dy[nm],
+    pch = pchs[nm], col = cols[nm], bg = cols[nm], cex = 1.6
+  )
+}
+
+legend("topright",
+       legend = paste0(names(methods), "  (Tₖ = ", round(scores, 3), ")"),
+       pch = pchs, col = cols, pt.bg = cols, pt.cex = 1.4, bty = "n")
+```
+
+---
+
+## Exact solution
+
+For small instances (roughly N ≤ 25–30), `ExactMaxMin()` solves the problem
+to proven optimality via a node-packing integer programme (Sayyady & Fathi
+2016), using the **highs** solver.
+
+```{r}
+#| label: exact-data
+set.seed(1L)
+pts30 <- matrix(rnorm(60L), ncol = 2L)
+d30   <- dist(pts30)
+```
+
+```{r}
+#| label: exact
+#| eval: !expr requireNamespace("highs", quietly = TRUE)
+res_ex <- ExactMaxMin(d30, m = 6L, time_budget_s = 30L)
+
+res_ex$proven      # TRUE  ⟹  objective is the global optimum
+res_ex$objective
+
+# Compare to the greedy heuristic on the same instance
+res_gonz30 <- Gonzalez(d30, n = 6L)
+c(exact    = res_ex$objective,
+  Gonzalez = TkScore(d30, res_gonz30))
+```
+
+`$proven = TRUE` certifies that no selection can achieve a higher T~k~.
+ExactMaxMin is NP-hard; instances with more than ~30 candidates require a
+time budget or should be tackled with the heuristics above.
+
+---
+
+## Scoring and polish
+
+### `TkScore()`
+
+`TkScore()` computes the T~k~ objective for any index set.
+It accepts a `dist` object, a square distance matrix, or a coordinate matrix
+via the `points` argument:
+
+```{r}
+#| label: tkscore
+TkScore(d50, idx_gonz)                               # from dist
+TkScore(as.matrix(d50), idx_gonz)                    # from square matrix
+TkScore(points = pts, idx = idx_gonz)                # from coordinates
+```
+
+### `PolishSelection()`
+
+`PolishSelection()` applies a 1-swap local search anchored on the *critical
+edge* — the pair realising T~k~ — and is a fast post-processor for any
+greedy selector.
+Applying it to a single-seed (weaker) Gonzalez result often recovers a few
+extra units of T~k~:
+
+```{r}
+#| label: polish
+idx_raw      <- Gonzalez(d50, n = m, seed = "first")   # single, weaker seed
+TkScore(d50, idx_raw)
+
+idx_polished <- PolishSelection(d50, idx_raw)
+TkScore(d50, idx_polished)
+
+attr(idx_polished, "swaps")   # number of improving swaps applied
+```
+
+---
+
+## When to use which method
+
+| Scenario | Recommended |
+|---|---|
+| Speed matters most, N up to a few thousand | `Gonzalez()` (ensemble default) |
+| Deterministic, reproducible refinement | `DropAddTS()` |
+| Best quality, set `seed` for reproducibility | `GraspPR(seed = ...)` |
+| N > 46 000 (distance matrix infeasible) | `DropAddTSPoints()` or `Gonzalez(points = ...)` |
+| Arbitrary metric with no coordinate embedding | `GonzalezColumn()` |
+| Proven optimum, N ≤ ~ 25–30, **highs** installed | `ExactMaxMin()` |
+| Post-process any selection cheaply | `PolishSelection()` |
+
+The heuristics are complementary:
+`Gonzalez()` is O(*N* · *m*) and deterministic — an instant first result.
+`DropAddTS()` is deterministic and reproducible (no RNG), typically reaching
+≈ 99 % of optimal; the `seed` parameter governs only the RNG used for
+tie-breaking, not the algorithm itself.
+`GraspPR()` is stochastic and usually edges out `DropAddTS()` on T~k~, but
+requires a `seed` for reproducibility.
+For any of these, `PolishSelection()` can squeeze out further improvement at
+negligible cost.

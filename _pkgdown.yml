@@ -21,6 +21,7 @@ reference:
     contents:
       - DropAddTS
       - DropAddTSPoints
+      - GraspPR
       - ExactMaxMin
   - title: Refinement and scoring
     contents:

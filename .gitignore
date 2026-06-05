@@ -20,3 +20,5 @@ revdep/
 *.site
 *.bak
 .positai
+/doc/
+/Meta/

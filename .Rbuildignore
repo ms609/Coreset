@@ -32,3 +32,4 @@ memcheck
 ^dev$
 ^\.positai$
 ^\.claude$
+^Meta$
