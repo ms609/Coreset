@@ -88,7 +88,8 @@
 #' \describe{
 #'   \item{`"peripheral"`}{Two sweeps: the point furthest from point 1, then
 #'     the point furthest from that (a diameter-endpoint approximation). The
-#'     only anchor reachable from a distance-column oracle ([GonzalezColumn()]).}
+#'     only anchor reachable from a distance-column oracle (the function path of
+#'     [Gonzalez()]).}
 #'   \item{`"diameter"`}{A row endpoint of the diameter pair (the maximum
 #'     pairwise distance). Degenerate data (`d_max <= 0`) falls back to 1.}
 #'   \item{`"anti_medoid"`}{The point furthest from the 1-median (medoid).}
@@ -110,7 +111,7 @@
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' d <- dist(pts)
 #' MaxMinSeed(d, method = "diameter")
-#' Gonzalez(d, 5L, first = MaxMinSeed(d, method = "diameter"))
+#' Gonzalez(d, 5L, seed = MaxMinSeed(d, method = "diameter"))
 #' @seealso [Gonzalez()], which seeds and runs the greedy pass in one call.
 #' @export
 MaxMinSeed <- function(d = NULL, points = NULL,
@@ -128,9 +129,10 @@ MaxMinSeed <- function(d = NULL, points = NULL,
 #' Ensemble Gonzalez over cheap peripheral-anchor strategies (distance matrix)
 #'
 #' Runs Gonzalez from each requested deterministic peripheral anchor and returns
-#' the subset maximising \eqn{T_k}. Internal driver for `Gonzalez(seed =
-#' "ensemble")`; see [Gonzalez()] for the anchor descriptions. The returned
-#' vector carries `strategy_results` and `winning_strategy` attributes.
+#' the subset maximising \eqn{T_k}. Internal driver for the ensemble path of
+#' [Gonzalez()] (triggered when `seed` is a character vector of length > 1).
+#' The returned vector carries `strategy_results` and `winning_strategy`
+#' (character vector of all tied-best strategies) attributes.
 #' @param d Square numeric distance matrix (already coerced).
 #' @param n Integer subset size (`1 <= n < nrow(d)`).
 #' @param anchors Character vector of anchor names.
@@ -224,10 +226,9 @@ MaxMinSeed <- function(d = NULL, points = NULL,
     seed <- anchor_seed(anchors[[i]])
     g    <- run_gonz(seed$s1, seed$mask)
     strategy_results[[i]] <- list(
-      s1     = seed$s1,
-      idx    = g$idx,
-      t_k    = g$t_k,
-      chosen = FALSE
+      s1  = seed$s1,
+      idx = g$idx,
+      t_k = g$t_k
     )
   }
 
@@ -241,15 +242,21 @@ MaxMinSeed <- function(d = NULL, points = NULL,
       best_tk <- tk
     }
   }
-  strategy_results[[best_i]]$chosen <- TRUE
+
+  winners <- if (is.na(best_tk)) {
+    best_i
+  } else {
+    which(vapply(strategy_results, function(r) isTRUE(r$t_k == best_tk),
+                 logical(1L)))
+  }
 
   result <- strategy_results[[best_i]]$idx
   attr(result, "strategy_results") <- strategy_results
-  attr(result, "winning_strategy") <- anchors[[best_i]]
+  attr(result, "winning_strategy") <- anchors[winners]
   result
 }
 
-#' Coordinate (matrix-free) four-anchor Gonzalez ensemble
+#' Coordinate (matrix-free) multi-anchor Gonzalez ensemble
 #'
 #' Coordinate counterpart of [.GonzEnsemble()]; each anchor seed and the greedy
 #' expansion are computed from `points` via the coordinate primitives, so the
@@ -340,10 +347,9 @@ MaxMinSeed <- function(d = NULL, points = NULL,
     seed <- anchor_seed(anchors[[i]])
     g    <- run_gonz(seed$s1, seed$mask)
     strategy_results[[i]] <- list(
-      s1     = seed$s1,
-      idx    = g$idx,
-      t_k    = g$t_k,
-      chosen = FALSE
+      s1  = seed$s1,
+      idx = g$idx,
+      t_k = g$t_k
     )
   }
 
@@ -357,10 +363,16 @@ MaxMinSeed <- function(d = NULL, points = NULL,
       best_tk <- tk
     }
   }
-  strategy_results[[best_i]]$chosen <- TRUE
+
+  winners <- if (is.na(best_tk)) {
+    best_i
+  } else {
+    which(vapply(strategy_results, function(r) isTRUE(r$t_k == best_tk),
+                 logical(1L)))
+  }
 
   result <- strategy_results[[best_i]]$idx
   attr(result, "strategy_results") <- strategy_results
-  attr(result, "winning_strategy") <- anchors[[best_i]]
+  attr(result, "winning_strategy") <- anchors[winners]
   result
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/seed.R
 \name{.GonzEnsembleFromPoints}
 \alias{.GonzEnsembleFromPoints}
-\title{Coordinate (matrix-free) four-anchor Gonzalez ensemble}
+\title{Coordinate (matrix-free) multi-anchor Gonzalez ensemble}
 \usage{
 .GonzEnsembleFromPoints(
   points,

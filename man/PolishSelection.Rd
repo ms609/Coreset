@@ -55,7 +55,7 @@ is a no-op.
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d   <- dist(pts)
-s0  <- Gonzalez(d, 5L, first = 1L)
+s0  <- Gonzalez(d, 5L, seed = 1L)
 s1  <- PolishSelection(d, s0)
 TkScore(d, s1) >= TkScore(d, s0)
 }

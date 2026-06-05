@@ -117,54 +117,114 @@
 #' problem. The quality of the result depends on the first (seed) point; by
 #' default `Gonzalez()` runs an **ensemble** of cheap deterministic peripheral
 #' seeding strategies and keeps the selection with the largest minimum pairwise
-#' distance ([TkScore()]). A single strategy may be requested through `seed`,
-#' or an explicit start index through `first`.
+#' distance ([TkScore()]).
 #'
-#' @param d A `dist` object or a square symmetric numeric matrix of pairwise
-#'   distances. Ignored when `points` is supplied.
-#' @param n Integer: number of points to select. If `n >= nrow(d)`, all
+#' `Gonzalez()` accepts the distances in whichever of three forms suits the
+#' data, all returning identical selections on the same metric:
+#' \describe{
+#'   \item{a **distance matrix** (`d`)}{a `dist` object or square matrix, held
+#'     in full;}
+#'   \item{a **coordinate matrix** (`points`)}{each needed distance is
+#'     recomputed from coordinates on the fly in `O(N)` memory, never
+#'     materialising the `N x N` matrix (Euclidean data only);}
+#'   \item{a **distance-column oracle** (a function passed as `d`)}{for metrics
+#'     with neither a stored matrix nor a coordinate embedding -- e.g.
+#'     tree-to-tree distances computed on demand. See *Distance-column oracle*.}
+#' }
+#'
+#' @section Distance-column oracle:
+#' When `d` is a function it is treated as a closure `colFn(i)` returning, for a
+#' single 1-based index `i`, the length-`N` vector of distances from element `i`
+#' to every element. Gonzalez calls it once per selected element, maintaining a
+#' running nearest-distance vector, so the `N x N` matrix is never built:
+#' `O(N * n)` oracle calls and `O(N)` memory. The self-distance at position `i`
+#' may take any non-negative value; it is masked before use. Because the count
+#' of elements cannot be inferred from the closure, `N` must be supplied.
+#' Only an integer `seed` (a `first` index) or the default deterministic
+#' two-sweep peripheral seed is reachable from an oracle; the richer matrix
+#' anchors (diameter, anti-medoid, row-sum, row-norm) need `O(N^2)` work and
+#' are silently unavailable.
+#'
+#' @param d A `dist` object, a square symmetric numeric matrix of pairwise
+#'   distances, or a **distance-column oracle** function (see
+#'   *Distance-column oracle*). Ignored when `points` is supplied.
+#' @param n Integer: number of points to select. If `n >= N`, all
 #'   indices are returned.
-#' @param first Integer: explicit index of the first selected point. When
-#'   supplied (non-`NULL`) it overrides `seed`, giving a single bare Gonzalez
-#'   pass from that index. Default `NULL`.
 #' @param points Optional `N x dim` numeric coordinate matrix. When supplied,
 #'   the selection is computed directly from coordinates in `O(N * n * dim)`
 #'   time and `O(N)` memory, never materialising the `N x N` distance matrix
 #'   (`d` is then unused). For Euclidean data the returned indices are
 #'   identical to the matrix path. Only complete (non-`NA`) data is supported.
-#' @param seed Character: the seeding strategy used when `first` is `NULL`. One
-#'   of `"ensemble"` (default; run the four deterministic anchors below and keep
-#'   the best by [TkScore()]), `"diameter"`, `"anti_medoid"`, `"medoid"`,
-#'   `"rowsum"`, `"rownorm"`, `"peripheral"` (a two-sweep diameter-endpoint
-#'   approximation), or `"first"` (index 1, a bare Gonzalez pass). See
-#'   [MaxMinSeed()] for the anchor definitions.
-#' @param anchors Character vector of anchor names used only when
-#'   `seed = "ensemble"`: any subset of `c("diameter", "anti_medoid", "rowsum",
-#'   "rownorm")`. Default: all four. The returned vector then carries
-#'   `strategy_results` and `winning_strategy` attributes.
-#' @return Integer vector of length `min(n, nrow(d))` of selected indices.
-#' @seealso [MaxMinSeed()] for the seed indices alone; [GonzalezColumn()] for a
-#'   distance-column oracle; [DropAddTS()] and [ExactMaxMin()] for higher-effort
-#'   solvers.
+#' @param N Integer: the total number of elements. Required (and used) only on
+#'   the distance-column oracle path, where it cannot be inferred from the
+#'   closure; ignored for the matrix and coordinate paths.
+#' @param progress Logical; show a progress bar during greedy selection on the
+#'   distance-column oracle path (the only path slow enough to warrant one).
+#'   Default: `TRUE` in interactive sessions, `FALSE` otherwise
+#'   (`getOption("MaxMin.progress", interactive())`).
+#' @param seed Integer or character (scalar or vector). An **integer** gives the
+#'   explicit 1-based index of the first selected point (a single bare Gonzalez
+#'   pass). A **length-1 character** names a single seeding strategy:
+#'   `"diameter"`, `"anti_medoid"`, `"medoid"`, `"rowsum"`, `"rownorm"`,
+#'   `"peripheral"` (two-sweep diameter-endpoint approximation), or `"first"`
+#'   (index 1). A **length > 1 character vector** requests an ensemble: each
+#'   named anchor runs a full Gonzalez pass and the best result by [TkScore()]
+#'   is returned with `strategy_results` and `winning_strategy` (character
+#'   vector of all tied-best strategies) attributes.
+#'   Valid ensemble anchors: any subset of `c("diameter", "anti_medoid",
+#'   "rowsum", "rownorm")`. Default: all four (full ensemble). See
+#'   [MaxMinSeed()] for anchor definitions. On the distance-column oracle path
+#'   only an integer `seed` is honoured (see *Distance-column oracle*).
+#' @return Integer vector of length `min(n, N)` of selected indices.
+#' @seealso [MaxMinSeed()] for the seed indices alone; [DropAddTS()] and
+#'   [ExactMaxMin()] for higher-effort solvers.
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' d <- dist(pts)
-#' # Ensemble of peripheral seeds (default):
+#' # Default: ensemble of all four peripheral anchors:
 #' Gonzalez(d, 5L)
+#' # Custom two-anchor ensemble:
+#' Gonzalez(d, 5L, seed = c("diameter", "anti_medoid"))
 #' # A single strategy:
 #' Gonzalez(d, 5L, seed = "diameter")
-#' # An explicit start index:
-#' Gonzalez(d, 5L, first = 1L)
+#' # An explicit start index (integer seed):
+#' Gonzalez(d, 5L, seed = 1L)
 #' # Matrix-free coordinate path (identical result, O(N) memory):
-#' Gonzalez(n = 5L, points = pts, first = 1L)
+#' Gonzalez(n = 5L, points = pts, seed = 1L)
+#' # Distance-column oracle: supply one column at a time, never the full matrix.
+#' dm <- as.matrix(d)
+#' colFn <- function(i) dm[, i]
+#' identical(Gonzalez(colFn, 5L, N = nrow(dm), seed = 1L),
+#'           Gonzalez(d, 5L, seed = 1L))
 #' @export
-Gonzalez <- function(d = NULL, n, first = NULL, points = NULL,
-                     seed = c("ensemble", "diameter", "anti_medoid", "medoid",
-                              "rowsum", "rownorm", "peripheral", "first"),
-                     anchors = c("diameter", "anti_medoid", "rowsum",
-                                 "rownorm")) {
-  seed <- match.arg(seed)
+Gonzalez <- function(d = NULL, n,
+                     seed = c("diameter", "anti_medoid", "rowsum", "rownorm"),
+                     points = NULL, N = NULL,
+                     progress = getOption("MaxMin.progress", interactive())) {
+  if (is.numeric(seed) || is.integer(seed)) {
+    first <- as.integer(seed)
+    seed  <- "first"
+  } else if (length(seed) > 1L) {
+    first <- NULL
+  } else {
+    first <- NULL
+    seed  <- match.arg(seed, choices = c("diameter", "anti_medoid", "medoid",
+                                         "rowsum", "rownorm", "peripheral",
+                                         "first"))
+  }
+
+  # Distance-column oracle path: `d` is a closure returning one matrix column
+  # at a time, for metrics with neither a stored matrix nor a coordinate
+  # embedding (e.g. on-demand tree-to-tree distances). The selection is
+  # identical to the matrix path given the same `first`; only an integer
+  # `seed` (a `first` index) or the deterministic peripheral seed is reachable
+  # here, since the richer anchors need O(N^2) work (see Details).
+  if (is.function(d)) {
+    return(.GonzalezColumn(colFn = d, N = N, n = n, first = first,
+                           progress = progress))
+  }
+
   usePoints <- !is.null(points)
   if (usePoints) {
     points <- .AsPointsMatrix(points)
@@ -191,11 +251,11 @@ Gonzalez <- function(d = NULL, n, first = NULL, points = NULL,
     return(greedy(first))
   }
 
-  if (seed == "ensemble") {
+  if (length(seed) > 1L) {
     return(if (usePoints) {
-      .GonzEnsembleFromPoints(points, n, anchors)
+      .GonzEnsembleFromPoints(points, n, seed)
     } else {
-      .GonzEnsemble(d, n, anchors)
+      .GonzEnsemble(d, n, seed)
     })
   }
 
@@ -203,22 +263,14 @@ Gonzalez <- function(d = NULL, n, first = NULL, points = NULL,
   greedy(s)
 }
 
-#' Gonzalez maximin from a distance-column oracle (matrix-free, any metric)
+#' Gonzalez maximin from a distance-column oracle (worker)
 #'
-#' Closure-driven counterpart of [Gonzalez()] for spaces with no coordinate
-#' embedding (e.g. phylogenetic trees), where neither the matrix path nor the
-#' Euclidean coordinate path applies. At each greedy step the distances from
-#' the newly selected element to all `N` elements are obtained from `colFn`,
-#' and a running nearest-distance vector is maintained. The `N x N` distance
-#' matrix is never materialised: `O(N * n)` oracle calls and `O(N)` memory.
-#'
-#' On a symmetric metric the selection is identical to
-#' `Gonzalez(d, n, first = first)` given the same starting index, because
-#' `colFn(i)` returns column `i` of the distance matrix.
-#'
-#' Only the deterministic two-sweep peripheral seed is available here: the
-#' richer anchors of [Gonzalez()] (diameter, anti-medoid, row-sum, row-norm)
-#' need `O(N^2)` work and are unreachable from an `O(N)`-per-call oracle.
+#' Implements the distance-column oracle path of [Gonzalez()] (dispatched there
+#' when `d` is a function); see that function's *Distance-column oracle* section
+#' for the user-facing contract. At each greedy step the distances from the
+#' newly selected element to all `N` elements are obtained from `colFn`, and a
+#' running nearest-distance vector is maintained, so the `N x N` distance matrix
+#' is never materialised: `O(N * n)` oracle calls and `O(N)` memory.
 #'
 #' @param colFn A function of a single 1-based index `i` returning a length-`N`
 #'   numeric vector of distances from element `i` to every element. The
@@ -233,22 +285,16 @@ Gonzalez <- function(d = NULL, n, first = NULL, points = NULL,
 #'   sweeps: the element furthest from element 1, then the element furthest
 #'   from that (a diameter-endpoint approximation).
 #' @param progress Logical; show a progress bar during greedy selection.
-#'   Default: `TRUE` in interactive sessions, `FALSE` otherwise
-#'   (`getOption("MaxMin.progress", interactive())`).
 #' @return Integer vector of length `min(n, N)` of selected indices.
-#' @examples
-#' set.seed(1)
-#' pts <- matrix(rnorm(60), ncol = 2)
-#' d <- as.matrix(dist(pts))
-#' colFn <- function(i) d[, i]
-#' identical(GonzalezColumn(colFn, nrow(d), 5L, first = 1L),
-#'           Gonzalez(d, 5L, first = 1L))
-#' @seealso [Gonzalez()] for the matrix and coordinate paths.
-#' @export
-GonzalezColumn <- function(colFn, N, n, first = NULL,
+#' @keywords internal
+.GonzalezColumn <- function(colFn, N, n, first = NULL,
                             progress = getOption("MaxMin.progress", interactive())) {
   if (!is.function(colFn)) {
     stop("`colFn` must be a function of one index returning numeric(N)")
+  }
+  if (is.null(N)) {
+    stop("`N` (the element count) must be supplied when `d` is a ",
+         "distance-column function")
   }
   N <- as.integer(N)
   n <- as.integer(n)
@@ -277,7 +323,7 @@ GonzalezColumn <- function(colFn, N, n, first = NULL,
 #' `colFn(i)` call for the matrix-column read `d[, i]`. `which.max()` uses R's
 #' first-maximum (strict `>`) rule, matching the kernel's tie-breaking, so the
 #' selection is identical to the matrix path on symmetric input.
-#' @param colFn Column oracle; see [GonzalezColumn()].
+#' @param colFn Column oracle; see [Gonzalez()].
 #' @param N Integer element count.
 #' @param n Integer subset size (`>= 2`).
 #' @param first Integer seed index.
@@ -293,7 +339,7 @@ GonzalezColumn <- function(colFn, N, n, first = NULL,
   }
   min_dist[first] <- -Inf                 # mask seed before the loop
   if (progress) {
-    .pb <- cli::cli_progress_bar("GonzalezColumn", total = n - 1L)
+    .pb <- cli::cli_progress_bar("Gonzalez (column oracle)", total = n - 1L)
   }
   for (k in seq_len(n - 1L) + 1L) {
     best <- which.max(min_dist)           # first global max (ties -> first)
@@ -313,7 +359,7 @@ GonzalezColumn <- function(colFn, N, n, first = NULL,
 #' and a markedly better Gonzalez anchor than an arbitrary start, at the cost
 #' of two of the `O(N * n)` sweeps. The richer peripheral anchors (diameter,
 #' anti-medoid) need `O(N^2)` work and are unreachable from a column oracle.
-#' @param colFn Column oracle; see [GonzalezColumn()].
+#' @param colFn Column oracle; see [Gonzalez()].
 #' @param N Integer element count.
 #' @return Integer index of the seed.
 #' @keywords internal

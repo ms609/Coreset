@@ -46,7 +46,7 @@ matrix is never materialised: \code{O(N * n)} oracle calls and \code{O(N)} memor
 }
 \details{
 On a symmetric metric the selection is identical to
-\code{Gonzalez(d, n, first = first)} given the same starting index, because
+\code{Gonzalez(d, n, seed = first)} given the same starting index, because
 \code{colFn(i)} returns column \code{i} of the distance matrix.
 
 Only the deterministic two-sweep peripheral seed is available here: the
@@ -59,7 +59,7 @@ pts <- matrix(rnorm(60), ncol = 2)
 d <- as.matrix(dist(pts))
 colFn <- function(i) d[, i]
 identical(GonzalezColumn(colFn, nrow(d), 5L, first = 1L),
-          Gonzalez(d, 5L, first = 1L))
+          Gonzalez(d, 5L, seed = 1L))
 }
 \seealso{
 \code{\link[=Gonzalez]{Gonzalez()}} for the matrix and coordinate paths.

@@ -22,7 +22,8 @@ Integer vector of selected indices with attributes.
 }
 \description{
 Runs Gonzalez from each requested deterministic peripheral anchor and returns
-the subset maximising \eqn{T_k}. Internal driver for \code{Gonzalez(seed = "ensemble")}; see \code{\link[=Gonzalez]{Gonzalez()}} for the anchor descriptions. The returned
-vector carries \code{strategy_results} and \code{winning_strategy} attributes.
+the subset maximising \eqn{T_k}. Internal driver for the ensemble path of
+\code{\link[=Gonzalez]{Gonzalez()}} (triggered when \code{seed} is a character vector of length > 1).
+The returned vector carries \code{strategy_results} and \code{winning_strategy} attributes.
 }
 \keyword{internal}

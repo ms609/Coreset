@@ -93,19 +93,20 @@ farthest from the current selection.
 This greedy rule guarantees a 2-approximation to the optimal T~k~ and runs
 in O(*N* · *m*) time.
 
-The default `seed = "ensemble"` runs four peripheral seeding strategies and
-returns whichever produced the highest T~k~:
+By default `seed = c("diameter", "anti_medoid", "rowsum", "rownorm")`:
+all four peripheral seeding strategies run and whichever produced the highest
+T~k~ is returned.
+Pass a shorter character vector to use a subset, or a single name for one strategy.
 
 ```{r}
 #| label: gonzalez-ensemble
-idx_ens <- Gonzalez(eurodist, n = 6L)   # ensemble is the default
+idx_ens <- Gonzalez(eurodist, n = 6L)   # default: four-anchor ensemble
 
 # Which seeding strategy won?
 attr(idx_ens, "winning_strategy")
 ```
 
-You can also request a specific seeding strategy, or pass `first` to fix the
-starting index manually:
+You can also request a specific seeding strategy or a custom ensemble subset:
 
 ```{r}
 #| label: gonzalez-seeds
@@ -116,10 +117,12 @@ idx_anti <- Gonzalez(eurodist, n = 6L, seed = "anti_medoid")
 TkScore(eurodist, idx_anti)
 ```
 
-When your items live in a space with no coordinate embedding — for example,
-phylogenetic trees with patristic distances — `GonzalezColumn()` accepts an
-*on-demand distance-column oracle* and avoids materialising the full matrix
-entirely.
+When only pairwise distances between objects are known — there are no
+coordinates to work from — and computing or storing all N×N distances at once
+would be too expensive (e.g. large phylogenetic trees, where each patristic
+distance requires a tree traversal), `GonzalezColumn()` accepts a user-supplied
+function that returns one column of the distance matrix at a time.
+Gonzalez needs only *n* such columns, so the full N×N matrix is never built.
 
 ---
 

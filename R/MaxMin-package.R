@@ -8,10 +8,10 @@
 #'
 #' @section Solvers:
 #' \describe{
-#'   \item{[Gonzalez()]}{Greedy farthest-first selection, with a choice of
-#'     peripheral seeding strategies and a robust ensemble default.}
-#'   \item{[GonzalezColumn()]}{Farthest-first from a distance-column oracle, for
-#'     spaces with no coordinate embedding.}
+#'   \item{[Gonzalez()]}{Greedy farthest-first selection from a distance matrix,
+#'     a coordinate matrix, or a distance-column oracle (for spaces with no
+#'     coordinate embedding), with a choice of peripheral seeding strategies and
+#'     a robust ensemble default.}
 #'   \item{[DropAddTS()] / [DropAddTSPoints()]}{DropAdd tabu search heuristic.}
 #'   \item{[ExactMaxMin()]}{Exact node-packing optimum (needs \pkg{highs}).}
 #'   \item{[PolishSelection()]}{1-swap local-search refinement.}

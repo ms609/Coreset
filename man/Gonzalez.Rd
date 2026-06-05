@@ -7,11 +7,8 @@
 Gonzalez(
   d = NULL,
   n,
-  first = NULL,
-  points = NULL,
-  seed = c("ensemble", "diameter", "anti_medoid", "medoid", "rowsum", "rownorm",
-    "peripheral", "first"),
-  anchors = c("diameter", "anti_medoid", "rowsum", "rownorm")
+  seed = c("diameter", "anti_medoid", "rowsum", "rownorm"),
+  points = NULL
 )
 }
 \arguments{
@@ -21,26 +18,22 @@ distances. Ignored when \code{points} is supplied.}
 \item{n}{Integer: number of points to select. If \code{n >= nrow(d)}, all
 indices are returned.}
 
-\item{first}{Integer: explicit index of the first selected point. When
-supplied (non-\code{NULL}) it overrides \code{seed}, giving a single bare Gonzalez
-pass from that index. Default \code{NULL}.}
+\item{seed}{Integer or character (scalar or vector). An \strong{integer} gives the
+explicit 1-based index of the first selected point (a single bare Gonzalez
+pass). A \strong{length-1 character} names a single seeding strategy:
+\code{"diameter"}, \code{"anti_medoid"}, \code{"medoid"}, \code{"rowsum"}, \code{"rownorm"},
+\code{"peripheral"} (two-sweep diameter-endpoint approximation), or \code{"first"}
+(index 1). A \strong{length > 1 character vector} requests an ensemble: each
+named anchor runs a full Gonzalez pass and the best result by \code{\link[=TkScore]{TkScore()}}
+is returned with \code{strategy_results} and \code{winning_strategy} attributes.
+Valid ensemble anchors: any subset of \code{c("diameter", "anti_medoid", "rowsum", "rownorm")}. Default: all four (full ensemble). See
+\code{\link[=MaxMinSeed]{MaxMinSeed()}} for anchor definitions.}
 
 \item{points}{Optional \verb{N x dim} numeric coordinate matrix. When supplied,
 the selection is computed directly from coordinates in \code{O(N * n * dim)}
 time and \code{O(N)} memory, never materialising the \verb{N x N} distance matrix
 (\code{d} is then unused). For Euclidean data the returned indices are
 identical to the matrix path. Only complete (non-\code{NA}) data is supported.}
-
-\item{seed}{Character: the seeding strategy used when \code{first} is \code{NULL}. One
-of \code{"ensemble"} (default; run the four deterministic anchors below and keep
-the best by \code{\link[=TkScore]{TkScore()}}), \code{"diameter"}, \code{"anti_medoid"}, \code{"medoid"},
-\code{"rowsum"}, \code{"rownorm"}, \code{"peripheral"} (a two-sweep diameter-endpoint
-approximation), or \code{"first"} (index 1, a bare Gonzalez pass). See
-\code{\link[=MaxMinSeed]{MaxMinSeed()}} for the anchor definitions.}
-
-\item{anchors}{Character vector of anchor names used only when
-\code{seed = "ensemble"}: any subset of \code{c("diameter", "anti_medoid", "rowsum", "rownorm")}. Default: all four. The returned vector then carries
-\code{strategy_results} and \code{winning_strategy} attributes.}
 }
 \value{
 Integer vector of length \code{min(n, nrow(d))} of selected indices.
@@ -51,21 +44,22 @@ furthest from the current selection, a 2-approximation to the k-centre
 problem. The quality of the result depends on the first (seed) point; by
 default \code{Gonzalez()} runs an \strong{ensemble} of cheap deterministic peripheral
 seeding strategies and keeps the selection with the largest minimum pairwise
-distance (\code{\link[=TkScore]{TkScore()}}). A single strategy may be requested through \code{seed},
-or an explicit start index through \code{first}.
+distance (\code{\link[=TkScore]{TkScore()}}).
 }
 \examples{
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
-# Ensemble of peripheral seeds (default):
+# Default: ensemble of all four peripheral anchors:
 Gonzalez(d, 5L)
+# Custom two-anchor ensemble:
+Gonzalez(d, 5L, seed = c("diameter", "anti_medoid"))
 # A single strategy:
 Gonzalez(d, 5L, seed = "diameter")
-# An explicit start index:
-Gonzalez(d, 5L, first = 1L)
+# An explicit start index (integer seed):
+Gonzalez(d, 5L, seed = 1L)
 # Matrix-free coordinate path (identical result, O(N) memory):
-Gonzalez(n = 5L, points = pts, first = 1L)
+Gonzalez(n = 5L, points = pts, seed = 1L)
 }
 \seealso{
 \code{\link[=MaxMinSeed]{MaxMinSeed()}} for the seed indices alone; \code{\link[=GonzalezColumn]{GonzalezColumn()}} for a

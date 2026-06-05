@@ -84,7 +84,7 @@
     rhs     = rep.int(1, n_edge),
     types   = rep.int("I", n),                # integer var on [0,1] = binary
     maximum = TRUE,
-    control = highs::highs_control(
+    control = list(
       threads    = 1L,                        # determinism
       time_limit = time_limit
     )
