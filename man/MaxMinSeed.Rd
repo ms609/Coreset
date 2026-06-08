@@ -7,7 +7,8 @@
 MaxMinSeed(
   d = NULL,
   points = NULL,
-  method = c("peripheral", "diameter", "anti_medoid", "medoid", "rowsum", "rownorm")
+  method = c("peripheral", "centroid", "random_furthest", "diameter", "anti_medoid",
+    "medoid", "rowsum", "rownorm")
 )
 }
 \arguments{
@@ -15,7 +16,8 @@ MaxMinSeed(
 \code{points} is supplied.}
 
 \item{points}{Optional \verb{N x dim} numeric coordinate matrix; when supplied the
-seed is computed from coordinates in \code{O(N)} memory.}
+seed is computed from coordinates in \code{O(N)} memory. Required for the
+\code{"centroid"} anchor, which has no distance-matrix form.}
 
 \item{method}{Anchor name (see above). Default \code{"peripheral"}.}
 }
@@ -30,10 +32,17 @@ when composing a custom selection pass.
 \details{
 Anchors:
 \describe{
+\item{\code{"centroid"}}{The point farthest from the coordinate mean
+(\verb{argmax ||x - x_bar||}), an \code{O(N * dim)} approximate diameter endpoint.
+Computed from coordinates, so it requires \code{points}; it is unavailable on
+the distance-matrix path, where \code{"peripheral"} serves the same role.}
 \item{\code{"peripheral"}}{Two sweeps: the point furthest from point 1, then
-the point furthest from that (a diameter-endpoint approximation). The
-only anchor reachable from a distance-column oracle (the function path of
-\code{\link[=Gonzalez]{Gonzalez()}}).}
+the point furthest from that (a diameter-endpoint approximation), in
+\code{O(N)}. The only anchor reachable from a distance-column oracle (the
+function path of \code{\link[=Gonzalez]{Gonzalez()}}).}
+\item{\code{"random_furthest"}}{The point furthest from a random pivot, in
+\code{O(N)}. The pivot is drawn from a fixed internal seed, isolated from the
+ambient RNG, so the index is reproducible across sessions and machines.}
 \item{\code{"diameter"}}{A row endpoint of the diameter pair (the maximum
 pairwise distance). Degenerate data (\code{d_max <= 0}) falls back to 1.}
 \item{\code{"anti_medoid"}}{The point furthest from the 1-median (medoid).}

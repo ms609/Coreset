@@ -91,14 +91,19 @@ farthest from the current selection.
 This greedy rule guarantees a 2-approximation to the optimal T~k~ and runs
 in O(*N* · *m*) time.
 
-By default `seed = c("diameter", "anti_medoid", "rowsum", "rownorm")`:
-all four peripheral seeding strategies run and whichever produced the highest
-T~k~ is returned.
-Pass a shorter character vector to use a subset, or a single name for one strategy.
+By default `Gonzalez()` runs an ensemble of the cheap O(*N*) seeding
+strategies — `"centroid"`, `"peripheral"`, and three reproducible
+`"random_furthest"` starts — and returns whichever pass produced the highest
+T~k~ (a best-of-five selection). The `"centroid"` seed is computed from
+coordinates, so on a distance matrix such as `eurodist` it is dropped and the
+remaining seeds apply. The random starts pivot on points drawn from a fixed
+internal seed, so the default result is reproducible and does not disturb your
+random stream. Raise `n_random` for more random starts; pass a character vector
+to choose a custom ensemble, or a single name for one strategy.
 
 ```{r}
 #| label: gonzalez-ensemble
-idx_ens <- Gonzalez(eurodist, n = 6L)   # default: four-anchor ensemble
+idx_ens <- Gonzalez(eurodist, n = 6L)   # default: best-of-five O(N) seeds
 
 # Which seeding strategy won?
 attr(idx_ens, "winning_strategy")

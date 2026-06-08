@@ -7,7 +7,7 @@ make_data <- function(seed = 42, N = 60, dim = 4) {
 }
 
 single_seeds <- c("diameter", "anti_medoid", "medoid", "rowsum", "rownorm",
-                  "peripheral")
+                  "peripheral", "random_furthest")
 
 test_that("matrix and coordinate paths agree for every seed strategy", {
   dat <- make_data()
@@ -18,10 +18,13 @@ test_that("matrix and coordinate paths agree for every seed strategy", {
       expect_identical(mat, pt, info = paste("seed", s, "n", n))
     }
   }
-  # Default (full ensemble) also agrees across paths.
+  # A centroid-free ensemble agrees across paths (the random pivots depend only
+  # on N and the fixed seed, and the distances are bit-identical on Euclidean
+  # data, so the random-furthest starts coincide too).
   for (n in c(2L, 6L, 12L)) {
-    mat <- Gonzalez(dat$d, n)
-    pt  <- Gonzalez(n = n, points = dat$pts)
+    mat <- Gonzalez(dat$d, n, seed = c("peripheral", "random_furthest"))
+    pt  <- Gonzalez(n = n, points = dat$pts,
+                    seed = c("peripheral", "random_furthest"))
     attributes(mat) <- NULL
     attributes(pt)  <- NULL
     expect_identical(mat, pt, info = paste("ensemble n", n))
@@ -40,17 +43,64 @@ test_that("integer seed gives a bare pass from that index", {
 test_that("ensemble keeps the best anchor by T_k", {
   dat <- make_data()
   n   <- 8L
-  ens <- Gonzalez(dat$d, n)   # default: full four-anchor ensemble
+  anchors <- c("diameter", "anti_medoid", "rowsum", "rownorm")
+  ens <- Gonzalez(dat$d, n, seed = anchors)
   ens_tk <- TkScore(dat$d, ens)
-  for (s in c("diameter", "anti_medoid", "rowsum", "rownorm")) {
+  for (s in anchors) {
     expect_gte(ens_tk + 1e-9, TkScore(dat$d, Gonzalez(dat$d, n, seed = s)))
   }
-  expect_true(all(attr(ens, "winning_strategy") %in%
-                    c("diameter", "anti_medoid", "rowsum", "rownorm")))
+  expect_true(all(attr(ens, "winning_strategy") %in% anchors))
   expect_length(attr(ens, "strategy_results"), 4L)
   # Two-anchor ensemble works and has only those two entries.
   two <- Gonzalez(dat$d, n, seed = c("diameter", "rowsum"))
   expect_length(attr(two, "strategy_results"), 2L)
+})
+
+test_that("the default ensemble is the best-of-five O(N) seeds", {
+  dat <- make_data()
+  n   <- 8L
+  # Matrix path: centroid is coordinate-only, so the default is peripheral plus
+  # n_random (3) random-furthest starts -> four strategies.
+  mat <- Gonzalez(dat$d, n)
+  expect_length(attr(mat, "strategy_results"), 4L)
+  expect_identical(names(attr(mat, "strategy_results")),
+                   c("peripheral", "random_furthest1", "random_furthest2",
+                     "random_furthest3"))
+  # Coordinate path adds centroid -> five strategies.
+  pt <- Gonzalez(n = n, points = dat$pts)
+  expect_length(attr(pt, "strategy_results"), 5L)
+  expect_true("centroid" %in% names(attr(pt, "strategy_results")))
+  # The default is at least as good as any of its own member seeds.
+  for (s in c("peripheral", "random_furthest")) {
+    expect_gte(TkScore(dat$d, mat) + 1e-9,
+               TkScore(dat$d, Gonzalez(dat$d, n, seed = s)))
+  }
+})
+
+test_that("the default selection is deterministic and RNG-isolated", {
+  dat <- make_data()
+  # Independent of ambient RNG state.
+  set.seed(11);  a <- Gonzalez(dat$d, 8L)
+  set.seed(999); b <- Gonzalez(dat$d, 8L)
+  expect_identical(c(a), c(b))
+  # Leaves the caller's random stream untouched.
+  set.seed(7); u1 <- runif(1)
+  set.seed(7); invisible(Gonzalez(dat$d, 8L)); u2 <- runif(1)
+  expect_identical(u1, u2)
+})
+
+test_that("n_random controls the random-furthest start count", {
+  dat <- make_data()
+  n   <- 8L
+  # Raising it adds more random starts (matrix default: peripheral + n_random).
+  expect_length(attr(Gonzalez(dat$d, n, n_random = 6L), "strategy_results"), 7L)
+  # Zero disables them: matrix default reduces to peripheral alone.
+  z <- Gonzalez(dat$d, n, n_random = 0L)
+  expect_length(attr(z, "strategy_results"), 1L)
+  expect_identical(attr(z, "winning_strategy"), "peripheral")
+  # Validated as a single non-negative integer.
+  expect_error(Gonzalez(dat$d, n, n_random = -1L), "non-negative")
+  expect_error(Gonzalez(dat$d, n, n_random = c(1L, 2L)), "single")
 })
 
 test_that("trivial cardinalities are handled", {
@@ -68,6 +118,16 @@ test_that("input validation", {
   expect_error(Gonzalez(dat$d, c(1L, 2L)), "single")
   expect_error(Gonzalez(dat$d, 3L, seed = "nope"), "arg")
   expect_error(Gonzalez("not a matrix", 3L), "dist|matrix")
+})
+
+test_that("explicitly naming centroid in a matrix ensemble warns and drops it", {
+  dat <- make_data(N = 12)
+  expect_warning(res <- Gonzalez(dat$d, 4L,
+                                 seed = c("centroid", "peripheral"),
+                                 n_random = 0L),
+                 "coordinates")
+  # Dropped, leaving peripheral alone.
+  expect_identical(names(attr(res, "strategy_results")), "peripheral")
 })
 
 # ---- distance-column oracle path ----------------------------------------

@@ -5,6 +5,111 @@
 # anchors are exposed through MaxMinSeed(); Gonzalez(seed = ) selects among them
 # (or the ensemble) and runs the greedy pass.
 
+# The default seed ensemble: the two O(N) deterministic peripheral seeds plus
+# the `"random_furthest"` token, which expands to `n_random` (default 3)
+# fixed-seed random-furthest starts -- a best-of-five cheap O(N) selection.
+# `"peripheral"` and `"random_furthest"` work on every input form; `"centroid"`
+# (farthest point from the coordinate mean) needs coordinates, so on the
+# distance-matrix path it is dropped and the remaining seeds apply.
+.kDefaultEnsemble <- c("centroid", "peripheral", "random_furthest")
+
+# Seeds available to the ensemble drivers. The matrix path lacks coordinates, so
+# `"centroid"` is reachable only from the coordinate path.
+.kMatrixEnsembleSeeds <- c("peripheral", "random_furthest", "diameter",
+                           "anti_medoid", "medoid", "rowsum", "rownorm")
+.kPointEnsembleSeeds  <- c("centroid", .kMatrixEnsembleSeeds)
+
+# Fixed internal RNG seed for the random-furthest starts, so the default
+# selection is reproducible and independent of ambient RNG state.
+.kRandomSeed <- 0x4d4d4dL
+
+#' Squared distance of every point to the coordinate centroid
+#'
+#' The `O(N * dim)` basis of the `"centroid"` seed: its argmax is the point
+#' farthest from the coordinate mean, an approximate diameter endpoint.
+#' @param points A `double` `N x dim` coordinate matrix.
+#' @return Numeric vector of length `N` of squared distances to the mean.
+#' @keywords internal
+.CentroidSqDist <- function(points) {
+  mu  <- colMeans(points)
+  dev <- points - rep(mu, each = nrow(points))
+  rowSums(dev * dev)
+}
+
+#' Reproducible random start indices, isolated from ambient RNG
+#'
+#' Draws `min(k, N)` distinct indices in `[1, N]` from a fixed internal seed,
+#' the random pivots for the `"random_furthest"` seed. The caller's RNG kind and
+#' `.Random.seed` are saved and restored, so the draw neither depends on nor
+#' perturbs the ambient random stream; the result is therefore identical across
+#' sessions and machines. Restoring the kind scrambles `.Random.seed`, so the
+#' kind is restored before the seed.
+#' @param N Integer element count (`>= 1`).
+#' @param k Integer number of pivots to draw.
+#' @param seed Integer RNG seed; defaults to the package's fixed value.
+#' @return Integer vector of `min(k, N)` distinct indices.
+#' @keywords internal
+.DrawRandomStarts <- function(N, k, seed = .kRandomSeed) {
+  old_kind <- RNGkind()
+  old_seed <- if (exists(".Random.seed", globalenv(), inherits = FALSE)) {
+    get(".Random.seed", globalenv(), inherits = FALSE)
+  } else {
+    NULL
+  }
+  on.exit({
+    RNGkind(old_kind[1L], old_kind[2L], old_kind[3L])
+    if (is.null(old_seed)) {
+      suppressWarnings(rm(".Random.seed", envir = globalenv()))
+    } else {
+      assign(".Random.seed", old_seed, envir = globalenv())
+    }
+  }, add = TRUE)
+  suppressWarnings(set.seed(seed, kind = "Mersenne-Twister",
+                            sample.kind = "Rejection"))
+  sample.int(N, min(as.integer(k), N))
+}
+
+#' Expand ensemble anchor names into labelled seed specs
+#'
+#' Maps each anchor name to a `list(label, s1, mask)` spec. The
+#' `"random_furthest"` token expands to `n_random` specs, each seeded at the
+#' point furthest from one of `n_random` reproducible random pivots (labelled
+#' `random_furthest1`, ...); with `n_random == 0` it contributes none.
+#' @param anchors Character vector of (de-duplicated) anchor names.
+#' @param n_random Integer count the `"random_furthest"` token expands to.
+#' @param N Integer element count, for the random pivot draw.
+#' @param anchor_seed Function mapping a deterministic anchor name to
+#'   `list(s1, mask)`.
+#' @param rf_seed Function mapping a pivot index to the furthest-point seed.
+#' @return List of `list(label, s1, mask)` specs.
+#' @keywords internal
+.ExpandAnchors <- function(anchors, n_random, N, anchor_seed, rf_seed) {
+  specs <- list()
+  for (name in anchors) {
+    if (name == "random_furthest") {
+      if (n_random > 0L) {
+        pivots <- .DrawRandomStarts(N, n_random)
+        for (j in seq_along(pivots)) {
+          specs[[length(specs) + 1L]] <- list(
+            label = paste0("random_furthest", j),
+            s1    = as.integer(rf_seed(pivots[[j]])),
+            mask  = FALSE
+          )
+        }
+      }
+    } else {
+      sd <- anchor_seed(name)
+      specs[[length(specs) + 1L]] <- list(label = name, s1 = sd$s1,
+                                          mask = sd$mask)
+    }
+  }
+  if (length(specs) == 0L) {  # nocov start
+    stop("no seed strategies to run; `n_random` is 0 and the ensemble names ",
+         "only `random_furthest`")
+  }                           # nocov end
+  specs
+}
+
 #' Peripheral seed index for Gonzalez selection (distance matrix)
 #'
 #' @param d Square numeric distance matrix.
@@ -14,6 +119,8 @@
 .MaxMinSeed <- function(d, method) {
   switch(method,
     first   = 1L,
+    centroid = stop("`centroid` seed requires coordinates; supply `points=` ",
+                    "or use `peripheral` on the distance-matrix path"),
     medoid  = as.integer(which.min(rowSums(d))),
     rowsum  = as.integer(which.max(rowSums(d))),
     rownorm = as.integer(which.max(rowSums(d ^ 2))),
@@ -37,6 +144,10 @@
       s1 <- which.max(d[, 1L])
       as.integer(which.max(d[, s1]))
     },
+    random_furthest = {
+      r <- .DrawRandomStarts(nrow(d), 1L)
+      as.integer(which.max(d[, r]))
+    },
     stop("Unknown seed method: ", method)  # nocov
   )
 }
@@ -53,6 +164,7 @@
 .MaxMinSeedPoints <- function(points, method) {
   switch(method,
     first   = 1L,
+    centroid = as.integer(which.max(.CentroidSqDist(points))),
     medoid  = as.integer(which.min(RowSumsFromPoints_cpp(points))),
     rowsum  = as.integer(which.max(RowSumsFromPoints_cpp(points))),
     rownorm = as.integer(which.max(RowSqSumsFromPoints_cpp(points))),
@@ -74,6 +186,10 @@
       s1 <- which.max(EuclidColFromPoints_cpp(points, 1L))
       as.integer(which.max(EuclidColFromPoints_cpp(points, s1)))
     },
+    random_furthest = {
+      r <- .DrawRandomStarts(nrow(points), 1L)
+      as.integer(which.max(EuclidColFromPoints_cpp(points, r)))
+    },
     stop("Unknown seed method: ", method)  # nocov
   )
 }
@@ -86,10 +202,17 @@
 #'
 #' Anchors:
 #' \describe{
+#'   \item{`"centroid"`}{The point farthest from the coordinate mean
+#'     (`argmax ||x - x_bar||`), an `O(N * dim)` approximate diameter endpoint.
+#'     Computed from coordinates, so it requires `points`; it is unavailable on
+#'     the distance-matrix path, where `"peripheral"` serves the same role.}
 #'   \item{`"peripheral"`}{Two sweeps: the point furthest from point 1, then
-#'     the point furthest from that (a diameter-endpoint approximation). The
-#'     only anchor reachable from a distance-column oracle (the function path of
-#'     [Gonzalez()]).}
+#'     the point furthest from that (a diameter-endpoint approximation), in
+#'     `O(N)`. The only anchor reachable from a distance-column oracle (the
+#'     function path of [Gonzalez()]).}
+#'   \item{`"random_furthest"`}{The point furthest from a random pivot, in
+#'     `O(N)`. The pivot is drawn from a fixed internal seed, isolated from the
+#'     ambient RNG, so the index is reproducible across sessions and machines.}
 #'   \item{`"diameter"`}{A row endpoint of the diameter pair (the maximum
 #'     pairwise distance). Degenerate data (`d_max <= 0`) falls back to 1.}
 #'   \item{`"anti_medoid"`}{The point furthest from the 1-median (medoid).}
@@ -103,7 +226,8 @@
 #' @param d A `dist` object or square symmetric numeric matrix. Ignored when
 #'   `points` is supplied.
 #' @param points Optional `N x dim` numeric coordinate matrix; when supplied the
-#'   seed is computed from coordinates in `O(N)` memory.
+#'   seed is computed from coordinates in `O(N)` memory. Required for the
+#'   `"centroid"` anchor, which has no distance-matrix form.
 #' @param method Anchor name (see above). Default `"peripheral"`.
 #' @return Integer seed index in `[1, N]`.
 #' @examples
@@ -115,8 +239,9 @@
 #' @seealso [Gonzalez()], which seeds and runs the greedy pass in one call.
 #' @export
 MaxMinSeed <- function(d = NULL, points = NULL,
-                       method = c("peripheral", "diameter", "anti_medoid",
-                                  "medoid", "rowsum", "rownorm")) {
+                       method = c("peripheral", "centroid", "random_furthest",
+                                  "diameter", "anti_medoid", "medoid", "rowsum",
+                                  "rownorm")) {
   method <- match.arg(method)
   if (!is.null(points)) {
     points <- .AsPointsMatrix(points)
@@ -128,19 +253,21 @@ MaxMinSeed <- function(d = NULL, points = NULL,
 
 #' Ensemble Gonzalez over cheap peripheral-anchor strategies (distance matrix)
 #'
-#' Runs Gonzalez from each requested deterministic peripheral anchor and returns
-#' the subset maximising \eqn{T_k}. Internal driver for the ensemble path of
-#' [Gonzalez()] (triggered when `seed` is a character vector of length > 1).
-#' The returned vector carries `strategy_results` and `winning_strategy`
-#' (character vector of all tied-best strategies) attributes.
+#' Runs Gonzalez from each requested peripheral anchor and returns the subset
+#' maximising \eqn{T_k}. Internal driver for the ensemble path of [Gonzalez()]
+#' (triggered when `seed` is a character vector of length > 1). The
+#' `"random_furthest"` token expands to `n_random` fixed-seed random-furthest
+#' starts. The returned vector carries `strategy_results` and `winning_strategy`
+#' (character vector of all tied-best strategies, with random starts labelled
+#' `random_furthest1`, `random_furthest2`, ...) attributes.
 #' @param d Square numeric distance matrix (already coerced).
 #' @param n Integer subset size (`1 <= n < nrow(d)`).
 #' @param anchors Character vector of anchor names.
+#' @param n_random Integer; number of starts the `"random_furthest"` token
+#'   expands to (`0` contributes none).
 #' @return Integer vector of selected indices with attributes.
 #' @keywords internal
-.GonzEnsemble <- function(d, n,
-                          anchors = c("diameter", "anti_medoid",
-                                      "rowsum", "rownorm")) {
+.GonzEnsemble <- function(d, n, anchors = "peripheral", n_random = 0L) {
   d <- .AsDistMatrix(d)
   n <- as.integer(n)
   if (length(n) != 1L || is.na(n) || n < 0L) {
@@ -151,7 +278,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
   }
   anchors <- unique(match.arg(
     anchors,
-    choices = c("diameter", "anti_medoid", "rowsum", "rownorm"),
+    choices = .kMatrixEnsembleSeeds,
     several.ok = TRUE
   ))
   nPts <- nrow(d)
@@ -215,18 +342,25 @@ MaxMinSeed <- function(d = NULL, points = NULL,
         dist_from_medoid[med] <- -Inf
         list(s1 = as.integer(which.max(dist_from_medoid)), mask = FALSE)
       },
+      medoid = list(s1 = get_medoid(), mask = FALSE),
+      peripheral = {
+        s1 <- which.max(d[, 1L])
+        list(s1 = as.integer(which.max(d[, s1])), mask = FALSE)
+      },
       rowsum = list(s1 = as.integer(which.max(get_row_sums())), mask = FALSE),
       rownorm = list(s1 = as.integer(which.max(get_row_sq_sums())), mask = FALSE)
     )
   }
 
-  strategy_results <- vector("list", length(anchors))
-  names(strategy_results) <- anchors
-  for (i in seq_along(anchors)) {
-    seed <- anchor_seed(anchors[[i]])
-    g    <- run_gonz(seed$s1, seed$mask)
+  expanded <- .ExpandAnchors(anchors, n_random, nPts, anchor_seed,
+                             function(r) which.max(d[, r]))
+  labels   <- vapply(expanded, `[[`, character(1L), "label")
+  strategy_results <- vector("list", length(expanded))
+  names(strategy_results) <- labels
+  for (i in seq_along(expanded)) {
+    g <- run_gonz(expanded[[i]]$s1, expanded[[i]]$mask)
     strategy_results[[i]] <- list(
-      s1  = seed$s1,
+      s1  = expanded[[i]]$s1,
       idx = g$idx,
       t_k = g$t_k
     )
@@ -252,7 +386,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
 
   result <- strategy_results[[best_i]]$idx
   attr(result, "strategy_results") <- strategy_results
-  attr(result, "winning_strategy") <- anchors[winners]
+  attr(result, "winning_strategy") <- labels[winners]
   result
 }
 
@@ -260,15 +394,18 @@ MaxMinSeed <- function(d = NULL, points = NULL,
 #'
 #' Coordinate counterpart of [.GonzEnsemble()]; each anchor seed and the greedy
 #' expansion are computed from `points` via the coordinate primitives, so the
-#' returned indices and attributes match the matrix path on Euclidean data.
+#' returned indices and attributes match the matrix path on Euclidean data. The
+#' random pivots depend only on `N` and the fixed seed, so the
+#' `"random_furthest"` starts also match the matrix path.
 #' @param points A `double` `N x dim` coordinate matrix.
 #' @param n Integer subset size.
 #' @param anchors Character vector of anchor names.
+#' @param n_random Integer; number of starts the `"random_furthest"` token
+#'   expands to (`0` contributes none).
 #' @return Integer vector of selected indices with attributes.
 #' @keywords internal
-.GonzEnsembleFromPoints <- function(points, n,
-                                    anchors = c("diameter", "anti_medoid",
-                                                "rowsum", "rownorm")) {
+.GonzEnsembleFromPoints <- function(points, n, anchors = .kDefaultEnsemble,
+                                    n_random = 0L) {
   points <- .AsPointsMatrix(points)
   n <- as.integer(n)
   if (length(n) != 1L || is.na(n) || n < 0L) {
@@ -279,7 +416,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
   }
   anchors <- unique(match.arg(
     anchors,
-    choices = c("diameter", "anti_medoid", "rowsum", "rownorm"),
+    choices = .kPointEnsembleSeeds,
     several.ok = TRUE
   ))
   nPts <- nrow(points)
@@ -298,6 +435,10 @@ MaxMinSeed <- function(d = NULL, points = NULL,
   get_diameter <- function() {
     lazy$diameter <- lazy$diameter %||% DiameterFromPoints_cpp(points)
     lazy$diameter
+  }
+  get_centroid_d2 <- function() {
+    lazy$centroid_d2 <- lazy$centroid_d2 %||% .CentroidSqDist(points)
+    lazy$centroid_d2
   }
   get_medoid <- function() {
     lazy$medoid <- lazy$medoid %||% as.integer(which.min(get_row_sums()))
@@ -336,18 +477,30 @@ MaxMinSeed <- function(d = NULL, points = NULL,
         dist_from_medoid[med] <- -Inf
         list(s1 = as.integer(which.max(dist_from_medoid)), mask = FALSE)
       },
+      centroid = list(s1 = as.integer(which.max(get_centroid_d2())),
+                      mask = FALSE),
+      medoid = list(s1 = get_medoid(), mask = FALSE),
+      peripheral = {
+        s1 <- which.max(EuclidColFromPoints_cpp(points, 1L))
+        list(s1 = as.integer(which.max(EuclidColFromPoints_cpp(points, s1))),
+             mask = FALSE)
+      },
       rowsum = list(s1 = as.integer(which.max(get_row_sums())), mask = FALSE),
       rownorm = list(s1 = as.integer(which.max(get_row_sq_sums())), mask = FALSE)
     )
   }
 
-  strategy_results <- vector("list", length(anchors))
-  names(strategy_results) <- anchors
-  for (i in seq_along(anchors)) {
-    seed <- anchor_seed(anchors[[i]])
-    g    <- run_gonz(seed$s1, seed$mask)
+  expanded <- .ExpandAnchors(
+    anchors, n_random, nPts, anchor_seed,
+    function(r) which.max(EuclidColFromPoints_cpp(points, r))
+  )
+  labels   <- vapply(expanded, `[[`, character(1L), "label")
+  strategy_results <- vector("list", length(expanded))
+  names(strategy_results) <- labels
+  for (i in seq_along(expanded)) {
+    g <- run_gonz(expanded[[i]]$s1, expanded[[i]]$mask)
     strategy_results[[i]] <- list(
-      s1  = seed$s1,
+      s1  = expanded[[i]]$s1,
       idx = g$idx,
       t_k = g$t_k
     )
@@ -373,6 +526,6 @@ MaxMinSeed <- function(d = NULL, points = NULL,
 
   result <- strategy_results[[best_i]]$idx
   attr(result, "strategy_results") <- strategy_results
-  attr(result, "winning_strategy") <- anchors[winners]
+  attr(result, "winning_strategy") <- labels[winners]
   result
 }

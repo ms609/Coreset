@@ -4,11 +4,7 @@
 \alias{.GonzEnsembleFromPoints}
 \title{Coordinate (matrix-free) multi-anchor Gonzalez ensemble}
 \usage{
-.GonzEnsembleFromPoints(
-  points,
-  n,
-  anchors = c("diameter", "anti_medoid", "rowsum", "rownorm")
-)
+.GonzEnsembleFromPoints(points, n, anchors = .kDefaultEnsemble, n_random = 0L)
 }
 \arguments{
 \item{points}{A \code{double} \verb{N x dim} coordinate matrix.}
@@ -16,6 +12,9 @@
 \item{n}{Integer subset size.}
 
 \item{anchors}{Character vector of anchor names.}
+
+\item{n_random}{Integer; number of starts the \code{"random_furthest"} token
+expands to (\code{0} contributes none).}
 }
 \value{
 Integer vector of selected indices with attributes.
@@ -23,6 +22,8 @@ Integer vector of selected indices with attributes.
 \description{
 Coordinate counterpart of \code{\link[=.GonzEnsemble]{.GonzEnsemble()}}; each anchor seed and the greedy
 expansion are computed from \code{points} via the coordinate primitives, so the
-returned indices and attributes match the matrix path on Euclidean data.
+returned indices and attributes match the matrix path on Euclidean data. The
+random pivots depend only on \code{N} and the fixed seed, so the
+\code{"random_furthest"} starts also match the matrix path.
 }
 \keyword{internal}

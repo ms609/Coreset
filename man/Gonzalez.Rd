@@ -7,7 +7,8 @@
 Gonzalez(
   d = NULL,
   n,
-  seed = c("diameter", "anti_medoid", "rowsum", "rownorm"),
+  seed = .kDefaultEnsemble,
+  n_random = 3L,
   points = NULL,
   N = NULL,
   progress = getOption("MaxMin.progress", interactive())
@@ -24,16 +25,26 @@ indices are returned.}
 \item{seed}{Integer or character (scalar or vector). An \strong{integer} gives the
 explicit 1-based index of the first selected point (a single bare Gonzalez
 pass). A \strong{length-1 character} names a single seeding strategy:
-\code{"diameter"}, \code{"anti_medoid"}, \code{"medoid"}, \code{"rowsum"}, \code{"rownorm"},
-\code{"peripheral"} (two-sweep diameter-endpoint approximation), or \code{"first"}
-(index 1). A \strong{length > 1 character vector} requests an ensemble: each
-named anchor runs a full Gonzalez pass and the best result by \code{\link[=TkScore]{TkScore()}}
-is returned with \code{strategy_results} and \code{winning_strategy} (character
-vector of all tied-best strategies) attributes.
-Valid ensemble anchors: any subset of \code{c("diameter", "anti_medoid", "rowsum", "rownorm")}. Default: all four (full ensemble). See
+\code{"centroid"} (coordinates only), \code{"peripheral"} (two-sweep
+diameter-endpoint approximation), \code{"random_furthest"} (furthest point from
+a fixed-seed random pivot), \code{"diameter"}, \code{"anti_medoid"}, \code{"medoid"},
+\code{"rowsum"}, \code{"rownorm"}, or \code{"first"} (index 1). A \strong{length > 1 character
+vector} requests an ensemble: each named anchor runs a full Gonzalez pass
+and the best result by \code{\link[=TkScore]{TkScore()}} is returned with \code{strategy_results} and
+\code{winning_strategy} (character vector of all tied-best strategies)
+attributes. The \code{"random_furthest"} token expands to \code{n_random} starts,
+labelled \code{random_furthest1}, \code{random_furthest2}, ... Valid ensemble anchors:
+any subset of \code{c("centroid", "peripheral", "random_furthest", "diameter", "anti_medoid", "medoid", "rowsum", "rownorm")} (\code{"centroid"} requires
+\code{points}). Default: \code{c("centroid", "peripheral", "random_furthest")}. See
 \code{\link[=MaxMinSeed]{MaxMinSeed()}} for anchor definitions. On the distance-column oracle path
 only an integer \code{seed} is honoured; a named or ensemble \code{seed} there warns
 and falls back to the peripheral seed (see \emph{Distance-column oracle}).}
+
+\item{n_random}{Integer; the number of fixed-seed random-furthest starts the
+\code{"random_furthest"} ensemble token expands to. The random pivots are drawn
+from a fixed internal seed, isolated from the ambient RNG, so the default
+selection is reproducible across sessions and machines. Default \code{3}; \code{0}
+contributes no random starts.}
 
 \item{points}{Optional \verb{N x dim} numeric coordinate matrix. When supplied,
 the selection is computed directly from coordinates in \code{O(N * n * dim)}
@@ -57,9 +68,15 @@ Integer vector of length \code{min(n, N)} of selected indices.
 Greedy k-centre selection (Gonzalez 1985). Iteratively selects the point
 furthest from the current selection, a 2-approximation to the k-centre
 problem. The quality of the result depends on the first (seed) point; by
-default \code{Gonzalez()} runs an \strong{ensemble} of cheap deterministic peripheral
-seeding strategies and keeps the selection with the largest minimum pairwise
-distance (\code{\link[=TkScore]{TkScore()}}).
+default \code{Gonzalez()} runs an \strong{ensemble} of cheap \code{O(N)} seeding strategies
+and keeps the selection with the largest minimum pairwise distance
+(\code{\link[=TkScore]{TkScore()}}). The default ensemble is the two deterministic \code{O(N)} seeds
+\code{"centroid"} and \code{"peripheral"} together with \code{n_random} (3) reproducible
+\code{"random_furthest"} starts -- a best-of-five selection. The \code{"centroid"}
+seed is computed from coordinates, so on a distance matrix the default drops
+it and keeps \code{"peripheral"} plus the random starts. Costlier \code{O(N^2)}
+anchors (\code{"diameter"}, \code{"anti_medoid"}, \code{"medoid"}, \code{"rowsum"}, \code{"rownorm"})
+are available as opt-in \code{seed} strategies.
 }
 \details{
 \code{Gonzalez()} accepts the distances in whichever of three forms suits the
@@ -84,19 +101,20 @@ running nearest-distance vector, so the \verb{N x N} matrix is never built:
 \code{O(N * n)} oracle calls and \code{O(N)} memory. The self-distance at position \code{i}
 may take any non-negative value; it is masked before use. Because the count
 of elements cannot be inferred from the closure, \code{N} must be supplied.
-Only an integer \code{seed} (a \code{first} index) or the default deterministic
-two-sweep peripheral seed is reachable from an oracle; the richer matrix
-anchors (diameter, anti-medoid, row-sum, row-norm) need \code{O(N^2)} work. An
-explicitly named or ensemble \code{seed} on this path is ignored with a warning
-and the peripheral seed is used instead.
+Only an integer \code{seed} (a \code{first} index) or a single deterministic two-sweep
+peripheral seed is reachable from an oracle; the other anchors need either
+coordinates or \code{O(N^2)} work. An explicitly named or ensemble \code{seed} on this
+path is ignored with a warning and the peripheral seed is used instead.
 }
 
 \examples{
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
-# Default: ensemble of all four peripheral anchors:
+# Default: best of the O(N) seeds (centroid, peripheral, 3 random-furthest):
 Gonzalez(d, 5L)
+# Raise the number of random-furthest starts:
+Gonzalez(d, 5L, n_random = 8L)
 # Custom two-anchor ensemble:
 Gonzalez(d, 5L, seed = c("diameter", "anti_medoid"))
 # A single strategy:

@@ -4,11 +4,7 @@
 \alias{.GonzEnsemble}
 \title{Ensemble Gonzalez over cheap peripheral-anchor strategies (distance matrix)}
 \usage{
-.GonzEnsemble(
-  d,
-  n,
-  anchors = c("diameter", "anti_medoid", "rowsum", "rownorm")
-)
+.GonzEnsemble(d, n, anchors = "peripheral", n_random = 0L)
 }
 \arguments{
 \item{d}{Square numeric distance matrix (already coerced).}
@@ -16,15 +12,20 @@
 \item{n}{Integer subset size (\verb{1 <= n < nrow(d)}).}
 
 \item{anchors}{Character vector of anchor names.}
+
+\item{n_random}{Integer; number of starts the \code{"random_furthest"} token
+expands to (\code{0} contributes none).}
 }
 \value{
 Integer vector of selected indices with attributes.
 }
 \description{
-Runs Gonzalez from each requested deterministic peripheral anchor and returns
-the subset maximising \eqn{T_k}. Internal driver for the ensemble path of
-\code{\link[=Gonzalez]{Gonzalez()}} (triggered when \code{seed} is a character vector of length > 1).
-The returned vector carries \code{strategy_results} and \code{winning_strategy}
-(character vector of all tied-best strategies) attributes.
+Runs Gonzalez from each requested peripheral anchor and returns the subset
+maximising \eqn{T_k}. Internal driver for the ensemble path of \code{\link[=Gonzalez]{Gonzalez()}}
+(triggered when \code{seed} is a character vector of length > 1). The
+\code{"random_furthest"} token expands to \code{n_random} fixed-seed random-furthest
+starts. The returned vector carries \code{strategy_results} and \code{winning_strategy}
+(character vector of all tied-best strategies, with random starts labelled
+\code{random_furthest1}, \code{random_furthest2}, ...) attributes.
 }
 \keyword{internal}

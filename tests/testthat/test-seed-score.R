@@ -26,11 +26,33 @@ test_that("MaxMinSeed anchors match their definitions (matrix)", {
 
 test_that("MaxMinSeed coordinate path matches the matrix path", {
   dat <- make_data()
-  for (m in c("peripheral", "diameter", "anti_medoid", "medoid",
-              "rowsum", "rownorm")) {
+  for (m in c("peripheral", "random_furthest", "diameter", "anti_medoid",
+              "medoid", "rowsum", "rownorm")) {
     expect_identical(MaxMinSeed(points = dat$pts, method = m),
                      MaxMinSeed(dat$d, method = m), info = m)
   }
+})
+
+test_that("centroid seed is the farthest point from the coordinate mean", {
+  dat <- make_data()
+  mu  <- colMeans(dat$pts)
+  d2  <- rowSums((dat$pts - rep(mu, each = nrow(dat$pts))) ^ 2)
+  expect_identical(MaxMinSeed(points = dat$pts, method = "centroid"),
+                   as.integer(which.max(d2)))
+  # It has no distance-matrix form.
+  expect_error(MaxMinSeed(dat$d, method = "centroid"), "coordinates")
+  expect_error(Gonzalez(dat$d, 5L, seed = "centroid"), "coordinates")
+})
+
+test_that("random_furthest is reproducible and RNG-isolated", {
+  dat <- make_data()
+  set.seed(1);   a <- MaxMinSeed(points = dat$pts, method = "random_furthest")
+  set.seed(404); b <- MaxMinSeed(points = dat$pts, method = "random_furthest")
+  expect_identical(a, b)                      # ambient-independent
+  set.seed(3); u1 <- runif(1)
+  set.seed(3); invisible(MaxMinSeed(dat$d, method = "random_furthest"))
+  u2 <- runif(1)
+  expect_identical(u1, u2)                     # caller's stream untouched
 })
 
 test_that("MaxMinSeed validates method", {

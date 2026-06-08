@@ -3,10 +3,11 @@ source("benchmark/_init.R")
 # Gonzalez farthest-first across its three input paths, at sizes representative
 # of the application benchmark (hundreds-thousands of candidates, tens chosen).
 
-# Dense-matrix path: ensemble default (runs all four peripheral anchors) and a
-# single named seed strategy.
+# Dense-matrix path: ensemble default (best-of-five cheap O(N) seeds: peripheral
+# plus three random-furthest starts; centroid is coordinate-only) and a single
+# named seed strategy.
 d2000 <- BenchDist(2000L, 10L, seed = 1L)
-Benchmark(Gonzalez(d2000, 20L))                       # default: four-anchor ensemble
+Benchmark(Gonzalez(d2000, 20L))                       # default: O(N) ensemble
 Benchmark(Gonzalez(d2000, 20L, seed = "diameter"))
 
 # Coordinate (matrix-free) path: never materialises the N x N matrix.
