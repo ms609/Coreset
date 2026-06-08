@@ -20,7 +20,7 @@ from a database.
 install.packages("MaxMin")
 ```
 
-For the exact solver demonstrated later, also install **highs**:
+For the exact solver, also install **highs**:
 
 ``` r
 
@@ -30,24 +30,30 @@ install.packages("highs")
 ## Quick start
 
 `eurodist` is a built-in R `dist` object containing road distances (km)
-between 21 European cities. It can be passed straight to MaxMin — no
-conversion needed.
+between 21 European cities.
 
 ``` r
 
 data(eurodist)
 
-# Select 6 maximally dispersed cities
-idx <- Gonzalez(eurodist, n = 6L)
+# Select 4 maximally dispersed cities
+idx <- Gonzalez(eurodist, n = 4L)
+
+as.matrix(eurodist)[idx, idx]
+#>           Lisbon Athens Stockholm Milan
+#> Lisbon         0   4532      3231  2250
+#> Athens      4532      0      3927  2282
+#> Stockholm   3231   3927         0  2187
+#> Milan       2250   2282      2187     0
 
 labels(eurodist)[idx]
-#> [1] "Lisbon"    "Athens"    "Stockholm" "Milan"     "Cherbourg" "Barcelona"
+#> [1] "Lisbon"    "Athens"    "Stockholm" "Milan"
 TkScore(eurodist, idx)
-#> [1] 1014
+#> [1] 2187
 ```
 
 [`Gonzalez()`](https://ms609.github.io/MaxMin/reference/Gonzalez.md)
-returned the indices of the six cities whose nearest-neighbour distance
+returned the indices of the four cities whose nearest-neighbour distance
 within the selection is largest.
 [`TkScore()`](https://ms609.github.io/MaxMin/reference/TkScore.md)
 reports that value explicitly.
@@ -150,7 +156,7 @@ res_da$objective     # T_k achieved
 res_da$iters         # iterations completed
 #> [1] 516
 res_da$time_s        # wall-clock seconds
-#> [1] 0.0002436638
+#> [1] 0.000254631
 ```
 
 `max_no_improve` is the main stopping knob: the algorithm terminates
@@ -300,8 +306,9 @@ c(exact    = res_ex$objective,
 ```
 
 `$proven = TRUE` certifies that no selection can achieve a higher T_(k).
-ExactMaxMin is NP-hard; instances with more than ~30 candidates require
-a time budget or should be tackled with the heuristics above.
+[`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
+is NP-hard; instances with more than ~30 candidates require a time
+budget or should be tackled with the heuristics above.
 
 ------------------------------------------------------------------------
 

@@ -71,27 +71,34 @@
 <div class="sourceCode cell-code" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"MaxMin"</span><span class="op">)</span></span></code></pre></div>
 </div>
-<p>For the exact solver demonstrated later, also install <strong>highs</strong>:</p>
+<p>For the exact solver, also install <strong>highs</strong>:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"highs"</span><span class="op">)</span></span></code></pre></div>
 </div>
 </section><section class="level2"><h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
-<p><code>eurodist</code> is a built-in R <code>dist</code> object containing road distances (km) between 21 European cities. It can be passed straight to MaxMin — no conversion needed.</p>
+<p><code>eurodist</code> is a built-in R <code>dist</code> object containing road distances (km) between 21 European cities.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Select 6 maximally dispersed cities</span></span>
-<span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Gonzalez.html">Gonzalez</a></span><span class="op">(</span><span class="va">eurodist</span>, n <span class="op">=</span> <span class="fl">6L</span><span class="op">)</span></span>
+<span><span class="co"># Select 4 maximally dispersed cities</span></span>
+<span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Gonzalez.html">Gonzalez</a></span><span class="op">(</span><span class="va">eurodist</span>, n <span class="op">=</span> <span class="fl">4L</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span><span class="op">[</span><span class="va">idx</span>, <span class="va">idx</span><span class="op">]</span></span>
+<span><span class="co">#&gt;           Lisbon Athens Stockholm Milan</span></span>
+<span><span class="co">#&gt; Lisbon         0   4532      3231  2250</span></span>
+<span><span class="co">#&gt; Athens      4532      0      3927  2282</span></span>
+<span><span class="co">#&gt; Stockholm   3231   3927         0  2187</span></span>
+<span><span class="co">#&gt; Milan       2250   2282      2187     0</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/labels.html" class="external-link">labels</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span><span class="op">[</span><span class="va">idx</span><span class="op">]</span></span>
-<span><span class="co">#&gt; [1] "Lisbon"    "Athens"    "Stockholm" "Milan"     "Cherbourg" "Barcelona"</span></span>
+<span><span class="co">#&gt; [1] "Lisbon"    "Athens"    "Stockholm" "Milan"</span></span>
 <span><span class="fu"><a href="../reference/TkScore.html">TkScore</a></span><span class="op">(</span><span class="va">eurodist</span>, <span class="va">idx</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 1014</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 2187</span></span></code></pre></div>
 </div>
-<p><code><a href="../reference/Gonzalez.html">Gonzalez()</a></code> returned the indices of the six cities whose nearest-neighbour distance within the selection is largest. <code><a href="../reference/TkScore.html">TkScore()</a></code> reports that value explicitly.</p>
+<p><code><a href="../reference/Gonzalez.html">Gonzalez()</a></code> returned the indices of the four cities whose nearest-neighbour distance within the selection is largest. <code><a href="../reference/TkScore.html">TkScore()</a></code> reports that value explicitly.</p>
 </section><section class="level2"><h2 id="methods-at-a-glance">Methods at a glance<a class="anchor" aria-label="anchor" href="#methods-at-a-glance"></a>
 </h2>
 <p>MaxMin provides four solvers and two utilities:</p>
@@ -188,7 +195,7 @@
 <span><span class="va">res_da</span><span class="op">$</span><span class="va">iters</span>         <span class="co"># iterations completed</span></span>
 <span><span class="co">#&gt; [1] 516</span></span>
 <span><span class="va">res_da</span><span class="op">$</span><span class="va">time_s</span>        <span class="co"># wall-clock seconds</span></span>
-<span><span class="co">#&gt; [1] 0.0002436638</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.000254631</span></span></code></pre></div>
 </div>
 <p><code>max_no_improve</code> is the main stopping knob: the algorithm terminates after this many consecutive iterations without an improvement in T<sub>k</sub>. For coordinate data where <em>N</em> is large enough to make the distance matrix infeasible (roughly N &gt; 46 000), use <code><a href="../reference/DropAddTSPoints.html">DropAddTSPoints()</a></code>, which accepts a coordinate matrix directly.</p>
 <hr></section><section class="level2"><h2 id="grasp-with-path-relinking">GRASP with path relinking<a class="anchor" aria-label="anchor" href="#grasp-with-path-relinking"></a>
@@ -296,7 +303,7 @@
 <span><span class="co">#&gt;    exact Gonzalez </span></span>
 <span><span class="co">#&gt; 1.616311 1.616311</span></span></code></pre></div>
 </div>
-<p><code>$proven = TRUE</code> certifies that no selection can achieve a higher T<sub>k</sub>. ExactMaxMin is NP-hard; instances with more than ~30 candidates require a time budget or should be tackled with the heuristics above.</p>
+<p><code>$proven = TRUE</code> certifies that no selection can achieve a higher T<sub>k</sub>. <code><a href="../reference/ExactMaxMin.html">ExactMaxMin()</a></code> is NP-hard; instances with more than ~30 candidates require a time budget or should be tackled with the heuristics above.</p>
 <hr></section><section class="level2"><h2 id="scoring-and-polish">Scoring and polish<a class="anchor" aria-label="anchor" href="#scoring-and-polish"></a>
 </h2>
 <section class="level3"><h3 id="tkscore">
