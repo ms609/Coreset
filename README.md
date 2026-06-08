@@ -29,13 +29,6 @@ This dependency-light toolbox operates on three types of input:
 | `PolishSelection()` | Critical-edge 1-swap local search | Refine any selection |
 | `TkScore()` | Minimum pairwise distance (the objective) | Score a selection |
 
-## Not to be confused with `maximin`
-
-The CRAN package [`maximin`](https://cran.r-project.org/package=maximin) (Sun &
-Gramacy) constructs continuous **space-filling designs** — it *generates new
-points* in a coordinate box to maximise the minimum inter-point distance.
-`MaxMin` instead *selects a subset* from a *fixed* candidate set under an
-arbitrary distance, a combinatorial problem on a different footing.
 
 ## Installation
 
@@ -43,3 +36,9 @@ arbitrary distance, a combinatorial problem on a different footing.
 # install.packages("remotes")
 remotes::install_github("ms609/MaxMin")
 ```
+
+## Related packages
+
+The CRAN package [`maximin`](https://cran.r-project.org/package=maximin)
+constructs continuous space-filling designs — it generates new points in a
+coordinate box to maximise the minimum inter-point distance.
