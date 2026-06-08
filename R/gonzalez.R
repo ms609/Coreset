@@ -118,7 +118,7 @@
 #' default `Gonzalez()` runs an **ensemble** of cheap `O(N)` seeding strategies
 #' and keeps the selection with the largest minimum pairwise distance
 #' ([TkScore()]). The default ensemble is the two deterministic `O(N)` seeds
-#' `"centroid"` and `"peripheral"` together with `n_random` (3) reproducible
+#' `"centroid"` and `"peripheral"` together with three reproducible
 #' `"random_furthest"` starts -- a best-of-five selection. The `"centroid"`
 #' seed is computed from coordinates, so on a distance matrix the default drops
 #' it and keeps `"peripheral"` plus the random starts. Costlier `O(N^2)`
@@ -178,19 +178,22 @@
 #'   vector** requests an ensemble: each named anchor runs a full Gonzalez pass
 #'   and the best result by [TkScore()] is returned with `strategy_results` and
 #'   `winning_strategy` (character vector of all tied-best strategies)
-#'   attributes. The `"random_furthest"` token expands to `n_random` starts,
-#'   labelled `random_furthest1`, `random_furthest2`, ... Valid ensemble anchors:
-#'   any subset of `c("centroid", "peripheral", "random_furthest", "diameter",
-#'   "anti_medoid", "medoid", "rowsum", "rownorm")` (`"centroid"` requires
-#'   `points`). Default: `c("centroid", "peripheral", "random_furthest")`. See
-#'   [MaxMinSeed()] for anchor definitions. On the distance-column oracle path
-#'   only an integer `seed` is honoured; a named or ensemble `seed` there warns
-#'   and falls back to the peripheral seed (see *Distance-column oracle*).
-#' @param n_random Integer; the number of fixed-seed random-furthest starts the
-#'   `"random_furthest"` ensemble token expands to. The random pivots are drawn
+#'   attributes. The `"random_furthest"` token expands to one start per element
+#'   of `pivots`, labelled `random_furthest1`, `random_furthest2`, ... Valid
+#'   ensemble anchors: any subset of `c("centroid", "peripheral",
+#'   "random_furthest", "diameter", "anti_medoid", "medoid", "rowsum",
+#'   "rownorm")` (`"centroid"` requires `points`). Default:
+#'   `c("centroid", "peripheral", "random_furthest")`. See [MaxMinSeed()] for
+#'   anchor definitions. On the distance-column oracle path only an integer
+#'   `seed` is honoured; a named or ensemble `seed` there warns and falls back
+#'   to the peripheral seed (see *Distance-column oracle*).
+#' @param pivots Integer vector of pivot indices over which the
+#'   `"random_furthest"` ensemble token expands: each pivot contributes one
+#'   start, seeded at the point furthest from it, so the vector's length sets
+#'   the number of random-furthest starts. `NULL` (default) draws three pivots
 #'   from a fixed internal seed, isolated from the ambient RNG, so the default
-#'   selection is reproducible across sessions and machines. Default `3`; `0`
-#'   contributes no random starts.
+#'   selection is reproducible across sessions and machines; supply a vector to
+#'   choose the pivots (and their count) explicitly, or `integer(0)` for none.
 #' @return Integer vector of length `min(n, N)` of selected indices.
 #' @seealso [MaxMinSeed()] for the seed indices alone; [DropAddTS()] and
 #'   [ExactMaxMin()] for higher-effort solvers.
@@ -200,8 +203,10 @@
 #' d <- dist(pts)
 #' # Default: best of the O(N) seeds (centroid, peripheral, 3 random-furthest):
 #' Gonzalez(d, 5L)
-#' # Raise the number of random-furthest starts:
-#' Gonzalez(d, 5L, n_random = 8L)
+#' # More random-furthest starts (length of `pivots` sets the count):
+#' Gonzalez(d, 5L, pivots = sample.int(nrow(as.matrix(d)), 8L))
+#' # Or choose the pivots explicitly:
+#' Gonzalez(d, 5L, pivots = c(1L, 10L, 20L))
 #' # Custom two-anchor ensemble:
 #' Gonzalez(d, 5L, seed = c("diameter", "anti_medoid"))
 #' # A single strategy:
@@ -217,14 +222,10 @@
 #'           Gonzalez(d, 5L, seed = 1L))
 #' @export
 Gonzalez <- function(d = NULL, n,
-                     seed = .kDefaultEnsemble, n_random = 3L,
+                     seed = .kDefaultEnsemble, pivots = NULL,
                      points = NULL, N = NULL,
                      progress = getOption("MaxMin.progress", interactive())) {
   seedMissing <- missing(seed)
-  n_random <- as.integer(n_random)
-  if (length(n_random) != 1L || is.na(n_random) || n_random < 0L) {
-    stop("`n_random` must be a single non-negative integer")
-  }
   if (is.numeric(seed) || is.integer(seed)) {
     first <- as.integer(seed)
     seed  <- "first"
@@ -283,8 +284,24 @@ Gonzalez <- function(d = NULL, n,
   }
 
   if (length(seed) > 1L) {
+    # Pivots for the `"random_furthest"` token: a user-supplied vector is taken
+    # verbatim (its length sets the number of starts); otherwise three pivots
+    # are drawn from a fixed internal seed, so the default is reproducible and
+    # independent of the ambient RNG.
+    if (is.null(pivots)) {
+      pivots <- if ("random_furthest" %in% seed) {
+        .DrawRandomStarts(nPts, 3L)
+      } else {
+        integer(0)
+      }
+    } else {
+      pivots <- as.integer(pivots)
+      if (anyNA(pivots) || any(pivots < 1L | pivots > nPts)) {
+        stop("`pivots` must be indices in [1, N]")
+      }
+    }
     if (usePoints) {
-      return(.GonzEnsembleFromPoints(points, n, seed, n_random))
+      return(.GonzEnsembleFromPoints(points, n, seed, pivots))
     }
     # Matrix path: `"centroid"` is coordinate-only, so drop it (the remaining
     # O(N) seeds cover that role here). Warn only if it was named explicitly,
@@ -294,7 +311,7 @@ Gonzalez <- function(d = NULL, n,
       warning("`centroid` seed requires coordinates; it is dropped on the ",
               "distance-matrix path, where `peripheral` covers the same role")
     }
-    return(.GonzEnsemble(d, n, matrix_anchors, n_random))
+    return(.GonzEnsemble(d, n, matrix_anchors, pivots))
   }
 
   if (!usePoints && seed == "centroid") {

@@ -60,7 +60,7 @@ test_that("the default ensemble is the best-of-five O(N) seeds", {
   dat <- make_data()
   n   <- 8L
   # Matrix path: centroid is coordinate-only, so the default is peripheral plus
-  # n_random (3) random-furthest starts -> four strategies.
+  # three random-furthest starts -> four strategies.
   mat <- Gonzalez(dat$d, n)
   expect_length(attr(mat, "strategy_results"), 4L)
   expect_identical(names(attr(mat, "strategy_results")),
@@ -89,18 +89,24 @@ test_that("the default selection is deterministic and RNG-isolated", {
   expect_identical(u1, u2)
 })
 
-test_that("n_random controls the random-furthest start count", {
+test_that("pivots vector controls the random-furthest starts", {
   dat <- make_data()
   n   <- 8L
-  # Raising it adds more random starts (matrix default: peripheral + n_random).
-  expect_length(attr(Gonzalez(dat$d, n, n_random = 6L), "strategy_results"), 7L)
-  # Zero disables them: matrix default reduces to peripheral alone.
-  z <- Gonzalez(dat$d, n, n_random = 0L)
+  # The vector's length sets the count (matrix default: peripheral + pivots).
+  expect_length(attr(Gonzalez(dat$d, n, pivots = 1:6), "strategy_results"), 7L)
+  # User-chosen pivots are honoured: each seeds at the point furthest from it.
+  res <- Gonzalez(dat$d, n, pivots = c(2L, 30L))
+  sr  <- attr(res, "strategy_results")
+  expect_identical(sr[["random_furthest1"]]$s1,
+                   as.integer(which.max(dat$d[, 2L])))
+  expect_identical(sr[["random_furthest2"]]$s1,
+                   as.integer(which.max(dat$d[, 30L])))
+  # Empty disables them: matrix default reduces to peripheral alone.
+  z <- Gonzalez(dat$d, n, pivots = integer(0))
   expect_length(attr(z, "strategy_results"), 1L)
   expect_identical(attr(z, "winning_strategy"), "peripheral")
-  # Validated as a single non-negative integer.
-  expect_error(Gonzalez(dat$d, n, n_random = -1L), "non-negative")
-  expect_error(Gonzalez(dat$d, n, n_random = c(1L, 2L)), "single")
+  # Out-of-range pivots are rejected.
+  expect_error(Gonzalez(dat$d, n, pivots = c(1L, 999L)), "pivots")
 })
 
 test_that("trivial cardinalities are handled", {
@@ -124,7 +130,7 @@ test_that("explicitly naming centroid in a matrix ensemble warns and drops it", 
   dat <- make_data(N = 12)
   expect_warning(res <- Gonzalez(dat$d, 4L,
                                  seed = c("centroid", "peripheral"),
-                                 n_random = 0L),
+                                 pivots = integer(0)),
                  "coordinates")
   # Dropped, leaving peripheral alone.
   expect_identical(names(attr(res, "strategy_results")), "peripheral")

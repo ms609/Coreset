@@ -98,8 +98,9 @@ T~k~ (a best-of-five selection). The `"centroid"` seed is computed from
 coordinates, so on a distance matrix such as `eurodist` it is dropped and the
 remaining seeds apply. The random starts pivot on points drawn from a fixed
 internal seed, so the default result is reproducible and does not disturb your
-random stream. Raise `n_random` for more random starts; pass a character vector
-to choose a custom ensemble, or a single name for one strategy.
+random stream. Pass a `pivots` vector for more (or your own) random starts — its
+length sets the number of starts; pass a character vector to `seed` to choose a
+custom ensemble, or a single name for one strategy.
 
 ```{r}
 #| label: gonzalez-ensemble

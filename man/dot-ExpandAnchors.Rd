@@ -4,14 +4,13 @@
 \alias{.ExpandAnchors}
 \title{Expand ensemble anchor names into labelled seed specs}
 \usage{
-.ExpandAnchors(anchors, n_random, N, anchor_seed, rf_seed)
+.ExpandAnchors(anchors, pivots, anchor_seed, rf_seed)
 }
 \arguments{
 \item{anchors}{Character vector of (de-duplicated) anchor names.}
 
-\item{n_random}{Integer count the \code{"random_furthest"} token expands to.}
-
-\item{N}{Integer element count, for the random pivot draw.}
+\item{pivots}{Integer vector of pivot indices the \code{"random_furthest"} token
+expands over (one start per pivot).}
 
 \item{anchor_seed}{Function mapping a deterministic anchor name to
 \code{list(s1, mask)}.}
@@ -23,8 +22,8 @@ List of \code{list(label, s1, mask)} specs.
 }
 \description{
 Maps each anchor name to a \code{list(label, s1, mask)} spec. The
-\code{"random_furthest"} token expands to \code{n_random} specs, each seeded at the
-point furthest from one of \code{n_random} reproducible random pivots (labelled
-\code{random_furthest1}, ...); with \code{n_random == 0} it contributes none.
+\code{"random_furthest"} token expands to one spec per element of \code{pivots}, each
+seeded at the point furthest from that pivot (labelled \code{random_furthest1},
+...); an empty \code{pivots} contributes none.
 }
 \keyword{internal}

@@ -6,8 +6,8 @@
 # (or the ensemble) and runs the greedy pass.
 
 # The default seed ensemble: the two O(N) deterministic peripheral seeds plus
-# the `"random_furthest"` token, which expands to `n_random` (default 3)
-# fixed-seed random-furthest starts -- a best-of-five cheap O(N) selection.
+# the `"random_furthest"` token, which expands to one start per `pivots` element
+# (three fixed-seed pivots by default) -- a best-of-five cheap O(N) selection.
 # `"peripheral"` and `"random_furthest"` work on every input form; `"centroid"`
 # (farthest point from the coordinate mean) needs coordinates, so on the
 # distance-matrix path it is dropped and the remaining seeds apply.
@@ -72,30 +72,27 @@
 #' Expand ensemble anchor names into labelled seed specs
 #'
 #' Maps each anchor name to a `list(label, s1, mask)` spec. The
-#' `"random_furthest"` token expands to `n_random` specs, each seeded at the
-#' point furthest from one of `n_random` reproducible random pivots (labelled
-#' `random_furthest1`, ...); with `n_random == 0` it contributes none.
+#' `"random_furthest"` token expands to one spec per element of `pivots`, each
+#' seeded at the point furthest from that pivot (labelled `random_furthest1`,
+#' ...); an empty `pivots` contributes none.
 #' @param anchors Character vector of (de-duplicated) anchor names.
-#' @param n_random Integer count the `"random_furthest"` token expands to.
-#' @param N Integer element count, for the random pivot draw.
+#' @param pivots Integer vector of pivot indices the `"random_furthest"` token
+#'   expands over (one start per pivot).
 #' @param anchor_seed Function mapping a deterministic anchor name to
 #'   `list(s1, mask)`.
 #' @param rf_seed Function mapping a pivot index to the furthest-point seed.
 #' @return List of `list(label, s1, mask)` specs.
 #' @keywords internal
-.ExpandAnchors <- function(anchors, n_random, N, anchor_seed, rf_seed) {
+.ExpandAnchors <- function(anchors, pivots, anchor_seed, rf_seed) {
   specs <- list()
   for (name in anchors) {
     if (name == "random_furthest") {
-      if (n_random > 0L) {
-        pivots <- .DrawRandomStarts(N, n_random)
-        for (j in seq_along(pivots)) {
-          specs[[length(specs) + 1L]] <- list(
-            label = paste0("random_furthest", j),
-            s1    = as.integer(rf_seed(pivots[[j]])),
-            mask  = FALSE
-          )
-        }
+      for (j in seq_along(pivots)) {
+        specs[[length(specs) + 1L]] <- list(
+          label = paste0("random_furthest", j),
+          s1    = as.integer(rf_seed(pivots[[j]])),
+          mask  = FALSE
+        )
       }
     } else {
       sd <- anchor_seed(name)
@@ -104,7 +101,7 @@
     }
   }
   if (length(specs) == 0L) {  # nocov start
-    stop("no seed strategies to run; `n_random` is 0 and the ensemble names ",
+    stop("no seed strategies to run; `pivots` is empty and the ensemble names ",
          "only `random_furthest`")
   }                           # nocov end
   specs
@@ -256,18 +253,18 @@ MaxMinSeed <- function(d = NULL, points = NULL,
 #' Runs Gonzalez from each requested peripheral anchor and returns the subset
 #' maximising \eqn{T_k}. Internal driver for the ensemble path of [Gonzalez()]
 #' (triggered when `seed` is a character vector of length > 1). The
-#' `"random_furthest"` token expands to `n_random` fixed-seed random-furthest
-#' starts. The returned vector carries `strategy_results` and `winning_strategy`
-#' (character vector of all tied-best strategies, with random starts labelled
+#' `"random_furthest"` token expands to one start per element of `pivots`. The
+#' returned vector carries `strategy_results` and `winning_strategy` (character
+#' vector of all tied-best strategies, with random starts labelled
 #' `random_furthest1`, `random_furthest2`, ...) attributes.
 #' @param d Square numeric distance matrix (already coerced).
 #' @param n Integer subset size (`1 <= n < nrow(d)`).
 #' @param anchors Character vector of anchor names.
-#' @param n_random Integer; number of starts the `"random_furthest"` token
-#'   expands to (`0` contributes none).
+#' @param pivots Integer vector of pivot indices the `"random_furthest"` token
+#'   expands over (empty contributes none).
 #' @return Integer vector of selected indices with attributes.
 #' @keywords internal
-.GonzEnsemble <- function(d, n, anchors = "peripheral", n_random = 0L) {
+.GonzEnsemble <- function(d, n, anchors = "peripheral", pivots = integer(0)) {
   d <- .AsDistMatrix(d)
   n <- as.integer(n)
   if (length(n) != 1L || is.na(n) || n < 0L) {
@@ -352,7 +349,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
     )
   }
 
-  expanded <- .ExpandAnchors(anchors, n_random, nPts, anchor_seed,
+  expanded <- .ExpandAnchors(anchors, pivots, anchor_seed,
                              function(r) which.max(d[, r]))
   labels   <- vapply(expanded, `[[`, character(1L), "label")
   strategy_results <- vector("list", length(expanded))
@@ -394,18 +391,18 @@ MaxMinSeed <- function(d = NULL, points = NULL,
 #'
 #' Coordinate counterpart of [.GonzEnsemble()]; each anchor seed and the greedy
 #' expansion are computed from `points` via the coordinate primitives, so the
-#' returned indices and attributes match the matrix path on Euclidean data. The
-#' random pivots depend only on `N` and the fixed seed, so the
-#' `"random_furthest"` starts also match the matrix path.
+#' returned indices and attributes match the matrix path on Euclidean data.
+#' `pivots` indexes points directly, so the `"random_furthest"` starts also
+#' match the matrix path.
 #' @param points A `double` `N x dim` coordinate matrix.
 #' @param n Integer subset size.
 #' @param anchors Character vector of anchor names.
-#' @param n_random Integer; number of starts the `"random_furthest"` token
-#'   expands to (`0` contributes none).
+#' @param pivots Integer vector of pivot indices the `"random_furthest"` token
+#'   expands over (empty contributes none).
 #' @return Integer vector of selected indices with attributes.
 #' @keywords internal
 .GonzEnsembleFromPoints <- function(points, n, anchors = .kDefaultEnsemble,
-                                    n_random = 0L) {
+                                    pivots = integer(0)) {
   points <- .AsPointsMatrix(points)
   n <- as.integer(n)
   if (length(n) != 1L || is.na(n) || n < 0L) {
@@ -491,7 +488,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
   }
 
   expanded <- .ExpandAnchors(
-    anchors, n_random, nPts, anchor_seed,
+    anchors, pivots, anchor_seed,
     function(r) which.max(EuclidColFromPoints_cpp(points, r))
   )
   labels   <- vapply(expanded, `[[`, character(1L), "label")

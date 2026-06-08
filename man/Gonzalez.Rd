@@ -8,7 +8,7 @@ Gonzalez(
   d = NULL,
   n,
   seed = .kDefaultEnsemble,
-  n_random = 3L,
+  pivots = NULL,
   points = NULL,
   N = NULL,
   progress = getOption("MaxMin.progress", interactive())
@@ -32,19 +32,21 @@ a fixed-seed random pivot), \code{"diameter"}, \code{"anti_medoid"}, \code{"medo
 vector} requests an ensemble: each named anchor runs a full Gonzalez pass
 and the best result by \code{\link[=TkScore]{TkScore()}} is returned with \code{strategy_results} and
 \code{winning_strategy} (character vector of all tied-best strategies)
-attributes. The \code{"random_furthest"} token expands to \code{n_random} starts,
-labelled \code{random_furthest1}, \code{random_furthest2}, ... Valid ensemble anchors:
-any subset of \code{c("centroid", "peripheral", "random_furthest", "diameter", "anti_medoid", "medoid", "rowsum", "rownorm")} (\code{"centroid"} requires
-\code{points}). Default: \code{c("centroid", "peripheral", "random_furthest")}. See
-\code{\link[=MaxMinSeed]{MaxMinSeed()}} for anchor definitions. On the distance-column oracle path
-only an integer \code{seed} is honoured; a named or ensemble \code{seed} there warns
-and falls back to the peripheral seed (see \emph{Distance-column oracle}).}
+attributes. The \code{"random_furthest"} token expands to one start per element
+of \code{pivots}, labelled \code{random_furthest1}, \code{random_furthest2}, ... Valid
+ensemble anchors: any subset of \code{c("centroid", "peripheral", "random_furthest", "diameter", "anti_medoid", "medoid", "rowsum", "rownorm")} (\code{"centroid"} requires \code{points}). Default:
+\code{c("centroid", "peripheral", "random_furthest")}. See \code{\link[=MaxMinSeed]{MaxMinSeed()}} for
+anchor definitions. On the distance-column oracle path only an integer
+\code{seed} is honoured; a named or ensemble \code{seed} there warns and falls back
+to the peripheral seed (see \emph{Distance-column oracle}).}
 
-\item{n_random}{Integer; the number of fixed-seed random-furthest starts the
-\code{"random_furthest"} ensemble token expands to. The random pivots are drawn
+\item{pivots}{Integer vector of pivot indices over which the
+\code{"random_furthest"} ensemble token expands: each pivot contributes one
+start, seeded at the point furthest from it, so the vector's length sets
+the number of random-furthest starts. \code{NULL} (default) draws three pivots
 from a fixed internal seed, isolated from the ambient RNG, so the default
-selection is reproducible across sessions and machines. Default \code{3}; \code{0}
-contributes no random starts.}
+selection is reproducible across sessions and machines; supply a vector to
+choose the pivots (and their count) explicitly, or \code{integer(0)} for none.}
 
 \item{points}{Optional \verb{N x dim} numeric coordinate matrix. When supplied,
 the selection is computed directly from coordinates in \code{O(N * n * dim)}
@@ -71,7 +73,7 @@ problem. The quality of the result depends on the first (seed) point; by
 default \code{Gonzalez()} runs an \strong{ensemble} of cheap \code{O(N)} seeding strategies
 and keeps the selection with the largest minimum pairwise distance
 (\code{\link[=TkScore]{TkScore()}}). The default ensemble is the two deterministic \code{O(N)} seeds
-\code{"centroid"} and \code{"peripheral"} together with \code{n_random} (3) reproducible
+\code{"centroid"} and \code{"peripheral"} together with three reproducible
 \code{"random_furthest"} starts -- a best-of-five selection. The \code{"centroid"}
 seed is computed from coordinates, so on a distance matrix the default drops
 it and keeps \code{"peripheral"} plus the random starts. Costlier \code{O(N^2)}
@@ -113,8 +115,10 @@ pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
 # Default: best of the O(N) seeds (centroid, peripheral, 3 random-furthest):
 Gonzalez(d, 5L)
-# Raise the number of random-furthest starts:
-Gonzalez(d, 5L, n_random = 8L)
+# More random-furthest starts (length of `pivots` sets the count):
+Gonzalez(d, 5L, pivots = sample.int(nrow(as.matrix(d)), 8L))
+# Or choose the pivots explicitly:
+Gonzalez(d, 5L, pivots = c(1L, 10L, 20L))
 # Custom two-anchor ensemble:
 Gonzalez(d, 5L, seed = c("diameter", "anti_medoid"))
 # A single strategy:
