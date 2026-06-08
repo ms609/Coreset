@@ -27,9 +27,6 @@ This problem arises naturally wherever you want a diverse sample from a fixed
 pool: selecting field-survey sites to cover a landscape, picking biological
 specimens for sequencing that span the available genetic diversity, or choosing
 a representative subset of protein structures from a database.
-MaxMin differs from the CRAN package **maximin**, which constructs
-*continuous* space-filling designs by generating new points;
-MaxMin selects from a *fixed candidate set* under an arbitrary distance.
 
 ## Installation
 
@@ -360,3 +357,8 @@ tie-breaking, not the algorithm itself.
 requires a `seed` for reproducibility.
 For any of these, `PolishSelection()` can squeeze out further improvement at
 negligible cost.
+
+## Related packages
+
+The CRAN package [**maximin**](https://CRAN.R-project.org/package=maximin)
+constructs continuous space-filling designs by generating new points.

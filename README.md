@@ -7,18 +7,17 @@
 <!-- badges: end -->
 
 `MaxMin` selects a maximally dispersed subset of a fixed set of candidate items
-under the **Max-Min Diversity Problem** (MMDP, the discrete *p*-dispersion
-objective): choose `n` items so that the *minimum* pairwise distance within the
+under the Max-Min Diversity Problem (MMDP, the discrete *p*-dispersion
+objective): choose $n$ items so that the minimum pairwise distance within the
 selection is as large as possible.
 
-It is a small, dependency-light toolbox (`Imports: Rcpp, stats`) that operates
-on three kinds of input:
+This dependency-light toolbox operates on three types of input:
 
-- a **distance matrix** (or `dist` object);
-- **Euclidean coordinates**, without ever materialising the distance matrix; or
-- an **on-demand distance-column oracle**, for spaces with no coordinate
-  embedding (e.g. phylogenetic trees), where the distance matrix would be too
-  large to hold.
+- a distance matrix (or `dist` object);
+- Euclidean coordinates, without ever materialising the distance matrix; or
+- an on-demand distance-column oracle, for spaces with no coordinate embedding
+  (e.g. phylogenetic trees), where the distance matrix would be too large to
+  store in memory.
 
 ## Solvers
 
