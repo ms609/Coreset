@@ -12,7 +12,8 @@ selection pass.
 MaxMinSeed(
   d = NULL,
   points = NULL,
-  method = c("peripheral", "diameter", "anti_medoid", "medoid", "rowsum", "rownorm")
+  method = c("peripheral", "centroid", "random_furthest", "diameter", "anti_medoid",
+    "medoid", "rowsum", "rownorm")
 )
 ```
 
@@ -26,7 +27,8 @@ MaxMinSeed(
 - points:
 
   Optional `N x dim` numeric coordinate matrix; when supplied the seed
-  is computed from coordinates in `O(N)` memory.
+  is computed from coordinates in `O(N)` memory. Required for the
+  `"centroid"` anchor, which has no distance-matrix form.
 
 - method:
 
@@ -40,12 +42,25 @@ Integer seed index in `[1, N]`.
 
 Anchors:
 
+- `"centroid"`:
+
+  The point farthest from the coordinate mean (`argmax ||x - x_bar||`),
+  an `O(N * dim)` approximate diameter endpoint. Computed from
+  coordinates, so it requires `points`; it is unavailable on the
+  distance-matrix path, where `"peripheral"` serves the same role.
+
 - `"peripheral"`:
 
   Two sweeps: the point furthest from point 1, then the point furthest
-  from that (a diameter-endpoint approximation). The only anchor
-  reachable from a distance-column oracle (the function path of
+  from that (a diameter-endpoint approximation), in `O(N)`. The only
+  anchor reachable from a distance-column oracle (the function path of
   [`Gonzalez()`](https://ms609.github.io/MaxMin/reference/Gonzalez.md)).
+
+- `"random_furthest"`:
+
+  The point furthest from a random pivot, in `O(N)`. The pivot is drawn
+  from a fixed internal seed, isolated from the ambient RNG, so the
+  index is reproducible across sessions and machines.
 
 - `"diameter"`:
 

@@ -49,7 +49,8 @@ when composing a custom selection pass.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">MaxMinSeed</span><span class="op">(</span></span>
 <span>  d <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  points <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"peripheral"</span>, <span class="st">"diameter"</span>, <span class="st">"anti_medoid"</span>, <span class="st">"medoid"</span>, <span class="st">"rowsum"</span>, <span class="st">"rownorm"</span><span class="op">)</span></span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"peripheral"</span>, <span class="st">"centroid"</span>, <span class="st">"random_furthest"</span>, <span class="st">"diameter"</span>, <span class="st">"anti_medoid"</span>,</span>
+<span>    <span class="st">"medoid"</span>, <span class="st">"rowsum"</span>, <span class="st">"rownorm"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -64,7 +65,8 @@ when composing a custom selection pass.</p>
 
 <dt id="arg-points">points<a class="anchor" aria-label="anchor" href="#arg-points"></a></dt>
 <dd><p>Optional <code>N x dim</code> numeric coordinate matrix; when supplied the
-seed is computed from coordinates in <code>O(N)</code> memory.</p></dd>
+seed is computed from coordinates in <code>O(N)</code> memory. Required for the
+<code>"centroid"</code> anchor, which has no distance-matrix form.</p></dd>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
@@ -77,11 +79,22 @@ seed is computed from coordinates in <code>O(N)</code> memory.</p></dd>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Anchors:</p><dl><dt><code>"peripheral"</code></dt>
+    <p>Anchors:</p><dl><dt><code>"centroid"</code></dt>
+<dd><p>The point farthest from the coordinate mean
+(<code>argmax ||x - x_bar||</code>), an <code>O(N * dim)</code> approximate diameter endpoint.
+Computed from coordinates, so it requires <code>points</code>; it is unavailable on
+the distance-matrix path, where <code>"peripheral"</code> serves the same role.</p></dd>
+
+<dt><code>"peripheral"</code></dt>
 <dd><p>Two sweeps: the point furthest from point 1, then
-the point furthest from that (a diameter-endpoint approximation). The
-only anchor reachable from a distance-column oracle (the function path of
-<code><a href="Gonzalez.html">Gonzalez()</a></code>).</p></dd>
+the point furthest from that (a diameter-endpoint approximation), in
+<code>O(N)</code>. The only anchor reachable from a distance-column oracle (the
+function path of <code><a href="Gonzalez.html">Gonzalez()</a></code>).</p></dd>
+
+<dt><code>"random_furthest"</code></dt>
+<dd><p>The point furthest from a random pivot, in
+<code>O(N)</code>. The pivot is drawn from a fixed internal seed, isolated from the
+ambient RNG, so the index is reproducible across sessions and machines.</p></dd>
 
 <dt><code>"diameter"</code></dt>
 <dd><p>A row endpoint of the diameter pair (the maximum

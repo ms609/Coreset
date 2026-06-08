@@ -40,14 +40,14 @@ data(eurodist)
 idx <- Gonzalez(eurodist, n = 4L)
 
 as.matrix(eurodist)[idx, idx]
-#>           Lisbon Athens Stockholm Milan
-#> Lisbon         0   4532      3231  2250
-#> Athens      4532      0      3927  2282
-#> Stockholm   3231   3927         0  2187
-#> Milan       2250   2282      2187     0
+#>           Athens Lisbon Stockholm Milan
+#> Athens         0   4532      3927  2282
+#> Lisbon      4532      0      3231  2250
+#> Stockholm   3927   3231         0  2187
+#> Milan       2282   2250      2187     0
 
 labels(eurodist)[idx]
-#> [1] "Lisbon"    "Athens"    "Stockholm" "Milan"
+#> [1] "Athens"    "Lisbon"    "Stockholm" "Milan"
 TkScore(eurodist, idx)
 #> [1] 2187
 ```
@@ -82,18 +82,25 @@ from a seed point, then repeatedly add whichever unselected point is
 farthest from the current selection. This greedy rule guarantees a
 2-approximation to the optimal T_(k) and runs in O(*N* · *m*) time.
 
-By default `seed = c("diameter", "anti_medoid", "rowsum", "rownorm")`:
-all four peripheral seeding strategies run and whichever produced the
-highest T_(k) is returned. Pass a shorter character vector to use a
-subset, or a single name for one strategy.
+By default
+[`Gonzalez()`](https://ms609.github.io/MaxMin/reference/Gonzalez.md)
+runs an ensemble of the cheap O(*N*) seeding strategies — `"centroid"`,
+`"peripheral"`, and three reproducible `"random_furthest"` starts — and
+returns whichever pass produced the highest T_(k) (a best-of-five
+selection). The `"centroid"` seed is computed from coordinates, so on a
+distance matrix such as `eurodist` it is dropped and the remaining seeds
+apply. The random starts pivot on points drawn from a fixed internal
+seed, so the default result is reproducible and does not disturb your
+random stream. Raise `n_random` for more random starts; pass a character
+vector to choose a custom ensemble, or a single name for one strategy.
 
 ``` r
 
-idx_ens <- Gonzalez(eurodist, n = 6L)   # default: four-anchor ensemble
+idx_ens <- Gonzalez(eurodist, n = 6L)   # default: best-of-five O(N) seeds
 
 # Which seeding strategy won?
 attr(idx_ens, "winning_strategy")
-#> [1] "diameter"    "anti_medoid" "rowsum"      "rownorm"
+#> [1] "peripheral"       "random_furthest1" "random_furthest2" "random_furthest3"
 ```
 
 You can also request a specific seeding strategy or a custom ensemble
@@ -156,7 +163,7 @@ res_da$objective     # T_k achieved
 res_da$iters         # iterations completed
 #> [1] 516
 res_da$time_s        # wall-clock seconds
-#> [1] 0.000254631
+#> [1] 0.0002498627
 ```
 
 `max_no_improve` is the main stopping knob: the algorithm terminates
