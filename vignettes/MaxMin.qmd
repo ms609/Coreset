@@ -36,7 +36,7 @@ a representative subset of protein structures from a database.
 install.packages("MaxMin")
 ```
 
-For the exact solver demonstrated later, also install **highs**:
+For the exact solver, also install **highs**:
 
 ```{r}
 #| label: install-highs
@@ -48,20 +48,21 @@ install.packages("highs")
 
 `eurodist` is a built-in R `dist` object containing road distances (km)
 between 21 European cities.
-It can be passed straight to MaxMin — no conversion needed.
 
 ```{r}
 #| label: quickstart
 data(eurodist)
 
-# Select 6 maximally dispersed cities
-idx <- Gonzalez(eurodist, n = 6L)
+# Select 4 maximally dispersed cities
+idx <- Gonzalez(eurodist, n = 4L)
+
+as.matrix(eurodist)[idx, idx]
 
 labels(eurodist)[idx]
 TkScore(eurodist, idx)
 ```
 
-`Gonzalez()` returned the indices of the six cities whose nearest-neighbour
+`Gonzalez()` returned the indices of the four cities whose nearest-neighbour
 distance within the selection is largest.
 `TkScore()` reports that value explicitly.
 
