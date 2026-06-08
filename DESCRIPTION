@@ -32,6 +32,7 @@ Imports:
     stats
 Suggests:
     highs,
+    knitr,
     quarto,
     rprojroot,
     spelling,
