@@ -1,4 +1,4 @@
-# Tests for MaxMinSeed(), TkScore(), and the coordinate primitives.
+# Tests for MaxMinSeed() and TkScore().
 
 make_data <- function(seed = 7, N = 50, dim = 3) {
   set.seed(seed)
@@ -55,28 +55,4 @@ test_that("TkScore returns NA for fewer than two points", {
   dat <- make_data(N = 6)
   expect_true(is.na(TkScore(dat$d, 3L)))
   expect_true(is.na(TkScore(idx = integer(0), points = dat$pts)))
-})
-
-# ---- Coordinate primitives ----------------------------------------------
-
-test_that("PointColumn reproduces a distance-matrix column", {
-  dat <- make_data()
-  for (i in c(1L, 13L, 50L)) {
-    expect_equal(PointColumn(dat$pts, i), unname(dat$d[, i]))
-  }
-  expect_error(PointColumn(dat$pts, 999L), "index")
-})
-
-test_that("PointDiameter returns the max distance and a realising pair", {
-  dat <- make_data()
-  out <- PointDiameter(dat$pts)
-  expect_named(out, c("d_max", "i", "j"))
-  d_off <- dat$d; diag(d_off) <- -Inf
-  expect_equal(unname(out[["d_max"]]), max(d_off))
-  expect_equal(dat$d[out[["i"]], out[["j"]]], max(d_off))
-})
-
-test_that("PointColumn on a simple 3-4-5 triangle", {
-  pts <- matrix(c(0, 0, 3, 4), ncol = 2, byrow = TRUE)
-  expect_equal(PointColumn(pts, 1L), c(0, 5))
 })

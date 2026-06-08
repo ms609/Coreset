@@ -15,6 +15,6 @@ Benchmark(Gonzalez(points = pts5000, n = 30L))
 
 # Distance-column oracle path (as used by TreeSearch on tree sets): pass a
 # closure as `d` and Gonzalez() reads one column at a time, never a matrix.
-# Here the column is recomputed from coordinates on the fly via PointColumn().
-colFn <- function(i) PointColumn(pts5000, i)
+# Here the column is recomputed from coordinates on the fly.
+colFn <- function(i) sqrt(rowSums(sweep(pts5000, 2L, pts5000[i, ]) ^ 2))
 Benchmark(Gonzalez(colFn, 30L, N = 5000L))
