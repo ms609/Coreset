@@ -43,10 +43,11 @@ to the peripheral seed (see \emph{Distance-column oracle}).}
 \item{pivots}{Integer vector of pivot indices over which the
 \code{"random_furthest"} ensemble token expands: each pivot contributes one
 start, seeded at the point furthest from it, so the vector's length sets
-the number of random-furthest starts. \code{NULL} (default) draws three pivots
-from a fixed internal seed, isolated from the ambient RNG, so the default
-selection is reproducible across sessions and machines; supply a vector to
-choose the pivots (and their count) explicitly, or \code{integer(0)} for none.}
+the number of random-furthest starts. Left unspecified, three pivots are
+drawn with the session RNG (\code{sample.int(N, 3)}; set a seed for a
+reproducible selection). Pass \code{integer(0)}, \code{NA}, or \code{NULL} to disable the
+random starts, or an index vector to choose the pivots (and their count)
+explicitly.}
 
 \item{points}{Optional \verb{N x dim} numeric coordinate matrix. When supplied,
 the selection is computed directly from coordinates in \code{O(N * n * dim)}
@@ -73,8 +74,9 @@ problem. The quality of the result depends on the first (seed) point; by
 default \code{Gonzalez()} runs an \strong{ensemble} of cheap \code{O(N)} seeding strategies
 and keeps the selection with the largest minimum pairwise distance
 (\code{\link[=TkScore]{TkScore()}}). The default ensemble is the two deterministic \code{O(N)} seeds
-\code{"centroid"} and \code{"peripheral"} together with three reproducible
-\code{"random_furthest"} starts -- a best-of-five selection. The \code{"centroid"}
+\code{"centroid"} and \code{"peripheral"} together with three \code{"random_furthest"}
+starts -- a best-of-five selection. The random starts use the session RNG,
+so set a seed (\code{set.seed()}) for a reproducible selection. The \code{"centroid"}
 seed is computed from coordinates, so on a distance matrix the default drops
 it and keeps \code{"peripheral"} plus the random starts. Costlier \code{O(N^2)}
 anchors (\code{"diameter"}, \code{"anti_medoid"}, \code{"medoid"}, \code{"rowsum"}, \code{"rownorm"})

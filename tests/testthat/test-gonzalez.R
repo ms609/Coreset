@@ -13,18 +13,22 @@ test_that("matrix and coordinate paths agree for every seed strategy", {
   dat <- make_data()
   for (s in single_seeds) {
     for (n in c(2L, 6L, 12L)) {
-      mat <- Gonzalez(dat$d, n, seed = s)
-      pt  <- Gonzalez(n = n, points = dat$pts, seed = s)
+      # Seed the RNG identically so the random_furthest pivot matches on both
+      # paths; deterministic strategies are unaffected by it.
+      set.seed(1); mat <- Gonzalez(dat$d, n, seed = s)
+      set.seed(1); pt  <- Gonzalez(n = n, points = dat$pts, seed = s)
       expect_identical(mat, pt, info = paste("seed", s, "n", n))
     }
   }
-  # A centroid-free ensemble agrees across paths (the random pivots depend only
-  # on N and the fixed seed, and the distances are bit-identical on Euclidean
-  # data, so the random-furthest starts coincide too).
+  # A centroid-free ensemble agrees across paths. Explicit pivots index points
+  # directly and the distances are bit-identical on Euclidean data, so the
+  # random-furthest starts coincide too.
   for (n in c(2L, 6L, 12L)) {
-    mat <- Gonzalez(dat$d, n, seed = c("peripheral", "random_furthest"))
+    mat <- Gonzalez(dat$d, n, seed = c("peripheral", "random_furthest"),
+                    pivots = c(3L, 17L, 28L))
     pt  <- Gonzalez(n = n, points = dat$pts,
-                    seed = c("peripheral", "random_furthest"))
+                    seed = c("peripheral", "random_furthest"),
+                    pivots = c(3L, 17L, 28L))
     attributes(mat) <- NULL
     attributes(pt)  <- NULL
     expect_identical(mat, pt, info = paste("ensemble n", n))
@@ -70,28 +74,23 @@ test_that("the default ensemble is the best-of-five O(N) seeds", {
   pt <- Gonzalez(n = n, points = dat$pts)
   expect_length(attr(pt, "strategy_results"), 5L)
   expect_true("centroid" %in% names(attr(pt, "strategy_results")))
-  # The default is at least as good as any of its own member seeds.
-  for (s in c("peripheral", "random_furthest")) {
-    expect_gte(TkScore(dat$d, mat) + 1e-9,
-               TkScore(dat$d, Gonzalez(dat$d, n, seed = s)))
-  }
+  # The default includes peripheral, so it is at least as good as it.
+  expect_gte(TkScore(dat$d, mat) + 1e-9,
+             TkScore(dat$d, Gonzalez(dat$d, n, seed = "peripheral")))
 })
 
-test_that("the default selection is deterministic and RNG-isolated", {
+test_that("the default selection is reproducible under set.seed", {
   dat <- make_data()
-  # Independent of ambient RNG state.
-  set.seed(11);  a <- Gonzalez(dat$d, 8L)
-  set.seed(999); b <- Gonzalez(dat$d, 8L)
+  set.seed(1); a <- Gonzalez(dat$d, 8L)
+  set.seed(1); b <- Gonzalez(dat$d, 8L)
   expect_identical(c(a), c(b))
-  # Leaves the caller's random stream untouched.
-  set.seed(7); u1 <- runif(1)
-  set.seed(7); invisible(Gonzalez(dat$d, 8L)); u2 <- runif(1)
-  expect_identical(u1, u2)
 })
 
 test_that("pivots vector controls the random-furthest starts", {
   dat <- make_data()
   n   <- 8L
+  # Unspecified draws three pivots (matrix default: peripheral + 3 random).
+  expect_length(attr(Gonzalez(dat$d, n), "strategy_results"), 4L)
   # The vector's length sets the count (matrix default: peripheral + pivots).
   expect_length(attr(Gonzalez(dat$d, n, pivots = 1:6), "strategy_results"), 7L)
   # User-chosen pivots are honoured: each seeds at the point furthest from it.
@@ -101,10 +100,13 @@ test_that("pivots vector controls the random-furthest starts", {
                    as.integer(which.max(dat$d[, 2L])))
   expect_identical(sr[["random_furthest2"]]$s1,
                    as.integer(which.max(dat$d[, 30L])))
-  # Empty disables them: matrix default reduces to peripheral alone.
-  z <- Gonzalez(dat$d, n, pivots = integer(0))
-  expect_length(attr(z, "strategy_results"), 1L)
-  expect_identical(attr(z, "winning_strategy"), "peripheral")
+  # integer(0), NA, and NULL all disable the random starts equivalently: the
+  # matrix default then reduces to peripheral alone.
+  for (none in list(integer(0), NA, NULL)) {
+    z <- Gonzalez(dat$d, n, pivots = none)
+    expect_length(attr(z, "strategy_results"), 1L)
+    expect_identical(attr(z, "winning_strategy"), "peripheral")
+  }
   # Out-of-range pivots are rejected.
   expect_error(Gonzalez(dat$d, n, pivots = c(1L, 999L)), "pivots")
 })

@@ -53,7 +53,9 @@ between 21 European cities.
 #| label: quickstart
 data(eurodist)
 
-# Select 4 maximally dispersed cities
+# Select 4 maximally dispersed cities. The default ensemble uses random
+# starts, so set a seed for a reproducible selection.
+set.seed(1)
 idx <- Gonzalez(eurodist, n = 4L)
 
 as.matrix(eurodist)[idx, idx]
@@ -92,18 +94,19 @@ This greedy rule guarantees a 2-approximation to the optimal T~k~ and runs
 in O(*N* · *m*) time.
 
 By default `Gonzalez()` runs an ensemble of the cheap O(*N*) seeding
-strategies — `"centroid"`, `"peripheral"`, and three reproducible
-`"random_furthest"` starts — and returns whichever pass produced the highest
-T~k~ (a best-of-five selection). The `"centroid"` seed is computed from
-coordinates, so on a distance matrix such as `eurodist` it is dropped and the
-remaining seeds apply. The random starts pivot on points drawn from a fixed
-internal seed, so the default result is reproducible and does not disturb your
-random stream. Pass a `pivots` vector for more (or your own) random starts — its
-length sets the number of starts; pass a character vector to `seed` to choose a
-custom ensemble, or a single name for one strategy.
+strategies — `"centroid"`, `"peripheral"`, and three `"random_furthest"`
+starts — and returns whichever pass produced the highest T~k~ (a best-of-five
+selection). The `"centroid"` seed is computed from coordinates, so on a distance
+matrix such as `eurodist` it is dropped and the remaining seeds apply. The
+random starts pivot on points drawn with the session RNG, so set a seed
+(`set.seed()`) for a reproducible selection. Pass a `pivots` vector for more (or
+your own) random starts — its length sets the number of starts, and
+`integer(0)` disables them; pass a character vector to `seed` to choose a custom
+ensemble, or a single name for one strategy.
 
 ```{r}
 #| label: gonzalez-ensemble
+set.seed(1)
 idx_ens <- Gonzalez(eurodist, n = 6L)   # default: best-of-five O(N) seeds
 
 # Which seeding strategy won?

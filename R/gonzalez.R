@@ -118,8 +118,9 @@
 #' default `Gonzalez()` runs an **ensemble** of cheap `O(N)` seeding strategies
 #' and keeps the selection with the largest minimum pairwise distance
 #' ([TkScore()]). The default ensemble is the two deterministic `O(N)` seeds
-#' `"centroid"` and `"peripheral"` together with three reproducible
-#' `"random_furthest"` starts -- a best-of-five selection. The `"centroid"`
+#' `"centroid"` and `"peripheral"` together with three `"random_furthest"`
+#' starts -- a best-of-five selection. The random starts use the session RNG,
+#' so set a seed (`set.seed()`) for a reproducible selection. The `"centroid"`
 #' seed is computed from coordinates, so on a distance matrix the default drops
 #' it and keeps `"peripheral"` plus the random starts. Costlier `O(N^2)`
 #' anchors (`"diameter"`, `"anti_medoid"`, `"medoid"`, `"rowsum"`, `"rownorm"`)
@@ -190,10 +191,11 @@
 #' @param pivots Integer vector of pivot indices over which the
 #'   `"random_furthest"` ensemble token expands: each pivot contributes one
 #'   start, seeded at the point furthest from it, so the vector's length sets
-#'   the number of random-furthest starts. `NULL` (default) draws three pivots
-#'   from a fixed internal seed, isolated from the ambient RNG, so the default
-#'   selection is reproducible across sessions and machines; supply a vector to
-#'   choose the pivots (and their count) explicitly, or `integer(0)` for none.
+#'   the number of random-furthest starts. Left unspecified, three pivots are
+#'   drawn with the session RNG (`sample.int(N, 3)`; set a seed for a
+#'   reproducible selection). Pass `integer(0)`, `NA`, or `NULL` to disable the
+#'   random starts, or an index vector to choose the pivots (and their count)
+#'   explicitly.
 #' @return Integer vector of length `min(n, N)` of selected indices.
 #' @seealso [MaxMinSeed()] for the seed indices alone; [DropAddTS()] and
 #'   [ExactMaxMin()] for higher-effort solvers.
@@ -225,7 +227,8 @@ Gonzalez <- function(d = NULL, n,
                      seed = .kDefaultEnsemble, pivots = NULL,
                      points = NULL, N = NULL,
                      progress = getOption("MaxMin.progress", interactive())) {
-  seedMissing <- missing(seed)
+  seedMissing   <- missing(seed)
+  pivotsMissing <- missing(pivots)
   if (is.numeric(seed) || is.integer(seed)) {
     first <- as.integer(seed)
     seed  <- "first"
@@ -284,16 +287,18 @@ Gonzalez <- function(d = NULL, n,
   }
 
   if (length(seed) > 1L) {
-    # Pivots for the `"random_furthest"` token: a user-supplied vector is taken
-    # verbatim (its length sets the number of starts); otherwise three pivots
-    # are drawn from a fixed internal seed, so the default is reproducible and
-    # independent of the ambient RNG.
-    if (is.null(pivots)) {
+    # Pivots for the `"random_furthest"` token. Unspecified: draw three pivots
+    # with the session RNG (`set.seed()` for a reproducible selection). An empty
+    # / `NA` / `NULL` `pivots` disables the random starts; a supplied index
+    # vector is taken verbatim, its length setting the number of starts.
+    if (pivotsMissing) {
       pivots <- if ("random_furthest" %in% seed) {
-        .DrawRandomStarts(nPts, 3L)
+        sample.int(nPts, min(.kDefaultRandomStarts, nPts))
       } else {
         integer(0)
       }
+    } else if (length(pivots) == 0L || all(is.na(pivots))) {
+      pivots <- integer(0)
     } else {
       pivots <- as.integer(pivots)
       if (anyNA(pivots) || any(pivots < 1L | pivots > nPts)) {

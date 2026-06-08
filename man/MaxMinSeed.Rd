@@ -41,8 +41,8 @@ the point furthest from that (a diameter-endpoint approximation), in
 \code{O(N)}. The only anchor reachable from a distance-column oracle (the
 function path of \code{\link[=Gonzalez]{Gonzalez()}}).}
 \item{\code{"random_furthest"}}{The point furthest from a random pivot, in
-\code{O(N)}. The pivot is drawn from a fixed internal seed, isolated from the
-ambient RNG, so the index is reproducible across sessions and machines.}
+\code{O(N)}. The pivot is drawn with the session RNG; set a seed
+(\code{set.seed()}) for a reproducible index.}
 \item{\code{"diameter"}}{A row endpoint of the diameter pair (the maximum
 pairwise distance). Degenerate data (\code{d_max <= 0}) falls back to 1.}
 \item{\code{"anti_medoid"}}{The point furthest from the 1-median (medoid).}

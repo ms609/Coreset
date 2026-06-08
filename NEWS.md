@@ -7,9 +7,9 @@
   Euclidean coordinates (`points =`), or an on-demand **distance-column oracle**
   (pass a column function as `d`, with `N =`) for spaces with no coordinate
   embedding. The default `seed` runs a best-of-five ensemble of cheap O(*N*)
-  seeds — `"centroid"`, `"peripheral"`, and three reproducible
-  `"random_furthest"` starts whose pivots are drawn from a fixed internal seed
-  (override or extend them with the `pivots` argument) — and keeps the best by
+  seeds — `"centroid"`, `"peripheral"`, and three `"random_furthest"` starts
+  (whose pivots are drawn with the session RNG; set a seed for a reproducible
+  selection, or supply them via the `pivots` argument) — and keeps the best by
   `TkScore()`. Costlier O(*N*²) anchors (`"diameter"`, `"anti_medoid"`,
   `"medoid"`, `"rowsum"`, `"rownorm"`) are available as opt-in strategies.
 - `DropAddTS()` / `DropAddTSPoints()`: DropAdd tabu search (Porumbel et al.

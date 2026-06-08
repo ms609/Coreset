@@ -7,7 +7,8 @@
 
 # The default seed ensemble: the two O(N) deterministic peripheral seeds plus
 # the `"random_furthest"` token, which expands to one start per `pivots` element
-# (three fixed-seed pivots by default) -- a best-of-five cheap O(N) selection.
+# (three pivots drawn with the session RNG by default) -- a best-of-five cheap
+# O(N) selection. Set a seed (`set.seed()`) for a reproducible draw.
 # `"peripheral"` and `"random_furthest"` work on every input form; `"centroid"`
 # (farthest point from the coordinate mean) needs coordinates, so on the
 # distance-matrix path it is dropped and the remaining seeds apply.
@@ -19,9 +20,8 @@
                            "anti_medoid", "medoid", "rowsum", "rownorm")
 .kPointEnsembleSeeds  <- c("centroid", .kMatrixEnsembleSeeds)
 
-# Fixed internal RNG seed for the random-furthest starts, so the default
-# selection is reproducible and independent of ambient RNG state.
-.kRandomSeed <- 0x4d4d4dL
+# Number of random-furthest pivots drawn when `pivots` is left unspecified.
+.kDefaultRandomStarts <- 3L
 
 #' Squared distance of every point to the coordinate centroid
 #'
@@ -36,38 +36,6 @@
   rowSums(dev * dev)
 }
 
-#' Reproducible random start indices, isolated from ambient RNG
-#'
-#' Draws `min(k, N)` distinct indices in `[1, N]` from a fixed internal seed,
-#' the random pivots for the `"random_furthest"` seed. The caller's RNG kind and
-#' `.Random.seed` are saved and restored, so the draw neither depends on nor
-#' perturbs the ambient random stream; the result is therefore identical across
-#' sessions and machines. Restoring the kind scrambles `.Random.seed`, so the
-#' kind is restored before the seed.
-#' @param N Integer element count (`>= 1`).
-#' @param k Integer number of pivots to draw.
-#' @param seed Integer RNG seed; defaults to the package's fixed value.
-#' @return Integer vector of `min(k, N)` distinct indices.
-#' @keywords internal
-.DrawRandomStarts <- function(N, k, seed = .kRandomSeed) {
-  old_kind <- RNGkind()
-  old_seed <- if (exists(".Random.seed", globalenv(), inherits = FALSE)) {
-    get(".Random.seed", globalenv(), inherits = FALSE)
-  } else {
-    NULL
-  }
-  on.exit({
-    RNGkind(old_kind[1L], old_kind[2L], old_kind[3L])
-    if (is.null(old_seed)) {
-      suppressWarnings(rm(".Random.seed", envir = globalenv()))  # nocov
-    } else {
-      assign(".Random.seed", old_seed, envir = globalenv())
-    }
-  }, add = TRUE)
-  suppressWarnings(set.seed(seed, kind = "Mersenne-Twister",
-                            sample.kind = "Rejection"))
-  sample.int(N, min(as.integer(k), N))
-}
 
 #' Expand ensemble anchor names into labelled seed specs
 #'
@@ -142,7 +110,7 @@
       as.integer(which.max(d[, s1]))
     },
     random_furthest = {
-      r <- .DrawRandomStarts(nrow(d), 1L)
+      r <- sample.int(nrow(d), 1L)
       as.integer(which.max(d[, r]))
     },
     stop("Unknown seed method: ", method)  # nocov
@@ -184,7 +152,7 @@
       as.integer(which.max(EuclidColFromPoints_cpp(points, s1)))
     },
     random_furthest = {
-      r <- .DrawRandomStarts(nrow(points), 1L)
+      r <- sample.int(nrow(points), 1L)
       as.integer(which.max(EuclidColFromPoints_cpp(points, r)))
     },
     stop("Unknown seed method: ", method)  # nocov
@@ -208,8 +176,8 @@
 #'     `O(N)`. The only anchor reachable from a distance-column oracle (the
 #'     function path of [Gonzalez()]).}
 #'   \item{`"random_furthest"`}{The point furthest from a random pivot, in
-#'     `O(N)`. The pivot is drawn from a fixed internal seed, isolated from the
-#'     ambient RNG, so the index is reproducible across sessions and machines.}
+#'     `O(N)`. The pivot is drawn with the session RNG; set a seed
+#'     (`set.seed()`) for a reproducible index.}
 #'   \item{`"diameter"`}{A row endpoint of the diameter pair (the maximum
 #'     pairwise distance). Degenerate data (`d_max <= 0`) falls back to 1.}
 #'   \item{`"anti_medoid"`}{The point furthest from the 1-median (medoid).}
