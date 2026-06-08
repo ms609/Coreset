@@ -39,7 +39,7 @@ Suggests:
 VignetteBuilder: quarto
 LinkingTo:
     Rcpp
-URL: https://github.com/ms609/MaxMin
+URL: https://ms609.github.com/MaxMin/
 BugReports: https://github.com/ms609/MaxMin/issues
 Config/Needs/benchmark: bench, highs
 Config/Needs/check: rcmdcheck, testthat
