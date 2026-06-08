@@ -64,7 +64,7 @@
 
 
     <p>The <strong>Max-Min Diversity Problem</strong> (MMDP) asks: given a fixed set of <em>N</em> candidate items and a distance between every pair, choose <em>m</em> items so that the closest pair in the selection is as far apart as possible. The objective — often written T<sub>k</sub> — is the minimum pairwise distance within the chosen subset; a larger T<sub>k</sub> means a more spread-out, representative selection.</p>
-<p>This problem arises naturally wherever you want a diverse sample from a fixed pool: selecting field-survey sites to cover a landscape, picking biological specimens for sequencing that span the available genetic diversity, or choosing a representative subset of protein structures from a database. MaxMin differs from the CRAN package <strong>maximin</strong>, which constructs <em>continuous</em> space-filling designs by generating new points; MaxMin selects from a <em>fixed candidate set</em> under an arbitrary distance.</p>
+<p>This problem arises naturally wherever you want a diverse sample from a fixed pool: selecting field-survey sites to cover a landscape, picking biological specimens for sequencing that span the available genetic diversity, or choosing a representative subset of protein structures from a database.</p>
 <section class="level2"><h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <div class="cell">
@@ -188,7 +188,7 @@
 <span><span class="va">res_da</span><span class="op">$</span><span class="va">iters</span>         <span class="co"># iterations completed</span></span>
 <span><span class="co">#&gt; [1] 516</span></span>
 <span><span class="va">res_da</span><span class="op">$</span><span class="va">time_s</span>        <span class="co"># wall-clock seconds</span></span>
-<span><span class="co">#&gt; [1] 0.0002846718</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.0002436638</span></span></code></pre></div>
 </div>
 <p><code>max_no_improve</code> is the main stopping knob: the algorithm terminates after this many consecutive iterations without an improvement in T<sub>k</sub>. For coordinate data where <em>N</em> is large enough to make the distance matrix infeasible (roughly N &gt; 46 000), use <code><a href="../reference/DropAddTSPoints.html">DropAddTSPoints()</a></code>, which accepts a coordinate matrix directly.</p>
 <hr></section><section class="level2"><h2 id="grasp-with-path-relinking">GRASP with path relinking<a class="anchor" aria-label="anchor" href="#grasp-with-path-relinking"></a>
@@ -375,6 +375,9 @@
 </tbody>
 </table>
 <p>The heuristics are complementary: <code><a href="../reference/Gonzalez.html">Gonzalez()</a></code> is O(<em>N</em> · <em>m</em>) and deterministic — an instant first result. <code><a href="../reference/DropAddTS.html">DropAddTS()</a></code> is deterministic and reproducible (no RNG), typically reaching ≈ 99 % of optimal; the <code>seed</code> parameter governs only the RNG used for tie-breaking, not the algorithm itself. <code><a href="../reference/GraspPR.html">GraspPR()</a></code> is stochastic and usually edges out <code><a href="../reference/DropAddTS.html">DropAddTS()</a></code> on T<sub>k</sub>, but requires a <code>seed</code> for reproducibility. For any of these, <code><a href="../reference/PolishSelection.html">PolishSelection()</a></code> can squeeze out further improvement at negligible cost.</p>
+</section><section class="level2"><h2 id="related-packages">Related packages<a class="anchor" aria-label="anchor" href="#related-packages"></a>
+</h2>
+<p>The CRAN package <a href="https://CRAN.R-project.org/package=maximin" class="external-link"><strong>maximin</strong></a> constructs continuous space-filling designs by generating new points.</p>
 </section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);

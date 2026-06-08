@@ -1,20 +1,18 @@
 # MaxMin
 
 `MaxMin` selects a maximally dispersed subset of a fixed set of
-candidate items under the **Max-Min Diversity Problem** (MMDP, the
-discrete *p*-dispersion objective): choose `n` items so that the
-*minimum* pairwise distance within the selection is as large as
-possible.
+candidate items under the Max-Min Diversity Problem (MMDP, the discrete
+*p*-dispersion objective): choose $`n`$ items so that the minimum
+pairwise distance within the selection is as large as possible.
 
-It is a small, dependency-light toolbox (`Imports: Rcpp, stats`) that
-operates on three kinds of input:
+This dependency-light toolbox operates on three types of input:
 
-- a **distance matrix** (or `dist` object);
-- **Euclidean coordinates**, without ever materialising the distance
-  matrix; or
-- an **on-demand distance-column oracle**, for spaces with no coordinate
+- a distance matrix (or `dist` object);
+- Euclidean coordinates, without ever materialising the distance matrix;
+  or
+- an on-demand distance-column oracle, for spaces with no coordinate
   embedding (e.g. phylogenetic trees), where the distance matrix would
-  be too large to hold.
+  be too large to store in memory.
 
 ## Solvers
 
@@ -26,15 +24,6 @@ operates on three kinds of input:
 | [`PolishSelection()`](https://ms609.github.io/MaxMin/reference/PolishSelection.md) | Critical-edge 1-swap local search | Refine any selection |
 | [`TkScore()`](https://ms609.github.io/MaxMin/reference/TkScore.md) | Minimum pairwise distance (the objective) | Score a selection |
 
-## Not to be confused with `maximin`
-
-The CRAN package [`maximin`](https://cran.r-project.org/package=maximin)
-(Sun & Gramacy) constructs continuous **space-filling designs** — it
-*generates new points* in a coordinate box to maximise the minimum
-inter-point distance. `MaxMin` instead *selects a subset* from a *fixed*
-candidate set under an arbitrary distance, a combinatorial problem on a
-different footing.
-
 ## Installation
 
 ``` r
@@ -42,6 +31,12 @@ different footing.
 # install.packages("remotes")
 remotes::install_github("ms609/MaxMin")
 ```
+
+## Related packages
+
+The CRAN package [`maximin`](https://cran.r-project.org/package=maximin)
+constructs continuous space-filling designs — it generates new points in
+a coordinate box to maximise the minimum inter-point distance.
 
 # Package index
 

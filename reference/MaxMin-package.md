@@ -45,7 +45,7 @@ an arbitrary distance, a combinatorial problem on a different footing.
 
 Useful links:
 
-- <https://github.com/ms609/MaxMin>
+- <https://ms609.github.com/MaxMin/>
 
 - Report bugs at <https://github.com/ms609/MaxMin/issues>
 

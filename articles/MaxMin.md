@@ -11,9 +11,7 @@ This problem arises naturally wherever you want a diverse sample from a
 fixed pool: selecting field-survey sites to cover a landscape, picking
 biological specimens for sequencing that span the available genetic
 diversity, or choosing a representative subset of protein structures
-from a database. MaxMin differs from the CRAN package **maximin**, which
-constructs *continuous* space-filling designs by generating new points;
-MaxMin selects from a *fixed candidate set* under an arbitrary distance.
+from a database.
 
 ## Installation
 
@@ -152,7 +150,7 @@ res_da$objective     # T_k achieved
 res_da$iters         # iterations completed
 #> [1] 516
 res_da$time_s        # wall-clock seconds
-#> [1] 0.0002846718
+#> [1] 0.0002436638
 ```
 
 `max_no_improve` is the main stopping knob: the algorithm terminates
@@ -375,3 +373,9 @@ stochastic and usually edges out
 on T_(k), but requires a `seed` for reproducibility. For any of these,
 [`PolishSelection()`](https://ms609.github.io/MaxMin/reference/PolishSelection.md)
 can squeeze out further improvement at negligible cost.
+
+## Related packages
+
+The CRAN package
+[**maximin**](https://CRAN.R-project.org/package=maximin) constructs
+continuous space-filling designs by generating new points.
