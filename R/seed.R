@@ -59,7 +59,7 @@
   on.exit({
     RNGkind(old_kind[1L], old_kind[2L], old_kind[3L])
     if (is.null(old_seed)) {
-      suppressWarnings(rm(".Random.seed", envir = globalenv()))
+      suppressWarnings(rm(".Random.seed", envir = globalenv()))  # nocov
     } else {
       assign(".Random.seed", old_seed, envir = globalenv())
     }
