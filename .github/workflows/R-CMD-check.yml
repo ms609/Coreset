@@ -154,6 +154,17 @@ jobs:
           needs: |
             check
 
+      # Windows is the only runner with the Quarto binary, so it is the only
+      # platform that builds the Quarto vignette (others skip via vweave_empty).
+      # CRAN quarto 1.5.1 does not pass .libPaths() to the render subprocess, so
+      # the freshly-installed MaxMin (in R CMD build's temp library) is invisible
+      # and `library("MaxMin")` fails. The dev version propagates .libPaths().
+      # Remove this block once quarto 1.5.2 is on CRAN.
+      - name: Install dev quarto (vignette libPaths fix)
+        if: runner.os == 'Windows'
+        run: pak::pak("quarto-dev/quarto-r")
+        shell: Rscript {0}
+
       - name: Check package
         uses: r-lib/actions/check-r-package@v2
 
