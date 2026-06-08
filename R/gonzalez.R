@@ -106,7 +106,7 @@
     diag(sub) <- Inf
     min(sub)
   } else {
-    mean(sub[lower.tri(sub)])
+    mean(sub[lower.tri(sub)])  # nocov
   }
 }
 
@@ -299,7 +299,7 @@ Gonzalez <- function(d = NULL, n,
 .GonzalezColumn <- function(colFn, N, n, first = NULL,
                             progress = getOption("MaxMin.progress", interactive())) {
   if (!is.function(colFn)) {
-    stop("`colFn` must be a function of one index returning numeric(N)")
+    stop("`colFn` must be a function of one index returning numeric(N)")  # nocov
   }
   if (is.null(N)) {
     stop("`N` (the element count) must be supplied when `d` is a ",

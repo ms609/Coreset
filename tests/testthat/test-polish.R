@@ -116,3 +116,31 @@ test_that("polish degenerate cases pass through unchanged", {
   expect_identical(PolishSelection(d, integer(0)), integer(0))
   expect_identical(PolishSelection(d, 3L), 3L)
 })
+
+test_that("PolishSelection progress = TRUE fires the cli hooks", {
+  pts <- rbind(c(0, 0), c(1, 0), c(1, 1), c(0, 1), c(0.5, 0.5))
+  d   <- as.matrix(dist(pts))
+  expect_no_error(
+    PolishSelection(d, 1:4, progress = TRUE)
+  )
+})
+
+# ---- C++ guard paths (polish.cpp lines 38-41, 50, 53) --------------------
+
+test_that("PolishMaximin_cpp early-returns when limit < 1 (lines 38-41)", {
+  set.seed(1)
+  d   <- as.matrix(dist(matrix(rnorm(20), ncol = 2)))
+  res <- PolishSelection(d, c(1L, 3L, 5L), limit = 0L)
+  expect_identical(attr(res, "swaps"), 0L)
+})
+
+test_that("PolishMaximin_cpp stops on out-of-range index (line 50)", {
+  d <- as.matrix(dist(matrix(rnorm(6), ncol = 2)))  # 3-point distance matrix
+  expect_error(PolishSelection(d, c(1L, 100L)), "out-of-range")
+})
+
+test_that("PolishMaximin_cpp stops on duplicate index (line 53)", {
+  set.seed(2)
+  d <- as.matrix(dist(matrix(rnorm(20), ncol = 2)))
+  expect_error(PolishSelection(d, c(1L, 1L, 2L)), "duplicate")
+})

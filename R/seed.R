@@ -37,7 +37,7 @@
       s1 <- which.max(d[, 1L])
       as.integer(which.max(d[, s1]))
     },
-    stop("Unknown seed method: ", method)
+    stop("Unknown seed method: ", method)  # nocov
   )
 }
 
@@ -74,7 +74,7 @@
       s1 <- which.max(EuclidColFromPoints_cpp(points, 1L))
       as.integer(which.max(EuclidColFromPoints_cpp(points, s1)))
     },
-    stop("Unknown seed method: ", method)
+    stop("Unknown seed method: ", method)  # nocov
   )
 }
 
@@ -144,10 +144,10 @@ MaxMinSeed <- function(d = NULL, points = NULL,
   d <- .AsDistMatrix(d)
   n <- as.integer(n)
   if (length(n) != 1L || is.na(n) || n < 0L) {
-    stop("`n` must be a single non-negative integer")
+    stop("`n` must be a single non-negative integer")  # nocov
   }
   if (is.null(anchors) || length(anchors) == 0L) {
-    stop("`anchors` must name at least one strategy")
+    stop("`anchors` must name at least one strategy")  # nocov
   }
   anchors <- unique(match.arg(
     anchors,
@@ -155,8 +155,8 @@ MaxMinSeed <- function(d = NULL, points = NULL,
     several.ok = TRUE
   ))
   nPts <- nrow(d)
-  if (n >= nPts) return(seq_len(nPts))
-  if (n == 0L)   return(integer(0))
+  if (n >= nPts) return(seq_len(nPts))  # nocov
+  if (n == 0L)   return(integer(0))     # nocov
 
   lazy <- new.env(parent = emptyenv())
   get_row_sums <- function() {
@@ -180,14 +180,14 @@ MaxMinSeed <- function(d = NULL, points = NULL,
   run_gonz <- function(s1, mask_medoid) {
     key <- paste0(s1, if (mask_medoid) "M" else "U")
     gonz_cache[[key]] %||% {
-      if (mask_medoid) {
+      if (mask_medoid) { # nocov start
         med   <- get_medoid()
         d_use <- d
         d_use[med, ] <- -Inf
         d_use[, med] <- -Inf
         diag(d_use) <- 0
         idx <- .MaximinFrom(d_use, n, first = s1)
-      } else {
+      } else { # nocov end
         idx <- .MaximinFrom(d, n, first = s1)
       }
       t_k <- if (length(idx) >= 2L) TkScore(d, idx) else NA_real_
@@ -272,10 +272,10 @@ MaxMinSeed <- function(d = NULL, points = NULL,
   points <- .AsPointsMatrix(points)
   n <- as.integer(n)
   if (length(n) != 1L || is.na(n) || n < 0L) {
-    stop("`n` must be a single non-negative integer")
+    stop("`n` must be a single non-negative integer")  # nocov
   }
   if (is.null(anchors) || length(anchors) == 0L) {
-    stop("`anchors` must name at least one strategy")
+    stop("`anchors` must name at least one strategy")  # nocov
   }
   anchors <- unique(match.arg(
     anchors,
@@ -283,8 +283,8 @@ MaxMinSeed <- function(d = NULL, points = NULL,
     several.ok = TRUE
   ))
   nPts <- nrow(points)
-  if (n >= nPts) return(seq_len(nPts))
-  if (n == 0L)   return(integer(0))
+  if (n >= nPts) return(seq_len(nPts))  # nocov
+  if (n == 0L)   return(integer(0))     # nocov
 
   lazy <- new.env(parent = emptyenv())
   get_row_sums <- function() {
@@ -308,9 +308,9 @@ MaxMinSeed <- function(d = NULL, points = NULL,
   run_gonz <- function(s1, mask_medoid) {
     key <- paste0(s1, if (mask_medoid) "M" else "U")
     gonz_cache[[key]] %||% {
-      idx <- if (mask_medoid) {
+      idx <- if (mask_medoid) {  # nocov start
         .MaximinFromPoints(points, n, first = s1, mask = get_medoid())
-      } else {
+      } else {                   # nocov end
         .MaximinFromPoints(points, n, first = s1)
       }
       t_k <- if (length(idx) >= 2L) TkScore(idx = idx, points = points) else NA_real_

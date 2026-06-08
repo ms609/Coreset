@@ -102,3 +102,102 @@ test_that(".GprPathRelink keeps the best state along the path", {
   expect_equal(pr$intermediates, 3L)
   expect_true(pr$objective >= max(zx, zy))
 })
+
+# 8. GraspPR time_budget_s validation -------------------------------------
+
+test_that("GraspPR validates time_budget_s", {
+  expect_error(GraspPR(d30, m = 4L, time_budget_s = 0),  "time_budget_s")
+  expect_error(GraspPR(d30, m = 4L, time_budget_s = -1), "time_budget_s")
+  expect_error(GraspPR(d30, m = 4L, time_budget_s = NA_real_), "time_budget_s")
+})
+
+# 9. .GraspPR_R max_iter cap (line 389) -----------------------------------
+
+test_that(".GraspPR_R stops exactly at max_iter", {
+  set.seed(1)
+  ref <- MaxMin:::.GraspPR_R(d30m, m = 5L, max_no_improve = 1000L,
+                              max_iter = 3L, elite_size = 4L)
+  expect_lte(ref$iters, 3L)
+})
+
+# 10. .GprLocalSearch pair-count reduction (extended-improvement branch) ---
+
+test_that(".GprLocalSearch reduces pair count when T_k is unchanged", {
+  # Construct a matrix where two points are equidistant (forcing n_critical > 1),
+  # and a swap outside preserves T_k but reduces the critical-pair count.
+  # Four corners of a unit square: T_4 = 1, with 4 critical pairs (all sides).
+  pts_sq <- rbind(c(0,0), c(1,0), c(1,1), c(0,1), c(3,0.5))
+  d_sq   <- as.matrix(dist(pts_sq))
+  sel    <- 1:4   # four corners; T_k = 1, 4 critical pairs
+  improved <- MaxMin:::.GprLocalSearch(d_sq, sel)
+  # After improvement T_k must be >= 1.
+  expect_gte(MaxMin:::.GprObjective(d_sq, improved),
+             MaxMin:::.GprObjective(d_sq, sel))
+})
+
+# 11. .GprTryInsert second acceptance condition and tail insertion ---------
+# Hand-crafted 4-point geometry guarantees both branches:
+#   P1=(0,0), P2=(1,0), P3=(0,0.5), P4=(0.3,0.5)
+#   d12=1.0  (z1), d34=0.3 (zb), d13=0.5 (sel_z) with zb < sel_z < z1
+#
+# Line 217 fires: sel_z=0.5 > zb=0.3 and sel_z <= z1=1.0, dmin=1 >= dth=1.
+# Tie-break on Hamming removes s2={3,4} (lowest z=0.3), leaving ES=[{1,2}].
+# pos = sum([1.0] >= 0.5) + 1 = 2 > 1 = length(remaining) → tail (233-234).
+
+test_that(".GprTryInsert line 217 (second condition) and lines 233-234 (tail insert)", {
+  pts4 <- rbind(c(0, 0), c(1, 0), c(0, 0.5), c(0.3, 0.5))
+  d4   <- as.matrix(dist(pts4))
+
+  s1   <- c(1L, 2L); s2 <- c(3L, 4L)
+  z1   <- MaxMin:::.GprObjective(d4, s1)   # 1.0
+  z2   <- MaxMin:::.GprObjective(d4, s2)   # 0.3
+  ES   <- list(s1, s2)
+  ES_z <- c(z1, z2)   # already descending
+
+  sel   <- c(1L, 3L)
+  sel_z <- MaxMin:::.GprObjective(d4, sel) # 0.5  (between zb and z1)
+  dth   <- 1L
+
+  res <- MaxMin:::.GprTryInsert(d4, ES, ES_z, sel, sel_z, dth)
+
+  expect_true(res$changed)
+  expect_length(res$ES, 2L)
+  expect_equal(res$ES_z[2L], sel_z)   # sel inserted at tail position
+})
+
+# 12. Path relinking improves best_sel (.GraspPR_R lines 422-423) ---------
+# Scan seeds until Phase C PR beats the Phase A best, confirming lines 422-423.
+# Phase A is replicated manually (same RNG path) to get the pre-PR ceiling;
+# Phase C is deterministic, so any gain must have fired those lines.
+
+test_that(".GraspPR_R phase-C path relinking fires lines 422-423", {
+  m     <- 4L
+  es    <- 6L
+  alpha <- 0.8
+  found <- FALSE
+  for (s in seq_len(200L)) {
+    set.seed(s)
+    pts <- matrix(rnorm(30L * 2L), ncol = 2L)
+    d   <- as.matrix(dist(pts))
+
+    # Replicate Phase A: same RNG, same constructions -> same Phase A ceiling.
+    set.seed(s)
+    phase_a_best <- -Inf
+    for (b in seq_len(es)) {
+      x  <- MaxMin:::.GprConstruct(d, m, alpha)
+      xp <- MaxMin:::.GprLocalSearch(d, x)
+      phase_a_best <- max(phase_a_best, MaxMin:::.GprObjective(d, xp))
+    }
+
+    # Full run (Phase A + C, no Phase B).
+    set.seed(s)
+    res <- MaxMin:::.GraspPR_R(d, m = m, max_no_improve = 1000L,
+                                max_iter = 0L, elite_size = es, alpha = alpha)
+
+    if (res$objective > phase_a_best + 1e-9) {
+      found <- TRUE
+      break
+    }
+  }
+  expect_true(found)
+})

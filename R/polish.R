@@ -54,10 +54,10 @@ PolishSelection <- function(d, idx, limit = 20L, max_passes = 200L,
   out <- PolishMaximin_cpp(d, idx, as.integer(limit), as.integer(max_passes))
   if (progress) {
     time_s <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
-    .passes <- attr(out, "passes")
-    .swaps  <- attr(out, "swaps")
+    passes_msg <- attr(out, "passes")
+    swaps_msg  <- attr(out, "swaps")
     cli::cli_process_done(
-      msg = "Polish: {.passes} passes, {.swaps} swaps, {round(time_s, 2)}s"
+      msg = "Polish: {passes_msg} passes, {swaps_msg} swaps, {round(time_s, 2)}s"
     )
   }
   out

@@ -118,3 +118,63 @@ test_that("column-oracle warns on an unreachable named seed but not the default"
   expect_silent(Gonzalez(colFn, 4L, N = 12L))
   expect_silent(Gonzalez(colFn, 4L, N = 12L, seed = 1L))
 })
+
+# ---- .AsPointsMatrix validation (lines 40, 43, 46, 49-50) ------------------
+
+test_that(".AsPointsMatrix coerces non-matrix, converts integer, and rejects bad input", {
+  # Non-matrix coerced via as.matrix() (line 40): a plain vector becomes Nx1.
+  r <- Gonzalez(n = 3L, points = 1:20, seed = 1L)
+  expect_length(r, 3L)
+  # Non-numeric matrix errors (line 43).
+  expect_error(
+    Gonzalez(n = 2L, points = matrix(c("a", "b", "c", "d"), 2L, 2L)),
+    "numeric"
+  )
+  # Integer storage mode is silently coerced to double (line 46).
+  r_int <- Gonzalez(n = 3L, points = matrix(1L:20L, ncol = 4L), seed = 1L)
+  expect_length(r_int, 3L)
+  # NA entries error (lines 49-50).
+  expect_error(
+    Gonzalez(n = 2L, points = matrix(c(1, 2, NA, 4), 2L, 2L)),
+    "NA"
+  )
+})
+
+# ---- .MaximinFromColumn progress (lines 351, 359) ---------------------------
+
+test_that(".MaximinFromColumn progress = TRUE fires the cli hooks", {
+  dat <- make_data()
+  colFn <- function(i) dat$d[, i]
+  expect_no_error(
+    Gonzalez(colFn, 5L, N = nrow(dat$d), seed = 1L, progress = TRUE)
+  )
+})
+
+# ---- .GonzalezColumn N/n/first validation (lines 311, 314, 323) ------------
+
+test_that(".GonzalezColumn validates N < 1, n < 0, and first out of bounds", {
+  dat <- make_data(N = 12)
+  colFn <- function(i) dat$d[, i]
+  # N < 1: line 311
+  expect_error(Gonzalez(colFn, 3L, N = 0L),           "N")
+  # n < 0: line 314
+  expect_error(Gonzalez(colFn, -1L, N = 12L, seed = 1L), "n")
+  # first out of bounds (> N): line 323
+  expect_error(Gonzalez(colFn, 3L, N = 12L, seed = 15L), "first")
+})
+
+# ---- MaximinFrom_cpp stop on out-of-range first (maximin.cpp:16) ------------
+
+test_that("MaximinFrom_cpp stops when seed index is out of range", {
+  dat <- make_data(N = 10)
+  # seed = 0L -> first = 0 < 1 -> Rcpp::stop in maximin.cpp line 16
+  expect_error(Gonzalez(dat$d, 3L, seed = 0L), "first")
+})
+
+# ---- MaximinFromPoints_cpp stop on out-of-range first (maximin_points.cpp:57) --
+
+test_that("MaximinFromPoints_cpp stops when seed index is out of range", {
+  dat <- make_data(N = 10)
+  # seed = 0L -> first = 0 < 1 -> Rcpp::stop in maximin_points.cpp line 57
+  expect_error(Gonzalez(n = 3L, points = dat$pts, seed = 0L), "first")
+})

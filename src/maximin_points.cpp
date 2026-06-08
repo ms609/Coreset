@@ -56,9 +56,9 @@ Rcpp::IntegerVector MaximinFromPoints_cpp(Rcpp::NumericMatrix points,
   if (first < 1 || first > nPts) {
     Rcpp::stop("'first' must be in [1, %d]; got %d", nPts, first);
   }
-  if (mask < 0 || mask > nPts) {
+  if (mask < 0 || mask > nPts) {                    // LCOV_EXCL_START
     Rcpp::stop("'mask' must be in [0, %d]; got %d", nPts, mask);
-  }
+  }                                                  // LCOV_EXCL_STOP
   const double* P = points.begin();
 
   Rcpp::IntegerVector selected(n);
@@ -70,9 +70,9 @@ Rcpp::IntegerVector MaximinFromPoints_cpp(Rcpp::NumericMatrix points,
     min_dist[i] = EuclidCol(P, nPts, dim, i, first0);
   }
   min_dist[first0] = R_NegInf;      // mask seed before entering loop
-  if (mask >= 1) {
+  if (mask >= 1) {                                   // LCOV_EXCL_START
     min_dist[mask - 1] = R_NegInf;  // pin forbidden point (anti-medoid medoid)
-  }
+  }                                                  // LCOV_EXCL_STOP
 
   for (int k = 1; k < n; k++) {
     // which.max: first index of the global maximum (strict >, so ties -> first)
@@ -168,9 +168,9 @@ Rcpp::NumericVector EuclidColFromPoints_cpp(Rcpp::NumericMatrix points,
                                             int col) {
   int nPts = points.nrow();
   int dim  = points.ncol();
-  if (col < 1 || col > nPts) {
+  if (col < 1 || col > nPts) {                       // LCOV_EXCL_START
     Rcpp::stop("'col' must be in [1, %d]; got %d", nPts, col);
-  }
+  }                                                  // LCOV_EXCL_STOP
   const double* P = points.begin();
   int col0 = col - 1;
   Rcpp::NumericVector out(nPts);

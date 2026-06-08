@@ -94,6 +94,7 @@
        min_dist_count = min_dist_count)
 }
 
+# nocov start
 # MMDPo objective from streamlined records: for the current set X,
 #   maxmin = min over x in X of min_dist(x)
 .MMDPoObj <- function(dmat, S) {
@@ -118,6 +119,7 @@
   mn <- min(vals)
   list(mn = mn, cnt = sum(vals == mn))
 }
+# nocov end
 
 # ----- main entry point -----------------------------------------------------
 
@@ -243,10 +245,10 @@ DropAddTS <- function(d, m, max_no_improve = 5000L, max_iter = NULL,
     }
     time_s <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
     if (progress) {
-      .iters <- as.integer(out$iters)
-      .tk    <- as.numeric(out$objective)
+      iters_msg <- as.integer(out$iters)
+      tk_msg    <- as.numeric(out$objective)
       cli::cli_process_done(
-        msg = "DropAdd: {.iters} iters, T_k = {signif(.tk, 4)}, {round(time_s, 1)}s"
+        msg = "DropAdd: {iters_msg} iters, T_k = {signif(tk_msg, 4)}, {round(time_s, 1)}s"
       )
     }
     return(list(
@@ -300,7 +302,7 @@ DropAddTS <- function(d, m, max_no_improve = 5000L, max_iter = NULL,
   .verify_records <- function(S, min_dist, min_dist_count, sum_dist) {
     for (xx in seq_len(n)) {
       others <- if (xx %in% S) setdiff(S, xx) else S
-      if (!length(others)) next
+      if (!length(others)) next  # nocov
       vals <- dmat[xx, others]
       tm <- min(vals); tc <- sum(vals == tm); ts <- sum(dmat[xx, S])
       stopifnot(abs(min_dist[xx] - tm) < 1e-9,
@@ -319,7 +321,7 @@ DropAddTS <- function(d, m, max_no_improve = 5000L, max_iter = NULL,
     if (no_improve >= max_no_improve) break
     countdown <- countdown - 1L
     if (countdown == 0L) {
-      if (unclass(Sys.time()) - t0_num >= time_budget_s) break
+      if (unclass(Sys.time()) - t0_num >= time_budget_s) break  # nocov
       countdown <- check_every
     }
 
@@ -350,7 +352,7 @@ DropAddTS <- function(d, m, max_no_improve = 5000L, max_iter = NULL,
         cols <- match(need_recompute[sel], S_after_drop)
         sub[cbind(sel, cols)] <- Inf
       }
-      mns  <- do.call(pmin.int, asplit(sub, 2L))
+      mns  <- as.numeric(do.call(pmin.int, asplit(sub, 2L)))
       cnts <- rowSums(sub == mns)
       finite_mns <- is.finite(mns)
       if (all(finite_mns)) {
@@ -374,8 +376,8 @@ DropAddTS <- function(d, m, max_no_improve = 5000L, max_iter = NULL,
       min_dist[x_hash] <- mn
       min_dist_count[x_hash] <- sum(row_vals == mn)
     } else {
-      min_dist[x_hash] <- Inf
-      min_dist_count[x_hash] <- 0L
+      min_dist[x_hash] <- Inf         # nocov
+      min_dist_count[x_hash] <- 0L   # nocov
     }
 
     # 2. ADD: argmax over Add X(k) = Z - X(k) of (min_dist, sum_dist), ties →

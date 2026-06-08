@@ -180,6 +180,88 @@ test_that("DropAddTS respects time_budget_s within reasonable slack", {
 })
 
 # ---------------------------------------------------------------------------
+# 8. seed parameter, input validation, and progress output
+# ---------------------------------------------------------------------------
+test_that("DropAddTS seed parameter and input validation", {
+  set.seed(11)
+  dmat <- as.matrix(dist(matrix(rnorm(20 * 3), ncol = 3)))
+
+  # seed path
+  r1 <- DropAddTS(dmat, m = 4L, max_iter = 0L, seed = 1L)
+  r2 <- DropAddTS(dmat, m = 4L, max_iter = 0L, seed = 1L)
+  expect_identical(r1$indices, r2$indices)
+
+  # m validation
+  expect_error(DropAddTS(dmat, m = 1L),   "2 <= m")
+  expect_error(DropAddTS(dmat, m = 25L),  "2 <= m")
+  # max_no_improve validation
+  expect_error(DropAddTS(dmat, m = 4L, max_no_improve = 0L),  "max_no_improve")
+  # max_iter validation
+  expect_error(DropAddTS(dmat, m = 4L, max_iter = -1L),  "max_iter")
+  # time_budget_s validation
+  expect_error(DropAddTS(dmat, m = 4L, time_budget_s = 0),   "time_budget_s")
+  expect_error(DropAddTS(dmat, m = 4L, time_budget_s = NA_real_), "time_budget_s")
+})
+
+test_that("DropAddTS progress = TRUE fires the cli hooks", {
+  dmat <- as.matrix(dist(matrix(rnorm(15 * 2), ncol = 2)))
+  expect_no_error(DropAddTS(dmat, m = 3L, max_iter = 2L, progress = TRUE))
+})
+
+# ---------------------------------------------------------------------------
+# 9. R-path corner cases: tie-breaking, caseA updates, m=2 else branch
+# ---------------------------------------------------------------------------
+test_that("DropAddTS construction tie-breaking and caseA update (.verify)", {
+  # Unit square: all sides=1, diagonals=sqrt(2).
+  # Construction for m=3: seed=P1, add diagonal P3 (caseA fires for P2 and P4),
+  # then P2 and P4 are tied (lines 51-53 of .DropAddConstruct).
+  pts_sq <- rbind(c(0,0), c(1,0), c(1,1), c(0,1))
+  dmat   <- as.matrix(dist(pts_sq))
+  # .verify=TRUE routes through R path with brute-force record checks
+  res <- DropAddTS(dmat, m = 3L, max_iter = 4L, .verify = TRUE)
+  expect_length(res$indices, 3L)
+})
+
+test_that("DropAddTS m=2 else-branch and ADD tie-breaking (.verify)", {
+  # Rhombus: all edges=sqrt(2), diagonals=2.
+  # m=2: after drop of seed, two candidates are equidistant from remaining
+  # selected point (lines 360-366 else branch + lines 391-393 ADD tie).
+  pts_rh <- rbind(c(0,0), c(1,1), c(2,0), c(1,-1))
+  dmat   <- as.matrix(dist(pts_rh))
+  res <- DropAddTS(dmat, m = 2L, max_iter = 4L, .verify = TRUE)
+  expect_length(res$indices, 2L)
+})
+
+test_that("DropAddTS caseA ADD update fires in main loop (.verify)", {
+  # Unit square m=3: first main-loop ADD of P4 has d[P4,P1]=1 = min_dist[P1]=1
+  # (caseA, line 409).
+  pts_sq <- rbind(c(0,0), c(1,0), c(1,1), c(0,1))
+  dmat   <- as.matrix(dist(pts_sq))
+  expect_no_error(
+    DropAddTS(dmat, m = 3L, max_iter = 3L, .verify = TRUE)
+  )
+})
+
+test_that("DropAddTS effective_max = 0 when m == n (.verify)", {
+  dmat <- as.matrix(dist(matrix(rnorm(5 * 2), ncol = 2)))
+  res  <- DropAddTS(dmat, m = 5L, .verify = TRUE)
+  # All 5 points selected, no loop iterations.
+  expect_length(res$indices, 5L)
+  expect_equal(res$iters, 0L)
+})
+
+test_that("DropAddTS .trace + .verify together cover init and loop writes", {
+  set.seed(2026)
+  dmat <- as.matrix(dist(matrix(rnorm(12 * 2), ncol = 2)))
+  te   <- new.env()
+  res  <- DropAddTS(dmat, m = 4L, max_iter = 5L, .verify = TRUE, .trace = te)
+  # .trace should have been initialised on R path (lines 295-296) and
+  # written during the loop (lines 438-439).
+  expect_equal(length(te$drops), res$iters)
+  expect_equal(length(te$adds),  res$iters)
+})
+
+# ---------------------------------------------------------------------------
 # 7. R reference loop and C++ port are bit-identical on a fixed iter budget.
 #
 # .verify = TRUE routes through the original R reference loop (with brute-
@@ -187,6 +269,63 @@ test_that("DropAddTS respects time_budget_s within reasonable slack", {
 # two paths must produce identical indices, objective, secondary, and iters
 # for any iter budget.
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# 10. C++ path coverage: tie-breaking and min_dist-count branches
+#
+# Tests 10a-10c exercise specific branches in dropadd.cpp that require exact
+# distance ties; they use the default (C++) path (no .verify).
+# ---------------------------------------------------------------------------
+
+test_that("DropAddTS C++ construction covers sum_dist tie-break (lines 82-85)", {
+  # 5-point geometry: A=(0,0), B=(3,0), C=(0,2), P=(1,1), Q=(2,1).
+  # Construction: B (max row-sum) -> C -> A.
+  # Then P and Q both have min_dist=sqrt(2) to {B,C,A}, but
+  # sum_dist[Q]=sqrt(2)+2*sqrt(5) > sum_dist[P]=2*sqrt(2)+sqrt(5),
+  # so the tie-break updates x_new to Q (lines 83-85 fire).
+  # When A is added, d(P,A)=sqrt(2)==min_dist[P] -> line 103 fires too.
+  pts <- rbind(c(0,0), c(3,0), c(0,2), c(1,1), c(2,1))
+  d   <- as.matrix(dist(pts))
+  res <- DropAddTS(d, m = 4L, max_iter = 0L)
+  expect_length(res$indices, 4L)
+  expect_equal(res$iters, 0L)
+})
+
+test_that("DropAddTS C++ m=2 covers DROP else-branch (lines 214-215)", {
+  # Rhombus: (0,0),(1,1),(2,0),(1,-1).  All edges=sqrt(2), diagonals=2.
+  # Construction: {(0,0),(2,0)} (endpoints of the longer diagonal).
+  # Drop (0,0): the remaining selected (2,0) had (0,0) as its only peer,
+  # so min_dist_count[(2,0)] drops to 0.  In the recompute, the self-mask
+  # skips the only surviving S member, leaving mns=Inf -> else branch fires.
+  pts_rh <- rbind(c(0,0), c(1,1), c(2,0), c(1,-1))
+  d_rh   <- as.matrix(dist(pts_rh))
+  res <- DropAddTS(d_rh, m = 2L, max_iter = 4L)
+  expect_length(res$indices, 2L)
+})
+
+test_that("DropAddTS C++ main-loop ADD covers tie-break (255-258) and equality (277)", {
+  # 7-point geometry ensures:
+  #   * Lines 255-258: after dropping ANC, X=(1,0) and Y=(3,0) tie on
+  #     min_dist=1 but sum_dist[Y]>sum_dist[X], so Y wins via the update.
+  #   * Line 277: when Y is added, d(Y,W)=0.5=min_dist[W] -> count increments.
+  #
+  # Points: P(0,0), Q(4,0), R(0,4), ANC(10,10), X(1,0), Y(3,0), W(3.5,0).
+  # Construction: ANC -> P -> Q -> R  (ANC has max row-sum).
+  pts7 <- rbind(c(0,0), c(4,0), c(0,4), c(10,10), c(1,0), c(3,0), c(3.5,0))
+  d7   <- as.matrix(dist(pts7))
+  res <- DropAddTS(d7, m = 4L, max_iter = 1L)
+  expect_length(res$indices, 4L)
+  expect_equal(res$iters, 1L)
+})
+
+# ---------------------------------------------------------------------------
+# 7. R reference loop and C++ port are bit-identical.
+#
+# .verify = TRUE routes through the original R reference loop (with brute-
+# force record assertions); the default routes through DropAddTS_cpp. The
+# two paths must produce identical indices, objective, secondary, and iters
+# for any iter budget.
+# ---------------------------------------------------------------------------
+
 test_that("DropAddTS R reference loop and C++ port are bit-identical", {
   set.seed(2026)
   pts <- matrix(rnorm(60 * 4), ncol = 4)

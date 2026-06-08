@@ -138,3 +138,78 @@ test_that("DropAddTSPoints returns a meaningful result at n = 5000", {
   expect_equal(res$objective, .maxmin_pts(res$indices, pts), tolerance = 1e-12)
   expect_gte(res$iters, 100L)   # not iteration-starved
 })
+
+# ---------------------------------------------------------------------------
+# 6. seed parameter, input validation, and progress output
+# ---------------------------------------------------------------------------
+test_that("DropAddTSPoints seed parameter and input validation", {
+  pts <- matrix(rnorm(30 * 3), ncol = 3)
+
+  # seed: set.seed(1) path is executed
+  r1 <- DropAddTSPoints(pts, m = 4L, max_iter = 0L, seed = 1L)
+  r2 <- DropAddTSPoints(pts, m = 4L, max_iter = 0L, seed = 1L)
+  expect_identical(r1$indices, r2$indices)
+
+  # m validation
+  expect_error(DropAddTSPoints(pts, m = 1L), "2 <= m")
+  expect_error(DropAddTSPoints(pts, m = 100L), "2 <= m")
+
+  # max_no_improve validation
+  expect_error(DropAddTSPoints(pts, m = 4L, max_no_improve = 0L),
+               "max_no_improve")
+
+  # max_iter validation
+  expect_error(DropAddTSPoints(pts, m = 4L, max_iter = -1L), "max_iter")
+
+  # time_budget_s validation
+  expect_error(DropAddTSPoints(pts, m = 4L, time_budget_s = 0),
+               "time_budget_s")
+  expect_error(DropAddTSPoints(pts, m = 4L, time_budget_s = -1),
+               "time_budget_s")
+  expect_error(DropAddTSPoints(pts, m = 4L, time_budget_s = NA_real_),
+               "time_budget_s")
+})
+
+test_that("DropAddTSPoints progress = TRUE fires the cli hooks", {
+  pts <- matrix(rnorm(20 * 2), ncol = 2)
+  expect_no_error(
+    DropAddTSPoints(pts, m = 3L, max_iter = 2L, progress = TRUE)
+  )
+})
+
+# ---------------------------------------------------------------------------
+# 7. C++ path coverage (dropadd_mf.cpp)
+# ---------------------------------------------------------------------------
+
+test_that("DropAddTSPoints C++ construction covers sum_dist tie-break (lines 131-134)", {
+  # 5-point geometry: A=(0,0), B=(3,0), C=(0,2), P=(1,1), Q=(2,1).
+  # Centroid=(1.2,0.8); B is farthest -> seed=B.
+  # Construction: B->C->A, then P and Q are tied on min_dist=sqrt(2)
+  # but sum_dist[Q]=2*sqrt(5)+sqrt(2) > sum_dist[P]=2*sqrt(2)+sqrt(5) -> Q wins.
+  # When A is added: d(P,A)=sqrt(2)==min_dist[P] -> line 152 (equality) fires.
+  pts5 <- rbind(c(0, 0), c(3, 0), c(0, 2), c(1, 1), c(2, 1))
+  res <- DropAddTSPoints(pts5, m = 4L, max_iter = 0L)
+  expect_length(res$indices, 4L)
+  expect_equal(res$iters, 0L)
+})
+
+test_that("DropAddTSPoints C++ m=2 covers DROP else-branch (lines 263-264)", {
+  # Rhombus: (0,0),(1,1),(2,0),(1,-1). All from-centroid distances equal ->
+  # seed = index 1 (ties -> smallest). Construction: {(0,0),(2,0)}.
+  # Drop (0,0): (2,0) loses its sole selected peer; need_recompute fires;
+  # self-mask inside recompute leaves mns=Inf -> else branch (lines 263-264).
+  pts_rh <- rbind(c(0, 0), c(1, 1), c(2, 0), c(1, -1))
+  res <- DropAddTSPoints(pts_rh, m = 2L, max_iter = 4L)
+  expect_length(res$indices, 2L)
+})
+
+test_that("DropAddTSPoints C++ main-loop ADD covers tie-break (304-307) and equality (327)", {
+  # 7-point: P=(0,0),Q=(4,0),R=(0,4),ANC=(10,10),X=(1,0),Y=(3,0),W=(3.5,0).
+  # ANC is farthest from centroid -> seed. Construction: ANC->P->Q->R.
+  # Drop ANC: X and Y tied on min_dist=1; sum_dist[Y]=9>sum_dist[X]~8.12 ->
+  # lines 304-307 fire. When Y added: d(Y,W)=0.5==min_dist[W]=0.5 -> line 327.
+  pts7 <- rbind(c(0, 0), c(4, 0), c(0, 4), c(10, 10), c(1, 0), c(3, 0), c(3.5, 0))
+  res <- DropAddTSPoints(pts7, m = 4L, max_iter = 1L)
+  expect_length(res$indices, 4L)
+  expect_equal(res$iters, 1L)
+})

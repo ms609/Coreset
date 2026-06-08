@@ -133,10 +133,10 @@ DropAddTSPoints <- function(points, m, max_no_improve = 5000L, max_iter = NULL,
                               cpp_max_iter, max_no_improve, FALSE)
   time_s <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
   if (progress) {
-    .iters <- as.integer(out$iters)
-    .tk    <- as.numeric(out$objective)
+    iters_msg <- as.integer(out$iters)
+    tk_msg    <- as.numeric(out$objective)
     cli::cli_process_done(
-      msg = "DropAdd: {.iters} iters, T_k = {signif(.tk, 4)}, {round(time_s, 1)}s"
+      msg = "DropAdd: {iters_msg} iters, T_k = {signif(tk_msg, 4)}, {round(time_s, 1)}s"
     )
   }
 

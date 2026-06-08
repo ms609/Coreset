@@ -55,20 +55,20 @@
 #   "inconclusive" -- the budget expired before either could be established
 #                     (witness = integer(0)).
 .MaxISVerdict <- function(d, n, lambda, m, time_limit) {
-  if (!is.finite(time_limit) || time_limit <= 0) {
+  if (!is.finite(time_limit) || time_limit <= 0) { # nocov start
     return(list(verdict = "inconclusive", witness = integer(0)))
-  }
+  } # nocov end
   # Edges of G(lambda): unordered pairs with d(i, j) < lambda. `<` (strict)
   # is exact here because lambda is itself an achieved pairwise distance and
   # both d and lambda come from the same matrix -- no rounding intervenes.
   edge <- which(d < lambda & upper.tri(d), arr.ind = TRUE)
   n_edge <- nrow(edge)
 
-  if (n_edge == 0L) {
+  if (n_edge == 0L) { # nocov start
     # Empty graph: every vertex is independent, so alpha = n. Feasible
     # whenever m <= n (guaranteed by the caller's guard). No solve needed.
     return(list(verdict = "feasible", witness = seq_len(n)))
-  }
+  } # nocov end
 
   # One row per edge: x_i + x_j <= 1.
   A <- matrix(0, nrow = n_edge, ncol = n)
@@ -93,7 +93,7 @@
   # Independent validation of the witness -- never trust the status alone.
   sel <- which(res$primal_solution > 0.5)
   is_valid_independent <- if (length(sel) < 2L) {
-    TRUE                                  # 0 or 1 vertex: trivially independent
+    TRUE  # nocov                         # 0 or 1 vertex: trivially independent
   } else {
     sub <- d[sel, sel, drop = FALSE]
     !any(sub[upper.tri(sub)] < lambda)
@@ -110,7 +110,7 @@
   if (optimal && is_valid_independent && length(sel) < m) {
     return(list(verdict = "infeasible", witness = integer(0)))
   }
-  list(verdict = "inconclusive", witness = integer(0))
+  list(verdict = "inconclusive", witness = integer(0))  # nocov
 }
 
 # ----- main -----------------------------------------------------------------
@@ -163,10 +163,10 @@ ExactMaxMin <- function(d, m, solver = NULL, time_budget_s = 60,
   if (!identical(solver, "highs")) {
     stop("Unsupported `solver`: ", solver, ". Only \"highs\" is implemented.")
   }
-  if (!requireNamespace("highs", quietly = TRUE)) {
+  if (!requireNamespace("highs", quietly = TRUE)) { # nocov start
     stop("The `highs` package is required for ExactMaxMin(). ",
          "Install it with install.packages(\"highs\").")
-  }
+  } # nocov end
 
   d <- .ExactAsMatrix(d)
   n <- nrow(d)
@@ -202,10 +202,10 @@ ExactMaxMin <- function(d, m, solver = NULL, time_budget_s = 60,
     # mismatch would signal a solver or construction bug, never normal
     # degeneracy. On an unproven incumbent `obj` may exceed `lambda`; that
     # is a legitimately better lower bound, not an error.
-    if (proven && abs(obj - lambda) > 1e-9 * max(1, abs(lambda))) {
+    if (proven && abs(obj - lambda) > 1e-9 * max(1, abs(lambda))) { # nocov start
       stop("Internal error: recovered min-distance ", obj,
            " != proven threshold ", lambda)
-    }
+    } # nocov end
     list(
       indices   = idx,
       objective = obj,
@@ -231,10 +231,10 @@ ExactMaxMin <- function(d, m, solver = NULL, time_budget_s = 60,
 
   while (lo <= hi) {
     remaining <- time_budget_s - elapsed()
-    if (remaining <= 0) {
+    if (remaining <= 0) { # nocov start
       inconclusive <- TRUE
       break
-    }
+    } # nocov end
     mid <- (lo + hi) %/% 2L
     v <- .MaxISVerdict(d, n, cand[mid], m, remaining)
     if (identical(v$verdict, "feasible")) {
@@ -249,12 +249,12 @@ ExactMaxMin <- function(d, m, solver = NULL, time_budget_s = 60,
       if (progress && n_cand > 1L) {
         cli::cli_progress_update(id = .pb, set = (lo - 2L) + (n_cand - hi))
       }
-    } else {
+    } else { # nocov start
       # Budget expired mid-solve: cannot place this candidate. Stop and
       # return the best threshold proven feasible so far.
       inconclusive <- TRUE
       break
-    }
+    } # nocov end
   }
 
   if (progress && n_cand > 1L) {

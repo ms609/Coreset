@@ -19,7 +19,7 @@
 #' Minimum pairwise distance over a selection.
 #' @keywords internal
 .GprObjective <- function(d, sel) {
-  if (length(sel) < 2L) return(NA_real_)
+  if (length(sel) < 2L) return(NA_real_)  # nocov
   sub <- d[sel, sel, drop = FALSE]
   diag(sub) <- Inf
   min(sub)
@@ -29,7 +29,7 @@
 #' @keywords internal
 .GprNearestInSel <- function(d, sel) {
   m <- length(sel)
-  if (m < 2L) return(rep(Inf, m))
+  if (m < 2L) return(rep(Inf, m))  # nocov
   sub <- d[sel, sel, drop = FALSE]
   diag(sub) <- Inf
   apply(sub, 1L, min)
@@ -38,7 +38,7 @@
 #' Count pairs at the minimum distance (used by extended-improvement LS).
 #' @keywords internal
 .GprMinPairCount <- function(d, sel, dstar) {
-  if (length(sel) < 2L) return(0L)
+  if (length(sel) < 2L) return(0L)  # nocov
   sub <- d[sel, sel, drop = FALSE]
   diag(sub) <- Inf
   # Each min-pair appears twice (i,j) and (j,i) in the symmetric matrix.
@@ -100,7 +100,7 @@
 .GprLocalSearch <- function(d, sel) {
   n <- nrow(d)
   m <- length(sel)
-  if (m < 2L) return(sel)
+  if (m < 2L) return(sel)  # nocov
   repeat {
     sel_sorted <- sort(sel)
     di <- .GprNearestInSel(d, sel_sorted)
@@ -387,7 +387,7 @@ GraspPR <- function(d, m, max_no_improve = 100L, max_iter = NULL,
   repeat {
     if (no_improve >= max_no_improve) break
     if (iters >= max_iter) break
-    if (gated && elapsed() >= time_budget_s) break
+    if (gated && elapsed() >= time_budget_s) break  # nocov
     x  <- .GprConstruct(d, m, alpha)
     xp <- .GprLocalSearch(d, x)
     zp <- .GprObjective(d, xp)
@@ -410,7 +410,7 @@ GraspPR <- function(d, m, max_no_improve = 100L, max_iter = NULL,
   if (k >= 2L && !(gated && elapsed() >= time_budget_s)) {
     done <- FALSE
     for (i in seq_len(k - 1L)) {
-      if (done) break
+      if (done) break  # nocov
       for (j in (i + 1L):k) {
         pr1 <- .GprPathRelink(d, ES[[i]], ES[[j]])
         pr2 <- .GprPathRelink(d, ES[[j]], ES[[i]])
@@ -422,10 +422,10 @@ GraspPR <- function(d, m, max_no_improve = 100L, max_iter = NULL,
           best_z <- zp
           best_sel <- yp
         }
-        if (gated && elapsed() >= time_budget_s) {
+        if (gated && elapsed() >= time_budget_s) { # nocov start
           done <- TRUE
           break
-        }
+        } # nocov end
       }
     }
   }

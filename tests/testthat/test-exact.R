@@ -115,6 +115,19 @@ test_that("ExactMaxMin validates m and solver", {
   expect_error(ExactMaxMin(d, m = 1L), "2 <= m <= nrow")
   expect_error(ExactMaxMin(d, m = 11L), "2 <= m <= nrow")
   expect_error(ExactMaxMin(d, m = 3L, solver = "gurobi"), "Unsupported")
+  # .ExactAsMatrix validation: non-matrix and non-square inputs
+  expect_error(ExactMaxMin(1:9, m = 3L), "dist|matrix")
+  expect_error(ExactMaxMin(matrix(1:6, 2, 3), m = 2L), "dist|matrix")
+})
+
+# ---------------------------------------------------------------------------
+# 7. progress = TRUE fires the cli progress bar
+# ---------------------------------------------------------------------------
+test_that("ExactMaxMin progress = TRUE fires the cli hooks", {
+  skip_if_no_highs()
+  set.seed(1)
+  d <- as.matrix(stats::dist(matrix(stats::rnorm(12 * 2), ncol = 2)))
+  expect_no_error(ExactMaxMin(d, m = 3L, progress = TRUE))
 })
 
 # ---------------------------------------------------------------------------
