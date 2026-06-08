@@ -142,8 +142,9 @@
 #' of elements cannot be inferred from the closure, `N` must be supplied.
 #' Only an integer `seed` (a `first` index) or the default deterministic
 #' two-sweep peripheral seed is reachable from an oracle; the richer matrix
-#' anchors (diameter, anti-medoid, row-sum, row-norm) need `O(N^2)` work and
-#' are silently unavailable.
+#' anchors (diameter, anti-medoid, row-sum, row-norm) need `O(N^2)` work. An
+#' explicitly named or ensemble `seed` on this path is ignored with a warning
+#' and the peripheral seed is used instead.
 #'
 #' @param d A `dist` object, a square symmetric numeric matrix of pairwise
 #'   distances, or a **distance-column oracle** function (see
@@ -174,7 +175,8 @@
 #'   Valid ensemble anchors: any subset of `c("diameter", "anti_medoid",
 #'   "rowsum", "rownorm")`. Default: all four (full ensemble). See
 #'   [MaxMinSeed()] for anchor definitions. On the distance-column oracle path
-#'   only an integer `seed` is honoured (see *Distance-column oracle*).
+#'   only an integer `seed` is honoured; a named or ensemble `seed` there warns
+#'   and falls back to the peripheral seed (see *Distance-column oracle*).
 #' @return Integer vector of length `min(n, N)` of selected indices.
 #' @seealso [MaxMinSeed()] for the seed indices alone; [DropAddTS()] and
 #'   [ExactMaxMin()] for higher-effort solvers.
@@ -221,6 +223,13 @@ Gonzalez <- function(d = NULL, n,
   # `seed` (a `first` index) or the deterministic peripheral seed is reachable
   # here, since the richer anchors need O(N^2) work (see Details).
   if (is.function(d)) {
+    # A named/character `seed` is unreachable from an oracle (it would need the
+    # whole matrix); warn rather than silently substituting the peripheral seed.
+    # `first` is non-NULL only for an integer `seed`, which *is* honoured.
+    if (!missing(seed) && is.null(first)) {
+      warning("distance-column oracle path: only an integer `seed` (a `first` ",
+              "index) is honoured; using the deterministic peripheral seed")
+    }
     return(.GonzalezColumn(colFn = d, N = N, n = n, first = first,
                            progress = progress))
   }

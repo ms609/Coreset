@@ -1,4 +1,4 @@
-# Tests for Gonzalez() seeding strategies and GonzalezColumn().
+# Tests for Gonzalez() seeding strategies and its distance-column oracle path.
 
 make_data <- function(seed = 42, N = 60, dim = 4) {
   set.seed(seed)
@@ -105,4 +105,16 @@ test_that("column-oracle guards and contract", {
   expect_error(Gonzalez(colFn, 3L), "N")
   bad <- function(i) 1:3
   expect_error(Gonzalez(bad, 3L, N = 12L, seed = 1L), "length")
+})
+
+test_that("column-oracle warns on an unreachable named seed but not the default", {
+  dat <- make_data(N = 12)
+  colFn <- function(i) dat$d[, i]
+  # A character/ensemble seed cannot be honoured from an oracle -> warn.
+  expect_warning(Gonzalez(colFn, 4L, N = 12L, seed = "diameter"), "integer")
+  expect_warning(Gonzalez(colFn, 4L, N = 12L, seed = c("diameter", "rowsum")),
+                 "integer")
+  # The default (unsupplied) seed and an integer seed are silent.
+  expect_silent(Gonzalez(colFn, 4L, N = 12L))
+  expect_silent(Gonzalez(colFn, 4L, N = 12L, seed = 1L))
 })

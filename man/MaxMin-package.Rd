@@ -15,10 +15,10 @@ materialising the matrix), or on an on-demand distance-column oracle.
 \section{Solvers}{
 
 \describe{
-\item{\code{\link[=Gonzalez]{Gonzalez()}}}{Greedy farthest-first selection, with a choice of
-peripheral seeding strategies and a robust ensemble default.}
-\item{\code{\link[=GonzalezColumn]{GonzalezColumn()}}}{Farthest-first from a distance-column oracle, for
-spaces with no coordinate embedding.}
+\item{\code{\link[=Gonzalez]{Gonzalez()}}}{Greedy farthest-first selection from a distance matrix,
+a coordinate matrix, or a distance-column oracle (for spaces with no
+coordinate embedding), with a choice of peripheral seeding strategies and
+a robust ensemble default.}
 \item{\code{\link[=DropAddTS]{DropAddTS()}} / \code{\link[=DropAddTSPoints]{DropAddTSPoints()}}}{DropAdd tabu search heuristic.}
 \item{\code{\link[=ExactMaxMin]{ExactMaxMin()}}}{Exact node-packing optimum (needs \pkg{highs}).}
 \item{\code{\link[=PolishSelection]{PolishSelection()}}}{1-swap local-search refinement.}

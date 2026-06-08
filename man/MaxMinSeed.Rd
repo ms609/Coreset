@@ -32,7 +32,8 @@ Anchors:
 \describe{
 \item{\code{"peripheral"}}{Two sweeps: the point furthest from point 1, then
 the point furthest from that (a diameter-endpoint approximation). The
-only anchor reachable from a distance-column oracle (\code{\link[=GonzalezColumn]{GonzalezColumn()}}).}
+only anchor reachable from a distance-column oracle (the function path of
+\code{\link[=Gonzalez]{Gonzalez()}}).}
 \item{\code{"diameter"}}{A row endpoint of the diameter pair (the maximum
 pairwise distance). Degenerate data (\code{d_max <= 0}) falls back to 1.}
 \item{\code{"anti_medoid"}}{The point furthest from the 1-median (medoid).}

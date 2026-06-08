@@ -24,8 +24,7 @@ on three kinds of input:
 
 | Function | Method | Use |
 |---|---|---|
-| `Gonzalez()` | Greedy farthest-first (Gonzalez 1985), with peripheral seeding strategies and an `"ensemble"` default | Fast; the matrix and coordinate paths |
-| `GonzalezColumn()` | Farthest-first from a distance-column oracle | Very large sets with no embedding |
+| `Gonzalez()` | Greedy farthest-first (Gonzalez 1985), with peripheral seeding strategies and an `"ensemble"` default | Fast; matrix, coordinate, or distance-column-oracle input (the last for very large sets with no embedding) |
 | `DropAddTS()` / `DropAddTSPoints()` | DropAdd tabu search (Porumbel et al. 2011) | ~99%-optimal heuristic |
 | `ExactMaxMin()` | Node-packing integer program (Sayyady & Fathi 2016) | Proven optimum, small `n` (needs `highs`) |
 | `PolishSelection()` | Critical-edge 1-swap local search | Refine any selection |

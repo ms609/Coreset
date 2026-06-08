@@ -8,14 +8,17 @@ Gonzalez(
   d = NULL,
   n,
   seed = c("diameter", "anti_medoid", "rowsum", "rownorm"),
-  points = NULL
+  points = NULL,
+  N = NULL,
+  progress = getOption("MaxMin.progress", interactive())
 )
 }
 \arguments{
-\item{d}{A \code{dist} object or a square symmetric numeric matrix of pairwise
-distances. Ignored when \code{points} is supplied.}
+\item{d}{A \code{dist} object, a square symmetric numeric matrix of pairwise
+distances, or a \strong{distance-column oracle} function (see
+\emph{Distance-column oracle}). Ignored when \code{points} is supplied.}
 
-\item{n}{Integer: number of points to select. If \code{n >= nrow(d)}, all
+\item{n}{Integer: number of points to select. If \code{n >= N}, all
 indices are returned.}
 
 \item{seed}{Integer or character (scalar or vector). An \strong{integer} gives the
@@ -25,18 +28,30 @@ pass). A \strong{length-1 character} names a single seeding strategy:
 \code{"peripheral"} (two-sweep diameter-endpoint approximation), or \code{"first"}
 (index 1). A \strong{length > 1 character vector} requests an ensemble: each
 named anchor runs a full Gonzalez pass and the best result by \code{\link[=TkScore]{TkScore()}}
-is returned with \code{strategy_results} and \code{winning_strategy} attributes.
+is returned with \code{strategy_results} and \code{winning_strategy} (character
+vector of all tied-best strategies) attributes.
 Valid ensemble anchors: any subset of \code{c("diameter", "anti_medoid", "rowsum", "rownorm")}. Default: all four (full ensemble). See
-\code{\link[=MaxMinSeed]{MaxMinSeed()}} for anchor definitions.}
+\code{\link[=MaxMinSeed]{MaxMinSeed()}} for anchor definitions. On the distance-column oracle path
+only an integer \code{seed} is honoured; a named or ensemble \code{seed} there warns
+and falls back to the peripheral seed (see \emph{Distance-column oracle}).}
 
 \item{points}{Optional \verb{N x dim} numeric coordinate matrix. When supplied,
 the selection is computed directly from coordinates in \code{O(N * n * dim)}
 time and \code{O(N)} memory, never materialising the \verb{N x N} distance matrix
 (\code{d} is then unused). For Euclidean data the returned indices are
 identical to the matrix path. Only complete (non-\code{NA}) data is supported.}
+
+\item{N}{Integer: the total number of elements. Required (and used) only on
+the distance-column oracle path, where it cannot be inferred from the
+closure; ignored for the matrix and coordinate paths.}
+
+\item{progress}{Logical; show a progress bar during greedy selection on the
+distance-column oracle path (the only path slow enough to warrant one).
+Default: \code{TRUE} in interactive sessions, \code{FALSE} otherwise
+(\code{getOption("MaxMin.progress", interactive())}).}
 }
 \value{
-Integer vector of length \code{min(n, nrow(d))} of selected indices.
+Integer vector of length \code{min(n, N)} of selected indices.
 }
 \description{
 Greedy k-centre selection (Gonzalez 1985). Iteratively selects the point
@@ -46,6 +61,36 @@ default \code{Gonzalez()} runs an \strong{ensemble} of cheap deterministic perip
 seeding strategies and keeps the selection with the largest minimum pairwise
 distance (\code{\link[=TkScore]{TkScore()}}).
 }
+\details{
+\code{Gonzalez()} accepts the distances in whichever of three forms suits the
+data, all returning identical selections on the same metric:
+\describe{
+\item{a \strong{distance matrix} (\code{d})}{a \code{dist} object or square matrix, held
+in full;}
+\item{a \strong{coordinate matrix} (\code{points})}{each needed distance is
+recomputed from coordinates on the fly in \code{O(N)} memory, never
+materialising the \verb{N x N} matrix (Euclidean data only);}
+\item{a \strong{distance-column oracle} (a function passed as \code{d})}{for metrics
+with neither a stored matrix nor a coordinate embedding -- e.g.
+tree-to-tree distances computed on demand. See \emph{Distance-column oracle}.}
+}
+}
+\section{Distance-column oracle}{
+
+When \code{d} is a function it is treated as a closure \code{colFn(i)} returning, for a
+single 1-based index \code{i}, the length-\code{N} vector of distances from element \code{i}
+to every element. Gonzalez calls it once per selected element, maintaining a
+running nearest-distance vector, so the \verb{N x N} matrix is never built:
+\code{O(N * n)} oracle calls and \code{O(N)} memory. The self-distance at position \code{i}
+may take any non-negative value; it is masked before use. Because the count
+of elements cannot be inferred from the closure, \code{N} must be supplied.
+Only an integer \code{seed} (a \code{first} index) or the default deterministic
+two-sweep peripheral seed is reachable from an oracle; the richer matrix
+anchors (diameter, anti-medoid, row-sum, row-norm) need \code{O(N^2)} work. An
+explicitly named or ensemble \code{seed} on this path is ignored with a warning
+and the peripheral seed is used instead.
+}
+
 \examples{
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
@@ -60,9 +105,13 @@ Gonzalez(d, 5L, seed = "diameter")
 Gonzalez(d, 5L, seed = 1L)
 # Matrix-free coordinate path (identical result, O(N) memory):
 Gonzalez(n = 5L, points = pts, seed = 1L)
+# Distance-column oracle: supply one column at a time, never the full matrix.
+dm <- as.matrix(d)
+colFn <- function(i) dm[, i]
+identical(Gonzalez(colFn, 5L, N = nrow(dm), seed = 1L),
+          Gonzalez(d, 5L, seed = 1L))
 }
 \seealso{
-\code{\link[=MaxMinSeed]{MaxMinSeed()}} for the seed indices alone; \code{\link[=GonzalezColumn]{GonzalezColumn()}} for a
-distance-column oracle; \code{\link[=DropAddTS]{DropAddTS()}} and \code{\link[=ExactMaxMin]{ExactMaxMin()}} for higher-effort
-solvers.
+\code{\link[=MaxMinSeed]{MaxMinSeed()}} for the seed indices alone; \code{\link[=DropAddTS]{DropAddTS()}} and
+\code{\link[=ExactMaxMin]{ExactMaxMin()}} for higher-effort solvers.
 }

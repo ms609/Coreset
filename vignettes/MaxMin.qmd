@@ -119,10 +119,25 @@ TkScore(eurodist, idx_anti)
 
 When only pairwise distances between objects are known — there are no
 coordinates to work from — and computing or storing all N×N distances at once
-would be too expensive (e.g. large phylogenetic trees, where each patristic
-distance requires a tree traversal), `GonzalezColumn()` accepts a user-supplied
-function that returns one column of the distance matrix at a time.
-Gonzalez needs only *n* such columns, so the full N×N matrix is never built.
+would be too expensive (e.g. large phylogenetic trees, where each tree-to-tree
+distance requires its own calculation), pass `Gonzalez()` a *function* in place
+of the distance matrix. The function takes one index `i` and returns the
+distances from object `i` to all N objects — one column of the matrix. Gonzalez
+calls it only *n* times, so the full N×N matrix is never built; you must supply
+`N` (the number of objects), since it cannot be read off a function.
+
+```{r}
+#| label: gonzalez-oracle
+dm <- as.matrix(eurodist)
+col_of <- function(i) dm[, i]       # one column on demand
+Gonzalez(col_of, n = 6L, N = nrow(dm), seed = 1L)
+```
+
+(Here the column simply indexes a matrix we already have, to keep the example
+self-contained; the point is that `col_of` could instead *compute* each column
+from trees, sequences, or any metric with no coordinate embedding.) Only an
+integer `seed` (a fixed start index) or the default peripheral seed is
+available on this path — the richer ensemble anchors need the whole matrix.
 
 ---
 
@@ -332,7 +347,7 @@ attr(idx_polished, "swaps")   # number of improving swaps applied
 | Deterministic, reproducible refinement | `DropAddTS()` |
 | Best quality, set `seed` for reproducibility | `GraspPR(seed = ...)` |
 | N > 46 000 (distance matrix infeasible) | `DropAddTSPoints()` or `Gonzalez(points = ...)` |
-| Arbitrary metric with no coordinate embedding | `GonzalezColumn()` |
+| Arbitrary metric with no coordinate embedding | `Gonzalez(<column function>, N = ...)` |
 | Proven optimum, N ≤ ~ 25–30, **highs** installed | `ExactMaxMin()` |
 | Post-process any selection cheaply | `PolishSelection()` |
 
