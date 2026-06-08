@@ -296,7 +296,7 @@ c(exact    = res_ex$objective,
 ```
 
 `$proven = TRUE` certifies that no selection can achieve a higher T~k~.
-ExactMaxMin is NP-hard; instances with more than ~30 candidates require a
+`ExactMaxMin()` is NP-hard; instances with more than ~30 candidates require a
 time budget or should be tackled with the heuristics above.
 
 ---
