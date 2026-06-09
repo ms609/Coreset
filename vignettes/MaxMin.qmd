@@ -76,7 +76,6 @@ MaxMin provides four solvers, and a minimum-distance calculator:
 
 We now walk through each of these in turn.
 
----
 
 ## Gonzalez: fast greedy selection
 
@@ -86,43 +85,49 @@ farthest from the current selection.
 This greedy rule guarantees a 2-approximation to the optimal T~k~ and runs
 in O(*N* · *m*) time.
 
-By default `Gonzalez()` runs an ensemble of three `"random_furthest"` starts
-and returns whichever pass produced the highest T~k~ (a best-of-three
-selection). The random starts pivot on points drawn with the session RNG, so set
-a seed (`set.seed()`) for a reproducible selection. Pass a `pivots` vector for
-more (or your own) random starts — its length sets the number of starts. The
-deterministic anchors (`"centroid"`, `"peripheral"`, and the costlier O(*N*²)
-anchors) are opt-in: pass a character vector to `seed` to choose a custom
-ensemble, or a single name for one strategy.
+By default `Gonzalez()` runs three `"random_furthest"` starts, each beginning
+from the point furthest from a randomly selected 'pivot' point, and returns
+whichever pass produced the highest T~k~.
 
 ```{r}
 #| label: gonzalez-ensemble
 set.seed(1)
-idx_ens <- Gonzalez(eurodist, n = 6L)   # default: best of three random starts
-
-# Which seeding strategy won?
-attr(idx_ens, "winning_strategy")
+picks <- Gonzalez(eurodist, n = 6L)   # default: best of three random starts
 ```
 
-You can also request a specific seeding strategy or a custom ensemble subset:
+More random starts, or pivots of your own devising, can be accomplished by a
+vector of pivot points to a `pivots` vector.
+
+```{r}
+#| label: gonzalez-ensemble
+set.seed(1)
+nCities <- attr(eurodist, "Size")
+# Use 5 random starts
+pivots <- sample(nCities, 5)
+picks <- Gonzalez(eurodist, n = 6L, pivots = pivots)
+```
+
+
+Peripheral seeds may also be selected by deterministic methods: one or more
+such methods can be selected via the `seed` argument. The best solution found
+will be returned.
 
 ```{r}
 #| label: gonzalez-seeds
-idx_diam <- Gonzalez(eurodist, n = 6L, seed = "diameter")
-MinDist(eurodist, idx_diam)
+picks <- Gonzalez(eurodist, n = 6L, seed = c("diameter", "anti_medoid"))
+MinDist(eurodist, picks)
 
-idx_anti <- Gonzalez(eurodist, n = 6L, seed = "anti_medoid")
-MinDist(eurodist, idx_anti)
+attr(picks, "winning_strategy")
 ```
 
 When only pairwise distances between objects are known — there are no
 coordinates to work from — and computing or storing all N×N distances at once
-would be too expensive (e.g. large phylogenetic trees, where each tree-to-tree
-distance requires its own calculation), pass `Gonzalez()` a *function* in place
-of the distance matrix. The function takes one index `i` and returns the
-distances from object `i` to all N objects — one column of the matrix. Gonzalez
-calls it only *n* times, so the full N×N matrix is never built; you must supply
-`N` (the number of objects), since it cannot be read off a function.
+would be too expensive, a function may be passed in place
+of the distance matrix. This function will be passed one index `i`, and should
+returns the distances from object `i` to all N objects — one column of the
+matrix.
+`Gonzalez()` calls it $n$ times, so the full N×N matrix is never built.
+`N`, the number of objects, must be supplied.
 
 ```{r}
 #| label: gonzalez-oracle
@@ -137,7 +142,6 @@ from trees, sequences, or any metric with no coordinate embedding.) Only an
 integer `seed` (a fixed start index) or the default peripheral seed is
 available on this path — the richer ensemble anchors need the whole matrix.
 
----
 
 ## DropAdd tabu search
 
@@ -163,7 +167,6 @@ For coordinate data where *N* is large enough to make the distance matrix
 infeasible (roughly N > 46 000), use `DropAddTSPoints()`, which accepts a
 coordinate matrix directly.
 
----
 
 ## GRASP with path relinking
 
@@ -189,7 +192,6 @@ res_gr$pr_calls   # path-relinking calls performed
 trigger termination; `time_budget_s` is available as an absolute time cap for
 interactive or batch use.
 
----
 
 ## Comparing methods on a simulated example
 
@@ -266,7 +268,6 @@ legend("topright",
        pch = pchs, col = cols, pt.bg = cols, pt.cex = 1.4, bty = "n")
 ```
 
----
 
 ## Exact solution
 
@@ -307,7 +308,6 @@ c(exact    = res_ex$objective,
 `ExactMaxMin()` is NP-hard; instances with more than ~30 candidates require a
 time budget or should be tackled with the heuristics above.
 
----
 
 ## Scoring
 
@@ -324,7 +324,6 @@ MinDist(as.matrix(d50), idx_gonz)                    # from square matrix
 MinDist(points = pts, idx = idx_gonz)                # from coordinates
 ```
 
----
 
 ## When to use which method
 
