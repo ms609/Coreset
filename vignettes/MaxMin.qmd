@@ -36,14 +36,6 @@ a representative subset of protein structures from a database.
 install.packages("MaxMin")
 ```
 
-For the exact solver, also install **highs**:
-
-```{r}
-#| label: install-highs
-#| eval: false
-install.packages("highs")
-```
-
 ## Quick start
 
 `eurodist` is a built-in R `dist` object containing road distances (km)
@@ -53,12 +45,14 @@ between 21 European cities.
 #| label: quickstart
 data(eurodist)
 
-# Select 4 maximally dispersed cities. The default ensemble uses random
-# starts, so set a seed for a reproducible selection.
+# Set a seed for a reproducible selection
 set.seed(1)
+
+# Select 4 maximally dispersed cities
 idx <- Gonzalez(eurodist, n = 4L)
 MinDist(eurodist, idx)
 
+# View distances between chosen cities
 as.matrix(eurodist)[idx, idx]
 ```
 
@@ -68,7 +62,7 @@ distance within the selection is largest.
 
 ## Methods at a glance
 
-MaxMin provides four solvers and two utilities:
+MaxMin provides four solvers, and a minimum-distance calculator:
 
 | Function | Quality | Speed | Stochastic? |
 |---|---|---|---|
@@ -76,10 +70,9 @@ MaxMin provides four solvers and two utilities:
 | `DropAddTS()` | High (≈ 99 % optimal) | Fast | No |
 | `GraspPR()` | Highest | Moderate | Yes (`seed =`) |
 | `ExactMaxMin()` | Optimal (NP-hard) | Slow | No |
-| `PolishSelection()` | Post-processing only | Very fast | No |
 | `MinDist()` | Scoring only | Instant | No |
 
-The rest of this vignette walks through each in turn.
+We now walk through each of these in turn.
 
 ---
 
@@ -278,6 +271,14 @@ legend("topright",
 For small instances (roughly N ≤ 25–30), `ExactMaxMin()` solves the problem
 to proven optimality via a node-packing integer programme (Sayyady & Fathi
 2016), using the **highs** solver.
+
+First we must install **highs**:
+
+```{r}
+#| label: install-highs
+#| eval: false
+install.packages("highs")
+```
 
 ```{r}
 #| label: exact-data
