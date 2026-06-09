@@ -402,8 +402,8 @@ Gonzalez <- function(d = NULL, n,
 
 #' Gonzalez maximin from a distance-column oracle (worker)
 #'
-#' Mirrors `MaximinFrom_cpp()` (src/maximin.cpp), substituting an on-demand
-#' `colFn(i)` call for the matrix-column read `d[, i]`. `which.max()` uses R's
+#' Mirrors `MaximinFrom_cpp()`, substituting an on-demand `colFn(i)` call for
+#' the matrix-column read `d[, i]`. `which.max()` uses R's
 #' first-maximum (strict `>`) rule, matching the kernel's tie-breaking, so the
 #' selection is identical to the matrix path on symmetric input.
 #' @param colFn Column oracle; see [Gonzalez()].

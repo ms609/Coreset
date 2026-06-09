@@ -19,8 +19,8 @@
 Integer vector of selected indices.
 }
 \description{
-Mirrors \code{MaximinFrom_cpp()} (src/maximin.cpp), substituting an on-demand
-\code{colFn(i)} call for the matrix-column read \code{d[, i]}. \code{which.max()} uses R's
+Mirrors \code{MaximinFrom_cpp()}, substituting an on-demand \code{colFn(i)} call for
+the matrix-column read \code{d[, i]}. \code{which.max()} uses R's
 first-maximum (strict \code{>}) rule, matching the kernel's tie-breaking, so the
 selection is identical to the matrix path on symmetric input.
 }
