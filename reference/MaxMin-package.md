@@ -29,7 +29,7 @@ materialising the matrix), or on an on-demand distance-column oracle.
 
   1-swap local-search refinement.
 
-- [`TkScore()`](https://ms609.github.io/MaxMin/reference/TkScore.md):
+- [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md):
 
   The k-centre objective (minimum pairwise distance).
 

@@ -87,18 +87,17 @@
 <span><span class="co"># starts, so set a seed for a reproducible selection.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Gonzalez.html">Gonzalez</a></span><span class="op">(</span><span class="va">eurodist</span>, n <span class="op">=</span> <span class="fl">4L</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/MinDist.html">MinDist</a></span><span class="op">(</span><span class="va">eurodist</span>, <span class="va">idx</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 2187</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span><span class="op">[</span><span class="va">idx</span>, <span class="va">idx</span><span class="op">]</span></span>
 <span><span class="co">#&gt;           Athens Lisbon Stockholm Milan</span></span>
 <span><span class="co">#&gt; Athens         0   4532      3927  2282</span></span>
 <span><span class="co">#&gt; Lisbon      4532      0      3231  2250</span></span>
 <span><span class="co">#&gt; Stockholm   3927   3231         0  2187</span></span>
-<span><span class="co">#&gt; Milan       2282   2250      2187     0</span></span>
-<span></span>
-<span><span class="fu"><a href="../reference/TkScore.html">TkScore</a></span><span class="op">(</span><span class="va">eurodist</span>, <span class="va">idx</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 2187</span></span></code></pre></div>
+<span><span class="co">#&gt; Milan       2282   2250      2187     0</span></span></code></pre></div>
 </div>
-<p><code><a href="../reference/Gonzalez.html">Gonzalez()</a></code> returned the indices of the four cities whose nearest-neighbour distance within the selection is largest. <code><a href="../reference/TkScore.html">TkScore()</a></code> reports that value explicitly.</p>
+<p><code><a href="../reference/Gonzalez.html">Gonzalez()</a></code> returned the indices of the four cities whose nearest-neighbour distance within the selection is largest. <code><a href="../reference/MinDist.html">MinDist()</a></code> reports that value explicitly.</p>
 </section><section class="level2"><h2 id="methods-at-a-glance">Methods at a glance<a class="anchor" aria-label="anchor" href="#methods-at-a-glance"></a>
 </h2>
 <p>MaxMin provides four solvers and two utilities:</p>
@@ -141,7 +140,7 @@
 <td>No</td>
 </tr>
 <tr class="even">
-<td><code><a href="../reference/TkScore.html">TkScore()</a></code></td>
+<td><code><a href="../reference/MinDist.html">MinDist()</a></code></td>
 <td>Scoring only</td>
 <td>Instant</td>
 <td>No</td>
@@ -152,25 +151,25 @@
 <hr></section><section class="level2"><h2 id="gonzalez-fast-greedy-selection">Gonzalez: fast greedy selection<a class="anchor" aria-label="anchor" href="#gonzalez-fast-greedy-selection"></a>
 </h2>
 <p>The <strong>Gonzalez</strong> (1985) algorithm builds the selection greedily: start from a seed point, then repeatedly add whichever unselected point is farthest from the current selection. This greedy rule guarantees a 2-approximation to the optimal T<sub>k</sub> and runs in O(<em>N</em> · <em>m</em>) time.</p>
-<p>By default <code><a href="../reference/Gonzalez.html">Gonzalez()</a></code> runs an ensemble of the cheap O(<em>N</em>) seeding strategies — <code>"centroid"</code>, <code>"peripheral"</code>, and three <code>"random_furthest"</code> starts — and returns whichever pass produced the highest T<sub>k</sub> (a best-of-five selection). The <code>"centroid"</code> seed is computed from coordinates, so on a distance matrix such as <code>eurodist</code> it is dropped and the remaining seeds apply. The random starts pivot on points drawn with the session RNG, so set a seed (<code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code>) for a reproducible selection. Pass a <code>pivots</code> vector for more (or your own) random starts — its length sets the number of starts, and <code>integer(0)</code> disables them; pass a character vector to <code>seed</code> to choose a custom ensemble, or a single name for one strategy.</p>
+<p>By default <code><a href="../reference/Gonzalez.html">Gonzalez()</a></code> runs an ensemble of three <code>"random_furthest"</code> starts and returns whichever pass produced the highest T<sub>k</sub> (a best-of-three selection). The random starts pivot on points drawn with the session RNG, so set a seed (<code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code>) for a reproducible selection. Pass a <code>pivots</code> vector for more (or your own) random starts — its length sets the number of starts. The deterministic anchors (<code>"centroid"</code>, <code>"peripheral"</code>, and the costlier O(<em>N</em>²) anchors) are opt-in: pass a character vector to <code>seed</code> to choose a custom ensemble, or a single name for one strategy.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
-<span><span class="va">idx_ens</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Gonzalez.html">Gonzalez</a></span><span class="op">(</span><span class="va">eurodist</span>, n <span class="op">=</span> <span class="fl">6L</span><span class="op">)</span>   <span class="co"># default: best-of-five O(N) seeds</span></span>
+<span><span class="va">idx_ens</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Gonzalez.html">Gonzalez</a></span><span class="op">(</span><span class="va">eurodist</span>, n <span class="op">=</span> <span class="fl">6L</span><span class="op">)</span>   <span class="co"># default: best of three random starts</span></span>
 <span></span>
 <span><span class="co"># Which seeding strategy won?</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">idx_ens</span>, <span class="st">"winning_strategy"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "peripheral"       "random_furthest1" "random_furthest2" "random_furthest3"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "random_furthest1" "random_furthest2" "random_furthest3"</span></span></code></pre></div>
 </div>
 <p>You can also request a specific seeding strategy or a custom ensemble subset:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">idx_diam</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Gonzalez.html">Gonzalez</a></span><span class="op">(</span><span class="va">eurodist</span>, n <span class="op">=</span> <span class="fl">6L</span>, seed <span class="op">=</span> <span class="st">"diameter"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/TkScore.html">TkScore</a></span><span class="op">(</span><span class="va">eurodist</span>, <span class="va">idx_diam</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/MinDist.html">MinDist</a></span><span class="op">(</span><span class="va">eurodist</span>, <span class="va">idx_diam</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 1014</span></span>
 <span></span>
 <span><span class="va">idx_anti</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Gonzalez.html">Gonzalez</a></span><span class="op">(</span><span class="va">eurodist</span>, n <span class="op">=</span> <span class="fl">6L</span>, seed <span class="op">=</span> <span class="st">"anti_medoid"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/TkScore.html">TkScore</a></span><span class="op">(</span><span class="va">eurodist</span>, <span class="va">idx_anti</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/MinDist.html">MinDist</a></span><span class="op">(</span><span class="va">eurodist</span>, <span class="va">idx_anti</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 1014</span></span></code></pre></div>
 </div>
 <p>When only pairwise distances between objects are known — there are no coordinates to work from — and computing or storing all N×N distances at once would be too expensive (e.g. large phylogenetic trees, where each tree-to-tree distance requires its own calculation), pass <code><a href="../reference/Gonzalez.html">Gonzalez()</a></code> a <em>function</em> in place of the distance matrix. The function takes one index <code>i</code> and returns the distances from object <code>i</code> to all N objects — one column of the matrix. Gonzalez calls it only <em>n</em> times, so the full N×N matrix is never built; you must supply <code>N</code> (the number of objects), since it cannot be read off a function.</p>
@@ -196,7 +195,7 @@
 <span><span class="va">res_da</span><span class="op">$</span><span class="va">iters</span>         <span class="co"># iterations completed</span></span>
 <span><span class="co">#&gt; [1] 516</span></span>
 <span><span class="va">res_da</span><span class="op">$</span><span class="va">time_s</span>        <span class="co"># wall-clock seconds</span></span>
-<span><span class="co">#&gt; [1] 0.0001935959</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.0002613068</span></span></code></pre></div>
 </div>
 <p><code>max_no_improve</code> is the main stopping knob: the algorithm terminates after this many consecutive iterations without an improvement in T<sub>k</sub>. For coordinate data where <em>N</em> is large enough to make the distance matrix infeasible (roughly N &gt; 46 000), use <code><a href="../reference/DropAddTSPoints.html">DropAddTSPoints()</a></code>, which accepts a coordinate matrix directly.</p>
 <hr></section><section class="level2"><h2 id="grasp-with-path-relinking">GRASP with path relinking<a class="anchor" aria-label="anchor" href="#grasp-with-path-relinking"></a>
@@ -234,7 +233,7 @@
 <div class="cell">
 <div class="sourceCode cell-code" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">scores</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>  Gonzalez  <span class="op">=</span> <span class="fu"><a href="../reference/TkScore.html">TkScore</a></span><span class="op">(</span><span class="va">d50</span>, <span class="va">idx_gonz</span><span class="op">)</span>,</span>
+<span>  Gonzalez  <span class="op">=</span> <span class="fu"><a href="../reference/MinDist.html">MinDist</a></span><span class="op">(</span><span class="va">d50</span>, <span class="va">idx_gonz</span><span class="op">)</span>,</span>
 <span>  DropAddTS <span class="op">=</span> <span class="va">res_da50</span><span class="op">$</span><span class="va">objective</span>,</span>
 <span>  GraspPR   <span class="op">=</span> <span class="va">res_gr50</span><span class="op">$</span><span class="va">objective</span></span>
 <span><span class="op">)</span></span>
@@ -300,24 +299,24 @@
 <span><span class="co"># Compare to the greedy heuristic on the same instance</span></span>
 <span><span class="va">res_gonz30</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Gonzalez.html">Gonzalez</a></span><span class="op">(</span><span class="va">d30</span>, n <span class="op">=</span> <span class="fl">6L</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>exact    <span class="op">=</span> <span class="va">res_ex</span><span class="op">$</span><span class="va">objective</span>,</span>
-<span>  Gonzalez <span class="op">=</span> <span class="fu"><a href="../reference/TkScore.html">TkScore</a></span><span class="op">(</span><span class="va">d30</span>, <span class="va">res_gonz30</span><span class="op">)</span><span class="op">)</span></span>
+<span>  Gonzalez <span class="op">=</span> <span class="fu"><a href="../reference/MinDist.html">MinDist</a></span><span class="op">(</span><span class="va">d30</span>, <span class="va">res_gonz30</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    exact Gonzalez </span></span>
 <span><span class="co">#&gt; 1.616311 1.616311</span></span></code></pre></div>
 </div>
 <p><code>$proven = TRUE</code> certifies that no selection can achieve a higher T<sub>k</sub>. <code><a href="../reference/ExactMaxMin.html">ExactMaxMin()</a></code> is NP-hard; instances with more than ~30 candidates require a time budget or should be tackled with the heuristics above.</p>
 <hr></section><section class="level2"><h2 id="scoring-and-polish">Scoring and polish<a class="anchor" aria-label="anchor" href="#scoring-and-polish"></a>
 </h2>
-<section class="level3"><h3 id="tkscore">
-<code>TkScore()</code><a class="anchor" aria-label="anchor" href="#tkscore"></a>
+<section class="level3"><h3 id="mindist">
+<code>MinDist()</code><a class="anchor" aria-label="anchor" href="#mindist"></a>
 </h3>
-<p><code><a href="../reference/TkScore.html">TkScore()</a></code> computes the T<sub>k</sub> objective for any index set. It accepts a <code>dist</code> object, a square distance matrix, or a coordinate matrix via the <code>points</code> argument:</p>
+<p><code><a href="../reference/MinDist.html">MinDist()</a></code> computes the T<sub>k</sub> objective for any index set. It accepts a <code>dist</code> object, a square distance matrix, or a coordinate matrix via the <code>points</code> argument:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/TkScore.html">TkScore</a></span><span class="op">(</span><span class="va">d50</span>, <span class="va">idx_gonz</span><span class="op">)</span>                               <span class="co"># from dist</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/MinDist.html">MinDist</a></span><span class="op">(</span><span class="va">d50</span>, <span class="va">idx_gonz</span><span class="op">)</span>                               <span class="co"># from dist</span></span>
 <span><span class="co">#&gt; [1] 1.416314</span></span>
-<span><span class="fu"><a href="../reference/TkScore.html">TkScore</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">d50</span><span class="op">)</span>, <span class="va">idx_gonz</span><span class="op">)</span>                    <span class="co"># from square matrix</span></span>
+<span><span class="fu"><a href="../reference/MinDist.html">MinDist</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">d50</span><span class="op">)</span>, <span class="va">idx_gonz</span><span class="op">)</span>                    <span class="co"># from square matrix</span></span>
 <span><span class="co">#&gt; [1] 1.416314</span></span>
-<span><span class="fu"><a href="../reference/TkScore.html">TkScore</a></span><span class="op">(</span>points <span class="op">=</span> <span class="va">pts</span>, idx <span class="op">=</span> <span class="va">idx_gonz</span><span class="op">)</span>                <span class="co"># from coordinates</span></span>
+<span><span class="fu"><a href="../reference/MinDist.html">MinDist</a></span><span class="op">(</span>points <span class="op">=</span> <span class="va">pts</span>, idx <span class="op">=</span> <span class="va">idx_gonz</span><span class="op">)</span>                <span class="co"># from coordinates</span></span>
 <span><span class="co">#&gt; [1] 1.416314</span></span></code></pre></div>
 </div>
 </section><section class="level3"><h3 id="polishselection">
@@ -327,11 +326,11 @@
 <div class="cell">
 <div class="sourceCode cell-code" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">idx_raw</span>      <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Gonzalez.html">Gonzalez</a></span><span class="op">(</span><span class="va">d50</span>, n <span class="op">=</span> <span class="va">m</span>, seed <span class="op">=</span> <span class="st">"first"</span><span class="op">)</span>   <span class="co"># single, weaker seed</span></span>
-<span><span class="fu"><a href="../reference/TkScore.html">TkScore</a></span><span class="op">(</span><span class="va">d50</span>, <span class="va">idx_raw</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/MinDist.html">MinDist</a></span><span class="op">(</span><span class="va">d50</span>, <span class="va">idx_raw</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 1.322782</span></span>
 <span></span>
 <span><span class="va">idx_polished</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/PolishSelection.html">PolishSelection</a></span><span class="op">(</span><span class="va">d50</span>, <span class="va">idx_raw</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/TkScore.html">TkScore</a></span><span class="op">(</span><span class="va">d50</span>, <span class="va">idx_polished</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/MinDist.html">MinDist</a></span><span class="op">(</span><span class="va">d50</span>, <span class="va">idx_polished</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 1.416314</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">idx_polished</span>, <span class="st">"swaps"</span><span class="op">)</span>   <span class="co"># number of improving swaps applied</span></span>

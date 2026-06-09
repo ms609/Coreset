@@ -6,16 +6,14 @@ problem. The quality of the result depends on the first (seed) point; by
 default `Gonzalez()` runs an **ensemble** of cheap `O(N)` seeding
 strategies and keeps the selection with the largest minimum pairwise
 distance
-([`TkScore()`](https://ms609.github.io/MaxMin/reference/TkScore.md)).
-The default ensemble is the two deterministic `O(N)` seeds `"centroid"`
-and `"peripheral"` together with three `"random_furthest"` starts – a
-best-of-five selection. The random starts use the session RNG, so set a
+([`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md)).
+The default ensemble is three `"random_furthest"` starts – a
+best-of-three selection. The random starts use the session RNG, so set a
 seed ([`set.seed()`](https://rdrr.io/r/base/Random.html)) for a
-reproducible selection. The `"centroid"` seed is computed from
-coordinates, so on a distance matrix the default drops it and keeps
-`"peripheral"` plus the random starts. Costlier `O(N^2)` anchors
-(`"diameter"`, `"anti_medoid"`, `"medoid"`, `"rowsum"`, `"rownorm"`) are
-available as opt-in `seed` strategies.
+reproducible selection. The deterministic `O(N)` anchors (`"centroid"`,
+`"peripheral"`) and the costlier `O(N^2)` anchors (`"diameter"`,
+`"anti_medoid"`, `"medoid"`, `"rowsum"`, `"rownorm"`) are available as
+opt-in `seed` strategies.
 
 ## Usage
 
@@ -48,22 +46,25 @@ Gonzalez(
 
   Integer or character (scalar or vector). An **integer** gives the
   explicit 1-based index of the first selected point (a single bare
-  Gonzalez pass). A **length-1 character** names a single seeding
-  strategy: `"centroid"` (coordinates only), `"peripheral"` (two-sweep
-  diameter-endpoint approximation), `"random_furthest"` (furthest point
-  from a fixed-seed random pivot), `"diameter"`, `"anti_medoid"`,
-  `"medoid"`, `"rowsum"`, `"rownorm"`, or `"first"` (index 1). A
-  **length \> 1 character vector** requests an ensemble: each named
-  anchor runs a full Gonzalez pass and the best result by
-  [`TkScore()`](https://ms609.github.io/MaxMin/reference/TkScore.md) is
+  Gonzalez pass). A **length-1 character** names a single deterministic
+  seeding strategy run as one bare pass: `"centroid"` (coordinates
+  only), `"peripheral"` (two-sweep diameter-endpoint approximation),
+  `"diameter"`, `"anti_medoid"`, `"medoid"`, `"rowsum"`, `"rownorm"`, or
+  `"first"` (index 1). A **length \> 1 character vector** – or the lone
+  `"random_furthest"` token – requests an ensemble: each named anchor
+  runs a full Gonzalez pass and the best result by
+  [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md) is
   returned with `strategy_results` and `winning_strategy` (character
   vector of all tied-best strategies) attributes. The
   `"random_furthest"` token expands to one start per element of
-  `pivots`, labelled `random_furthest1`, `random_furthest2`, ... Valid
-  ensemble anchors: any subset of
+  `pivots`, labelled `random_furthest1`, `random_furthest2`, ...; named
+  on its own it still runs the ensemble (one pass per pivot), so a
+  single random start is best obtained via
+  [`MaxMinSeed()`](https://ms609.github.io/MaxMin/reference/MaxMinSeed.md).
+  Valid ensemble anchors: any subset of
   `c("centroid", "peripheral", "random_furthest", "diameter", "anti_medoid", "medoid", "rowsum", "rownorm")`
-  (`"centroid"` requires `points`). Default:
-  `c("centroid", "peripheral", "random_furthest")`. See
+  (`"centroid"` requires `points`). Default: `"random_furthest"` (three
+  random starts; see `pivots`). See
   [`MaxMinSeed()`](https://ms609.github.io/MaxMin/reference/MaxMinSeed.md)
   for anchor definitions. On the distance-column oracle path only an
   integer `seed` is honoured; a named or ensemble `seed` there warns and
@@ -78,7 +79,9 @@ Gonzalez(
   the session RNG (`sample.int(N, 3)`; set a seed for a reproducible
   selection). Pass `integer(0)`, `NA`, or `NULL` to disable the random
   starts, or an index vector to choose the pivots (and their count)
-  explicitly.
+  explicitly. Disabling the random starts errors under the default
+  `seed` (which names only `"random_furthest"`, leaving no anchor); pair
+  it with a deterministic `seed` such as `"peripheral"`.
 
 - points:
 
@@ -157,21 +160,10 @@ for higher-effort solvers.
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
-# Default: best of the O(N) seeds (centroid, peripheral, 3 random-furthest):
+# Default: best of three random-furthest starts (set.seed for reproducibility):
 Gonzalez(d, 5L)
 #> [1] 14  4 26  5 28
 #> attr(,"strategy_results")
-#> attr(,"strategy_results")$peripheral
-#> attr(,"strategy_results")$peripheral$s1
-#> [1] 26
-#> 
-#> attr(,"strategy_results")$peripheral$idx
-#> [1] 26 24 15  3 18
-#> 
-#> attr(,"strategy_results")$peripheral$t_k
-#> [1] 1.468498
-#> 
-#> 
 #> attr(,"strategy_results")$random_furthest1
 #> attr(,"strategy_results")$random_furthest1$s1
 #> [1] 24
@@ -211,17 +203,6 @@ Gonzalez(d, 5L)
 Gonzalez(d, 5L, pivots = sample.int(nrow(as.matrix(d)), 8L))
 #> [1] 14  4 26  5 28
 #> attr(,"strategy_results")
-#> attr(,"strategy_results")$peripheral
-#> attr(,"strategy_results")$peripheral$s1
-#> [1] 26
-#> 
-#> attr(,"strategy_results")$peripheral$idx
-#> [1] 26 24 15  3 18
-#> 
-#> attr(,"strategy_results")$peripheral$t_k
-#> [1] 1.468498
-#> 
-#> 
 #> attr(,"strategy_results")$random_furthest1
 #> attr(,"strategy_results")$random_furthest1$s1
 #> [1] 14
@@ -317,17 +298,6 @@ Gonzalez(d, 5L, pivots = sample.int(nrow(as.matrix(d)), 8L))
 Gonzalez(d, 5L, pivots = c(1L, 10L, 20L))
 #> [1]  5 26 14 21 28
 #> attr(,"strategy_results")
-#> attr(,"strategy_results")$peripheral
-#> attr(,"strategy_results")$peripheral$s1
-#> [1] 26
-#> 
-#> attr(,"strategy_results")$peripheral$idx
-#> [1] 26 24 15  3 18
-#> 
-#> attr(,"strategy_results")$peripheral$t_k
-#> [1] 1.468498
-#> 
-#> 
 #> attr(,"strategy_results")$random_furthest1
 #> attr(,"strategy_results")$random_furthest1$s1
 #> [1] 5

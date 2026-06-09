@@ -4,26 +4,22 @@ furthest from the current selection, a 2-approximation to the k-centre
 problem. The quality of the result depends on the first (seed) point; by
 default Gonzalez() runs an ensemble of cheap O(N) seeding strategies
 and keeps the selection with the largest minimum pairwise distance
-(TkScore()). The default ensemble is the two deterministic O(N) seeds
-"centroid" and "peripheral" together with three "random_furthest"
-starts – a best-of-five selection. The random starts use the session RNG,
-so set a seed (set.seed()) for a reproducible selection. The "centroid"
-seed is computed from coordinates, so on a distance matrix the default drops
-it and keeps "peripheral" plus the random starts. Costlier O(N^2)
-anchors ("diameter", "anti_medoid", "medoid", "rowsum", "rownorm")
-are available as opt-in seed strategies.'><meta property="og:description" content='Greedy k-centre selection (Gonzalez 1985). Iteratively selects the point
+(MinDist()). The default ensemble is three "random_furthest" starts – a
+best-of-three selection. The random starts use the session RNG, so set a seed
+(set.seed()) for a reproducible selection. The deterministic O(N) anchors
+("centroid", "peripheral") and the costlier O(N^2) anchors
+("diameter", "anti_medoid", "medoid", "rowsum", "rownorm") are
+available as opt-in seed strategies.'><meta property="og:description" content='Greedy k-centre selection (Gonzalez 1985). Iteratively selects the point
 furthest from the current selection, a 2-approximation to the k-centre
 problem. The quality of the result depends on the first (seed) point; by
 default Gonzalez() runs an ensemble of cheap O(N) seeding strategies
 and keeps the selection with the largest minimum pairwise distance
-(TkScore()). The default ensemble is the two deterministic O(N) seeds
-"centroid" and "peripheral" together with three "random_furthest"
-starts – a best-of-five selection. The random starts use the session RNG,
-so set a seed (set.seed()) for a reproducible selection. The "centroid"
-seed is computed from coordinates, so on a distance matrix the default drops
-it and keeps "peripheral" plus the random starts. Costlier O(N^2)
-anchors ("diameter", "anti_medoid", "medoid", "rowsum", "rownorm")
-are available as opt-in seed strategies.'></head><body>
+(MinDist()). The default ensemble is three "random_furthest" starts – a
+best-of-three selection. The random starts use the session RNG, so set a seed
+(set.seed()) for a reproducible selection. The deterministic O(N) anchors
+("centroid", "peripheral") and the costlier O(N^2) anchors
+("diameter", "anti_medoid", "medoid", "rowsum", "rownorm") are
+available as opt-in seed strategies.'></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -64,14 +60,12 @@ furthest from the current selection, a 2-approximation to the k-centre
 problem. The quality of the result depends on the first (seed) point; by
 default <code>Gonzalez()</code> runs an <strong>ensemble</strong> of cheap <code>O(N)</code> seeding strategies
 and keeps the selection with the largest minimum pairwise distance
-(<code><a href="TkScore.html">TkScore()</a></code>). The default ensemble is the two deterministic <code>O(N)</code> seeds
-<code>"centroid"</code> and <code>"peripheral"</code> together with three <code>"random_furthest"</code>
-starts – a best-of-five selection. The random starts use the session RNG,
-so set a seed (<code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code>) for a reproducible selection. The <code>"centroid"</code>
-seed is computed from coordinates, so on a distance matrix the default drops
-it and keeps <code>"peripheral"</code> plus the random starts. Costlier <code>O(N^2)</code>
-anchors (<code>"diameter"</code>, <code>"anti_medoid"</code>, <code>"medoid"</code>, <code>"rowsum"</code>, <code>"rownorm"</code>)
-are available as opt-in <code>seed</code> strategies.</p>
+(<code><a href="MinDist.html">MinDist()</a></code>). The default ensemble is three <code>"random_furthest"</code> starts – a
+best-of-three selection. The random starts use the session RNG, so set a seed
+(<code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code>) for a reproducible selection. The deterministic <code>O(N)</code> anchors
+(<code>"centroid"</code>, <code>"peripheral"</code>) and the costlier <code>O(N^2)</code> anchors
+(<code>"diameter"</code>, <code>"anti_medoid"</code>, <code>"medoid"</code>, <code>"rowsum"</code>, <code>"rownorm"</code>) are
+available as opt-in <code>seed</code> strategies.</p>
     </div>
 
     <div class="section level2">
@@ -105,19 +99,21 @@ indices are returned.</p></dd>
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
 <dd><p>Integer or character (scalar or vector). An <strong>integer</strong> gives the
 explicit 1-based index of the first selected point (a single bare Gonzalez
-pass). A <strong>length-1 character</strong> names a single seeding strategy:
-<code>"centroid"</code> (coordinates only), <code>"peripheral"</code> (two-sweep
-diameter-endpoint approximation), <code>"random_furthest"</code> (furthest point from
-a fixed-seed random pivot), <code>"diameter"</code>, <code>"anti_medoid"</code>, <code>"medoid"</code>,
-<code>"rowsum"</code>, <code>"rownorm"</code>, or <code>"first"</code> (index 1). A <strong>length &gt; 1 character
-vector</strong> requests an ensemble: each named anchor runs a full Gonzalez pass
-and the best result by <code><a href="TkScore.html">TkScore()</a></code> is returned with <code>strategy_results</code> and
-<code>winning_strategy</code> (character vector of all tied-best strategies)
-attributes. The <code>"random_furthest"</code> token expands to one start per element
-of <code>pivots</code>, labelled <code>random_furthest1</code>, <code>random_furthest2</code>, ... Valid
-ensemble anchors: any subset of <code>c("centroid", "peripheral", "random_furthest", "diameter", "anti_medoid", "medoid", "rowsum", "rownorm")</code> (<code>"centroid"</code> requires <code>points</code>). Default:
-<code>c("centroid", "peripheral", "random_furthest")</code>. See <code><a href="MaxMinSeed.html">MaxMinSeed()</a></code> for
-anchor definitions. On the distance-column oracle path only an integer
+pass). A <strong>length-1 character</strong> names a single deterministic seeding
+strategy run as one bare pass: <code>"centroid"</code> (coordinates only),
+<code>"peripheral"</code> (two-sweep diameter-endpoint approximation), <code>"diameter"</code>,
+<code>"anti_medoid"</code>, <code>"medoid"</code>, <code>"rowsum"</code>, <code>"rownorm"</code>, or <code>"first"</code>
+(index 1). A <strong>length &gt; 1 character vector</strong> – or the lone
+<code>"random_furthest"</code> token – requests an ensemble: each named anchor runs a
+full Gonzalez pass and the best result by <code><a href="MinDist.html">MinDist()</a></code> is returned with
+<code>strategy_results</code> and <code>winning_strategy</code> (character vector of all
+tied-best strategies) attributes. The <code>"random_furthest"</code> token expands to
+one start per element of <code>pivots</code>, labelled <code>random_furthest1</code>,
+<code>random_furthest2</code>, ...; named on its own it still runs the ensemble (one
+pass per pivot), so a single random start is best obtained via
+<code><a href="MaxMinSeed.html">MaxMinSeed()</a></code>. Valid ensemble anchors: any subset of <code>c("centroid", "peripheral", "random_furthest", "diameter", "anti_medoid", "medoid", "rowsum", "rownorm")</code> (<code>"centroid"</code> requires <code>points</code>). Default:
+<code>"random_furthest"</code> (three random starts; see <code>pivots</code>). See <code><a href="MaxMinSeed.html">MaxMinSeed()</a></code>
+for anchor definitions. On the distance-column oracle path only an integer
 <code>seed</code> is honoured; a named or ensemble <code>seed</code> there warns and falls back
 to the peripheral seed (see <em>Distance-column oracle</em>).</p></dd>
 
@@ -130,7 +126,9 @@ the number of random-furthest starts. Left unspecified, three pivots are
 drawn with the session RNG (<code>sample.int(N, 3)</code>; set a seed for a
 reproducible selection). Pass <code>integer(0)</code>, <code>NA</code>, or <code>NULL</code> to disable the
 random starts, or an index vector to choose the pivots (and their count)
-explicitly.</p></dd>
+explicitly. Disabling the random starts errors under the default <code>seed</code>
+(which names only <code>"random_furthest"</code>, leaving no anchor); pair it with a
+deterministic <code>seed</code> such as <code>"peripheral"</code>.</p></dd>
 
 
 <dt id="arg-points">points<a class="anchor" aria-label="anchor" href="#arg-points"></a></dt>
@@ -204,21 +202,10 @@ path is ignored with a warning and the peripheral seed is used instead.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">pts</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">60</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/dist.html" class="external-link">dist</a></span><span class="op">(</span><span class="va">pts</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="co"># Default: best of the O(N) seeds (centroid, peripheral, 3 random-furthest):</span></span></span>
+<span class="r-in"><span><span class="co"># Default: best of three random-furthest starts (set.seed for reproducibility):</span></span></span>
 <span class="r-in"><span><span class="fu">Gonzalez</span><span class="op">(</span><span class="va">d</span>, <span class="fl">5L</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 14  4 26  5 28</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"strategy_results")</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"strategy_results")$peripheral</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"strategy_results")$peripheral$s1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 26</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"strategy_results")$peripheral$idx</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 26 24 15  3 18</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"strategy_results")$peripheral$t_k</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1.468498</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"strategy_results")$random_furthest1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"strategy_results")$random_furthest1$s1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 24</span>
@@ -258,17 +245,6 @@ path is ignored with a warning and the peripheral seed is used instead.</p>
 <span class="r-in"><span><span class="fu">Gonzalez</span><span class="op">(</span><span class="va">d</span>, <span class="fl">5L</span>, pivots <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample.int</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">d</span><span class="op">)</span><span class="op">)</span>, <span class="fl">8L</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 14  4 26  5 28</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"strategy_results")</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"strategy_results")$peripheral</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"strategy_results")$peripheral$s1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 26</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"strategy_results")$peripheral$idx</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 26 24 15  3 18</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"strategy_results")$peripheral$t_k</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1.468498</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"strategy_results")$random_furthest1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"strategy_results")$random_furthest1$s1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 14</span>
@@ -364,17 +340,6 @@ path is ignored with a warning and the peripheral seed is used instead.</p>
 <span class="r-in"><span><span class="fu">Gonzalez</span><span class="op">(</span><span class="va">d</span>, <span class="fl">5L</span>, pivots <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1L</span>, <span class="fl">10L</span>, <span class="fl">20L</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1]  5 26 14 21 28</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"strategy_results")</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"strategy_results")$peripheral</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"strategy_results")$peripheral$s1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 26</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"strategy_results")$peripheral$idx</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 26 24 15  3 18</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"strategy_results")$peripheral$t_k</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1.468498</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"strategy_results")$random_furthest1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"strategy_results")$random_furthest1$s1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 5</span>

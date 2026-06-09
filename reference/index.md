@@ -24,6 +24,6 @@ Farthest-first (Gonzalez) selection and its seeding strategies.
 
 - [`PolishSelection()`](https://ms609.github.io/MaxMin/reference/PolishSelection.md)
   : Local-search polish for a max-min diversity selection
-- [`TkScore()`](https://ms609.github.io/MaxMin/reference/TkScore.md) :
+- [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md) :
   Minimum pairwise distance within a selection (T_k = k-centre
   objective)

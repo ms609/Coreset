@@ -40,6 +40,8 @@ data(eurodist)
 # starts, so set a seed for a reproducible selection.
 set.seed(1)
 idx <- Gonzalez(eurodist, n = 4L)
+MinDist(eurodist, idx)
+#> [1] 2187
 
 as.matrix(eurodist)[idx, idx]
 #>           Athens Lisbon Stockholm Milan
@@ -47,15 +49,12 @@ as.matrix(eurodist)[idx, idx]
 #> Lisbon      4532      0      3231  2250
 #> Stockholm   3927   3231         0  2187
 #> Milan       2282   2250      2187     0
-
-TkScore(eurodist, idx)
-#> [1] 2187
 ```
 
 [`Gonzalez()`](https://ms609.github.io/MaxMin/reference/Gonzalez.md)
 returned the indices of the four cities whose nearest-neighbour distance
 within the selection is largest.
-[`TkScore()`](https://ms609.github.io/MaxMin/reference/TkScore.md)
+[`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md)
 reports that value explicitly.
 
 ## Methods at a glance
@@ -69,7 +68,7 @@ MaxMin provides four solvers and two utilities:
 | [`GraspPR()`](https://ms609.github.io/MaxMin/reference/GraspPR.md) | Highest | Moderate | Yes (`seed =`) |
 | [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md) | Optimal (NP-hard) | Slow | No |
 | [`PolishSelection()`](https://ms609.github.io/MaxMin/reference/PolishSelection.md) | Post-processing only | Very fast | No |
-| [`TkScore()`](https://ms609.github.io/MaxMin/reference/TkScore.md) | Scoring only | Instant | No |
+| [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md) | Scoring only | Instant | No |
 
 The rest of this vignette walks through each in turn.
 
@@ -84,26 +83,24 @@ farthest from the current selection. This greedy rule guarantees a
 
 By default
 [`Gonzalez()`](https://ms609.github.io/MaxMin/reference/Gonzalez.md)
-runs an ensemble of the cheap O(*N*) seeding strategies — `"centroid"`,
-`"peripheral"`, and three `"random_furthest"` starts — and returns
-whichever pass produced the highest T_(k) (a best-of-five selection).
-The `"centroid"` seed is computed from coordinates, so on a distance
-matrix such as `eurodist` it is dropped and the remaining seeds apply.
+runs an ensemble of three `"random_furthest"` starts and returns
+whichever pass produced the highest T_(k) (a best-of-three selection).
 The random starts pivot on points drawn with the session RNG, so set a
 seed ([`set.seed()`](https://rdrr.io/r/base/Random.html)) for a
 reproducible selection. Pass a `pivots` vector for more (or your own)
-random starts — its length sets the number of starts, and `integer(0)`
-disables them; pass a character vector to `seed` to choose a custom
+random starts — its length sets the number of starts. The deterministic
+anchors (`"centroid"`, `"peripheral"`, and the costlier O(*N*²) anchors)
+are opt-in: pass a character vector to `seed` to choose a custom
 ensemble, or a single name for one strategy.
 
 ``` r
 
 set.seed(1)
-idx_ens <- Gonzalez(eurodist, n = 6L)   # default: best-of-five O(N) seeds
+idx_ens <- Gonzalez(eurodist, n = 6L)   # default: best of three random starts
 
 # Which seeding strategy won?
 attr(idx_ens, "winning_strategy")
-#> [1] "peripheral"       "random_furthest1" "random_furthest2" "random_furthest3"
+#> [1] "random_furthest1" "random_furthest2" "random_furthest3"
 ```
 
 You can also request a specific seeding strategy or a custom ensemble
@@ -112,11 +109,11 @@ subset:
 ``` r
 
 idx_diam <- Gonzalez(eurodist, n = 6L, seed = "diameter")
-TkScore(eurodist, idx_diam)
+MinDist(eurodist, idx_diam)
 #> [1] 1014
 
 idx_anti <- Gonzalez(eurodist, n = 6L, seed = "anti_medoid")
-TkScore(eurodist, idx_anti)
+MinDist(eurodist, idx_anti)
 #> [1] 1014
 ```
 
@@ -166,7 +163,7 @@ res_da$objective     # T_k achieved
 res_da$iters         # iterations completed
 #> [1] 516
 res_da$time_s        # wall-clock seconds
-#> [1] 0.0001935959
+#> [1] 0.0002613068
 ```
 
 `max_no_improve` is the main stopping knob: the algorithm terminates
@@ -231,7 +228,7 @@ dispersed selection.
 ``` r
 
 scores <- c(
-  Gonzalez  = TkScore(d50, idx_gonz),
+  Gonzalez  = MinDist(d50, idx_gonz),
   DropAddTS = res_da50$objective,
   GraspPR   = res_gr50$objective
 )
@@ -310,7 +307,7 @@ res_ex$objective
 # Compare to the greedy heuristic on the same instance
 res_gonz30 <- Gonzalez(d30, n = 6L)
 c(exact    = res_ex$objective,
-  Gonzalez = TkScore(d30, res_gonz30))
+  Gonzalez = MinDist(d30, res_gonz30))
 #>    exact Gonzalez 
 #> 1.616311 1.616311
 ```
@@ -324,20 +321,20 @@ budget or should be tackled with the heuristics above.
 
 ## Scoring and polish
 
-### `TkScore()`
+### `MinDist()`
 
-[`TkScore()`](https://ms609.github.io/MaxMin/reference/TkScore.md)
+[`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md)
 computes the T_(k) objective for any index set. It accepts a `dist`
 object, a square distance matrix, or a coordinate matrix via the
 `points` argument:
 
 ``` r
 
-TkScore(d50, idx_gonz)                               # from dist
+MinDist(d50, idx_gonz)                               # from dist
 #> [1] 1.416314
-TkScore(as.matrix(d50), idx_gonz)                    # from square matrix
+MinDist(as.matrix(d50), idx_gonz)                    # from square matrix
 #> [1] 1.416314
-TkScore(points = pts, idx = idx_gonz)                # from coordinates
+MinDist(points = pts, idx = idx_gonz)                # from coordinates
 #> [1] 1.416314
 ```
 
@@ -352,11 +349,11 @@ few extra units of T_(k):
 ``` r
 
 idx_raw      <- Gonzalez(d50, n = m, seed = "first")   # single, weaker seed
-TkScore(d50, idx_raw)
+MinDist(d50, idx_raw)
 #> [1] 1.322782
 
 idx_polished <- PolishSelection(d50, idx_raw)
-TkScore(d50, idx_polished)
+MinDist(d50, idx_polished)
 #> [1] 1.416314
 
 attr(idx_polished, "swaps")   # number of improving swaps applied
