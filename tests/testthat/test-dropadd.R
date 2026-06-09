@@ -42,7 +42,7 @@ test_that("DropAdd smoke: 20 pts in 5-D, m=5", {
   expect_length(res, 5L)
   expect_equal(length(unique(res)), 5L)
   expect_true(all(res %in% seq_len(20L)))
-  expect_gt(attr(res, "objective"), 0)
+  expect_gt(attr(res, "score"), 0)
   expect_gte(attr(res, "iters"), 5L)
   expect_true(attr(res, "time_s") >= 0)
 })
@@ -58,7 +58,7 @@ test_that("DropAdd construction-only result matches its MaxMin score", {
   expect_length(res, 6L)
   expect_equal(attr(res, "iters"), 0L)
   # Objective stored equals the actual MaxMin over the returned indices.
-  expect_equal(attr(res, "objective"), .MaxminBrute(res, dmat))
+  expect_equal(attr(res, "score"), .MaxminBrute(res, dmat))
 })
 
 # ---------------------------------------------------------------------------
@@ -74,7 +74,7 @@ test_that("DropAdd never worsens the constructive solution", {
 
   cons <- DropAdd(dmat, m = 10L, maxIter = 0L)
   full <- DropAdd(dmat, m = 10L, plateau = 2000L)
-  expect_gte(attr(full, "objective"), attr(cons, "objective") - 1e-9)
+  expect_gte(attr(full, "score"), attr(cons, "score") - 1e-9)
 })
 
 # ---------------------------------------------------------------------------
@@ -101,9 +101,9 @@ test_that("DropAdd reaches the Geo 100 1 m=10 optimum (89.37)", {
   # result, so a wall-clock budget is appropriate here).
   res <- DropAdd(dmat, m = 10L, timeBudgetS = 10, plateau = 100000000L)
   bestKnown <- 89.37
-  expect_gte(attr(res, "objective"), 0.999 * bestKnown)
+  expect_gte(attr(res, "score"), 0.999 * bestKnown)
   # Returned indices truly achieve the reported objective.
-  expect_equal(attr(res, "objective"), .MaxminBrute(res, dmat),
+  expect_equal(attr(res, "score"), .MaxminBrute(res, dmat),
                tolerance = 1e-9)
 })
 
@@ -335,7 +335,7 @@ test_that("DropAdd R reference loop and C++ port are bit-identical", {
     outR <- DropAdd(dmat, m = 8L, maxIter = maxIter, .verify = TRUE)
     outC <- DropAdd(dmat, m = 8L, maxIter = maxIter)
     expect_identical(outR,                        outC)
-    expect_identical(attr(outR, "objective"),  attr(outC, "objective"))
+    expect_identical(attr(outR, "score"),  attr(outC, "score"))
     expect_identical(attr(outR, "secondary"),  attr(outC, "secondary"))
     expect_identical(attr(outR, "iters"),      attr(outC, "iters"))
   }
@@ -347,7 +347,7 @@ test_that("DropAdd R reference loop and C++ port are bit-identical", {
     outR <- DropAdd(dmat, m = 8L, plateau = mni, .verify = TRUE)
     outC <- DropAdd(dmat, m = 8L, plateau = mni)
     expect_identical(outR,                        outC)
-    expect_identical(attr(outR, "objective"),  attr(outC, "objective"))
+    expect_identical(attr(outR, "score"),  attr(outC, "score"))
     expect_identical(attr(outR, "secondary"),  attr(outC, "secondary"))
     expect_identical(attr(outR, "iters"),      attr(outC, "iters"))
   }

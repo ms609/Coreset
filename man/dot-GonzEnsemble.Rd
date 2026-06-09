@@ -21,7 +21,7 @@ Integer vector of selected indices with attributes.
 }
 \description{
 Runs Gonzalez from each requested peripheral anchor and returns the subset
-maximising \eqn{T_k}. Internal driver for the ensemble path of \code{\link[=Gonzalez]{Gonzalez()}}
+maximising \eqn{T_k}. Internal driver for the ensemble path of \code{\link[=FarFirst]{FarFirst()}}
 (triggered when \code{seed} is a character vector of length > 1). The
 \code{"random_furthest"} token expands to one start per element of \code{pivots}. The
 returned vector carries \code{strategy_results} and \code{winning_strategy} (character

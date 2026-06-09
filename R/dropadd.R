@@ -145,6 +145,14 @@
 #' initially-selected point is dropped exactly once before any re-eviction.
 #'
 #' @param d A \code{dist} object or square symmetric numeric matrix.
+#'   Mutually exclusive with \code{points}; supply exactly one.
+#' @param points A numeric \eqn{n \times \mathrm{dim}} coordinate matrix (or an
+#'   object coercible to one via \code{as.matrix}). Must be complete (no
+#'   \code{NA}). Mutually exclusive with \code{d}; supply exactly one. When
+#'   supplied, the algorithm never materialises the dense \eqn{n \times n}
+#'   distance matrix, giving \eqn{O(n)} working memory and enabling use at
+#'   \eqn{n} far exceeding the matrix path's ceiling (R's
+#'   \code{as.matrix.dist} overflows at \eqn{n = 46340}).
 #' @param m Integer; subset size, \eqn{2 \le m \le n}.
 #' @param plateau Integer; stop after this many consecutive drop-add
 #'   iterations that do not improve the best objective. The primary,
@@ -167,7 +175,7 @@
 #'   `.verify = TRUE` (testing path).
 #' @param .verify Logical (testing only); if `TRUE`, routes to the R reference
 #'   loop and brute-force asserts the streamlined records at every iteration.
-#'   Default `FALSE` (the C++ fast path).
+#'   Default `FALSE` (the C++ fast path). Only applies to the \code{d} path.
 #' @param .trace Optional environment (testing only); if supplied, the dropped
 #'   and added index sequences are written into it as `drops` and `adds`.
 #'
@@ -186,24 +194,26 @@
 #' @references \insertAllCited{}
 #'
 #' @export
-DropAdd <- function(d, m, plateau = 5000L, maxIter = NULL,
+DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
                       timeBudgetS = Inf, seed = NULL,
                       progress = getOption("MaxMin.progress", interactive()),
+                      points = NULL,
                       .verify = FALSE, .trace = NULL) {
-  # .verify: if TRUE, brute-force recompute and assert all streamlined
-  #   records (minDist, sumDist, minDistCount) at every iteration.
-  #   Routes to the R reference loop; off by default.
-  # .trace: optional environment; if supplied, the algorithm writes
-  #   `drops` (integer vector of dropped indices in order) and `adds`
-  #   (integer vector of added indices in order) into it. Used by the
-  #   FIFO test to inspect drop order without re-implementing the loop.
-  #   Supported by both the R and C++ paths.
+  if (!is.null(points) && !is.null(d)) {
+    stop("supply `d` or `points`, not both")
+  }
   if (!is.null(seed)) set.seed(seed)
-  dmat <- .AsDistMatrix(d)
-  n <- nrow(dmat)
+  usePoints <- !is.null(points)
+  if (usePoints) {
+    points <- .AsPointsMatrix(points)
+    n <- nrow(points)
+  } else {
+    dmat <- .AsDistMatrix(d)
+    n <- nrow(dmat)
+  }
   m <- as.integer(m)
   if (length(m) != 1L || is.na(m) || m < 2L || m > n) {
-    stop("`m` must be a single integer with 2 <= m <= nrow(d)")
+    stop("`m` must be a single integer with 2 <= m <= n")
   }
   plateau <- as.integer(plateau)
   if (length(plateau) != 1L || is.na(plateau) ||
@@ -224,6 +234,34 @@ DropAdd <- function(d, m, plateau = 5000L, maxIter = NULL,
   t0 <- Sys.time()
   eps <- 1e-9
 
+  # --- Matrix-free (coordinate) path ----------------------------------------
+  if (usePoints) {
+    cppMaxIter <- if (is.null(maxIter)) .Machine$integer.max else maxIter
+    if (progress) {
+      cli::cli_process_start(
+        "DropAdd tabu search (n = {n}, m = {m}, budget = {timeBudgetS}s)",
+        .auto_close = FALSE
+      )
+    }
+    out <- DropAdd_points_cpp(points, m, as.double(timeBudgetS),
+                                cppMaxIter, plateau, FALSE)
+    timeS <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+    if (progress) {
+      itersMsg <- as.integer(out$iters)
+      tkMsg    <- as.numeric(out$objective)
+      cli::cli_process_done(
+        msg = "DropAdd: {itersMsg} iters, T_k = {signif(tkMsg, 4)}, {round(timeS, 1)}s"
+      )
+    }
+    return(structure(
+      sort(as.integer(out$indices)),
+      score     = as.numeric(out$objective),
+      secondary = as.numeric(out$secondary),
+      time_s    = timeS,
+      iters     = as.integer(out$iters)
+    ))
+  }
+
   # --- C++ fast path. .verify routes to R for the brute-force assertion. --
   if (!.verify) {
     cppMaxIter <- if (is.null(maxIter)) .Machine$integer.max else maxIter
@@ -243,14 +281,14 @@ DropAdd <- function(d, m, plateau = 5000L, maxIter = NULL,
     timeS <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
     if (progress) {
       itersMsg <- as.integer(out$iters)
-      tkMsg    <- as.numeric(out$score)
+      tkMsg    <- as.numeric(out$objective)
       cli::cli_process_done(
         msg = "DropAdd: {itersMsg} iters, T_k = {signif(tkMsg, 4)}, {round(timeS, 1)}s"
       )
     }
     return(structure(
       sort(as.integer(out$indices)),
-      score     = as.numeric(out$score),
+      score     = as.numeric(out$objective),
       secondary = as.numeric(out$secondary),
       time_s    = timeS,
       iters     = as.integer(out$iters)
@@ -285,9 +323,6 @@ DropAdd <- function(d, m, plateau = 5000L, maxIter = NULL,
   head        <- 1L
   itersDone   <- 0L
   noImprove   <- 0L
-  t0Num       <- unclass(t0)
-  checkEvery  <- 64L
-  countdown   <- checkEvery
   effectiveMax <- if (is.null(maxIter)) .Machine$integer.max else maxIter
   if (m >= n) effectiveMax <- 0L  # all points selected: no drop-add move exists
   if (!is.null(.trace)) {
@@ -310,17 +345,14 @@ DropAdd <- function(d, m, plateau = 5000L, maxIter = NULL,
   }
   if (.verify) .VerifyRecords(S, minDist, minDistCount, sumDist)
 
-  repeat {
-    # Termination checks. maxIter is cheap (integer compare); Sys.time is
-    # throttled to once per `checkEvery` iterations because POSIXct
-    # creation + difftime dispatch was ~15% of per-iter cost.
+  on.exit(setTimeLimit(), add = TRUE)
+  if (is.finite(timeBudgetS)) {
+    setTimeLimit(elapsed = max(0, timeBudgetS - as.numeric(Sys.time() - t0, units = "secs")),
+                 transient = TRUE)
+  }
+  tryCatch(repeat {
     if (itersDone >= effectiveMax) break
     if (noImprove >= plateau) break
-    countdown <- countdown - 1L
-    if (countdown == 0L) {
-      if (unclass(Sys.time()) - t0Num >= timeBudgetS) break  # nocov
-      countdown <- checkEvery
-    }
 
     # 1. DROP: head IS the FIFO head under the circular-buffer invariant.
     xHash <- S[head]
@@ -438,9 +470,12 @@ DropAdd <- function(d, m, plateau = 5000L, maxIter = NULL,
       .trace$adds  <- c(.trace$adds, xNew)
     }
     if (.verify) .VerifyRecords(S, minDist, minDistCount, sumDist)
-  }
+  }, error = function(e) { # nocov start
+    setTimeLimit()
+    if (!grepl("time limit", conditionMessage(e), ignore.case = TRUE)) stop(e)
+  }) # nocov end
 
-  timeS <- unclass(Sys.time()) - t0Num
+  timeS <- as.numeric(Sys.time() - t0, units = "secs")
   structure(
     sort(as.integer(bestS)),
     score     = as.numeric(bestMaxmin),

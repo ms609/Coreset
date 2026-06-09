@@ -15,11 +15,11 @@ materialising the matrix), or on an on-demand distance-column oracle.
 \section{Solvers}{
 
 \describe{
-\item{\code{\link[=Gonzalez]{Gonzalez()}}}{Greedy farthest-first selection from a distance matrix,
+\item{\code{\link[=FarFirst]{FarFirst()}}}{Greedy farthest-first selection from a distance matrix,
 a coordinate matrix, or a distance-column oracle (for spaces with no
 coordinate embedding), with a choice of peripheral seeding strategies and
 a robust ensemble default.}
-\item{\code{\link[=DropAdd]{DropAdd()}} / \code{\link[=DropAddPoints]{DropAddPoints()}}}{DropAdd tabu search heuristic.}
+\item{\code{\link[=DropAdd]{DropAdd()}}}{DropAdd tabu search heuristic.}
 \item{\code{\link[=ExactMaxMin]{ExactMaxMin()}}}{Exact node-packing optimum (needs \pkg{highs}).}
 #'   \item{\code{\link[=MinDist]{MinDist()}}}{The k-centre objective (minimum pairwise distance).}
 }

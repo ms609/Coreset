@@ -10,8 +10,8 @@
 # (construction, local search, path relinking) operates on a materialised
 # n x n distance matrix, so it does not offer a coordinate or column-oracle
 # path and is intended for instances small enough to hold that matrix. For
-# the matrix-free scaling regime use DropAddPoints() / Gonzalez(points=) or
-# Gonzalez() with a distance-column oracle.
+# the matrix-free scaling regime use DropAdd(points=) / FarFirst(points=) or
+# FarFirst() with a distance-column oracle.
 
 
 # -- objective and selection helpers --------------------------------------
@@ -265,7 +265,7 @@
 #' subsets the full \eqn{n \times n} distance matrix, so it is suited to
 #' instances small enough to hold that matrix. It offers no coordinate or
 #' column-oracle path. For the matrix-free regime where the dense matrix is
-#' infeasible, use [DropAddPoints()] or [Gonzalez()] (coordinate or
+#' infeasible, use [DropAdd()] (coordinate path via \code{points =}) or [FarFirst()] (coordinate or
 #' distance-column oracle path), whose
 #' \eqn{T_k} lands within roughly a percent on the benchmark while scaling to
 #' far larger instances.
@@ -287,24 +287,24 @@
 #' @param seed Optional integer; if supplied, `set.seed(seed)` is called at
 #'   entry. `GraspPR` is genuinely stochastic (randomised construction and RCL
 #'   sampling), so the seed governs the trajectory and the returned selection.
-#' @return A list with elements
+#' @return An integer vector of length `m` (1-based, sorted ascending)
+#'   with attributes:
 #'   \describe{
-#'     \item{indices}{Integer vector of length `m`, 1-based, sorted ascending.}
-#'     \item{objective}{Achieved MaxMin objective \eqn{T_k}.}
+#'     \item{score}{Achieved MaxMin objective \eqn{T_k}.}
 #'     \item{time_s}{Wall-clock seconds spent.}
 #'     \item{iters}{Number of GRASP refinement iterations executed.}
 #'     \item{pr_calls}{Number of path-relinking pair-applications run.}
 #'   }
 #' @references \insertAllCited{}
 #'
-#' @seealso [DropAdd()] and [DropAddPoints()] for scalable refinement;
+#' @seealso [DropAdd()] for scalable refinement;
 #'   [ExactMaxMin()] for the proven optimum on small instances.
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' res <- GraspPR(dist(pts), m = 5L, plateau = 20L, eliteSize = 4L,
 #'                seed = 1L)
-#' res$indices
+#' res
 #' @export
 GraspPR <- function(d, m, plateau = 100L, maxIter = NULL,
                     eliteSize = 10L, alpha = 0.8, timeBudgetS = Inf,
@@ -331,12 +331,12 @@ GraspPR <- function(d, m, plateau = 100L, maxIter = NULL,
 
   out <- GraspPR_cpp(d, m, plateau, maxIter, eliteSize,
                      as.double(alpha), as.double(timeBudgetS))
-  list(
-    indices   = sort(as.integer(out$indices)),
-    objective = as.numeric(out$objective),
-    time_s    = as.numeric(out$time_s),
-    iters     = as.integer(out$iters),
-    pr_calls  = as.integer(out$pr_calls)
+  structure(
+    sort(as.integer(out$indices)),
+    score    = as.numeric(out$objective),
+    time_s   = as.numeric(out$time_s),
+    iters    = as.integer(out$iters),
+    pr_calls = as.integer(out$pr_calls)
   )
 }
 
@@ -360,8 +360,6 @@ GraspPR <- function(d, m, plateau = 100L, maxIter = NULL,
   eliteSize <- as.integer(eliteSize)
   dth <- 5L
   t0 <- Sys.time()
-  Elapsed <- function() as.numeric(Sys.time() - t0, units = "secs")
-  gated <- is.finite(timeBudgetS)
 
   # Phase A: build initial elite set.
   ES <- vector("list", eliteSize)
@@ -375,63 +373,69 @@ GraspPR <- function(d, m, plateau = 100L, maxIter = NULL,
   ord <- order(esZ, decreasing = TRUE)
   ES <- ES[ord]; esZ <- esZ[ord]
 
+  bestSel <- ES[[1L]]
+  bestZ   <- esZ[1L]
+  iters   <- 0L
+  prCalls <- 0L
+  on.exit(setTimeLimit(), add = TRUE)
+  if (is.finite(timeBudgetS)) {
+    setTimeLimit(elapsed = max(0, timeBudgetS - as.numeric(Sys.time() - t0, units = "secs")),
+                 transient = TRUE)
+  }
+
   # Phase B: GRASP iterations until `plateau` consecutive non-improving
   # iterations (the deterministic criterion), an optional iteration cap, or an
   # optional wall-clock ceiling.
-  iters <- 0L
-  noImprove <- 0L
-  bestZB <- esZ[1L]
-  repeat {
-    if (noImprove >= plateau) break
-    if (iters >= maxIter) break
-    if (gated && Elapsed() >= timeBudgetS) break  # nocov
-    x  <- .GprConstruct(d, m, alpha)
-    xp <- .GprLocalSearch(d, x)
-    zp <- .GprObjective(d, xp)
-    res <- .GprTryInsert(d, ES, esZ, xp, zp, dth)
-    ES <- res$ES; esZ <- res$esZ
-    iters <- iters + 1L
-    if (esZ[1L] > bestZB) {
-      bestZB <- esZ[1L]
-      noImprove <- 0L
-    } else {
-      noImprove <- noImprove + 1L
-    }
-  }
-
-  # Phase C: path relinking over all elite pairs (deterministic; no RNG).
-  bestSel <- ES[[1L]]
-  bestZ   <- esZ[1L]
-  prCalls <- 0L
-  k <- length(ES)
-  if (k >= 2L && !(gated && Elapsed() >= timeBudgetS)) {
-    done <- FALSE
-    for (i in seq_len(k - 1L)) {
-      if (done) break  # nocov
-      for (j in (i + 1L):k) {
-        pr1 <- .GprPathRelink(d, ES[[i]], ES[[j]])
-        pr2 <- .GprPathRelink(d, ES[[j]], ES[[i]])
-        prCalls <- prCalls + 2L
-        ySel <- if (pr1$objective >= pr2$objective) pr1$best else pr2$best
-        yp <- .GprLocalSearch(d, ySel)
-        zp <- .GprObjective(d, yp)
-        if (zp > bestZ) {
-          bestZ <- zp
-          bestSel <- yp
-        }
-        if (gated && Elapsed() >= timeBudgetS) { # nocov start
-          done <- TRUE
-          break
-        } # nocov end
+  tryCatch({
+    noImprove <- 0L
+    repeat {
+      if (noImprove >= plateau) break
+      if (iters >= maxIter) break
+      x  <- .GprConstruct(d, m, alpha)
+      xp <- .GprLocalSearch(d, x)
+      zp <- .GprObjective(d, xp)
+      res <- .GprTryInsert(d, ES, esZ, xp, zp, dth)
+      ES <- res$ES; esZ <- res$esZ
+      iters <- iters + 1L
+      if (esZ[1L] > bestZ) {
+        bestZ   <- esZ[1L]
+        bestSel <- ES[[1L]]
+        noImprove <- 0L
+      } else {
+        noImprove <- noImprove + 1L
       }
     }
-  }
 
-  list(
-    indices   = sort(as.integer(bestSel)),
-    objective = bestZ,
-    time_s    = Elapsed(),
-    iters     = iters,
-    pr_calls  = prCalls
+    # Phase C: path relinking over all elite pairs (deterministic; no RNG).
+    bestSel <- ES[[1L]]
+    bestZ   <- esZ[1L]
+    k <- length(ES)
+    if (k >= 2L) {
+      for (i in seq_len(k - 1L)) {
+        for (j in (i + 1L):k) {
+          pr1 <- .GprPathRelink(d, ES[[i]], ES[[j]])
+          pr2 <- .GprPathRelink(d, ES[[j]], ES[[i]])
+          prCalls <- prCalls + 2L
+          ySel <- if (pr1$objective >= pr2$objective) pr1$best else pr2$best
+          yp <- .GprLocalSearch(d, ySel)
+          zp <- .GprObjective(d, yp)
+          if (zp > bestZ) {
+            bestZ <- zp
+            bestSel <- yp
+          }
+        }
+      }
+    }
+  }, error = function(e) { # nocov start
+    setTimeLimit()
+    if (!grepl("time limit", conditionMessage(e), ignore.case = TRUE)) stop(e)
+  }) # nocov end
+
+  structure(
+    sort(as.integer(bestSel)),
+    score    = bestZ,
+    time_s   = as.numeric(Sys.time() - t0, units = "secs"),
+    iters    = iters,
+    pr_calls = prCalls
   )
 }

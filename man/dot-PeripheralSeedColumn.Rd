@@ -7,7 +7,7 @@
 .PeripheralSeedColumn(colFn, N)
 }
 \arguments{
-\item{colFn}{Column oracle; see \code{\link[=Gonzalez]{Gonzalez()}}.}
+\item{colFn}{Column oracle; see \code{\link[=FarFirst]{FarFirst()}}.}
 
 \item{N}{Integer element count.}
 }

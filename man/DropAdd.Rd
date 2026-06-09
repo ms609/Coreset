@@ -5,19 +5,21 @@
 \title{DropAdd Tabu Search for the Max-Min Diversity Problem}
 \usage{
 DropAdd(
-  d,
+  d = NULL,
   m,
   plateau = 5000L,
   maxIter = NULL,
   timeBudgetS = Inf,
   seed = NULL,
   progress = getOption("MaxMin.progress", interactive()),
+  points = NULL,
   .verify = FALSE,
   .trace = NULL
 )
 }
 \arguments{
-\item{d}{A \code{dist} object or square symmetric numeric matrix.}
+\item{d}{A \code{dist} object or square symmetric numeric matrix.
+Mutually exclusive with \code{points}; supply exactly one.}
 
 \item{m}{Integer; subset size, \eqn{2 \le m \le n}.}
 
@@ -45,9 +47,17 @@ interactive sessions, \code{FALSE} otherwise
 (\code{getOption("MaxMin.progress", interactive())}). No effect when
 \code{.verify = TRUE} (testing path).}
 
+\item{points}{A numeric \eqn{n \times \mathrm{dim}} coordinate matrix (or an
+object coercible to one via \code{as.matrix}). Must be complete (no
+\code{NA}). Mutually exclusive with \code{d}; supply exactly one. When
+supplied, the algorithm never materialises the dense \eqn{n \times n}
+distance matrix, giving \eqn{O(n)} working memory and enabling use at
+\eqn{n} far exceeding the matrix path's ceiling (R's
+\code{as.matrix.dist} overflows at \eqn{n = 46340}).}
+
 \item{.verify}{Logical (testing only); if \code{TRUE}, routes to the R reference
 loop and brute-force asserts the streamlined records at every iteration.
-Default \code{FALSE} (the C++ fast path).}
+Default \code{FALSE} (the C++ fast path). Only applies to the \code{d} path.}
 
 \item{.trace}{Optional environment (testing only); if supplied, the dropped
 and added index sequences are written into it as \code{drops} and \code{adds}.}

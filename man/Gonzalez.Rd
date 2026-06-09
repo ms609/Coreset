@@ -75,7 +75,7 @@ Integer vector of length \code{min(n, N)} of selected indices.
 Greedy k-centre selection \insertCite{Gonzalez1985}{MaxMin}. Iteratively selects the point
 furthest from the current selection, a 2-approximation to the k-centre
 problem. The quality of the result depends on the first (seed) point; by
-default \code{Gonzalez()} runs an \strong{ensemble} of cheap \code{O(N)} seeding strategies
+default \code{FarFirst()} runs an \strong{ensemble} of cheap \code{O(N)} seeding strategies
 and keeps the selection with the largest minimum pairwise distance
 (\code{\link[=MinDist]{MinDist()}}). The default ensemble is three \code{"random_furthest"} starts -- a
 best-of-three selection. The random starts use the session RNG, so set a seed
@@ -85,7 +85,7 @@ best-of-three selection. The random starts use the session RNG, so set a seed
 available as opt-in \code{seed} strategies.
 }
 \details{
-\code{Gonzalez()} accepts the distances in whichever of three forms suits the
+\code{FarFirst()} accepts the distances in whichever of three forms suits the
 data, all returning identical selections on the same metric:
 \describe{
 \item{a \strong{distance matrix} (\code{d})}{a \code{dist} object or square matrix, held
@@ -118,19 +118,19 @@ set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
 # Default: best of three random-furthest starts (set.seed for reproducibility):
-Gonzalez(d, 5L)
+FarFirst(d, 5L)
 # More random-furthest starts (length of `pivots` sets the count):
-Gonzalez(d, 5L, pivots = sample.int(nrow(as.matrix(d)), 8L))
+FarFirst(d, 5L, pivots = sample.int(nrow(as.matrix(d)), 8L))
 # Or choose the pivots explicitly:
-Gonzalez(d, 5L, pivots = c(1L, 10L, 20L))
+FarFirst(d, 5L, pivots = c(1L, 10L, 20L))
 # Custom two-anchor ensemble:
-Gonzalez(d, 5L, seed = c("diameter", "anti_medoid"))
+FarFirst(d, 5L, seed = c("diameter", "anti_medoid"))
 # A single strategy:
-Gonzalez(d, 5L, seed = "diameter")
+FarFirst(d, 5L, seed = "diameter")
 # An explicit start index (integer seed):
-Gonzalez(d, 5L, seed = 1L)
+FarFirst(d, 5L, seed = 1L)
 # Matrix-free coordinate path (identical result, O(N) memory):
-Gonzalez(n = 5L, points = pts, seed = 1L)
+FarFirst(n = 5L, points = pts, seed = 1L)
 
 # Distance-column oracle: supply one column at a time, never the full matrix.
 data("USArrests")
@@ -139,7 +139,7 @@ StateDist <- function(i) {
   diffs <- sweep(arrestTypes, 2, unlist(arrestTypes[i, ]), "-")
   sqrt(rowSums(diffs ^ 2))
 }
-idx <- Gonzalez(StateDist, n = 4L, N = nrow(arrestTypes), seed = 1L)
+idx <- FarFirst(StateDist, n = 4L, N = nrow(arrestTypes), seed = 1L)
 arrestTypes[idx, ]
 }
 \references{

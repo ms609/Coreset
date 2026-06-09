@@ -2,7 +2,7 @@
 #
 # Peripheral seeding strategies for Gonzalez farthest-first selection, and the
 # ensemble driver that runs several and keeps the best by MinDist(). The single
-# anchors are exposed through MaxMinSeed(); Gonzalez(seed = ) selects among them
+# anchors are exposed through MaxMinSeed(); FarFirst(seed = ) selects among them
 # (or the ensemble) and runs the greedy pass.
 
 # The default seed ensemble: the `"random_furthest"` token alone, which expands
@@ -158,7 +158,7 @@
 #' Peripheral seed index for Gonzalez farthest-first selection
 #'
 #' Returns the index of a single deterministic peripheral seed, the starting
-#' point used by [Gonzalez()] under the corresponding `seed` strategy. Useful
+#' point used by [FarFirst()] under the corresponding `seed` strategy. Useful
 #' when composing a custom selection pass.
 #'
 #' Anchors:
@@ -170,7 +170,7 @@
 #'   \item{`"peripheral"`}{Two sweeps: the point furthest from point 1, then
 #'     the point furthest from that (a diameter-endpoint approximation), in
 #'     `O(N)`. The only anchor reachable from a distance-column oracle (the
-#'     function path of [Gonzalez()]).}
+#'     function path of [FarFirst()]).}
 #'   \item{`"random_furthest"`}{The point furthest from a random pivot, in
 #'     `O(N)`. The pivot is drawn with the session RNG; set a seed
 #'     (`set.seed()`) for a reproducible index.}
@@ -196,8 +196,8 @@
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' d <- dist(pts)
 #' MaxMinSeed(d, method = "diameter")
-#' Gonzalez(d, 5L, seed = MaxMinSeed(d, method = "diameter"))
-#' @seealso [Gonzalez()], which seeds and runs the greedy pass in one call.
+#' FarFirst(d, 5L, seed = MaxMinSeed(d, method = "diameter"))
+#' @seealso [FarFirst()], which seeds and runs the greedy pass in one call.
 #' @export
 MaxMinSeed <- function(d = NULL, points = NULL,
                        method = c("peripheral", "centroid", "random_furthest",
@@ -215,7 +215,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
 #' Ensemble Gonzalez over cheap peripheral-anchor strategies (distance matrix)
 #'
 #' Runs Gonzalez from each requested peripheral anchor and returns the subset
-#' maximising \eqn{T_k}. Internal driver for the ensemble path of [Gonzalez()]
+#' maximising \eqn{T_k}. Internal driver for the ensemble path of [FarFirst()]
 #' (triggered when `seed` is a character vector of length > 1). The
 #' `"random_furthest"` token expands to one start per element of `pivots`. The
 #' returned vector carries `strategy_results` and `winning_strategy` (character

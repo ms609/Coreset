@@ -35,7 +35,7 @@ from that (a diameter-endpoint approximation).}
 Integer vector of length \code{min(n, N)} of selected indices.
 }
 \description{
-Implements the distance-column oracle path of \code{\link[=Gonzalez]{Gonzalez()}} (dispatched there
+Implements the distance-column oracle path of \code{\link[=FarFirst]{FarFirst()}} (dispatched there
 when \code{d} is a function); see that function's \emph{Distance-column oracle} section
 for the user-facing contract. At each greedy step the distances from the
 newly selected element to all \code{N} elements are obtained from \code{colFn}, and a

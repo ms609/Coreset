@@ -14,12 +14,11 @@ reference:
   - title: Greedy selection
     desc: Farthest-first (Gonzalez) selection and its seeding strategies.
     contents:
-      - Gonzalez
+      - FarFirst
       - MaxMinSeed
   - title: Heuristic and exact solvers
     contents:
       - DropAdd
-      - DropAddPoints
       - GraspPR
       - ExactMaxMin
   - title: Scoring

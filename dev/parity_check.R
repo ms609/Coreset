@@ -15,54 +15,54 @@ strip <- function(x) { attributes(x) <- NULL; x }
 for (n in c(2L, 5L, 10L)) {
   # matrix path
   chk(sprintf("diameter   matrix n=%d", n),
-      MaxMin::Gonzalez(dm, n, seed = "diameter"),
+      MaxMin::FarFirst(dm, n, seed = "diameter"),
       FurthestPoint::WideSampleGonzDiameter(dm, n))
   chk(sprintf("medoid     matrix n=%d", n),
-      MaxMin::Gonzalez(dm, n, seed = "medoid"),
+      MaxMin::FarFirst(dm, n, seed = "medoid"),
       FurthestPoint::WideSampleMedoidFirst(dm, n))
   chk(sprintf("antimedoid matrix n=%d", n),
-      MaxMin::Gonzalez(dm, n, seed = "anti_medoid"),
+      MaxMin::FarFirst(dm, n, seed = "anti_medoid"),
       FurthestPoint::WideSampleAntiMedoid(dm, n))
   chk(sprintf("ensemble   matrix n=%d", n),
-      strip(MaxMin::Gonzalez(dm, n)),
+      strip(MaxMin::FarFirst(dm, n)),
       strip(FurthestPoint::WideSampleGonzEnsemble(dm, n)))
   chk(sprintf("ensemble-attr winner n=%d", n),
-      attr(MaxMin::Gonzalez(dm, n), "winning_strategy"),
+      attr(MaxMin::FarFirst(dm, n), "winning_strategy"),
       attr(FurthestPoint::WideSampleGonzEnsemble(dm, n), "winning_strategy"))
   chk(sprintf("first=1    matrix n=%d", n),
-      MaxMin::Gonzalez(dm, n, seed = 1L),
-      FurthestPoint::Gonzalez(dm, n, first = 1L))
+      MaxMin::FarFirst(dm, n, seed = 1L),
+      FurthestPoint::FarFirst(dm, n, first = 1L))
   # points path
   chk(sprintf("diameter   points n=%d", n),
-      MaxMin::Gonzalez(n = n, points = pts, seed = "diameter"),
+      MaxMin::FarFirst(n = n, points = pts, seed = "diameter"),
       FurthestPoint::WideSampleGonzDiameter(n = n, points = pts))
   chk(sprintf("medoid     points n=%d", n),
-      MaxMin::Gonzalez(n = n, points = pts, seed = "medoid"),
+      MaxMin::FarFirst(n = n, points = pts, seed = "medoid"),
       FurthestPoint::WideSampleMedoidFirst(n = n, points = pts))
   chk(sprintf("antimedoid points n=%d", n),
-      MaxMin::Gonzalez(n = n, points = pts, seed = "anti_medoid"),
+      MaxMin::FarFirst(n = n, points = pts, seed = "anti_medoid"),
       FurthestPoint::WideSampleAntiMedoid(n = n, points = pts))
   chk(sprintf("ensemble   points n=%d", n),
-      strip(MaxMin::Gonzalez(n = n, points = pts)),
+      strip(MaxMin::FarFirst(n = n, points = pts)),
       strip(FurthestPoint::WideSampleGonzEnsemble(n = n, points = pts)))
 }
 
-# Distance-column oracle (now the function path of Gonzalez())
+# Distance-column oracle (now the function path of FarFirst())
 colFn <- function(i) dm[, i]
 chk("Gonzalez column-oracle first=1",
-    MaxMin::Gonzalez(colFn, 8L, N = nrow(dm), seed = 1L),
+    MaxMin::FarFirst(colFn, 8L, N = nrow(dm), seed = 1L),
     FurthestPoint::GonzalezColumn(colFn, nrow(dm), 8L, first = 1L))
 chk("Gonzalez column-oracle peripheral seed",
-    MaxMin::Gonzalez(colFn, 8L, N = nrow(dm)),
+    MaxMin::FarFirst(colFn, 8L, N = nrow(dm)),
     FurthestPoint::GonzalezColumn(colFn, nrow(dm), 8L))
 
 # DropAdd (deterministic, matrix + points)
 chk("DropAdd matrix",
     MaxMin::DropAdd(dm, 8L, time_budget_s = 1, max_iter = 50L)$indices,
     FurthestPoint::DropAdd(dm, 8L, time_budget_s = 1, max_iter = 50L)$indices)
-chk("DropAddPoints",
-    MaxMin::DropAddPoints(pts, 8L, time_budget_s = 1, max_iter = 50L)$indices,
-    FurthestPoint::DropAddPoints(pts, 8L, time_budget_s = 1, max_iter = 50L)$indices)
+chk("DropAdd points",
+    MaxMin::DropAdd(points = pts, m = 8L, timeBudgetS = 1, maxIter = 50L),
+    FurthestPoint::DropAdd(points = pts, m = 8L, timeBudgetS = 1, maxIter = 50L))
 
 # MinDist
 chk("MinDist matrix", MaxMin::MinDist(dm, s0), FurthestPoint::MinDist(dm, s0))

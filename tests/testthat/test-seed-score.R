@@ -43,7 +43,7 @@ test_that("centroid seed is the farthest point from the coordinate mean", {
                    as.integer(which.max(d2)))
   # It has no distance-matrix form.
   expect_error(MaxMinSeed(dat$d, method = "centroid"), "coordinates")
-  expect_error(Gonzalez(dat$d, 5L, seed = "centroid"), "coordinates")
+  expect_error(FarFirst(dat$d, 5L, seed = "centroid"), "coordinates")
 })
 
 test_that("random_furthest is reproducible under set.seed", {
@@ -81,9 +81,9 @@ test_that("MinDist returns NA for fewer than two points", {
 
 test_that("Gonzalez seed='first' uses index 1 as anchor (both paths)", {
   dat <- MakeData()
-  rMat <- Gonzalez(dat$d, 4L, seed = "first")
+  rMat <- FarFirst(dat$d, 4L, seed = "first")
   expect_identical(rMat[1L], 1L)
-  rPts <- Gonzalez(n = 4L, points = dat$pts, seed = "first")
+  rPts <- FarFirst(n = 4L, points = dat$pts, seed = "first")
   expect_identical(rPts[1L], 1L)
 })
 
@@ -97,8 +97,8 @@ test_that("diameter anchor returns 1 on zero-distance data", {
   expect_identical(MaxMinSeed(dDegen, method = "diameter"), 1L)
   expect_identical(MaxMinSeed(points = ptsDegen, method = "diameter"), 1L)
   # Ensemble paths: AnchorSeed("diameter") hits the degenerate branch.
-  ensM  <- Gonzalez(dDegen, 2L, seed = c("diameter", "rowsum"))
-  ensPt <- Gonzalez(n = 2L, points = ptsDegen, seed = c("diameter", "rowsum"))
+  ensM  <- FarFirst(dDegen, 2L, seed = c("diameter", "rowsum"))
+  ensPt <- FarFirst(n = 2L, points = ptsDegen, seed = c("diameter", "rowsum"))
   expect_length(ensM,  2L)
   expect_length(ensPt, 2L)
 })
@@ -116,14 +116,14 @@ test_that(".GonzEnsemble non-first anchor wins when it is the better one", {
     pts <- matrix(rnorm(80L * 3L), ncol = 3L)
     d   <- as.matrix(dist(pts))
     n   <- 6L
-    tkD  <- MinDist(d, Gonzalez(d, n, seed = "diameter"))
-    tkAm <- MinDist(d, Gonzalez(d, n, seed = "anti_medoid"))
+    tkD  <- MinDist(d, FarFirst(d, n, seed = "diameter"))
+    tkAm <- MinDist(d, FarFirst(d, n, seed = "anti_medoid"))
     if (isTRUE(all.equal(tkD, tkAm))) next
     loser  <- if (tkAm > tkD) "diameter"    else "anti_medoid"
     winner <- if (tkAm > tkD) "anti_medoid" else "diameter"
     bestTk <- max(tkD, tkAm)
-    ensM  <- Gonzalez(d, n, seed = c(loser, winner))
-    ensPt <- Gonzalez(n = n, points = pts, seed = c(loser, winner))
+    ensM  <- FarFirst(d, n, seed = c(loser, winner))
+    ensPt <- FarFirst(n = n, points = pts, seed = c(loser, winner))
     expect_gte(MinDist(d, ensM),  bestTk - 1e-9)
     expect_gte(MinDist(d, ensPt), bestTk - 1e-9)
     found <- TRUE
@@ -140,7 +140,7 @@ test_that(".MaxMinSeed and .MaxMinSeedPoints stop on an unknown method", {
   expect_error(MaxMin:::.MaxMinSeedPoints(dat$pts, "nope"), "Unknown")
 })
 
-# ---- .GonzEnsemble internal guards (bypassed by Gonzalez() validation) -----
+# ---- .GonzEnsemble internal guards (bypassed by FarFirst() validation) -----
 
 test_that(".GonzEnsemble validates n and anchors and handles trivial n", {
   dat <- MakeData()
@@ -186,7 +186,7 @@ test_that(".GonzEnsembleFromPoints n=1 propagates NA t_k through all strategies"
   dat <- MakeData()
   # Each strategy returns one point -> t_k = NA -> is.na(tk) next fires for
   # every non-first strategy (line 360); is.na(bestTk) selects bestI (line 368).
-  res <- Gonzalez(n = 1L, points = dat$pts)
+  res <- FarFirst(n = 1L, points = dat$pts)
   expect_length(res, 1L)
   strat <- attr(res, "strategy_results")
   expect_true(all(is.na(vapply(strat, `[[`, numeric(1L), "t_k"))))

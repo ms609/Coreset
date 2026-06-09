@@ -51,14 +51,14 @@ data(eurodist)
 set.seed(1)
 
 # Select 4 maximally dispersed cities
-idx <- Gonzalez(eurodist, n = 4L)
+idx <- FarFirst(eurodist, n = 4L)
 MinDist(eurodist, idx)
 
 # View distances between chosen cities
 as.matrix(eurodist)[idx, idx]
 ```
 
-`Gonzalez()` returned the indices of the four cities whose nearest-neighbour
+`FarFirst()` returned the indices of the four cities whose nearest-neighbour
 distance within the selection is largest.
 `MinDist()` reports that value explicitly.
 
@@ -68,7 +68,7 @@ MaxMin provides four solvers, and a minimum-distance calculator:
 
 | Function | Quality | Speed | Stochastic? |
 |---|---|---|---|
-| `Gonzalez()` | Good (2-approximation) | Very fast | No |
+| `FarFirst()` | Good (2-approximation) | Very fast | No |
 | `DropAdd()` | High (≈ 99 % optimal) | Fast | No |
 | `GraspPR()` | Highest | Moderate | Yes (`seed =`) |
 | `ExactMaxMin()` | Optimal (NP-hard) | Slow | No |
@@ -79,20 +79,20 @@ We now walk through each of these in turn.
 
 ## Gonzalez: fast greedy selection
 
-The Gonzalez [-@Gonzalez1985] algorithm builds the selection greedily:
+The @Gonzalez1985 algorithm builds the selection greedily:
 start from a seed point, then repeatedly add whichever unselected point is
 farthest from the current selection.
 This greedy rule guarantees a 2-approximation to the optimal T~k~ and runs
 in O(*N* · *m*) time.
 
-By default `Gonzalez()` runs three `"random_furthest"` starts, each beginning
+By default `FarFirst()` runs three `"random_furthest"` starts, each beginning
 from the point furthest from a randomly selected 'pivot' point, and returns
 whichever pass produced the highest T~k~.
 
 ```{r}
 #| label: gonzalez-random
 set.seed(1)
-picks <- Gonzalez(eurodist, n = 6L)   # default: best of three random starts
+picks <- FarFirst(eurodist, n = 6L)   # default: best of three random starts
 ```
 
 More random starts, or pivots of your own devising, can be accomplished by a
@@ -104,7 +104,7 @@ set.seed(1)
 nCities <- attr(eurodist, "Size")
 # Use 5 random starts
 pivots <- sample(nCities, 5)
-picks <- Gonzalez(eurodist, n = 6L, pivots = pivots)
+picks <- FarFirst(eurodist, n = 6L, pivots = pivots)
 ```
 
 
@@ -114,7 +114,7 @@ will be returned.
 
 ```{r}
 #| label: gonzalez-seeds
-picks <- Gonzalez(eurodist, n = 6L, seed = c("diameter", "anti_medoid"))
+picks <- FarFirst(eurodist, n = 6L, seed = c("diameter", "anti_medoid"))
 MinDist(eurodist, picks)
 
 attr(picks, "winning_strategy")
@@ -126,7 +126,7 @@ would be too expensive, a function may be passed in place
 of the distance matrix. This function will be passed one index `i`, and should
 returns the distances from object `i` to all N objects — one column of the
 matrix.
-`Gonzalez()` calls it $n$ times, so the full N×N matrix is never built.
+`FarFirst()` calls it $n$ times, so the full N×N matrix is never built.
 `N`, the number of objects, must be supplied.
 
 ```{r}
@@ -137,7 +137,7 @@ StateDist <- function(i) {
   diffs <- sweep(arrestTypes, 2, unlist(arrestTypes[i, ]), "-")
   sqrt(rowSums(diffs ^ 2))
 }
-idx <- Gonzalez(StateDist, n = 4L, N = nrow(arrestTypes), seed = 1L)
+idx <- FarFirst(StateDist, n = 4L, N = nrow(arrestTypes), seed = 1L)
 arrestTypes[idx, ]
 ```
 
@@ -153,14 +153,14 @@ typically reaches ≈ 99 % of the optimal T~k~.
 picksDA <- DropAdd(eurodist, m = 6L, plateau = 500L)
 
 labels(eurodist)[picksDA]
-attr(picksDA, "objective")  # T_k achieved
+attr(picksDA, "score")  # T_k achieved
 attr(picksDA, "iters")      # iterations completed
 attr(picksDA, "time_s")     # wall-clock seconds
 ```
 
 The algorithm terminates after `plateau` iterations do not improve T~k~.
 Where *N* is too large for a distance matrix to fit in memory 
-(roughly N > 46 000), `DropAddPoints()` accepts a coordinate matrix directly.
+(roughly N > 46 000), pass a coordinate matrix via `DropAdd(points = ...)`.
 
 
 ## GRASP with path relinking
@@ -203,7 +203,7 @@ m   <- 8L
 
 ```{r}
 #| label: compare-run
-idx_gonz <- Gonzalez(d50, n = m)
+idx_ff <- FarFirst(d50, n = m)
 res_da50 <- DropAdd(d50, m = m, plateau = 500L)
 res_gr50 <- GraspPR(d50, m = m, plateau = 50L, seed = 42L)
 ```
@@ -214,8 +214,8 @@ dispersed selection.
 ```{r}
 #| label: compare-scores
 scores <- c(
-  Gonzalez  = MinDist(d50, idx_gonz),
-  DropAdd = attr(res_da50, "objective"),
+  FarFirst  = MinDist(d50, idx_ff),
+  DropAdd = attr(res_da50, "score"),
   GraspPR   = res_gr50$objective
 )
 round(scores, 3)
@@ -235,15 +235,15 @@ above captures the quality distinction even when the visual overlap is high.
 #|   full candidate set. A small jitter separates symbols at shared indices."
 
 methods <- list(
-  Gonzalez  = idx_gonz,
+  FarFirst  = idx_ff,
   DropAdd = res_da50,
   GraspPR   = res_gr50$indices
 )
-cols <- c(Gonzalez = "#E41A1C", DropAdd = "#377EB8", GraspPR = "#4DAF4A")
-pchs <- c(Gonzalez = 24L, DropAdd = 21L, GraspPR = 22L)
+cols <- c(FarFirst = "#E41A1C", DropAdd = "#377EB8", GraspPR = "#4DAF4A")
+pchs <- c(FarFirst = 24L, DropAdd = 21L, GraspPR = 22L)
 # Small per-method shift so coincident selections remain distinguishable
-dx   <- c(Gonzalez = 0, DropAdd =  0.04, GraspPR = -0.04)
-dy   <- c(Gonzalez = 0, DropAdd = -0.04, GraspPR =  0.04)
+dx   <- c(FarFirst = 0, DropAdd =  0.04, GraspPR = -0.04)
+dy   <- c(FarFirst = 0, DropAdd = -0.04, GraspPR =  0.04)
 
 plot(pts, pch = 1L, col = "grey75", asp = 1L,
      xlab = "x", ylab = "y",
@@ -294,9 +294,9 @@ res_ex$proven      # TRUE  ⟹  objective is the global optimum
 res_ex$objective
 
 # Compare to the greedy heuristic on the same instance
-res_gonz30 <- Gonzalez(d30, n = 6L)
+res_ff30 <- FarFirst(d30, n = 6L)
 c(exact    = res_ex$objective,
-  Gonzalez = MinDist(d30, res_gonz30))
+  Gonzalez = MinDist(d30, res_ff30))
 ```
 
 `$proven = TRUE` certifies that no selection can achieve a higher T~k~.
@@ -314,9 +314,9 @@ via the `points` argument:
 
 ```{r}
 #| label: MinDist
-MinDist(d50, idx_gonz)                               # from dist
-MinDist(as.matrix(d50), idx_gonz)                    # from square matrix
-MinDist(points = pts, idx = idx_gonz)                # from coordinates
+MinDist(d50, idx_ff)                               # from dist
+MinDist(as.matrix(d50), idx_ff)                    # from square matrix
+MinDist(points = pts, idx = idx_ff)                # from coordinates
 ```
 
 
@@ -324,15 +324,15 @@ MinDist(points = pts, idx = idx_gonz)                # from coordinates
 
 | Scenario | Recommended |
 |---|---|
-| Speed matters most, N up to a few thousand | `Gonzalez()` (ensemble default) |
+| Speed matters most, N up to a few thousand | `FarFirst()` (ensemble default) |
 | Deterministic, reproducible refinement | `DropAdd()` |
 | Best quality, set `seed` for reproducibility | `GraspPR(seed = ...)` |
-| N > 46 000 (distance matrix infeasible) | `DropAddPoints()` or `Gonzalez(points = ...)` |
-| Arbitrary metric with no coordinate embedding | `Gonzalez(<column function>, N = ...)` |
+| N > 46 000 (distance matrix infeasible) | `DropAdd(points = ...)` or `FarFirst(points = ...)` |
+| Arbitrary metric with no coordinate embedding | `FarFirst(<column function>, N = ...)` |
 | Proven optimum, N ≤ ~ 25–30, **highs** installed | `ExactMaxMin()` |
 
 The heuristics are complementary:
-`Gonzalez()` is O(*N* · *m*) and deterministic — an instant first result.
+`FarFirst()` is O(*N* · *m*) and deterministic — an instant first result.
 `DropAdd()` is deterministic and reproducible (no RNG), typically reaching
 ≈ 99 % of optimal; the `seed` parameter governs only the RNG used for
 tie-breaking, not the algorithm itself.

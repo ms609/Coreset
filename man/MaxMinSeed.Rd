@@ -26,7 +26,7 @@ Integer seed index in \verb{[1, N]}.
 }
 \description{
 Returns the index of a single deterministic peripheral seed, the starting
-point used by \code{\link[=Gonzalez]{Gonzalez()}} under the corresponding \code{seed} strategy. Useful
+point used by \code{\link[=FarFirst]{FarFirst()}} under the corresponding \code{seed} strategy. Useful
 when composing a custom selection pass.
 }
 \details{
@@ -39,7 +39,7 @@ the distance-matrix path, where \code{"peripheral"} serves the same role.}
 \item{\code{"peripheral"}}{Two sweeps: the point furthest from point 1, then
 the point furthest from that (a diameter-endpoint approximation), in
 \code{O(N)}. The only anchor reachable from a distance-column oracle (the
-function path of \code{\link[=Gonzalez]{Gonzalez()}}).}
+function path of \code{\link[=FarFirst]{FarFirst()}}).}
 \item{\code{"random_furthest"}}{The point furthest from a random pivot, in
 \code{O(N)}. The pivot is drawn with the session RNG; set a seed
 (\code{set.seed()}) for a reproducible index.}
@@ -58,8 +58,8 @@ set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
 MaxMinSeed(d, method = "diameter")
-Gonzalez(d, 5L, seed = MaxMinSeed(d, method = "diameter"))
+FarFirst(d, 5L, seed = MaxMinSeed(d, method = "diameter"))
 }
 \seealso{
-\code{\link[=Gonzalez]{Gonzalez()}}, which seeds and runs the greedy pass in one call.
+\code{\link[=FarFirst]{FarFirst()}}, which seeds and runs the greedy pass in one call.
 }

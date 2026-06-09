@@ -29,5 +29,5 @@ k-centre objective \eqn{T_k}. Higher values indicate a more spread-out
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
-MinDist(d, Gonzalez(d, 5L))
+MinDist(d, FarFirst(d, 5L))
 }
