@@ -11,13 +11,9 @@ under the Max-Min Diversity Problem (MMDP, the discrete *p*-dispersion
 objective): choose $n$ items so that the minimum pairwise distance within the
 selection is as large as possible.
 
-This dependency-light toolbox operates on three types of input:
-
-- a distance matrix (or `dist` object);
-- Euclidean coordinates, without ever materialising the distance matrix; or
-- an on-demand distance-column oracle, for spaces with no coordinate embedding
-  (e.g. phylogenetic trees), where the distance matrix would be too large to
-  store in memory.
+The package supports precomputed distance matrices (or `dist` objects), or 
+matrices of Euclidian coordinates, or lists of elements from which distances
+can be calculated.
 
 ## Solvers
 

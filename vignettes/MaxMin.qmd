@@ -152,10 +152,10 @@ typically reaches ≈ 99 % of the optimal T~k~.
 #| label: dropadd
 picksDA <- DropAdd(eurodist, m = 6L, plateau = 500L)
 
-labels(eurodist)[picksDA$indices]
-picksDA$score        # T_k achieved
-picksDA$iters        # iterations completed
-picksDA$time_s       # wall-clock seconds
+labels(eurodist)[picksDA]
+attr(picksDA, "objective")  # T_k achieved
+attr(picksDA, "iters")      # iterations completed
+attr(picksDA, "time_s")     # wall-clock seconds
 ```
 
 The algorithm terminates after `plateau` iterations do not improve T~k~.
@@ -215,7 +215,7 @@ dispersed selection.
 #| label: compare-scores
 scores <- c(
   Gonzalez  = MinDist(d50, idx_gonz),
-  DropAdd = res_da50$objective,
+  DropAdd = attr(res_da50, "objective"),
   GraspPR   = res_gr50$objective
 )
 round(scores, 3)
@@ -236,7 +236,7 @@ above captures the quality distinction even when the visual overlap is high.
 
 methods <- list(
   Gonzalez  = idx_gonz,
-  DropAdd = res_da50$indices,
+  DropAdd = res_da50,
   GraspPR   = res_gr50$indices
 )
 cols <- c(Gonzalez = "#E41A1C", DropAdd = "#377EB8", GraspPR = "#4DAF4A")
