@@ -37,17 +37,17 @@
 
 #' Expand ensemble anchor names into labelled seed specs
 #'
-#' Maps each anchor name to a `list(label, s1, mask)` spec. The
-#' `"random_furthest"` token expands to one spec per element of `pivots`, each
-#' seeded at the point furthest from that pivot (labelled `random_furthest1`,
-#' ...); an empty `pivots` contributes none.
+#' Maps each anchor name to a `list(label, s1)` spec. The `"random_furthest"`
+#' token expands to one spec per element of `pivots`, each seeded at the point
+#' furthest from that pivot (labelled `random_furthest1`, ...); an empty
+#' `pivots` contributes none.
 #' @param anchors Character vector of (de-duplicated) anchor names.
 #' @param pivots Integer vector of pivot indices the `"random_furthest"` token
 #'   expands over (one start per pivot).
-#' @param anchor_seed Function mapping a deterministic anchor name to
-#'   `list(s1, mask)`.
+#' @param anchor_seed Function mapping a deterministic anchor name to an integer
+#'   seed index.
 #' @param rf_seed Function mapping a pivot index to the furthest-point seed.
-#' @return List of `list(label, s1, mask)` specs.
+#' @return List of `list(label, s1)` specs.
 #' @keywords internal
 .ExpandAnchors <- function(anchors, pivots, anchor_seed, rf_seed) {
   specs <- list()
@@ -56,14 +56,12 @@
       for (j in seq_along(pivots)) {
         specs[[length(specs) + 1L]] <- list(
           label = paste0("random_furthest", j),
-          s1    = as.integer(rf_seed(pivots[[j]])),
-          mask  = FALSE
+          s1    = as.integer(rf_seed(pivots[[j]]))
         )
       }
     } else {
       sd <- anchor_seed(name)
-      specs[[length(specs) + 1L]] <- list(label = name, s1 = sd$s1,
-                                          mask = sd$mask)
+      specs[[length(specs) + 1L]] <- list(label = name, s1 = sd)
     }
   }
   if (length(specs) == 0L) {
@@ -267,19 +265,10 @@ MaxMinSeed <- function(d = NULL, points = NULL,
   }
 
   gonz_cache <- new.env(parent = emptyenv())
-  run_gonz <- function(s1, mask_medoid) {
-    key <- paste0(s1, if (mask_medoid) "M" else "U")
+  run_gonz <- function(s1) {
+    key <- as.character(s1)
     gonz_cache[[key]] %||% {
-      if (mask_medoid) { # nocov start
-        med   <- get_medoid()
-        d_use <- d
-        d_use[med, ] <- -Inf
-        d_use[, med] <- -Inf
-        diag(d_use) <- 0
-        idx <- .MaximinFrom(d_use, n, first = s1)
-      } else { # nocov end
-        idx <- .MaximinFrom(d, n, first = s1)
-      }
+      idx <- .MaximinFrom(d, n, first = s1)
       t_k <- if (length(idx) >= 2L) MinDist(d, idx) else NA_real_
       res  <- list(idx = idx, t_k = t_k)
       gonz_cache[[key]] <- res
@@ -293,25 +282,24 @@ MaxMinSeed <- function(d = NULL, points = NULL,
         d_off <- get_d_offdiag()
         d_max <- max(d_off)
         if (!is.finite(d_max) || d_max <= 0) {
-          list(s1 = 1L, mask = FALSE)
+          1L
         } else {
-          pair_ij <- arrayInd(which.max(d_off), dim(d_off))
-          list(s1 = as.integer(pair_ij[1L, 1L]), mask = FALSE)
+          as.integer(arrayInd(which.max(d_off), dim(d_off))[1L, 1L])
         }
       },
       anti_medoid = {
         med <- get_medoid()
         dist_from_medoid <- d[, med]
         dist_from_medoid[med] <- -Inf
-        list(s1 = as.integer(which.max(dist_from_medoid)), mask = FALSE)
+        as.integer(which.max(dist_from_medoid))
       },
-      medoid = list(s1 = get_medoid(), mask = FALSE),
+      medoid  = get_medoid(),
       peripheral = {
         s1 <- which.max(d[, 1L])
-        list(s1 = as.integer(which.max(d[, s1])), mask = FALSE)
+        as.integer(which.max(d[, s1]))
       },
-      rowsum = list(s1 = as.integer(which.max(get_row_sums())), mask = FALSE),
-      rownorm = list(s1 = as.integer(which.max(get_row_sq_sums())), mask = FALSE)
+      rowsum  = as.integer(which.max(get_row_sums())),
+      rownorm = as.integer(which.max(get_row_sq_sums()))
     )
   }
 
@@ -321,7 +309,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
   strategy_results <- vector("list", length(expanded))
   names(strategy_results) <- labels
   for (i in seq_along(expanded)) {
-    g <- run_gonz(expanded[[i]]$s1, expanded[[i]]$mask)
+    g <- run_gonz(expanded[[i]]$s1)
     strategy_results[[i]] <- list(
       s1  = expanded[[i]]$s1,
       idx = g$idx,
@@ -409,14 +397,10 @@ MaxMinSeed <- function(d = NULL, points = NULL,
   }
 
   gonz_cache <- new.env(parent = emptyenv())
-  run_gonz <- function(s1, mask_medoid) {
-    key <- paste0(s1, if (mask_medoid) "M" else "U")
+  run_gonz <- function(s1) {
+    key <- as.character(s1)
     gonz_cache[[key]] %||% {
-      idx <- if (mask_medoid) {  # nocov start
-        .MaximinFromPoints(points, n, first = s1, mask = get_medoid())
-      } else {                   # nocov end
-        .MaximinFromPoints(points, n, first = s1)
-      }
+      idx <- .MaximinFromPoints(points, n, first = s1)
       t_k <- if (length(idx) >= 2L) MinDist(idx = idx, points = points) else NA_real_
       res <- list(idx = idx, t_k = t_k)
       gonz_cache[[key]] <- res
@@ -429,27 +413,25 @@ MaxMinSeed <- function(d = NULL, points = NULL,
       diameter = {
         diam <- get_diameter()
         if (!is.finite(diam[1L]) || diam[1L] <= 0) {
-          list(s1 = 1L, mask = FALSE)
+          1L
         } else {
-          list(s1 = as.integer(diam[2L]), mask = FALSE)
+          as.integer(diam[2L])
         }
       },
       anti_medoid = {
         med <- get_medoid()
         dist_from_medoid <- EuclidColFromPoints_cpp(points, med)
         dist_from_medoid[med] <- -Inf
-        list(s1 = as.integer(which.max(dist_from_medoid)), mask = FALSE)
+        as.integer(which.max(dist_from_medoid))
       },
-      centroid = list(s1 = as.integer(which.max(get_centroid_d2())),
-                      mask = FALSE),
-      medoid = list(s1 = get_medoid(), mask = FALSE),
+      centroid  = as.integer(which.max(get_centroid_d2())),
+      medoid    = get_medoid(),
       peripheral = {
         s1 <- which.max(EuclidColFromPoints_cpp(points, 1L))
-        list(s1 = as.integer(which.max(EuclidColFromPoints_cpp(points, s1))),
-             mask = FALSE)
+        as.integer(which.max(EuclidColFromPoints_cpp(points, s1)))
       },
-      rowsum = list(s1 = as.integer(which.max(get_row_sums())), mask = FALSE),
-      rownorm = list(s1 = as.integer(which.max(get_row_sq_sums())), mask = FALSE)
+      rowsum  = as.integer(which.max(get_row_sums())),
+      rownorm = as.integer(which.max(get_row_sq_sums()))
     )
   }
 
@@ -461,7 +443,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
   strategy_results <- vector("list", length(expanded))
   names(strategy_results) <- labels
   for (i in seq_along(expanded)) {
-    g <- run_gonz(expanded[[i]]$s1, expanded[[i]]$mask)
+    g <- run_gonz(expanded[[i]]$s1)
     strategy_results[[i]] <- list(
       s1  = expanded[[i]]$s1,
       idx = g$idx,

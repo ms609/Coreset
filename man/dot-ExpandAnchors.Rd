@@ -12,18 +12,18 @@
 \item{pivots}{Integer vector of pivot indices the \code{"random_furthest"} token
 expands over (one start per pivot).}
 
-\item{anchor_seed}{Function mapping a deterministic anchor name to
-\code{list(s1, mask)}.}
+\item{anchor_seed}{Function mapping a deterministic anchor name to an integer
+seed index.}
 
 \item{rf_seed}{Function mapping a pivot index to the furthest-point seed.}
 }
 \value{
-List of \code{list(label, s1, mask)} specs.
+List of \code{list(label, s1)} specs.
 }
 \description{
-Maps each anchor name to a \code{list(label, s1, mask)} spec. The
-\code{"random_furthest"} token expands to one spec per element of \code{pivots}, each
-seeded at the point furthest from that pivot (labelled \code{random_furthest1},
-...); an empty \code{pivots} contributes none.
+Maps each anchor name to a \code{list(label, s1)} spec. The \code{"random_furthest"}
+token expands to one spec per element of \code{pivots}, each seeded at the point
+furthest from that pivot (labelled \code{random_furthest1}, ...); an empty
+\code{pivots} contributes none.
 }
 \keyword{internal}
