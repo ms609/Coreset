@@ -22,7 +22,6 @@ reference:
       - DropAddTSPoints
       - GraspPR
       - ExactMaxMin
-  - title: Refinement and scoring
+  - title: Scoring
     contents:
-      - PolishSelection
       - MinDist

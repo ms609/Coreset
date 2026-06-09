@@ -64,12 +64,6 @@ chk("DropAddTSPoints",
     MaxMin::DropAddTSPoints(pts, 8L, time_budget_s = 1, max_iter = 50L)$indices,
     FurthestPoint::DropAddTSPoints(pts, 8L, time_budget_s = 1, max_iter = 50L)$indices)
 
-# PolishSelection
-s0 <- MaxMin::Gonzalez(dm, 8L, seed = 1L)
-chk("PolishSelection",
-    strip(MaxMin::PolishSelection(dm, s0)),
-    strip(FurthestPoint::PolishSelection(dm, s0)))
-
 # MinDist
 chk("MinDist matrix", MaxMin::MinDist(dm, s0), FurthestPoint::MinDist(dm, s0))
 chk("MinDist points", MaxMin::MinDist(idx = s0, points = pts),

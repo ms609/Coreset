@@ -37,7 +37,3 @@ DiameterFromPoints_cpp <- function(points) {
     .Call(`_MaxMin_DiameterFromPoints_cpp`, points)
 }
 
-PolishMaximin_cpp <- function(d, S, limit, max_passes) {
-    .Call(`_MaxMin_PolishMaximin_cpp`, d, S, limit, max_passes)
-}
-
