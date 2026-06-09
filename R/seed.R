@@ -1,7 +1,7 @@
 # seed.R
 #
 # Peripheral seeding strategies for Gonzalez farthest-first selection, and the
-# ensemble driver that runs several and keeps the best by TkScore(). The single
+# ensemble driver that runs several and keeps the best by MinDist(). The single
 # anchors are exposed through MaxMinSeed(); Gonzalez(seed = ) selects among them
 # (or the ensemble) and runs the greedy pass.
 
@@ -282,7 +282,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
       } else { # nocov end
         idx <- .MaximinFrom(d, n, first = s1)
       }
-      t_k <- if (length(idx) >= 2L) TkScore(d, idx) else NA_real_
+      t_k <- if (length(idx) >= 2L) MinDist(d, idx) else NA_real_
       res  <- list(idx = idx, t_k = t_k)
       gonz_cache[[key]] <- res
       res
@@ -419,7 +419,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
       } else {                   # nocov end
         .MaximinFromPoints(points, n, first = s1)
       }
-      t_k <- if (length(idx) >= 2L) TkScore(idx = idx, points = points) else NA_real_
+      t_k <- if (length(idx) >= 2L) MinDist(idx = idx, points = points) else NA_real_
       res <- list(idx = idx, t_k = t_k)
       gonz_cache[[key]] <- res
       res

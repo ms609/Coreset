@@ -18,9 +18,9 @@
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' d <- dist(pts)
-#' TkScore(d, Gonzalez(d, 5L))
+#' MinDist(d, Gonzalez(d, 5L))
 #' @export
-TkScore <- function(d = NULL, idx, points = NULL) {
+MinDist <- function(d = NULL, idx, points = NULL) {
   if (!is.null(points)) {
     points <- .AsPointsMatrix(points)
     return(.MinPairwiseFromPoints(points, as.integer(idx)))

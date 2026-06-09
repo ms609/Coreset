@@ -29,9 +29,9 @@ test_that("polish recovers the global optimum on the corner+centre adversary", {
   )
   d   <- as.matrix(dist(pts))
   bad <- c(1L, 2L, 3L, 5L)  # 3 corners + centre
-  T_before <- TkScore(d, bad)
+  T_before <- MinDist(d, bad)
   polished <- PolishSelection(d, bad, limit = 20L)
-  T_after  <- TkScore(d, polished)
+  T_after  <- MinDist(d, polished)
 
   expect_lt(T_before, 1 - 1e-9)
   expect_equal(T_after, 1)
@@ -63,8 +63,8 @@ test_that("T_k(polish(S)) >= T_k(S) over many random selections", {
     for (trial in 1:6) {
       S0       <- sample.int(N, k)
       S1       <- PolishSelection(d, S0)
-      T0       <- TkScore(d, S0)
-      T1       <- TkScore(d, S1)
+      T0       <- MinDist(d, S0)
+      T1       <- MinDist(d, S1)
       # Strict monotonicity at minimum: polish never worsens T_k.
       expect_gte(T1, T0)
     }
@@ -92,14 +92,14 @@ test_that("polish escapes flat-landscape ties via Della Croce tie-break", {
   d   <- as.matrix(dist(pts))
   # Selecting all four square corners gives T_k = 1, n_critical = 4.
   S0  <- 1:4
-  T0  <- TkScore(d, S0)
+  T0  <- MinDist(d, S0)
   expect_equal(T0, 1)
 
   # After polish the selection must NOT be the four square corners — that is
   # the stalled state. The Della Croce branch should accept a swap to a
   # configuration with fewer tied minima (and may then climb further).
   S1 <- PolishSelection(d, S0, limit = 5L)
-  T1 <- TkScore(d, S1)
+  T1 <- MinDist(d, S1)
   expect_gte(T1, T0)
   # The polish should have made at least one swap.
   expect_gte(as.integer(attr(S1, "swaps")), 1L)

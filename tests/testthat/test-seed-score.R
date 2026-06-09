@@ -1,4 +1,4 @@
-# Tests for MaxMinSeed() and TkScore().
+# Tests for MaxMinSeed() and MinDist().
 
 make_data <- function(seed = 7, N = 50, dim = 3) {
   set.seed(seed)
@@ -59,22 +59,22 @@ test_that("MaxMinSeed validates method", {
   expect_error(MaxMinSeed(dat$d, method = "first"))
 })
 
-# ---- TkScore ------------------------------------------------------------
+# ---- MinDist ------------------------------------------------------------
 
-test_that("TkScore matrix and coordinate paths agree", {
+test_that("MinDist matrix and coordinate paths agree", {
   dat <- make_data()
   idx <- c(1L, 5L, 9L, 20L, 33L)
-  expect_equal(TkScore(dat$d, idx),
-               TkScore(idx = idx, points = dat$pts))
+  expect_equal(MinDist(dat$d, idx),
+               MinDist(idx = idx, points = dat$pts))
   # equals the brute-force minimum pairwise distance.
   sub <- dat$d[idx, idx]; diag(sub) <- Inf
-  expect_equal(TkScore(dat$d, idx), min(sub))
+  expect_equal(MinDist(dat$d, idx), min(sub))
 })
 
-test_that("TkScore returns NA for fewer than two points", {
+test_that("MinDist returns NA for fewer than two points", {
   dat <- make_data(N = 6)
-  expect_true(is.na(TkScore(dat$d, 3L)))
-  expect_true(is.na(TkScore(idx = integer(0), points = dat$pts)))
+  expect_true(is.na(MinDist(dat$d, 3L)))
+  expect_true(is.na(MinDist(idx = integer(0), points = dat$pts)))
 })
 
 # ---- "first" seed (.MaxMinSeed line 16; .MaxMinSeedPoints line 55) ---------
@@ -116,16 +116,16 @@ test_that(".GonzEnsemble non-first anchor wins when it is the better one", {
     pts <- matrix(rnorm(80L * 3L), ncol = 3L)
     d   <- as.matrix(dist(pts))
     n   <- 6L
-    tk_d  <- TkScore(d, Gonzalez(d, n, seed = "diameter"))
-    tk_am <- TkScore(d, Gonzalez(d, n, seed = "anti_medoid"))
+    tk_d  <- MinDist(d, Gonzalez(d, n, seed = "diameter"))
+    tk_am <- MinDist(d, Gonzalez(d, n, seed = "anti_medoid"))
     if (isTRUE(all.equal(tk_d, tk_am))) next
     loser  <- if (tk_am > tk_d) "diameter"    else "anti_medoid"
     winner <- if (tk_am > tk_d) "anti_medoid" else "diameter"
     best_tk <- max(tk_d, tk_am)
     ens_m  <- Gonzalez(d, n, seed = c(loser, winner))
     ens_pt <- Gonzalez(n = n, points = pts, seed = c(loser, winner))
-    expect_gte(TkScore(d, ens_m),  best_tk - 1e-9)
-    expect_gte(TkScore(d, ens_pt), best_tk - 1e-9)
+    expect_gte(MinDist(d, ens_m),  best_tk - 1e-9)
+    expect_gte(MinDist(d, ens_pt), best_tk - 1e-9)
     found <- TRUE
     break
   }

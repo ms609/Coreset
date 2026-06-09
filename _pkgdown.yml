@@ -25,4 +25,4 @@ reference:
   - title: Refinement and scoring
     contents:
       - PolishSelection
-      - TkScore
+      - MinDist

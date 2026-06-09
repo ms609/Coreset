@@ -49,9 +49,9 @@ test_that("ensemble keeps the best anchor by T_k", {
   n   <- 8L
   anchors <- c("diameter", "anti_medoid", "rowsum", "rownorm")
   ens <- Gonzalez(dat$d, n, seed = anchors)
-  ens_tk <- TkScore(dat$d, ens)
+  ens_tk <- MinDist(dat$d, ens)
   for (s in anchors) {
-    expect_gte(ens_tk + 1e-9, TkScore(dat$d, Gonzalez(dat$d, n, seed = s)))
+    expect_gte(ens_tk + 1e-9, MinDist(dat$d, Gonzalez(dat$d, n, seed = s)))
   }
   expect_true(all(attr(ens, "winning_strategy") %in% anchors))
   expect_length(attr(ens, "strategy_results"), 4L)
@@ -75,8 +75,8 @@ test_that("the default ensemble is the best-of-five O(N) seeds", {
   expect_length(attr(pt, "strategy_results"), 5L)
   expect_true("centroid" %in% names(attr(pt, "strategy_results")))
   # The default includes peripheral, so it is at least as good as it.
-  expect_gte(TkScore(dat$d, mat) + 1e-9,
-             TkScore(dat$d, Gonzalez(dat$d, n, seed = "peripheral")))
+  expect_gte(MinDist(dat$d, mat) + 1e-9,
+             MinDist(dat$d, Gonzalez(dat$d, n, seed = "peripheral")))
 })
 
 test_that("the default selection is reproducible under set.seed", {

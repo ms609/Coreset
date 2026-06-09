@@ -117,7 +117,7 @@
 #' problem. The quality of the result depends on the first (seed) point; by
 #' default `Gonzalez()` runs an **ensemble** of cheap `O(N)` seeding strategies
 #' and keeps the selection with the largest minimum pairwise distance
-#' ([TkScore()]). The default ensemble is the two deterministic `O(N)` seeds
+#' ([MinDist()]). The default ensemble is the two deterministic `O(N)` seeds
 #' `"centroid"` and `"peripheral"` together with three `"random_furthest"`
 #' starts -- a best-of-five selection. The random starts use the session RNG,
 #' so set a seed (`set.seed()`) for a reproducible selection. The `"centroid"`
@@ -177,7 +177,7 @@
 #'   a fixed-seed random pivot), `"diameter"`, `"anti_medoid"`, `"medoid"`,
 #'   `"rowsum"`, `"rownorm"`, or `"first"` (index 1). A **length > 1 character
 #'   vector** requests an ensemble: each named anchor runs a full Gonzalez pass
-#'   and the best result by [TkScore()] is returned with `strategy_results` and
+#'   and the best result by [MinDist()] is returned with `strategy_results` and
 #'   `winning_strategy` (character vector of all tied-best strategies)
 #'   attributes. The `"random_furthest"` token expands to one start per element
 #'   of `pivots`, labelled `random_furthest1`, `random_furthest2`, ... Valid

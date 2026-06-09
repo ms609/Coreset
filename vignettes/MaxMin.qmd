@@ -60,12 +60,12 @@ idx <- Gonzalez(eurodist, n = 4L)
 
 as.matrix(eurodist)[idx, idx]
 
-TkScore(eurodist, idx)
+MinDist(eurodist, idx)
 ```
 
 `Gonzalez()` returned the indices of the four cities whose nearest-neighbour
 distance within the selection is largest.
-`TkScore()` reports that value explicitly.
+`MinDist()` reports that value explicitly.
 
 ## Methods at a glance
 
@@ -78,7 +78,7 @@ MaxMin provides four solvers and two utilities:
 | `GraspPR()` | Highest | Moderate | Yes (`seed =`) |
 | `ExactMaxMin()` | Optimal (NP-hard) | Slow | No |
 | `PolishSelection()` | Post-processing only | Very fast | No |
-| `TkScore()` | Scoring only | Instant | No |
+| `MinDist()` | Scoring only | Instant | No |
 
 The rest of this vignette walks through each in turn.
 
@@ -117,10 +117,10 @@ You can also request a specific seeding strategy or a custom ensemble subset:
 ```{r}
 #| label: gonzalez-seeds
 idx_diam <- Gonzalez(eurodist, n = 6L, seed = "diameter")
-TkScore(eurodist, idx_diam)
+MinDist(eurodist, idx_diam)
 
 idx_anti <- Gonzalez(eurodist, n = 6L, seed = "anti_medoid")
-TkScore(eurodist, idx_anti)
+MinDist(eurodist, idx_anti)
 ```
 
 When only pairwise distances between objects are known — there are no
@@ -225,7 +225,7 @@ dispersed selection.
 ```{r}
 #| label: compare-scores
 scores <- c(
-  Gonzalez  = TkScore(d50, idx_gonz),
+  Gonzalez  = MinDist(d50, idx_gonz),
   DropAddTS = res_da50$objective,
   GraspPR   = res_gr50$objective
 )
@@ -300,7 +300,7 @@ res_ex$objective
 # Compare to the greedy heuristic on the same instance
 res_gonz30 <- Gonzalez(d30, n = 6L)
 c(exact    = res_ex$objective,
-  Gonzalez = TkScore(d30, res_gonz30))
+  Gonzalez = MinDist(d30, res_gonz30))
 ```
 
 `$proven = TRUE` certifies that no selection can achieve a higher T~k~.
@@ -311,17 +311,17 @@ time budget or should be tackled with the heuristics above.
 
 ## Scoring and polish
 
-### `TkScore()`
+### `MinDist()`
 
-`TkScore()` computes the T~k~ objective for any index set.
+`MinDist()` computes the T~k~ objective for any index set.
 It accepts a `dist` object, a square distance matrix, or a coordinate matrix
 via the `points` argument:
 
 ```{r}
-#| label: tkscore
-TkScore(d50, idx_gonz)                               # from dist
-TkScore(as.matrix(d50), idx_gonz)                    # from square matrix
-TkScore(points = pts, idx = idx_gonz)                # from coordinates
+#| label: MinDist
+MinDist(d50, idx_gonz)                               # from dist
+MinDist(as.matrix(d50), idx_gonz)                    # from square matrix
+MinDist(points = pts, idx = idx_gonz)                # from coordinates
 ```
 
 ### `PolishSelection()`
@@ -335,10 +335,10 @@ extra units of T~k~:
 ```{r}
 #| label: polish
 idx_raw      <- Gonzalez(d50, n = m, seed = "first")   # single, weaker seed
-TkScore(d50, idx_raw)
+MinDist(d50, idx_raw)
 
 idx_polished <- PolishSelection(d50, idx_raw)
-TkScore(d50, idx_polished)
+MinDist(d50, idx_polished)
 
 attr(idx_polished, "swaps")   # number of improving swaps applied
 ```

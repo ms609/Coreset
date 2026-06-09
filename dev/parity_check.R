@@ -70,10 +70,10 @@ chk("PolishSelection",
     strip(MaxMin::PolishSelection(dm, s0)),
     strip(FurthestPoint::PolishSelection(dm, s0)))
 
-# TkScore
-chk("TkScore matrix", MaxMin::TkScore(dm, s0), FurthestPoint::TkScore(dm, s0))
-chk("TkScore points", MaxMin::TkScore(idx = s0, points = pts),
-    FurthestPoint::TkScore(idx = s0, points = pts))
+# MinDist
+chk("MinDist matrix", MaxMin::MinDist(dm, s0), FurthestPoint::MinDist(dm, s0))
+chk("MinDist points", MaxMin::MinDist(idx = s0, points = pts),
+    FurthestPoint::MinDist(idx = s0, points = pts))
 
 # ExactMaxMin (needs highs)
 if (requireNamespace("highs", quietly = TRUE)) {

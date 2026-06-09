@@ -10,7 +10,7 @@ for the Max-Min Diversity Problem (MMDP / discrete p-dispersion).
 The MMDP algorithms — Gonzalez farthest-first (matrix /
 coordinate / column-oracle paths) and its seeding strategies, DropAdd tabu
 search, the exact node-packing solver, the polish local search, and the
-`TkScore` objective.
+`MinDist` objective.
 
 ## Conventions (ms609 house style)
 

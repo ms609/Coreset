@@ -22,7 +22,7 @@ a robust ensemble default.}
 \item{\code{\link[=DropAddTS]{DropAddTS()}} / \code{\link[=DropAddTSPoints]{DropAddTSPoints()}}}{DropAdd tabu search heuristic.}
 \item{\code{\link[=ExactMaxMin]{ExactMaxMin()}}}{Exact node-packing optimum (needs \pkg{highs}).}
 \item{\code{\link[=PolishSelection]{PolishSelection()}}}{1-swap local-search refinement.}
-\item{\code{\link[=TkScore]{TkScore()}}}{The k-centre objective (minimum pairwise distance).}
+\item{\code{\link[=MinDist]{MinDist()}}}{The k-centre objective (minimum pairwise distance).}
 }
 }
 

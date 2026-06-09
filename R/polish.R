@@ -37,7 +37,7 @@
 #' d   <- dist(pts)
 #' s0  <- Gonzalez(d, 5L, seed = 1L)
 #' s1  <- PolishSelection(d, s0)
-#' TkScore(d, s1) >= TkScore(d, s0)
+#' MinDist(d, s1) >= MinDist(d, s0)
 #' @export
 PolishSelection <- function(d, idx, limit = 20L, max_passes = 200L,
                             progress = getOption("MaxMin.progress", interactive())) {

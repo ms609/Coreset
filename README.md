@@ -27,7 +27,7 @@ This dependency-light toolbox operates on three types of input:
 | `DropAddTS()` / `DropAddTSPoints()` | DropAdd tabu search (Porumbel et al. 2011) | ~99%-optimal heuristic |
 | `ExactMaxMin()` | Node-packing integer program (Sayyady & Fathi 2016) | Proven optimum, small `n` (needs `highs`) |
 | `PolishSelection()` | Critical-edge 1-swap local search | Refine any selection |
-| `TkScore()` | Minimum pairwise distance (the objective) | Score a selection |
+| `MinDist()` | Minimum pairwise distance (the objective) | Score a selection |
 
 
 ## Installation

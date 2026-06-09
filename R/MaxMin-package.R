@@ -15,7 +15,7 @@
 #'   \item{[DropAddTS()] / [DropAddTSPoints()]}{DropAdd tabu search heuristic.}
 #'   \item{[ExactMaxMin()]}{Exact node-packing optimum (needs \pkg{highs}).}
 #'   \item{[PolishSelection()]}{1-swap local-search refinement.}
-#'   \item{[TkScore()]}{The k-centre objective (minimum pairwise distance).}
+#'   \item{[MinDist()]}{The k-centre objective (minimum pairwise distance).}
 #' }
 #'
 #' @section Relation to \pkg{maximin}:

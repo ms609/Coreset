@@ -30,7 +30,7 @@ diameter-endpoint approximation), \code{"random_furthest"} (furthest point from
 a fixed-seed random pivot), \code{"diameter"}, \code{"anti_medoid"}, \code{"medoid"},
 \code{"rowsum"}, \code{"rownorm"}, or \code{"first"} (index 1). A \strong{length > 1 character
 vector} requests an ensemble: each named anchor runs a full Gonzalez pass
-and the best result by \code{\link[=TkScore]{TkScore()}} is returned with \code{strategy_results} and
+and the best result by \code{\link[=MinDist]{MinDist()}} is returned with \code{strategy_results} and
 \code{winning_strategy} (character vector of all tied-best strategies)
 attributes. The \code{"random_furthest"} token expands to one start per element
 of \code{pivots}, labelled \code{random_furthest1}, \code{random_furthest2}, ... Valid
@@ -73,7 +73,7 @@ furthest from the current selection, a 2-approximation to the k-centre
 problem. The quality of the result depends on the first (seed) point; by
 default \code{Gonzalez()} runs an \strong{ensemble} of cheap \code{O(N)} seeding strategies
 and keeps the selection with the largest minimum pairwise distance
-(\code{\link[=TkScore]{TkScore()}}). The default ensemble is the two deterministic \code{O(N)} seeds
+(\code{\link[=MinDist]{MinDist()}}). The default ensemble is the two deterministic \code{O(N)} seeds
 \code{"centroid"} and \code{"peripheral"} together with three \code{"random_furthest"}
 starts -- a best-of-five selection. The random starts use the session RNG,
 so set a seed (\code{set.seed()}) for a reproducible selection. The \code{"centroid"}

@@ -10,7 +10,7 @@
   seeds — `"centroid"`, `"peripheral"`, and three `"random_furthest"` starts
   (whose pivots are drawn with the session RNG; set a seed for a reproducible
   selection, or supply them via the `pivots` argument) — and keeps the best by
-  `TkScore()`. Costlier O(*N*²) anchors (`"diameter"`, `"anti_medoid"`,
+  `MinDist()`. Costlier O(*N*²) anchors (`"diameter"`, `"anti_medoid"`,
   `"medoid"`, `"rowsum"`, `"rownorm"`) are available as opt-in strategies.
 - `DropAddTS()` / `DropAddTSPoints()`: DropAdd tabu search (Porumbel et al.
   2011), matrix and matrix-free coordinate paths.
@@ -20,5 +20,5 @@
   dense-matrix-only refinement metaheuristic that attains the highest `T_k`
   of the package's methods on small to medium instances.
 - `PolishSelection()`: critical-edge-anchored 1-swap local search.
-- `TkScore()`: the k-centre objective (minimum pairwise distance).
+- `MinDist()`: the k-centre objective (minimum pairwise distance).
 - `MaxMinSeed()`: exposes the peripheral seed indices directly.
