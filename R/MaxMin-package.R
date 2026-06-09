@@ -27,5 +27,6 @@
 #'
 #' @keywords internal
 #' @importFrom Rcpp sourceCpp
+#' @importFrom Rdpack reprompt
 #' @useDynLib MaxMin, .registration = TRUE
 "_PACKAGE"

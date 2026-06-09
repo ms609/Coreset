@@ -3,6 +3,8 @@ title: "Introduction to MaxMin"
 author: "Martin R. Smith"
 date: today
 format: html
+bibliography: ../inst/REFERENCES.bib
+csl: ../inst/apa.csl
 vignette: >
   %\VignetteIndexEntry{Introduction to MaxMin}
   %\VignetteEngine{quarto::html}
@@ -78,7 +80,7 @@ We now walk through each of these in turn.
 
 ## Gonzalez: fast greedy selection
 
-The **Gonzalez** (1985) algorithm builds the selection greedily:
+The Gonzalez [-@Gonzalez1985] algorithm builds the selection greedily:
 start from a seed point, then repeatedly add whichever unselected point is
 farthest from the current selection.
 This greedy rule guarantees a 2-approximation to the optimal T~k~ and runs
@@ -139,7 +141,7 @@ available on this path — the richer ensemble anchors need the whole matrix.
 
 ## DropAdd tabu search
 
-The **DropAdd** heuristic (Porumbel, Hao & Glover 2011) refines an initial
+The **DropAdd** heuristic [@Porumbel2011] refines an initial
 selection by alternating *drop* and *add* moves guided by a FIFO tabu list
 that prevents short cycles.
 It is fully deterministic and reproducible, and typically reaches ≈ 99 % of
@@ -165,7 +167,7 @@ coordinate matrix directly.
 
 ## GRASP with path relinking
 
-**GRASP + path relinking** (Resende et al. 2010) combines a *randomised*
+**GRASP + path relinking** [@Resende2010] combines a *randomised*
 greedy construction phase with extended local search and then refines an elite
 set of good solutions by interpolating between elite-pair trajectories
 (*path relinking*).
@@ -269,8 +271,8 @@ legend("topright",
 ## Exact solution
 
 For small instances (roughly N ≤ 25–30), `ExactMaxMin()` solves the problem
-to proven optimality via a node-packing integer programme (Sayyady & Fathi
-2016), using the **highs** solver.
+to proven optimality via a node-packing integer programme [@Sayyady2016],
+using the **highs** solver.
 
 First we must install **highs**:
 
@@ -369,3 +371,5 @@ negligible cost.
 
 The CRAN package [**maximin**](https://CRAN.R-project.org/package=maximin)
 constructs continuous space-filling designs by generating new points.
+
+## References

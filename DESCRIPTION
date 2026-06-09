@@ -19,8 +19,7 @@ Description: Selects a maximally dispersed subset of a fixed set of candidate
     node-packing integer program (Sayyady & Fathi 2016)
     <doi:10.1016/j.ejor.2016.02.026>, a GRASP with path-relinking heuristic
     (Resende, Marti, Gallego & Duarte 2010)
-    <doi:10.1016/j.ejor.2009.11.035>, and a local-search polish. Distinct from
-    the 'maximin' package, which constructs continuous space-filling designs.
+    <doi:10.1016/j.cor.2008.05.011>, and a local-search polish.
 License: GPL (>= 3)
 Encoding: UTF-8
 Language: en-GB
@@ -29,7 +28,9 @@ Depends:
 Imports:
     cli (>= 3.0.0),
     Rcpp,
+    Rdpack (>= 0.7),
     stats
+RdMacros: Rdpack
 Suggests:
     highs,
     knitr,

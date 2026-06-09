@@ -72,7 +72,7 @@ Default: \code{TRUE} in interactive sessions, \code{FALSE} otherwise
 Integer vector of length \code{min(n, N)} of selected indices.
 }
 \description{
-Greedy k-centre selection (Gonzalez 1985). Iteratively selects the point
+Greedy k-centre selection \insertCite{Gonzalez1985}{MaxMin}. Iteratively selects the point
 furthest from the current selection, a 2-approximation to the k-centre
 problem. The quality of the result depends on the first (seed) point; by
 default \code{Gonzalez()} runs an \strong{ensemble} of cheap \code{O(N)} seeding strategies
@@ -136,6 +136,9 @@ dm <- as.matrix(d)
 colFn <- function(i) dm[, i]
 identical(Gonzalez(colFn, 5L, N = nrow(dm), seed = 1L),
           Gonzalez(d, 5L, seed = 1L))
+}
+\references{
+\insertAllCited{}
 }
 \seealso{
 \code{\link[=MaxMinSeed]{MaxMinSeed()}} for the seed indices alone; \code{\link[=DropAddTS]{DropAddTS()}} and

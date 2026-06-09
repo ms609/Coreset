@@ -118,7 +118,7 @@
 #' Exact Max-Min Diversity (MMDP) optimum on small instances
 #'
 #' Solves the Max-Min Diversity Problem (discrete p-dispersion) to proven
-#' optimality by iterated node-packing (Sayyady & Fathi 2016): the optimum is
+#' optimality by iterated node-packing \insertCite{Sayyady2016;textual}{MaxMin}: the optimum is
 #' the largest threshold `lambda`, over the achieved distinct pairwise
 #' distances, for which the threshold graph `G(lambda)` (edges join pairs
 #' closer than `lambda`) contains an independent set of size at least `m`.
@@ -152,9 +152,7 @@
 #'     \item{solver}{Name of the MILP backend used.}
 #'     \item{n, m}{Instance size and target subset size.}
 #'   }
-#' @references Sayyady, F. & Fathi, Y. (2016). An integer programming
-#'   approach for solving the p-dispersion problem. *European Journal of
-#'   Operational Research* 253(1):216-225.
+#' @references \insertAllCited{}
 #' @export
 ExactMaxMin <- function(d, m, solver = NULL, time_budget_s = 60,
                         progress = getOption("MaxMin.progress", interactive())) {

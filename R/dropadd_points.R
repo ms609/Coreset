@@ -23,14 +23,14 @@
 #' dense \eqn{n \times n} distance matrix. Each needed distance column
 #' \eqn{d(\cdot, x)} is recomputed from the supplied coordinates on the fly in
 #' \eqn{O(n \cdot \mathrm{dim})}, giving \eqn{O(n)} working memory. This lets the
-#' SOTA MaxMin heuristic of Porumbel, Hao & Glover (2011) run on point sets far
+#' SOTA MaxMin heuristic of \insertCite{Porumbel2011;textual}{MaxMin} run on point sets far
 #' larger than the matrix path can hold (R's `as.matrix.dist` overflows at
 #' \eqn{n = 46340}; an \eqn{n = 58000} double matrix is roughly 27 GB).
 #'
 #' The construction (Algorithm 1), FIFO drop-add tabu search (Algorithm 2), and
 #' streamlined neighbour evaluation (Algorithms 3-4) are identical to
 #' [DropAddTS()], including the exclusion of the just-dropped point from the add
-#' candidates for one iteration (Porumbel et al. 2011, p.281). The MMDPo
+#' candidates for one iteration (\insertCite{Porumbel2011;textual}{MaxMin}, p.281). The MMDPo
 #' objective optimised is
 #' \deqn{\min_{x,y \in X} d(x,y) + \epsilon \sum_{x,y \in X} d(x,y),}
 #' with \eqn{\epsilon = 10^{-9}}.
@@ -86,10 +86,7 @@
 #'       construction phase).}
 #'   }
 #'
-#' @references
-#' Porumbel D, Hao J-K, Glover F (2011). A simple and effective algorithm for
-#' the MaxMin diversity problem. \emph{Annals of Operations Research}
-#' 186:275-293.
+#' @references \insertAllCited{}
 #'
 #' @seealso [DropAddTS()] for the matrix-based path used on smaller instances.
 #' @export

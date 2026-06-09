@@ -125,7 +125,7 @@
 
 #' DropAdd Tabu Search for the Max-Min Diversity Problem
 #'
-#' Implements the DropAdd-TS algorithm of Porumbel, Hao & Glover (2011) for
+#' Implements the DropAdd-TS algorithm of \insertCite{Porumbel2011;textual}{MaxMin} for
 #' selecting a maximally-dispersed subset of \code{m} points from a distance
 #' matrix. The procedure consists of a deterministic greedy construction
 #' (Algorithm 1) followed by a FIFO drop-add tabu search (Algorithm 2) with
@@ -183,10 +183,7 @@
 #'       construction phase).}
 #'   }
 #'
-#' @references
-#' Porumbel D, Hao J-K, Glover F (2011). A simple and effective algorithm for
-#' the MaxMin diversity problem. \emph{Annals of Operations Research}
-#' 186:275-293.
+#' @references \insertAllCited{}
 #'
 #' @export
 DropAddTS <- function(d, m, max_no_improve = 5000L, max_iter = NULL,

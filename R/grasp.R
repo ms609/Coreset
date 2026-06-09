@@ -245,8 +245,8 @@
 #' GRASP with Path Relinking for the Max-Min Diversity Problem
 #'
 #' Solves the Max-Min Diversity Problem (discrete p-dispersion) with the
-#' GRASP / path-relinking metaheuristic of Resende, Marti, Gallego & Duarte
-#' (2010), static variant (their Fig. 4): a randomised-greedy construction
+#' GRASP / path-relinking metaheuristic of \insertCite{Resende2010;textual}{MaxMin},
+#' static variant (their Fig. 4): a randomised-greedy construction
 #' with extended-improvement local search builds and maintains an elite set,
 #' followed by a single pass of path relinking over all elite pairs. On the
 #' application benchmark this attains the highest \eqn{T_k} of the methods in
@@ -295,10 +295,7 @@
 #'     \item{iters}{Number of GRASP refinement iterations executed.}
 #'     \item{pr_calls}{Number of path-relinking pair-applications run.}
 #'   }
-#' @references
-#' Resende MGC, Marti R, Gallego M, Duarte A (2010). GRASP and path relinking
-#' for the max-min diversity problem. \emph{Computers & Operations Research}
-#' 37(3):498-508. \doi{10.1016/j.cor.2008.05.011}
+#' @references \insertAllCited{}
 #'
 #' @seealso [DropAddTS()] and [DropAddTSPoints()] for scalable refinement;
 #'   [ExactMaxMin()] for the proven optimum on small instances.
