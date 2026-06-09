@@ -178,9 +178,9 @@ reproducibility:
 #| label: grasp
 res_gr <- GraspPR(eurodist, m = 6L, plateau = 50L, seed = 42L)
 
-labels(eurodist)[res_gr$indices]
-res_gr$objective
-res_gr$pr_calls   # path-relinking calls performed
+labels(eurodist)[res_gr]
+attr(res_gr, "score")
+attr(res_gr, "pr_calls")   # path-relinking calls performed
 ```
 
 `plateau` controls how many consecutive non-improving GRASP iterations
@@ -216,7 +216,7 @@ dispersed selection.
 scores <- c(
   FarFirst  = MinDist(d50, idx_ff),
   DropAdd = attr(res_da50, "score"),
-  GraspPR   = res_gr50$objective
+  GraspPR   = attr(res_gr50, "score")
 )
 round(scores, 3)
 ```
@@ -237,7 +237,7 @@ above captures the quality distinction even when the visual overlap is high.
 methods <- list(
   FarFirst  = idx_ff,
   DropAdd = res_da50,
-  GraspPR   = res_gr50$indices
+  GraspPR   = res_gr50
 )
 cols <- c(FarFirst = "#E41A1C", DropAdd = "#377EB8", GraspPR = "#4DAF4A")
 pchs <- c(FarFirst = 24L, DropAdd = 21L, GraspPR = 22L)

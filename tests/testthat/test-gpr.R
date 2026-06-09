@@ -10,11 +10,11 @@ d30m  <- as.matrix(d30)
 
 test_that("GraspPR smoke: returns valid selection on 30 random 3-D points", {
   res <- GraspPR(d30, m = 5L, plateau = 20L, eliteSize = 4L, seed = 1L)
-  expect_type(res$indices, "integer")
-  expect_length(res$indices, 5L)
-  expect_true(all(res$indices %in% seq_len(30L)))
-  expect_equal(length(unique(res$indices)), 5L)
-  expect_true(res$objective > 0)
+  expect_type(res, "integer")
+  expect_length(res, 5L)
+  expect_true(all(res %in% seq_len(30L)))
+  expect_equal(length(unique(res)), 5L)
+  expect_true(attr(res, "score") > 0)
 })
 
 # 2. Compiled kernel matches the R reference bit-for-bit -------------------
@@ -39,10 +39,10 @@ test_that("GraspPR_cpp == .GraspPR_R across seeds and parameters", {
                    alpha = 0.8)
 
     info <- sprintf("seed=%d mni=%d es=%d", s, mni, es)
-    expect_identical(ker$indices, ref$indices, info = info)
-    expect_identical(ker$objective, ref$objective, info = info)
-    expect_identical(ker$iters, ref$iters, info = info)
-    expect_identical(ker$pr_calls, ref$pr_calls, info = info)
+    expect_identical(ker,                    ref,                    info = info)
+    expect_identical(attr(ker, "score"),     attr(ref, "score"),     info = info)
+    expect_identical(attr(ker, "iters"),     attr(ref, "iters"),     info = info)
+    expect_identical(attr(ker, "pr_calls"),  attr(ref, "pr_calls"),  info = info)
   }
 })
 
@@ -51,18 +51,16 @@ test_that("GraspPR_cpp == .GraspPR_R across seeds and parameters", {
 test_that("GraspPR is reproducible from a seed (machine-independent)", {
   a <- GraspPR(d30, m = 6L, plateau = 30L, eliteSize = 5L, seed = 17L)
   b <- GraspPR(d30, m = 6L, plateau = 30L, eliteSize = 5L, seed = 17L)
-  expect_identical(a$indices, b$indices)
-  expect_identical(a$objective, b$objective)
-  expect_identical(a$iters, b$iters)
+  expect_identical(a, b)
 })
 
 # 4. maxIter = 0 short-circuits Phase B -----------------------------------
 
 test_that("GraspPR with maxIter = 0 runs Phase A + relinking only", {
   res <- GraspPR(d30, m = 4L, maxIter = 0L, eliteSize = 4L, seed = 7L)
-  expect_length(res$indices, 4L)
-  expect_true(res$objective > 0)
-  expect_equal(res$iters, 0L)
+  expect_length(res, 4L)
+  expect_true(attr(res, "score") > 0)
+  expect_equal(attr(res, "iters"), 0L)
 })
 
 # 5. Stagnation criterion bounds the run -----------------------------------
@@ -72,8 +70,8 @@ test_that("GraspPR stops within plateau of its last improvement", {
   # stagnation rule alone the loop must still terminate.
   res <- GraspPR(d30, m = 6L, plateau = 5L, maxIter = 200L,
                  eliteSize = 4L, seed = 3L)
-  expect_lte(res$iters, 200L)
-  expect_length(res$indices, 6L)
+  expect_lte(attr(res, "iters"), 200L)
+  expect_length(res, 6L)
 })
 
 # 6. Local search monotonicity (.GprLocalSearch reference helper) ----------
@@ -117,7 +115,7 @@ test_that(".GraspPR_R stops exactly at maxIter", {
   set.seed(1)
   ref <- MaxMin:::.GraspPR_R(d30m, m = 5L, plateau = 1000L,
                               maxIter = 3L, eliteSize = 4L)
-  expect_lte(ref$iters, 3L)
+  expect_lte(attr(ref, "iters"), 3L)
 })
 
 # 10. .GprLocalSearch pair-count reduction (extended-improvement branch) ---
@@ -194,7 +192,7 @@ test_that(".GraspPR_R phase-C path relinking fires lines 422-423", {
     res <- MaxMin:::.GraspPR_R(d, m = m, plateau = 1000L,
                                 maxIter = 0L, eliteSize = es, alpha = alpha)
 
-    if (res$objective > phaseABest + 1e-9) {
+    if (attr(res, "score") > phaseABest + 1e-9) {
       found <- TRUE
       break
     }
