@@ -31,8 +31,6 @@
   GRASP with path relinking (Resende et al. 2010), a dense-matrix-only
   refinement metaheuristic that attains the highest `T_k` of the
   package’s methods on small to medium instances.
-- [`PolishSelection()`](https://ms609.github.io/MaxMin/reference/PolishSelection.md):
-  critical-edge-anchored 1-swap local search.
 - [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md):
   the k-centre objective (minimum pairwise distance).
 - [`MaxMinSeed()`](https://ms609.github.io/MaxMin/reference/MaxMinSeed.md):

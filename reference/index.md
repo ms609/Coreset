@@ -20,10 +20,8 @@ Farthest-first (Gonzalez) selection and its seeding strategies.
 - [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
   : Exact Max-Min Diversity (MMDP) optimum on small instances
 
-## Refinement and scoring
+## Scoring
 
-- [`PolishSelection()`](https://ms609.github.io/MaxMin/reference/PolishSelection.md)
-  : Local-search polish for a max-min diversity selection
 - [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md) :
   Minimum pairwise distance within a selection (T_k = k-centre
   objective)

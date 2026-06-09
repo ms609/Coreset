@@ -21,7 +21,6 @@ This dependency-light toolbox operates on three types of input:
 | [`Gonzalez()`](https://ms609.github.io/MaxMin/reference/Gonzalez.md) | Greedy farthest-first (Gonzalez 1985); default best-of-three ensemble of reproducible random-furthest starts (deterministic anchors such as centroid/peripheral are opt-in) | Fast; matrix, coordinate, or distance-column-oracle input (the last for very large sets with no embedding) |
 | [`DropAddTS()`](https://ms609.github.io/MaxMin/reference/DropAddTS.md) / [`DropAddTSPoints()`](https://ms609.github.io/MaxMin/reference/DropAddTSPoints.md) | DropAdd tabu search (Porumbel et al. 2011) | ~99%-optimal heuristic |
 | [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md) | Node-packing integer program (Sayyady & Fathi 2016) | Proven optimum, small `n` (needs `highs`) |
-| [`PolishSelection()`](https://ms609.github.io/MaxMin/reference/PolishSelection.md) | Critical-edge 1-swap local search | Refine any selection |
 | [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md) | Minimum pairwise distance (the objective) | Score a selection |
 
 ## Installation

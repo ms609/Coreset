@@ -159,7 +159,7 @@ res_da$objective     # T_k achieved
 res_da$iters         # iterations completed
 #> [1] 516
 res_da$time_s        # wall-clock seconds
-#> [1] 0.0002295971
+#> [1] 0.000262022
 ```
 
 `max_no_improve` is the main stopping knob: the algorithm terminates
@@ -324,7 +324,7 @@ budget or should be tackled with the heuristics above.
 
 ------------------------------------------------------------------------
 
-## Scoring and polish
+## Scoring
 
 ### `MinDist()`
 
@@ -343,28 +343,6 @@ MinDist(points = pts, idx = idx_gonz)                # from coordinates
 #> [1] 1.416314
 ```
 
-### `PolishSelection()`
-
-[`PolishSelection()`](https://ms609.github.io/MaxMin/reference/PolishSelection.md)
-applies a 1-swap local search anchored on the *critical edge* — the pair
-realising T_(k) — and is a fast post-processor for any greedy selector.
-Applying it to a single-seed (weaker) Gonzalez result often recovers a
-few extra units of T_(k):
-
-``` r
-
-idx_raw      <- Gonzalez(d50, n = m, seed = "first")   # single, weaker seed
-MinDist(d50, idx_raw)
-#> [1] 1.322782
-
-idx_polished <- PolishSelection(d50, idx_raw)
-MinDist(d50, idx_polished)
-#> [1] 1.416314
-
-attr(idx_polished, "swaps")   # number of improving swaps applied
-#> [1] 1
-```
-
 ------------------------------------------------------------------------
 
 ## When to use which method
@@ -377,7 +355,6 @@ attr(idx_polished, "swaps")   # number of improving swaps applied
 | N \> 46 000 (distance matrix infeasible) | [`DropAddTSPoints()`](https://ms609.github.io/MaxMin/reference/DropAddTSPoints.md) or `Gonzalez(points = ...)` |
 | Arbitrary metric with no coordinate embedding | `Gonzalez(<column function>, N = ...)` |
 | Proven optimum, N ≤ ~ 25–30, **highs** installed | [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md) |
-| Post-process any selection cheaply | [`PolishSelection()`](https://ms609.github.io/MaxMin/reference/PolishSelection.md) |
 
 The heuristics are complementary:
 [`Gonzalez()`](https://ms609.github.io/MaxMin/reference/Gonzalez.md) is
@@ -389,9 +366,7 @@ tie-breaking, not the algorithm itself.
 [`GraspPR()`](https://ms609.github.io/MaxMin/reference/GraspPR.md) is
 stochastic and usually edges out
 [`DropAddTS()`](https://ms609.github.io/MaxMin/reference/DropAddTS.md)
-on T_(k), but requires a `seed` for reproducibility. For any of these,
-[`PolishSelection()`](https://ms609.github.io/MaxMin/reference/PolishSelection.md)
-can squeeze out further improvement at negligible cost.
+on T_(k), but requires a `seed` for reproducibility.
 
 ## Related packages
 

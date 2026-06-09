@@ -25,10 +25,6 @@ materialising the matrix), or on an on-demand distance-column oracle.
 
   Exact node-packing optimum (needs highs).
 
-- [`PolishSelection()`](https://ms609.github.io/MaxMin/reference/PolishSelection.md):
-
-  1-swap local-search refinement.
-
 - [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md):
 
   The k-centre objective (minimum pairwise distance).
