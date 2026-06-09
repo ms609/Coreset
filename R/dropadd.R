@@ -186,7 +186,7 @@
 #' @references \insertAllCited{}
 #'
 #' @export
-DropAddTS <- function(d, m, max_no_improve = 5000L, max_iter = NULL,
+DropAdd <- function(d, m, max_no_improve = 5000L, max_iter = NULL,
                       time_budget_s = Inf, seed = NULL,
                       progress = getOption("MaxMin.progress", interactive()),
                       .verify = FALSE, .trace = NULL) {
@@ -234,7 +234,7 @@ DropAddTS <- function(d, m, max_no_improve = 5000L, max_iter = NULL,
         .auto_close = FALSE
       )
     }
-    out <- DropAddTS_cpp(dmat, m, as.double(time_budget_s),
+    out <- DropAdd_cpp(dmat, m, as.double(time_budget_s),
                          cpp_max_iter, max_no_improve, want_trace)
     if (want_trace) {
       .trace$drops <- out$drops

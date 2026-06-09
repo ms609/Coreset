@@ -10,9 +10,9 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// DropAddTS_cpp
-List DropAddTS_cpp(NumericMatrix dmat, int m, double time_budget_s, int max_iter, int max_no_improve, bool want_trace);
-RcppExport SEXP _MaxMin_DropAddTS_cpp(SEXP dmatSEXP, SEXP mSEXP, SEXP time_budget_sSEXP, SEXP max_iterSEXP, SEXP max_no_improveSEXP, SEXP want_traceSEXP) {
+// DropAdd_cpp
+List DropAdd_cpp(NumericMatrix dmat, int m, double time_budget_s, int max_iter, int max_no_improve, bool want_trace);
+RcppExport SEXP _MaxMin_DropAdd_cpp(SEXP dmatSEXP, SEXP mSEXP, SEXP time_budget_sSEXP, SEXP max_iterSEXP, SEXP max_no_improveSEXP, SEXP want_traceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -22,13 +22,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
     Rcpp::traits::input_parameter< int >::type max_no_improve(max_no_improveSEXP);
     Rcpp::traits::input_parameter< bool >::type want_trace(want_traceSEXP);
-    rcpp_result_gen = Rcpp::wrap(DropAddTS_cpp(dmat, m, time_budget_s, max_iter, max_no_improve, want_trace));
+    rcpp_result_gen = Rcpp::wrap(DropAdd_cpp(dmat, m, time_budget_s, max_iter, max_no_improve, want_trace));
     return rcpp_result_gen;
 END_RCPP
 }
-// DropAddTS_points_cpp
-List DropAddTS_points_cpp(NumericMatrix points, int m, double time_budget_s, int max_iter, int max_no_improve, bool want_trace);
-RcppExport SEXP _MaxMin_DropAddTS_points_cpp(SEXP pointsSEXP, SEXP mSEXP, SEXP time_budget_sSEXP, SEXP max_iterSEXP, SEXP max_no_improveSEXP, SEXP want_traceSEXP) {
+// DropAdd_points_cpp
+List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s, int max_iter, int max_no_improve, bool want_trace);
+RcppExport SEXP _MaxMin_DropAdd_points_cpp(SEXP pointsSEXP, SEXP mSEXP, SEXP time_budget_sSEXP, SEXP max_iterSEXP, SEXP max_no_improveSEXP, SEXP want_traceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -38,7 +38,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
     Rcpp::traits::input_parameter< int >::type max_no_improve(max_no_improveSEXP);
     Rcpp::traits::input_parameter< bool >::type want_trace(want_traceSEXP);
-    rcpp_result_gen = Rcpp::wrap(DropAddTS_points_cpp(points, m, time_budget_s, max_iter, max_no_improve, want_trace));
+    rcpp_result_gen = Rcpp::wrap(DropAdd_points_cpp(points, m, time_budget_s, max_iter, max_no_improve, want_trace));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -133,8 +133,8 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_MaxMin_DropAddTS_cpp", (DL_FUNC) &_MaxMin_DropAddTS_cpp, 6},
-    {"_MaxMin_DropAddTS_points_cpp", (DL_FUNC) &_MaxMin_DropAddTS_points_cpp, 6},
+    {"_MaxMin_DropAdd_cpp", (DL_FUNC) &_MaxMin_DropAdd_cpp, 6},
+    {"_MaxMin_DropAdd_points_cpp", (DL_FUNC) &_MaxMin_DropAdd_points_cpp, 6},
     {"_MaxMin_GraspPR_cpp", (DL_FUNC) &_MaxMin_GraspPR_cpp, 7},
     {"_MaxMin_MaximinFrom_cpp", (DL_FUNC) &_MaxMin_MaximinFrom_cpp, 3},
     {"_MaxMin_MaximinFromPoints_cpp", (DL_FUNC) &_MaxMin_MaximinFromPoints_cpp, 4},

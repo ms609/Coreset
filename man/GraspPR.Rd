@@ -74,7 +74,7 @@ This is a \strong{dense-matrix-only} method: it materialises and repeatedly
 subsets the full \eqn{n \times n} distance matrix, so it is suited to
 instances small enough to hold that matrix. It offers no coordinate or
 column-oracle path. For the matrix-free regime where the dense matrix is
-infeasible, use \code{\link[=DropAddTSPoints]{DropAddTSPoints()}} or \code{\link[=Gonzalez]{Gonzalez()}} (coordinate or
+infeasible, use \code{\link[=DropAddPoints]{DropAddPoints()}} or \code{\link[=Gonzalez]{Gonzalez()}} (coordinate or
 distance-column oracle path), whose
 \eqn{T_k} lands within roughly a percent on the benchmark while scaling to
 far larger instances.
@@ -90,6 +90,6 @@ res$indices
 \insertAllCited{}
 }
 \seealso{
-\code{\link[=DropAddTS]{DropAddTS()}} and \code{\link[=DropAddTSPoints]{DropAddTSPoints()}} for scalable refinement;
+\code{\link[=DropAdd]{DropAdd()}} and \code{\link[=DropAddPoints]{DropAddPoints()}} for scalable refinement;
 \code{\link[=ExactMaxMin]{ExactMaxMin()}} for the proven optimum on small instances.
 }

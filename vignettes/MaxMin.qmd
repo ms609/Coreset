@@ -69,7 +69,7 @@ MaxMin provides four solvers, and a minimum-distance calculator:
 | Function | Quality | Speed | Stochastic? |
 |---|---|---|---|
 | `Gonzalez()` | Good (2-approximation) | Very fast | No |
-| `DropAddTS()` | High (≈ 99 % optimal) | Fast | No |
+| `DropAdd()` | High (≈ 99 % optimal) | Fast | No |
 | `GraspPR()` | Highest | Moderate | Yes (`seed =`) |
 | `ExactMaxMin()` | Optimal (NP-hard) | Slow | No |
 | `MinDist()` | Scoring only | Instant | No |
@@ -153,7 +153,7 @@ the optimal T~k~.
 
 ```{r}
 #| label: dropadd
-res_da <- DropAddTS(eurodist, m = 6L, max_no_improve = 500L)
+res_da <- DropAdd(eurodist, m = 6L, max_no_improve = 500L)
 
 labels(eurodist)[res_da$indices]
 res_da$objective     # T_k achieved
@@ -164,7 +164,7 @@ res_da$time_s        # wall-clock seconds
 `max_no_improve` is the main stopping knob: the algorithm terminates after
 this many consecutive iterations without an improvement in T~k~.
 For coordinate data where *N* is large enough to make the distance matrix
-infeasible (roughly N > 46 000), use `DropAddTSPoints()`, which accepts a
+infeasible (roughly N > 46 000), use `DropAddPoints()`, which accepts a
 coordinate matrix directly.
 
 
@@ -209,7 +209,7 @@ m   <- 8L
 ```{r}
 #| label: compare-run
 idx_gonz <- Gonzalez(d50, n = m)
-res_da50 <- DropAddTS(d50, m = m, max_no_improve = 500L)
+res_da50 <- DropAdd(d50, m = m, max_no_improve = 500L)
 res_gr50 <- GraspPR(d50, m = m, max_no_improve = 50L, seed = 42L)
 ```
 
@@ -220,7 +220,7 @@ dispersed selection.
 #| label: compare-scores
 scores <- c(
   Gonzalez  = MinDist(d50, idx_gonz),
-  DropAddTS = res_da50$objective,
+  DropAdd = res_da50$objective,
   GraspPR   = res_gr50$objective
 )
 round(scores, 3)
@@ -241,14 +241,14 @@ above captures the quality distinction even when the visual overlap is high.
 
 methods <- list(
   Gonzalez  = idx_gonz,
-  DropAddTS = res_da50$indices,
+  DropAdd = res_da50$indices,
   GraspPR   = res_gr50$indices
 )
-cols <- c(Gonzalez = "#E41A1C", DropAddTS = "#377EB8", GraspPR = "#4DAF4A")
-pchs <- c(Gonzalez = 24L, DropAddTS = 21L, GraspPR = 22L)
+cols <- c(Gonzalez = "#E41A1C", DropAdd = "#377EB8", GraspPR = "#4DAF4A")
+pchs <- c(Gonzalez = 24L, DropAdd = 21L, GraspPR = 22L)
 # Small per-method shift so coincident selections remain distinguishable
-dx   <- c(Gonzalez = 0, DropAddTS =  0.04, GraspPR = -0.04)
-dy   <- c(Gonzalez = 0, DropAddTS = -0.04, GraspPR =  0.04)
+dx   <- c(Gonzalez = 0, DropAdd =  0.04, GraspPR = -0.04)
+dy   <- c(Gonzalez = 0, DropAdd = -0.04, GraspPR =  0.04)
 
 plot(pts, pch = 1L, col = "grey75", asp = 1L,
      xlab = "x", ylab = "y",
@@ -330,18 +330,18 @@ MinDist(points = pts, idx = idx_gonz)                # from coordinates
 | Scenario | Recommended |
 |---|---|
 | Speed matters most, N up to a few thousand | `Gonzalez()` (ensemble default) |
-| Deterministic, reproducible refinement | `DropAddTS()` |
+| Deterministic, reproducible refinement | `DropAdd()` |
 | Best quality, set `seed` for reproducibility | `GraspPR(seed = ...)` |
-| N > 46 000 (distance matrix infeasible) | `DropAddTSPoints()` or `Gonzalez(points = ...)` |
+| N > 46 000 (distance matrix infeasible) | `DropAddPoints()` or `Gonzalez(points = ...)` |
 | Arbitrary metric with no coordinate embedding | `Gonzalez(<column function>, N = ...)` |
 | Proven optimum, N ≤ ~ 25–30, **highs** installed | `ExactMaxMin()` |
 
 The heuristics are complementary:
 `Gonzalez()` is O(*N* · *m*) and deterministic — an instant first result.
-`DropAddTS()` is deterministic and reproducible (no RNG), typically reaching
+`DropAdd()` is deterministic and reproducible (no RNG), typically reaching
 ≈ 99 % of optimal; the `seed` parameter governs only the RNG used for
 tie-breaking, not the algorithm itself.
-`GraspPR()` is stochastic and usually edges out `DropAddTS()` on T~k~, but
+`GraspPR()` is stochastic and usually edges out `DropAdd()` on T~k~, but
 requires a `seed` for reproducibility.
 
 ## Related packages

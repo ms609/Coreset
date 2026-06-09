@@ -12,7 +12,7 @@
 #'     a coordinate matrix, or a distance-column oracle (for spaces with no
 #'     coordinate embedding), with a choice of peripheral seeding strategies and
 #'     a robust ensemble default.}
-#'   \item{[DropAddTS()] / [DropAddTSPoints()]}{DropAdd tabu search heuristic.}
+#'   \item{[DropAdd()] / [DropAddPoints()]}{DropAdd tabu search heuristic.}
 #'   \item{[ExactMaxMin()]}{Exact node-packing optimum (needs \pkg{highs}).}
 #' #'   \item{[MinDist()]}{The k-centre objective (minimum pairwise distance).}
 #' }

@@ -200,7 +200,7 @@
 #'   deterministic `seed` such as `"peripheral"`.
 #' @return Integer vector of length `min(n, N)` of selected indices.
 #' @references \insertAllCited{}
-#' @seealso [MaxMinSeed()] for the seed indices alone; [DropAddTS()] and
+#' @seealso [MaxMinSeed()] for the seed indices alone; [DropAdd()] and
 #'   [ExactMaxMin()] for higher-effort solvers.
 #' @examples
 #' set.seed(1)

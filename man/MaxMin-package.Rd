@@ -19,7 +19,7 @@ materialising the matrix), or on an on-demand distance-column oracle.
 a coordinate matrix, or a distance-column oracle (for spaces with no
 coordinate embedding), with a choice of peripheral seeding strategies and
 a robust ensemble default.}
-\item{\code{\link[=DropAddTS]{DropAddTS()}} / \code{\link[=DropAddTSPoints]{DropAddTSPoints()}}}{DropAdd tabu search heuristic.}
+\item{\code{\link[=DropAdd]{DropAdd()}} / \code{\link[=DropAddPoints]{DropAddPoints()}}}{DropAdd tabu search heuristic.}
 \item{\code{\link[=ExactMaxMin]{ExactMaxMin()}}}{Exact node-packing optimum (needs \pkg{highs}).}
 #'   \item{\code{\link[=MinDist]{MinDist()}}}{The k-centre objective (minimum pairwise distance).}
 }

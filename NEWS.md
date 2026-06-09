@@ -13,7 +13,7 @@
   (`"centroid"`, `"peripheral"`) and the costlier O(*N*²) anchors (`"diameter"`,
   `"anti_medoid"`, `"medoid"`, `"rowsum"`, `"rownorm"`) are available as opt-in
   strategies.
-- `DropAddTS()` / `DropAddTSPoints()`: DropAdd tabu search (Porumbel et al.
+- `DropAdd()` / `DropAddPoints()`: DropAdd tabu search (Porumbel et al.
   2011), matrix and matrix-free coordinate paths.
 - `ExactMaxMin()`: exact node-packing optimum (Sayyady & Fathi 2016) via the
   `highs` MILP backend.

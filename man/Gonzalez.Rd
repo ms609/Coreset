@@ -141,6 +141,6 @@ identical(Gonzalez(colFn, 5L, N = nrow(dm), seed = 1L),
 \insertAllCited{}
 }
 \seealso{
-\code{\link[=MaxMinSeed]{MaxMinSeed()}} for the seed indices alone; \code{\link[=DropAddTS]{DropAddTS()}} and
+\code{\link[=MaxMinSeed]{MaxMinSeed()}} for the seed indices alone; \code{\link[=DropAdd]{DropAdd()}} and
 \code{\link[=ExactMaxMin]{ExactMaxMin()}} for higher-effort solvers.
 }

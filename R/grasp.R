@@ -10,7 +10,7 @@
 # (construction, local search, path relinking) operates on a materialised
 # n x n distance matrix, so it does not offer a coordinate or column-oracle
 # path and is intended for instances small enough to hold that matrix. For
-# the matrix-free scaling regime use DropAddTSPoints() / Gonzalez(points=) or
+# the matrix-free scaling regime use DropAddPoints() / Gonzalez(points=) or
 # Gonzalez() with a distance-column oracle.
 
 
@@ -265,7 +265,7 @@
 #' subsets the full \eqn{n \times n} distance matrix, so it is suited to
 #' instances small enough to hold that matrix. It offers no coordinate or
 #' column-oracle path. For the matrix-free regime where the dense matrix is
-#' infeasible, use [DropAddTSPoints()] or [Gonzalez()] (coordinate or
+#' infeasible, use [DropAddPoints()] or [Gonzalez()] (coordinate or
 #' distance-column oracle path), whose
 #' \eqn{T_k} lands within roughly a percent on the benchmark while scaling to
 #' far larger instances.
@@ -297,7 +297,7 @@
 #'   }
 #' @references \insertAllCited{}
 #'
-#' @seealso [DropAddTS()] and [DropAddTSPoints()] for scalable refinement;
+#' @seealso [DropAdd()] and [DropAddPoints()] for scalable refinement;
 #'   [ExactMaxMin()] for the proven optimum on small instances.
 #' @examples
 #' set.seed(1)

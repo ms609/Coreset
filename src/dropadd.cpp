@@ -5,7 +5,7 @@
 
 // DropAdd Tabu Search (Porumbel, Hao & Glover 2011) — C++ inner loop.
 //
-// Mirrors the R reference at R/competitors_dropadd.R::DropAddTS(). The R
+// Mirrors the R reference at R/competitors_dropadd.R::DropAdd(). The R
 // wrapper handles:
 //   * argument validation and .AsDistMatrix() coercion,
 //   * routing .verify=TRUE or .trace != NULL to the R path (test scaffolding),
@@ -24,7 +24,7 @@
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-List DropAddTS_cpp(NumericMatrix dmat, int m, double time_budget_s,
+List DropAdd_cpp(NumericMatrix dmat, int m, double time_budget_s,
                    int max_iter, int max_no_improve, bool want_trace) {
   const int n = dmat.nrow();
   if (n != dmat.ncol()) stop("dmat must be square");

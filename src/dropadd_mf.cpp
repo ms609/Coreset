@@ -7,7 +7,7 @@
 // Matrix-free (coordinate-based) DropAdd Tabu Search for the MaxMin Diversity
 // Problem (Porumbel, Hao & Glover 2011) — C++ inner loop.
 //
-// This is the O(N) memory counterpart of DropAddTS_cpp (src/dropadd.cpp), which
+// This is the O(N) memory counterpart of DropAdd_cpp (src/dropadd.cpp), which
 // reads a fully materialised n x n distance matrix. The algorithm is identical
 // in every respect — streamlined records (min_dist, sum_dist, min_dist_count),
 // FIFO circular-buffer drop, lexicographic (min_dist, sum_dist) add, exclusion
@@ -61,7 +61,7 @@ static inline double EuclidCol(const double* P, int nPts, int dim,
 }
 
 // [[Rcpp::export]]
-List DropAddTS_points_cpp(NumericMatrix points, int m, double time_budget_s,
+List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
                           int max_iter, int max_no_improve, bool want_trace) {
   const int n   = points.nrow();
   const int dim = points.ncol();

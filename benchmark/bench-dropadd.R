@@ -5,8 +5,8 @@ source("benchmark/_init.R")
 
 # Dense-matrix path.
 d500 <- BenchDist(500L, 8L, seed = 1L)
-Benchmark(DropAddTS(d500, 20L, max_no_improve = 2000L))
+Benchmark(DropAdd(d500, 20L, max_no_improve = 2000L))
 
 # Matrix-free coordinate path, at a size past a comfortable dense matrix.
 pts4000 <- BenchPoints(4000L, 8L, seed = 2L)
-Benchmark(DropAddTSPoints(pts4000, 20L, max_no_improve = 1000L))
+Benchmark(DropAddPoints(pts4000, 20L, max_no_improve = 1000L))

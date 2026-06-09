@@ -56,13 +56,13 @@ chk("Gonzalez column-oracle peripheral seed",
     MaxMin::Gonzalez(colFn, 8L, N = nrow(dm)),
     FurthestPoint::GonzalezColumn(colFn, nrow(dm), 8L))
 
-# DropAddTS (deterministic, matrix + points)
-chk("DropAddTS matrix",
-    MaxMin::DropAddTS(dm, 8L, time_budget_s = 1, max_iter = 50L)$indices,
-    FurthestPoint::DropAddTS(dm, 8L, time_budget_s = 1, max_iter = 50L)$indices)
-chk("DropAddTSPoints",
-    MaxMin::DropAddTSPoints(pts, 8L, time_budget_s = 1, max_iter = 50L)$indices,
-    FurthestPoint::DropAddTSPoints(pts, 8L, time_budget_s = 1, max_iter = 50L)$indices)
+# DropAdd (deterministic, matrix + points)
+chk("DropAdd matrix",
+    MaxMin::DropAdd(dm, 8L, time_budget_s = 1, max_iter = 50L)$indices,
+    FurthestPoint::DropAdd(dm, 8L, time_budget_s = 1, max_iter = 50L)$indices)
+chk("DropAddPoints",
+    MaxMin::DropAddPoints(pts, 8L, time_budget_s = 1, max_iter = 50L)$indices,
+    FurthestPoint::DropAddPoints(pts, 8L, time_budget_s = 1, max_iter = 50L)$indices)
 
 # MinDist
 chk("MinDist matrix", MaxMin::MinDist(dm, s0), FurthestPoint::MinDist(dm, s0))

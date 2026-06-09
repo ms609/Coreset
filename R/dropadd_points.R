@@ -3,15 +3,15 @@
 # Matrix-free (coordinate-based) DropAdd Tabu Search for the Max-Min Diversity
 # Problem (Porumbel, Hao & Glover 2011).
 #
-# Coordinate counterpart of DropAddTS() in competitors_dropadd.R. The matrix
+# Coordinate counterpart of DropAdd() in competitors_dropadd.R. The matrix
 # wrapper coerces its input to a dense n x n distance matrix and feeds it to
-# DropAddTS_cpp; this wrapper instead passes the raw n x dim coordinate matrix
-# to DropAddTS_points_cpp, which recomputes each needed distance column on the
+# DropAdd_cpp; this wrapper instead passes the raw n x dim coordinate matrix
+# to DropAdd_points_cpp, which recomputes each needed distance column on the
 # fly. The dense matrix is never built, so the SOTA heuristic runs at n far
 # beyond the matrix path's ceiling (R's as.matrix.dist overflows at n = 46340,
 # and an n = 58000 double matrix is ~27 GB).
 #
-# The algorithm is identical to DropAddTS() in every respect except the seed:
+# The algorithm is identical to DropAdd() in every respect except the seed:
 # Porumbel's argmax-row-sum seed is O(n^2 * dim), so the kernel substitutes the
 # O(n * dim) "farthest point from the centroid" proxy (documented in
 # src/dropadd_mf.cpp). On instances where the two seed rules coincide, the
@@ -19,7 +19,7 @@
 
 #' Matrix-free DropAdd Tabu Search for the Max-Min Diversity Problem
 #'
-#' Coordinate-based counterpart of [DropAddTS()] that never materialises the
+#' Coordinate-based counterpart of [DropAdd()] that never materialises the
 #' dense \eqn{n \times n} distance matrix. Each needed distance column
 #' \eqn{d(\cdot, x)} is recomputed from the supplied coordinates on the fly in
 #' \eqn{O(n \cdot \mathrm{dim})}, giving \eqn{O(n)} working memory. This lets the
@@ -29,7 +29,7 @@
 #'
 #' The construction (Algorithm 1), FIFO drop-add tabu search (Algorithm 2), and
 #' streamlined neighbour evaluation (Algorithms 3-4) are identical to
-#' [DropAddTS()], including the exclusion of the just-dropped point from the add
+#' [DropAdd()], including the exclusion of the just-dropped point from the add
 #' candidates for one iteration (\insertCite{Porumbel2011;textual}{MaxMin}, p.281). The MMDPo
 #' objective optimised is
 #' \deqn{\min_{x,y \in X} d(x,y) + \epsilon \sum_{x,y \in X} d(x,y),}
@@ -42,7 +42,7 @@
 #' \rVert} (the point farthest from the coordinate centroid), which
 #' approximates the peripheral max-row-sum point. The remainder of the
 #' algorithm is faithful, so on instances where the two seed rules coincide the
-#' trajectory matches [DropAddTS()] exactly; otherwise the final quality is
+#' trajectory matches [DropAdd()] exactly; otherwise the final quality is
 #' comparable (within a few percent on the MaxMin objective, empirically).
 #'
 #' Distances reproduce [stats::dist()]'s Euclidean bits exactly (see
@@ -69,7 +69,7 @@
 #' @param seed Optional integer; if non-`NULL`, `set.seed(seed)` is called at
 #'   entry. The algorithm is deterministic up to ties (broken by smallest
 #'   index), so the seed has no observable effect on the solution; it is exposed
-#'   for API parity with stochastic methods and with [DropAddTS()].
+#'   for API parity with stochastic methods and with [DropAdd()].
 #' @param progress Logical; show a start/done status line. Default: `TRUE` in
 #'   interactive sessions, `FALSE` otherwise
 #'   (`getOption("MaxMin.progress", interactive())`).
@@ -88,9 +88,9 @@
 #'
 #' @references \insertAllCited{}
 #'
-#' @seealso [DropAddTS()] for the matrix-based path used on smaller instances.
+#' @seealso [DropAdd()] for the matrix-based path used on smaller instances.
 #' @export
-DropAddTSPoints <- function(points, m, max_no_improve = 5000L, max_iter = NULL,
+DropAddPoints <- function(points, m, max_no_improve = 5000L, max_iter = NULL,
                             time_budget_s = Inf, seed = NULL,
                             progress = getOption("MaxMin.progress", interactive())) {
   if (!is.null(seed)) {
@@ -126,7 +126,7 @@ DropAddTSPoints <- function(points, m, max_no_improve = 5000L, max_iter = NULL,
       .auto_close = FALSE
     )
   }
-  out <- DropAddTS_points_cpp(points, m, as.double(time_budget_s),
+  out <- DropAdd_points_cpp(points, m, as.double(time_budget_s),
                               cpp_max_iter, max_no_improve, FALSE)
   time_s <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
   if (progress) {

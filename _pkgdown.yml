@@ -18,8 +18,8 @@ reference:
       - MaxMinSeed
   - title: Heuristic and exact solvers
     contents:
-      - DropAddTS
-      - DropAddTSPoints
+      - DropAdd
+      - DropAddPoints
       - GraspPR
       - ExactMaxMin
   - title: Scoring
