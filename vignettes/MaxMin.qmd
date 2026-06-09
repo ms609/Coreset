@@ -90,7 +90,7 @@ from the point furthest from a randomly selected 'pivot' point, and returns
 whichever pass produced the highest T~k~.
 
 ```{r}
-#| label: gonzalez-ensemble
+#| label: gonzalez-random
 set.seed(1)
 picks <- Gonzalez(eurodist, n = 6L)   # default: best of three random starts
 ```
@@ -131,16 +131,15 @@ matrix.
 
 ```{r}
 #| label: gonzalez-oracle
-dm <- as.matrix(eurodist)
-col_of <- function(i) dm[, i]       # one column on demand
-Gonzalez(col_of, n = 6L, N = nrow(dm), seed = 1L)
+data("USArrests")
+arrestTypes <- USArrests[, c("Murder", "Assault", "Rape")]
+StateDist <- function(i) {
+  diffs <- sweep(arrestTypes, 2, unlist(arrestTypes[i, ]), "-")
+  sqrt(rowSums(diffs ^ 2))
+}
+idx <- Gonzalez(StateDist, n = 4L, N = nrow(arrestTypes), seed = 1L)
+arrestTypes[idx, ]
 ```
-
-(Here the column simply indexes a matrix we already have, to keep the example
-self-contained; the point is that `col_of` could instead *compute* each column
-from trees, sequences, or any metric with no coordinate embedding.) Only an
-integer `seed` (a fixed start index) or the default peripheral seed is
-available on this path — the richer ensemble anchors need the whole matrix.
 
 
 ## DropAdd tabu search
