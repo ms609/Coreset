@@ -60,7 +60,6 @@ idx <- Gonzalez(eurodist, n = 4L)
 
 as.matrix(eurodist)[idx, idx]
 
-labels(eurodist)[idx]
 TkScore(eurodist, idx)
 ```
 
