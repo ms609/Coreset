@@ -6,12 +6,13 @@
 - `Gonzalez()`: deterministic farthest-first selection from a distance matrix,
   Euclidean coordinates (`points =`), or an on-demand **distance-column oracle**
   (pass a column function as `d`, with `N =`) for spaces with no coordinate
-  embedding. The default `seed` runs a best-of-five ensemble of cheap O(*N*)
-  seeds — `"centroid"`, `"peripheral"`, and three `"random_furthest"` starts
-  (whose pivots are drawn with the session RNG; set a seed for a reproducible
-  selection, or supply them via the `pivots` argument) — and keeps the best by
-  `MinDist()`. Costlier O(*N*²) anchors (`"diameter"`, `"anti_medoid"`,
-  `"medoid"`, `"rowsum"`, `"rownorm"`) are available as opt-in strategies.
+  embedding. The default `seed` runs a best-of-three ensemble of
+  `"random_furthest"` starts (whose pivots are drawn with the session RNG; set a
+  seed for a reproducible selection, or supply them via the `pivots` argument)
+  and keeps the best by `MinDist()`. The deterministic O(*N*) anchors
+  (`"centroid"`, `"peripheral"`) and the costlier O(*N*²) anchors (`"diameter"`,
+  `"anti_medoid"`, `"medoid"`, `"rowsum"`, `"rownorm"`) are available as opt-in
+  strategies.
 - `DropAddTS()` / `DropAddTSPoints()`: DropAdd tabu search (Porumbel et al.
   2011), matrix and matrix-free coordinate paths.
 - `ExactMaxMin()`: exact node-packing optimum (Sayyady & Fathi 2016) via the

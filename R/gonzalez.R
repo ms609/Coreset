@@ -106,7 +106,7 @@
     diag(sub) <- Inf
     min(sub)
   } else {
-    mean(sub[lower.tri(sub)])  # nocov
+    mean(sub[lower.tri(sub)])
   }
 }
 
@@ -117,14 +117,12 @@
 #' problem. The quality of the result depends on the first (seed) point; by
 #' default `Gonzalez()` runs an **ensemble** of cheap `O(N)` seeding strategies
 #' and keeps the selection with the largest minimum pairwise distance
-#' ([MinDist()]). The default ensemble is the two deterministic `O(N)` seeds
-#' `"centroid"` and `"peripheral"` together with three `"random_furthest"`
-#' starts -- a best-of-five selection. The random starts use the session RNG,
-#' so set a seed (`set.seed()`) for a reproducible selection. The `"centroid"`
-#' seed is computed from coordinates, so on a distance matrix the default drops
-#' it and keeps `"peripheral"` plus the random starts. Costlier `O(N^2)`
-#' anchors (`"diameter"`, `"anti_medoid"`, `"medoid"`, `"rowsum"`, `"rownorm"`)
-#' are available as opt-in `seed` strategies.
+#' ([MinDist()]). The default ensemble is three `"random_furthest"` starts -- a
+#' best-of-three selection. The random starts use the session RNG, so set a seed
+#' (`set.seed()`) for a reproducible selection. The deterministic `O(N)` anchors
+#' (`"centroid"`, `"peripheral"`) and the costlier `O(N^2)` anchors
+#' (`"diameter"`, `"anti_medoid"`, `"medoid"`, `"rowsum"`, `"rownorm"`) are
+#' available as opt-in `seed` strategies.
 #'
 #' `Gonzalez()` accepts the distances in whichever of three forms suits the
 #' data, all returning identical selections on the same metric:
@@ -171,21 +169,23 @@
 #'   (`getOption("MaxMin.progress", interactive())`).
 #' @param seed Integer or character (scalar or vector). An **integer** gives the
 #'   explicit 1-based index of the first selected point (a single bare Gonzalez
-#'   pass). A **length-1 character** names a single seeding strategy:
-#'   `"centroid"` (coordinates only), `"peripheral"` (two-sweep
-#'   diameter-endpoint approximation), `"random_furthest"` (furthest point from
-#'   a fixed-seed random pivot), `"diameter"`, `"anti_medoid"`, `"medoid"`,
-#'   `"rowsum"`, `"rownorm"`, or `"first"` (index 1). A **length > 1 character
-#'   vector** requests an ensemble: each named anchor runs a full Gonzalez pass
-#'   and the best result by [MinDist()] is returned with `strategy_results` and
-#'   `winning_strategy` (character vector of all tied-best strategies)
-#'   attributes. The `"random_furthest"` token expands to one start per element
-#'   of `pivots`, labelled `random_furthest1`, `random_furthest2`, ... Valid
-#'   ensemble anchors: any subset of `c("centroid", "peripheral",
-#'   "random_furthest", "diameter", "anti_medoid", "medoid", "rowsum",
-#'   "rownorm")` (`"centroid"` requires `points`). Default:
-#'   `c("centroid", "peripheral", "random_furthest")`. See [MaxMinSeed()] for
-#'   anchor definitions. On the distance-column oracle path only an integer
+#'   pass). A **length-1 character** names a single deterministic seeding
+#'   strategy run as one bare pass: `"centroid"` (coordinates only),
+#'   `"peripheral"` (two-sweep diameter-endpoint approximation), `"diameter"`,
+#'   `"anti_medoid"`, `"medoid"`, `"rowsum"`, `"rownorm"`, or `"first"`
+#'   (index 1). A **length > 1 character vector** -- or the lone
+#'   `"random_furthest"` token -- requests an ensemble: each named anchor runs a
+#'   full Gonzalez pass and the best result by [MinDist()] is returned with
+#'   `strategy_results` and `winning_strategy` (character vector of all
+#'   tied-best strategies) attributes. The `"random_furthest"` token expands to
+#'   one start per element of `pivots`, labelled `random_furthest1`,
+#'   `random_furthest2`, ...; named on its own it still runs the ensemble (one
+#'   pass per pivot), so a single random start is best obtained via
+#'   [MaxMinSeed()]. Valid ensemble anchors: any subset of `c("centroid",
+#'   "peripheral", "random_furthest", "diameter", "anti_medoid", "medoid",
+#'   "rowsum", "rownorm")` (`"centroid"` requires `points`). Default:
+#'   `"random_furthest"` (three random starts; see `pivots`). See [MaxMinSeed()]
+#'   for anchor definitions. On the distance-column oracle path only an integer
 #'   `seed` is honoured; a named or ensemble `seed` there warns and falls back
 #'   to the peripheral seed (see *Distance-column oracle*).
 #' @param pivots Integer vector of pivot indices over which the
@@ -195,7 +195,9 @@
 #'   drawn with the session RNG (`sample.int(N, 3)`; set a seed for a
 #'   reproducible selection). Pass `integer(0)`, `NA`, or `NULL` to disable the
 #'   random starts, or an index vector to choose the pivots (and their count)
-#'   explicitly.
+#'   explicitly. Disabling the random starts errors under the default `seed`
+#'   (which names only `"random_furthest"`, leaving no anchor); pair it with a
+#'   deterministic `seed` such as `"peripheral"`.
 #' @return Integer vector of length `min(n, N)` of selected indices.
 #' @seealso [MaxMinSeed()] for the seed indices alone; [DropAddTS()] and
 #'   [ExactMaxMin()] for higher-effort solvers.
@@ -203,7 +205,7 @@
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' d <- dist(pts)
-#' # Default: best of the O(N) seeds (centroid, peripheral, 3 random-furthest):
+#' # Default: best of three random-furthest starts (set.seed for reproducibility):
 #' Gonzalez(d, 5L)
 #' # More random-furthest starts (length of `pivots` sets the count):
 #' Gonzalez(d, 5L, pivots = sample.int(nrow(as.matrix(d)), 8L))
@@ -286,7 +288,13 @@ Gonzalez <- function(d = NULL, n,
     return(greedy(first))
   }
 
-  if (length(seed) > 1L) {
+  # The ensemble path runs each named anchor as a full Gonzalez pass and keeps
+  # the best by MinDist(). It is taken for a multi-anchor `seed`, and also for a
+  # lone `"random_furthest"` (the default): that token is inherently multi-start
+  # -- it expands to one pass per `pivots` element -- so it belongs here, not on
+  # the single-strategy path. (`MaxMinSeed(method = "random_furthest")` still
+  # returns exactly one seed for callers who want a single random start.)
+  if (length(seed) > 1L || "random_furthest" %in% seed) {
     # Pivots for the `"random_furthest"` token. Unspecified: draw three pivots
     # with the session RNG (`set.seed()` for a reproducible selection). An empty
     # / `NA` / `NULL` `pivots` disables the random starts; a supplied index
@@ -305,18 +313,28 @@ Gonzalez <- function(d = NULL, n,
         stop("`pivots` must be indices in [1, N]")
       }
     }
-    if (usePoints) {
-      return(.GonzEnsembleFromPoints(points, n, seed, pivots))
-    }
     # Matrix path: `"centroid"` is coordinate-only, so drop it (the remaining
     # O(N) seeds cover that role here). Warn only if it was named explicitly,
     # not when filtering the default ensemble.
-    matrix_anchors <- seed[seed != "centroid"]
-    if (!seedMissing && length(matrix_anchors) < length(seed)) {
+    anchors <- if (usePoints) seed else seed[seed != "centroid"]
+    if (!usePoints && !seedMissing && length(anchors) < length(seed)) {
       warning("`centroid` seed requires coordinates; it is dropped on the ",
               "distance-matrix path, where `peripheral` covers the same role")
     }
-    return(.GonzEnsemble(d, n, matrix_anchors, pivots))
+    # With `"random_furthest"` the only anchor and no pivots, nothing would run.
+    # This is reachable from the default `seed` once the random starts are
+    # disabled (`pivots = integer(0)` / `NA` / `NULL`), so fail clearly rather
+    # than tripping the internal "no strategies" guard.
+    if (length(setdiff(anchors, "random_furthest")) == 0L &&
+        length(pivots) == 0L) {
+      stop("no seed strategies to run: disabling the random-furthest starts ",
+           "leaves the default ensemble with no anchor. Name a deterministic ",
+           "`seed` (e.g. \"peripheral\") or supply non-empty `pivots`.")
+    }
+    if (usePoints) {
+      return(.GonzEnsembleFromPoints(points, n, anchors, pivots))
+    }
+    return(.GonzEnsemble(d, n, anchors, pivots))
   }
 
   if (!usePoints && seed == "centroid") {
@@ -354,7 +372,7 @@ Gonzalez <- function(d = NULL, n,
 .GonzalezColumn <- function(colFn, N, n, first = NULL,
                             progress = getOption("MaxMin.progress", interactive())) {
   if (!is.function(colFn)) {
-    stop("`colFn` must be a function of one index returning numeric(N)")  # nocov
+    stop("`colFn` must be a function of one index returning numeric(N)")
   }
   if (is.null(N)) {
     stop("`N` (the element count) must be supplied when `d` is a ",

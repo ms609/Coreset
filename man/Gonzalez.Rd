@@ -24,19 +24,21 @@ indices are returned.}
 
 \item{seed}{Integer or character (scalar or vector). An \strong{integer} gives the
 explicit 1-based index of the first selected point (a single bare Gonzalez
-pass). A \strong{length-1 character} names a single seeding strategy:
-\code{"centroid"} (coordinates only), \code{"peripheral"} (two-sweep
-diameter-endpoint approximation), \code{"random_furthest"} (furthest point from
-a fixed-seed random pivot), \code{"diameter"}, \code{"anti_medoid"}, \code{"medoid"},
-\code{"rowsum"}, \code{"rownorm"}, or \code{"first"} (index 1). A \strong{length > 1 character
-vector} requests an ensemble: each named anchor runs a full Gonzalez pass
-and the best result by \code{\link[=MinDist]{MinDist()}} is returned with \code{strategy_results} and
-\code{winning_strategy} (character vector of all tied-best strategies)
-attributes. The \code{"random_furthest"} token expands to one start per element
-of \code{pivots}, labelled \code{random_furthest1}, \code{random_furthest2}, ... Valid
-ensemble anchors: any subset of \code{c("centroid", "peripheral", "random_furthest", "diameter", "anti_medoid", "medoid", "rowsum", "rownorm")} (\code{"centroid"} requires \code{points}). Default:
-\code{c("centroid", "peripheral", "random_furthest")}. See \code{\link[=MaxMinSeed]{MaxMinSeed()}} for
-anchor definitions. On the distance-column oracle path only an integer
+pass). A \strong{length-1 character} names a single deterministic seeding
+strategy run as one bare pass: \code{"centroid"} (coordinates only),
+\code{"peripheral"} (two-sweep diameter-endpoint approximation), \code{"diameter"},
+\code{"anti_medoid"}, \code{"medoid"}, \code{"rowsum"}, \code{"rownorm"}, or \code{"first"}
+(index 1). A \strong{length > 1 character vector} -- or the lone
+\code{"random_furthest"} token -- requests an ensemble: each named anchor runs a
+full Gonzalez pass and the best result by \code{\link[=MinDist]{MinDist()}} is returned with
+\code{strategy_results} and \code{winning_strategy} (character vector of all
+tied-best strategies) attributes. The \code{"random_furthest"} token expands to
+one start per element of \code{pivots}, labelled \code{random_furthest1},
+\code{random_furthest2}, ...; named on its own it still runs the ensemble (one
+pass per pivot), so a single random start is best obtained via
+\code{\link[=MaxMinSeed]{MaxMinSeed()}}. Valid ensemble anchors: any subset of \code{c("centroid", "peripheral", "random_furthest", "diameter", "anti_medoid", "medoid", "rowsum", "rownorm")} (\code{"centroid"} requires \code{points}). Default:
+\code{"random_furthest"} (three random starts; see \code{pivots}). See \code{\link[=MaxMinSeed]{MaxMinSeed()}}
+for anchor definitions. On the distance-column oracle path only an integer
 \code{seed} is honoured; a named or ensemble \code{seed} there warns and falls back
 to the peripheral seed (see \emph{Distance-column oracle}).}
 
@@ -47,7 +49,9 @@ the number of random-furthest starts. Left unspecified, three pivots are
 drawn with the session RNG (\code{sample.int(N, 3)}; set a seed for a
 reproducible selection). Pass \code{integer(0)}, \code{NA}, or \code{NULL} to disable the
 random starts, or an index vector to choose the pivots (and their count)
-explicitly.}
+explicitly. Disabling the random starts errors under the default \code{seed}
+(which names only \code{"random_furthest"}, leaving no anchor); pair it with a
+deterministic \code{seed} such as \code{"peripheral"}.}
 
 \item{points}{Optional \verb{N x dim} numeric coordinate matrix. When supplied,
 the selection is computed directly from coordinates in \code{O(N * n * dim)}
@@ -73,14 +77,12 @@ furthest from the current selection, a 2-approximation to the k-centre
 problem. The quality of the result depends on the first (seed) point; by
 default \code{Gonzalez()} runs an \strong{ensemble} of cheap \code{O(N)} seeding strategies
 and keeps the selection with the largest minimum pairwise distance
-(\code{\link[=MinDist]{MinDist()}}). The default ensemble is the two deterministic \code{O(N)} seeds
-\code{"centroid"} and \code{"peripheral"} together with three \code{"random_furthest"}
-starts -- a best-of-five selection. The random starts use the session RNG,
-so set a seed (\code{set.seed()}) for a reproducible selection. The \code{"centroid"}
-seed is computed from coordinates, so on a distance matrix the default drops
-it and keeps \code{"peripheral"} plus the random starts. Costlier \code{O(N^2)}
-anchors (\code{"diameter"}, \code{"anti_medoid"}, \code{"medoid"}, \code{"rowsum"}, \code{"rownorm"})
-are available as opt-in \code{seed} strategies.
+(\code{\link[=MinDist]{MinDist()}}). The default ensemble is three \code{"random_furthest"} starts -- a
+best-of-three selection. The random starts use the session RNG, so set a seed
+(\code{set.seed()}) for a reproducible selection. The deterministic \code{O(N)} anchors
+(\code{"centroid"}, \code{"peripheral"}) and the costlier \code{O(N^2)} anchors
+(\code{"diameter"}, \code{"anti_medoid"}, \code{"medoid"}, \code{"rowsum"}, \code{"rownorm"}) are
+available as opt-in \code{seed} strategies.
 }
 \details{
 \code{Gonzalez()} accepts the distances in whichever of three forms suits the
@@ -115,7 +117,7 @@ path is ignored with a warning and the peripheral seed is used instead.
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
-# Default: best of the O(N) seeds (centroid, peripheral, 3 random-furthest):
+# Default: best of three random-furthest starts (set.seed for reproducibility):
 Gonzalez(d, 5L)
 # More random-furthest starts (length of `pivots` sets the count):
 Gonzalez(d, 5L, pivots = sample.int(nrow(as.matrix(d)), 8L))

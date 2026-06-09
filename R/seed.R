@@ -5,14 +5,12 @@
 # anchors are exposed through MaxMinSeed(); Gonzalez(seed = ) selects among them
 # (or the ensemble) and runs the greedy pass.
 
-# The default seed ensemble: the two O(N) deterministic peripheral seeds plus
-# the `"random_furthest"` token, which expands to one start per `pivots` element
-# (three pivots drawn with the session RNG by default) -- a best-of-five cheap
-# O(N) selection. Set a seed (`set.seed()`) for a reproducible draw.
-# `"peripheral"` and `"random_furthest"` work on every input form; `"centroid"`
-# (farthest point from the coordinate mean) needs coordinates, so on the
-# distance-matrix path it is dropped and the remaining seeds apply.
-.kDefaultEnsemble <- c("centroid", "peripheral", "random_furthest")
+# The default seed ensemble: the `"random_furthest"` token alone, which expands
+# to one start per `pivots` element (three pivots drawn with the session RNG by
+# default) -- a best-of-three cheap O(N) selection. Set a seed (`set.seed()`)
+# for a reproducible draw. The deterministic anchors (`"centroid"`,
+# `"peripheral"`, ...) remain available as opt-in `seed=` strategies.
+.kDefaultEnsemble <- "random_furthest"
 
 # Seeds available to the ensemble drivers. The matrix path lacks coordinates, so
 # `"centroid"` is reachable only from the coordinate path.
@@ -68,10 +66,10 @@
                                           mask = sd$mask)
     }
   }
-  if (length(specs) == 0L) {  # nocov start
+  if (length(specs) == 0L) {
     stop("no seed strategies to run; `pivots` is empty and the ensemble names ",
          "only `random_furthest`")
-  }                           # nocov end
+  }
   specs
 }
 
@@ -113,7 +111,7 @@
       r <- sample.int(nrow(d), 1L)
       as.integer(which.max(d[, r]))
     },
-    stop("Unknown seed method: ", method)  # nocov
+    stop("Unknown seed method: ", method)
   )
 }
 
@@ -155,7 +153,7 @@
       r <- sample.int(nrow(points), 1L)
       as.integer(which.max(EuclidColFromPoints_cpp(points, r)))
     },
-    stop("Unknown seed method: ", method)  # nocov
+    stop("Unknown seed method: ", method)
   )
 }
 
@@ -236,10 +234,10 @@ MaxMinSeed <- function(d = NULL, points = NULL,
   d <- .AsDistMatrix(d)
   n <- as.integer(n)
   if (length(n) != 1L || is.na(n) || n < 0L) {
-    stop("`n` must be a single non-negative integer")  # nocov
+    stop("`n` must be a single non-negative integer")
   }
   if (is.null(anchors) || length(anchors) == 0L) {
-    stop("`anchors` must name at least one strategy")  # nocov
+    stop("`anchors` must name at least one strategy")
   }
   anchors <- unique(match.arg(
     anchors,
@@ -247,8 +245,8 @@ MaxMinSeed <- function(d = NULL, points = NULL,
     several.ok = TRUE
   ))
   nPts <- nrow(d)
-  if (n >= nPts) return(seq_len(nPts))  # nocov
-  if (n == 0L)   return(integer(0))     # nocov
+  if (n >= nPts) return(seq_len(nPts))
+  if (n == 0L)   return(integer(0))
 
   lazy <- new.env(parent = emptyenv())
   get_row_sums <- function() {
@@ -374,10 +372,10 @@ MaxMinSeed <- function(d = NULL, points = NULL,
   points <- .AsPointsMatrix(points)
   n <- as.integer(n)
   if (length(n) != 1L || is.na(n) || n < 0L) {
-    stop("`n` must be a single non-negative integer")  # nocov
+    stop("`n` must be a single non-negative integer")
   }
   if (is.null(anchors) || length(anchors) == 0L) {
-    stop("`anchors` must name at least one strategy")  # nocov
+    stop("`anchors` must name at least one strategy")
   }
   anchors <- unique(match.arg(
     anchors,
@@ -385,8 +383,8 @@ MaxMinSeed <- function(d = NULL, points = NULL,
     several.ok = TRUE
   ))
   nPts <- nrow(points)
-  if (n >= nPts) return(seq_len(nPts))  # nocov
-  if (n == 0L)   return(integer(0))     # nocov
+  if (n >= nPts) return(seq_len(nPts))
+  if (n == 0L)   return(integer(0))
 
   lazy <- new.env(parent = emptyenv())
   get_row_sums <- function() {

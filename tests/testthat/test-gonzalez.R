@@ -6,8 +6,10 @@ make_data <- function(seed = 42, N = 60, dim = 4) {
   list(pts = pts, d = as.matrix(dist(pts)))
 }
 
+# `"random_furthest"` is excluded: named on its own it now runs the ensemble
+# (best-of-`pivots`), not a single bare pass, so it is exercised separately.
 single_seeds <- c("diameter", "anti_medoid", "medoid", "rowsum", "rownorm",
-                  "peripheral", "random_furthest")
+                  "peripheral")
 
 test_that("matrix and coordinate paths agree for every seed strategy", {
   dat <- make_data()
@@ -60,23 +62,19 @@ test_that("ensemble keeps the best anchor by T_k", {
   expect_length(attr(two, "strategy_results"), 2L)
 })
 
-test_that("the default ensemble is the best-of-five O(N) seeds", {
+test_that("the default ensemble is three random-furthest starts", {
   dat <- make_data()
   n   <- 8L
-  # Matrix path: centroid is coordinate-only, so the default is peripheral plus
-  # three random-furthest starts -> four strategies.
+  # Default is `"random_furthest"` alone -> three random starts on both paths.
   mat <- Gonzalez(dat$d, n)
-  expect_length(attr(mat, "strategy_results"), 4L)
   expect_identical(names(attr(mat, "strategy_results")),
-                   c("peripheral", "random_furthest1", "random_furthest2",
-                     "random_furthest3"))
-  # Coordinate path adds centroid -> five strategies.
+                   c("random_furthest1", "random_furthest2", "random_furthest3"))
   pt <- Gonzalez(n = n, points = dat$pts)
-  expect_length(attr(pt, "strategy_results"), 5L)
-  expect_true("centroid" %in% names(attr(pt, "strategy_results")))
-  # The default includes peripheral, so it is at least as good as it.
-  expect_gte(MinDist(dat$d, mat) + 1e-9,
-             MinDist(dat$d, Gonzalez(dat$d, n, seed = "peripheral")))
+  expect_identical(names(attr(pt, "strategy_results")),
+                   c("random_furthest1", "random_furthest2", "random_furthest3"))
+  # Neither path includes the deterministic anchors by default.
+  expect_false("centroid" %in% names(attr(pt, "strategy_results")))
+  expect_false("peripheral" %in% names(attr(mat, "strategy_results")))
 })
 
 test_that("the default selection is reproducible under set.seed", {
@@ -89,10 +87,10 @@ test_that("the default selection is reproducible under set.seed", {
 test_that("pivots vector controls the random-furthest starts", {
   dat <- make_data()
   n   <- 8L
-  # Unspecified draws three pivots (matrix default: peripheral + 3 random).
-  expect_length(attr(Gonzalez(dat$d, n), "strategy_results"), 4L)
-  # The vector's length sets the count (matrix default: peripheral + pivots).
-  expect_length(attr(Gonzalez(dat$d, n, pivots = 1:6), "strategy_results"), 7L)
+  # Unspecified draws three pivots (default: 3 random-furthest starts).
+  expect_length(attr(Gonzalez(dat$d, n), "strategy_results"), 3L)
+  # The vector's length sets the count.
+  expect_length(attr(Gonzalez(dat$d, n, pivots = 1:6), "strategy_results"), 6L)
   # User-chosen pivots are honoured: each seeds at the point furthest from it.
   res <- Gonzalez(dat$d, n, pivots = c(2L, 30L))
   sr  <- attr(res, "strategy_results")
@@ -100,13 +98,14 @@ test_that("pivots vector controls the random-furthest starts", {
                    as.integer(which.max(dat$d[, 2L])))
   expect_identical(sr[["random_furthest2"]]$s1,
                    as.integer(which.max(dat$d[, 30L])))
-  # integer(0), NA, and NULL all disable the random starts equivalently: the
-  # matrix default then reduces to peripheral alone.
+  # integer(0), NA, and NULL all disable the random starts equivalently: under
+  # the default `seed` that leaves no anchor, so it errors.
   for (none in list(integer(0), NA, NULL)) {
-    z <- Gonzalez(dat$d, n, pivots = none)
-    expect_length(attr(z, "strategy_results"), 1L)
-    expect_identical(attr(z, "winning_strategy"), "peripheral")
+    expect_error(Gonzalez(dat$d, n, pivots = none), "no seed strateg")
   }
+  # Paired with a deterministic anchor, disabling the random starts is fine.
+  z <- Gonzalez(dat$d, n, seed = "peripheral", pivots = integer(0))
+  expect_length(z, n)
   # Out-of-range pivots are rejected.
   expect_error(Gonzalez(dat$d, n, pivots = c(1L, 999L)), "pivots")
 })
@@ -245,4 +244,22 @@ test_that("MaximinFromPoints_cpp stops when seed index is out of range", {
   dat <- make_data(N = 10)
   # seed = 0L -> first = 0 < 1 -> Rcpp::stop in maximin_points.cpp line 57
   expect_error(Gonzalez(n = 3L, points = dat$pts, seed = 0L), "first")
+})
+
+# ---- .SubsetScore mean_pairwise branch --------------------------------------
+
+test_that(".SubsetScore mean_pairwise returns mean of lower-triangle entries", {
+  dat <- make_data(N = 10)
+  idx <- c(1L, 3L, 7L)
+  sub <- dat$d[idx, idx]
+  expect_equal(MaxMin:::.SubsetScore(dat$d, idx, "mean_pairwise"),
+               mean(sub[lower.tri(sub)]))
+  expect_true(is.na(MaxMin:::.SubsetScore(dat$d, 5L, "mean_pairwise")))
+})
+
+# ---- .GonzalezColumn non-function guard -------------------------------------
+
+test_that(".GonzalezColumn rejects a non-function colFn", {
+  expect_error(MaxMin:::.GonzalezColumn("not_a_function", N = 10L, n = 3L),
+               "function")
 })

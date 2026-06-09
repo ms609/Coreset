@@ -132,6 +132,53 @@ test_that(".GonzEnsemble non-first anchor wins when it is the better one", {
   expect_true(found)
 })
 
+# ---- .MaxMinSeed / .MaxMinSeedPoints unknown-method fallthrough -------------
+
+test_that(".MaxMinSeed and .MaxMinSeedPoints stop on an unknown method", {
+  dat <- make_data()
+  expect_error(MaxMin:::.MaxMinSeed(dat$d, "nope"), "Unknown")
+  expect_error(MaxMin:::.MaxMinSeedPoints(dat$pts, "nope"), "Unknown")
+})
+
+# ---- .GonzEnsemble internal guards (bypassed by Gonzalez() validation) -----
+
+test_that(".GonzEnsemble validates n and anchors and handles trivial n", {
+  dat <- make_data()
+  d   <- dat$d
+  n   <- nrow(d)
+  expect_error(MaxMin:::.GonzEnsemble(d, -1L, "peripheral"), "non-negative")
+  expect_error(MaxMin:::.GonzEnsemble(d, 3L, character(0)), "at least one")
+  expect_identical(MaxMin:::.GonzEnsemble(d, n, "peripheral"), seq_len(n))
+  expect_identical(MaxMin:::.GonzEnsemble(d, 0L, "peripheral"), integer(0))
+})
+
+# ---- .GonzEnsembleFromPoints internal guards --------------------------------
+
+test_that(".GonzEnsembleFromPoints validates n and anchors and handles trivial n", {
+  dat  <- make_data()
+  pts  <- dat$pts
+  nPts <- nrow(pts)
+  expect_error(MaxMin:::.GonzEnsembleFromPoints(pts, -1L, "peripheral"), "non-negative")
+  expect_error(MaxMin:::.GonzEnsembleFromPoints(pts, 3L, character(0)), "at least one")
+  expect_identical(MaxMin:::.GonzEnsembleFromPoints(pts, nPts, "peripheral"),
+                   seq_len(nPts))
+  expect_identical(MaxMin:::.GonzEnsembleFromPoints(pts, 0L, "peripheral"), integer(0))
+})
+
+# ---- .ExpandAnchors empty-specs guard (only random_furthest + no pivots) ----
+
+test_that(".GonzEnsemble stops when random_furthest only and pivots is empty", {
+  dat <- make_data()
+  expect_error(
+    MaxMin:::.GonzEnsemble(dat$d, 4L, "random_furthest", integer(0)),
+    "no seed strateg"
+  )
+  expect_error(
+    MaxMin:::.GonzEnsembleFromPoints(dat$pts, 4L, "random_furthest", integer(0)),
+    "no seed strateg"
+  )
+})
+
 # ---- n = 1 ensemble on the points path (.GonzEnsembleFromPoints line 360,
 #       368) -----------------------------------------------------------------
 

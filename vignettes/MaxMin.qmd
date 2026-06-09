@@ -57,10 +57,9 @@ data(eurodist)
 # starts, so set a seed for a reproducible selection.
 set.seed(1)
 idx <- Gonzalez(eurodist, n = 4L)
+MinDist(eurodist, idx)
 
 as.matrix(eurodist)[idx, idx]
-
-MinDist(eurodist, idx)
 ```
 
 `Gonzalez()` returned the indices of the four cities whose nearest-neighbour
@@ -92,21 +91,19 @@ farthest from the current selection.
 This greedy rule guarantees a 2-approximation to the optimal T~k~ and runs
 in O(*N* · *m*) time.
 
-By default `Gonzalez()` runs an ensemble of the cheap O(*N*) seeding
-strategies — `"centroid"`, `"peripheral"`, and three `"random_furthest"`
-starts — and returns whichever pass produced the highest T~k~ (a best-of-five
-selection). The `"centroid"` seed is computed from coordinates, so on a distance
-matrix such as `eurodist` it is dropped and the remaining seeds apply. The
-random starts pivot on points drawn with the session RNG, so set a seed
-(`set.seed()`) for a reproducible selection. Pass a `pivots` vector for more (or
-your own) random starts — its length sets the number of starts, and
-`integer(0)` disables them; pass a character vector to `seed` to choose a custom
+By default `Gonzalez()` runs an ensemble of three `"random_furthest"` starts
+and returns whichever pass produced the highest T~k~ (a best-of-three
+selection). The random starts pivot on points drawn with the session RNG, so set
+a seed (`set.seed()`) for a reproducible selection. Pass a `pivots` vector for
+more (or your own) random starts — its length sets the number of starts. The
+deterministic anchors (`"centroid"`, `"peripheral"`, and the costlier O(*N*²)
+anchors) are opt-in: pass a character vector to `seed` to choose a custom
 ensemble, or a single name for one strategy.
 
 ```{r}
 #| label: gonzalez-ensemble
 set.seed(1)
-idx_ens <- Gonzalez(eurodist, n = 6L)   # default: best-of-five O(N) seeds
+idx_ens <- Gonzalez(eurodist, n = 6L)   # default: best of three random starts
 
 # Which seeding strategy won?
 attr(idx_ens, "winning_strategy")
