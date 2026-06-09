@@ -112,49 +112,40 @@
 
 #' Deterministic Gonzalez furthest-point selection
 #'
-#' Greedy k-centre selection \insertCite{Gonzalez1985}{MaxMin}. Iteratively selects the point
-#' furthest from the current selection, a 2-approximation to the k-centre
-#' problem. The quality of the result depends on the first (seed) point; by
-#' default `FarFirst()` runs an **ensemble** of cheap `O(N)` seeding strategies
-#' and keeps the selection with the largest minimum pairwise distance
-#' ([MinDist()]). The default ensemble is three `"random_furthest"` starts -- a
-#' best-of-three selection. The random starts use the session RNG, so set a seed
-#' (`set.seed()`) for a reproducible selection. The deterministic `O(N)` anchors
-#' (`"centroid"`, `"peripheral"`) and the costlier `O(N^2)` anchors
-#' (`"diameter"`, `"anti_medoid"`, `"medoid"`, `"rowsum"`, `"rownorm"`) are
-#' available as opt-in `seed` strategies.
+#' Greedy k-centre selection \insertCite{Gonzalez1985}{MaxMin}.
+#' Iteratively selects the point furthest from the current selection, a
+#' 2-approximation to the k-centre problem.
+#' The quality of the result depends on the first (seed) point; by default
+#' `FarFirst()` runs three starts from randomly selected peripheral seeds.
+#' The deterministic `O(N)` anchors (`"centroid"`, `"peripheral"`) and the
+#' costlier `O(N^2)` anchors (`"diameter"`, `"anti_medoid"`, `"medoid"`,
+#' `"rowsum"`, `"rownorm"`) are alternative `seed` strategies.
 #'
-#' `FarFirst()` accepts the distances in whichever of three forms suits the
-#' data, all returning identical selections on the same metric:
+#' Distances may be provided as:
 #' \describe{
 #'   \item{a **distance matrix** (`d`)}{a `dist` object or square matrix, held
 #'     in full;}
 #'   \item{a **coordinate matrix** (`points`)}{each needed distance is
-#'     recomputed from coordinates on the fly in `O(N)` memory, never
-#'     materialising the `N x N` matrix (Euclidean data only);}
-#'   \item{a **distance-column oracle** (a function passed as `d`)}{for metrics
-#'     with neither a stored matrix nor a coordinate embedding -- e.g.
-#'     tree-to-tree distances computed on demand. See *Distance-column oracle*.}
+#'     recomputed from coordinates on the fly in `O(N)` memory
+#'     (Euclidean data only);}
+#'   \item{a distance function (function passed as `d`)}{for metrics
+#'     with neither a stored matrix nor a coordinate embedding, where distances
+#'     may be computed on demand.}
 #' }
 #'
-#' @section Distance-column oracle:
-#' When `d` is a function it is treated as a closure `colFn(i)` returning, for a
+#' @section Distance function
+#' When `d` is a function it is treated as a closure `ColFn(i)` returning, for a
 #' single 1-based index `i`, the length-`N` vector of distances from element `i`
-#' to every element. Gonzalez calls it once per selected element, maintaining a
-#' running nearest-distance vector, so the `N x N` matrix is never built:
-#' `O(N * n)` oracle calls and `O(N)` memory. The self-distance at position `i`
-#' may take any non-negative value; it is masked before use. Because the count
-#' of elements cannot be inferred from the closure, `N` must be supplied.
-#' Only an integer `seed` (a `first` index) or a single deterministic two-sweep
-#' peripheral seed is reachable from an oracle; the other anchors need either
-#' coordinates or `O(N^2)` work. An explicitly named or ensemble `seed` on this
-#' path is ignored with a warning and the peripheral seed is used instead.
+#' to every element. (The self-distance to `i` may be omitted; if provided,
+#' it is ignored.)
+#' `FarFirst()` calls `ColFn(i)` once per selected element, maintaining a running
+#' nearest-distance vector to avoid building a complete `N x N` matrix.
 #'
 #' @param d A `dist` object, a square symmetric numeric matrix of pairwise
-#'   distances, or a **distance-column oracle** function (see
-#'   *Distance-column oracle*). Ignored when `points` is supplied.
-#' @param n Integer: number of points to select. If `n >= N`, all
-#'   indices are returned.
+#'   distances, or a distance function (see
+#'   *§Distance function*). Ignored when `points` is supplied.
+#' @param n Integer: number of points to select. If `n >= N`, all indices are
+#'  returned.
 #' @param points Optional `N x dim` numeric coordinate matrix. When supplied,
 #'   the selection is computed directly from coordinates in `O(N * n * dim)`
 #'   time and `O(N)` memory, never materialising the `N x N` distance matrix
@@ -231,7 +222,7 @@
 #' idx <- FarFirst(StateDist, n = 4L, N = nrow(arrestTypes), seed = 1L)
 #' arrestTypes[idx, ]
 #' @export
-Gonzalez <- function(d = NULL, n,
+FarFirst <- function(d = NULL, n,
                      seed = .kDefaultEnsemble, pivots = NULL,
                      points = NULL, N = NULL,
                      progress = getOption("MaxMin.progress", interactive())) {

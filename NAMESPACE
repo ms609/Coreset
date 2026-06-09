@@ -2,7 +2,7 @@
 
 export(DropAdd)
 export(ExactMaxMin)
-export(Gonzalez)
+export(FarFirst)
 export(GraspPR)
 export(MaxMinSeed)
 export(MinDist)

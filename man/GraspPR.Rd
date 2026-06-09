@@ -42,10 +42,10 @@ entry. \code{GraspPR} is genuinely stochastic (randomised construction and RCL
 sampling), so the seed governs the trajectory and the returned selection.}
 }
 \value{
-A list with elements
+An integer vector of length \code{m} (1-based, sorted ascending)
+with attributes:
 \describe{
-\item{indices}{Integer vector of length \code{m}, 1-based, sorted ascending.}
-\item{objective}{Achieved MaxMin objective \eqn{T_k}.}
+\item{score}{Achieved MaxMin objective \eqn{T_k}.}
 \item{time_s}{Wall-clock seconds spent.}
 \item{iters}{Number of GRASP refinement iterations executed.}
 \item{pr_calls}{Number of path-relinking pair-applications run.}
@@ -84,7 +84,7 @@ set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 res <- GraspPR(dist(pts), m = 5L, plateau = 20L, eliteSize = 4L,
                seed = 1L)
-res$indices
+res
 }
 \references{
 \insertAllCited{}

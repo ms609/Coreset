@@ -2,7 +2,7 @@
 % Please edit documentation in R/gonzalez.R
 \name{.GonzalezColumn}
 \alias{.GonzalezColumn}
-\title{Gonzalez maximin from a distance-column oracle (worker)}
+\title{Gonzalez maximin from a distance-column oracle}
 \usage{
 .GonzalezColumn(
   colFn,
