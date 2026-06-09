@@ -52,7 +52,7 @@
       <h1>Introduction to MaxMin</h1>
 
       <p class="author">Martin R. Smith</p>
-      <p class="date">2026-06-08</p>
+      <p class="date">2026-06-09</p>
 
       <small class="dont-index">Source: <a href="https://github.com/ms609/MaxMin/blob/main/vignettes/MaxMin.qmd" class="external-link"><code>vignettes/MaxMin.qmd</code></a></small>
       <div class="d-none name"><code></code></div>
@@ -83,7 +83,9 @@
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Select 4 maximally dispersed cities</span></span>
+<span><span class="co"># Select 4 maximally dispersed cities. The default ensemble uses random</span></span>
+<span><span class="co"># starts, so set a seed for a reproducible selection.</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Gonzalez.html">Gonzalez</a></span><span class="op">(</span><span class="va">eurodist</span>, n <span class="op">=</span> <span class="fl">4L</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span><span class="op">[</span><span class="va">idx</span>, <span class="va">idx</span><span class="op">]</span></span>
@@ -93,8 +95,6 @@
 <span><span class="co">#&gt; Stockholm   3927   3231         0  2187</span></span>
 <span><span class="co">#&gt; Milan       2282   2250      2187     0</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/labels.html" class="external-link">labels</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span><span class="op">[</span><span class="va">idx</span><span class="op">]</span></span>
-<span><span class="co">#&gt; [1] "Athens"    "Lisbon"    "Stockholm" "Milan"</span></span>
 <span><span class="fu"><a href="../reference/TkScore.html">TkScore</a></span><span class="op">(</span><span class="va">eurodist</span>, <span class="va">idx</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 2187</span></span></code></pre></div>
 </div>
@@ -152,10 +152,11 @@
 <hr></section><section class="level2"><h2 id="gonzalez-fast-greedy-selection">Gonzalez: fast greedy selection<a class="anchor" aria-label="anchor" href="#gonzalez-fast-greedy-selection"></a>
 </h2>
 <p>The <strong>Gonzalez</strong> (1985) algorithm builds the selection greedily: start from a seed point, then repeatedly add whichever unselected point is farthest from the current selection. This greedy rule guarantees a 2-approximation to the optimal T<sub>k</sub> and runs in O(<em>N</em> · <em>m</em>) time.</p>
-<p>By default <code><a href="../reference/Gonzalez.html">Gonzalez()</a></code> runs an ensemble of the cheap O(<em>N</em>) seeding strategies — <code>"centroid"</code>, <code>"peripheral"</code>, and three reproducible <code>"random_furthest"</code> starts — and returns whichever pass produced the highest T<sub>k</sub> (a best-of-five selection). The <code>"centroid"</code> seed is computed from coordinates, so on a distance matrix such as <code>eurodist</code> it is dropped and the remaining seeds apply. The random starts pivot on points drawn from a fixed internal seed, so the default result is reproducible and does not disturb your random stream. Raise <code>n_random</code> for more random starts; pass a character vector to choose a custom ensemble, or a single name for one strategy.</p>
+<p>By default <code><a href="../reference/Gonzalez.html">Gonzalez()</a></code> runs an ensemble of the cheap O(<em>N</em>) seeding strategies — <code>"centroid"</code>, <code>"peripheral"</code>, and three <code>"random_furthest"</code> starts — and returns whichever pass produced the highest T<sub>k</sub> (a best-of-five selection). The <code>"centroid"</code> seed is computed from coordinates, so on a distance matrix such as <code>eurodist</code> it is dropped and the remaining seeds apply. The random starts pivot on points drawn with the session RNG, so set a seed (<code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code>) for a reproducible selection. Pass a <code>pivots</code> vector for more (or your own) random starts — its length sets the number of starts, and <code>integer(0)</code> disables them; pass a character vector to <code>seed</code> to choose a custom ensemble, or a single name for one strategy.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">idx_ens</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Gonzalez.html">Gonzalez</a></span><span class="op">(</span><span class="va">eurodist</span>, n <span class="op">=</span> <span class="fl">6L</span><span class="op">)</span>   <span class="co"># default: best-of-five O(N) seeds</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
+<span><span class="va">idx_ens</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Gonzalez.html">Gonzalez</a></span><span class="op">(</span><span class="va">eurodist</span>, n <span class="op">=</span> <span class="fl">6L</span><span class="op">)</span>   <span class="co"># default: best-of-five O(N) seeds</span></span>
 <span></span>
 <span><span class="co"># Which seeding strategy won?</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">idx_ens</span>, <span class="st">"winning_strategy"</span><span class="op">)</span></span>
@@ -195,7 +196,7 @@
 <span><span class="va">res_da</span><span class="op">$</span><span class="va">iters</span>         <span class="co"># iterations completed</span></span>
 <span><span class="co">#&gt; [1] 516</span></span>
 <span><span class="va">res_da</span><span class="op">$</span><span class="va">time_s</span>        <span class="co"># wall-clock seconds</span></span>
-<span><span class="co">#&gt; [1] 0.0002498627</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.0001935959</span></span></code></pre></div>
 </div>
 <p><code>max_no_improve</code> is the main stopping knob: the algorithm terminates after this many consecutive iterations without an improvement in T<sub>k</sub>. For coordinate data where <em>N</em> is large enough to make the distance matrix infeasible (roughly N &gt; 46 000), use <code><a href="../reference/DropAddTSPoints.html">DropAddTSPoints()</a></code>, which accepts a coordinate matrix directly.</p>
 <hr></section><section class="level2"><h2 id="grasp-with-path-relinking">GRASP with path relinking<a class="anchor" aria-label="anchor" href="#grasp-with-path-relinking"></a>

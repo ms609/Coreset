@@ -59,8 +59,9 @@ Anchors:
 - `"random_furthest"`:
 
   The point furthest from a random pivot, in `O(N)`. The pivot is drawn
-  from a fixed internal seed, isolated from the ambient RNG, so the
-  index is reproducible across sessions and machines.
+  with the session RNG; set a seed
+  ([`set.seed()`](https://rdrr.io/r/base/Random.html)) for a
+  reproducible index.
 
 - `"diameter"`:
 

@@ -12,8 +12,9 @@
   oracle** (pass a column function as `d`, with `N =`) for spaces with
   no coordinate embedding. The default `seed` runs a best-of-five
   ensemble of cheap O(*N*) seeds — `"centroid"`, `"peripheral"`, and
-  `n_random` (3) reproducible `"random_furthest"` starts drawn from a
-  fixed internal seed — and keeps the best by
+  three `"random_furthest"` starts (whose pivots are drawn with the
+  session RNG; set a seed for a reproducible selection, or supply them
+  via the `pivots` argument) — and keeps the best by
   [`TkScore()`](https://ms609.github.io/MaxMin/reference/TkScore.md).
   Costlier O(*N*²) anchors (`"diameter"`, `"anti_medoid"`, `"medoid"`,
   `"rowsum"`, `"rownorm"`) are available as opt-in strategies.

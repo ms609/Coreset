@@ -93,8 +93,8 @@ function path of <code><a href="Gonzalez.html">Gonzalez()</a></code>).</p></dd>
 
 <dt><code>"random_furthest"</code></dt>
 <dd><p>The point furthest from a random pivot, in
-<code>O(N)</code>. The pivot is drawn from a fixed internal seed, isolated from the
-ambient RNG, so the index is reproducible across sessions and machines.</p></dd>
+<code>O(N)</code>. The pivot is drawn with the session RNG; set a seed
+(<code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code>) for a reproducible index.</p></dd>
 
 <dt><code>"diameter"</code></dt>
 <dd><p>A row endpoint of the diameter pair (the maximum

@@ -36,7 +36,9 @@ between 21 European cities.
 
 data(eurodist)
 
-# Select 4 maximally dispersed cities
+# Select 4 maximally dispersed cities. The default ensemble uses random
+# starts, so set a seed for a reproducible selection.
+set.seed(1)
 idx <- Gonzalez(eurodist, n = 4L)
 
 as.matrix(eurodist)[idx, idx]
@@ -46,8 +48,6 @@ as.matrix(eurodist)[idx, idx]
 #> Stockholm   3927   3231         0  2187
 #> Milan       2282   2250      2187     0
 
-labels(eurodist)[idx]
-#> [1] "Athens"    "Lisbon"    "Stockholm" "Milan"
 TkScore(eurodist, idx)
 #> [1] 2187
 ```
@@ -85,17 +85,20 @@ farthest from the current selection. This greedy rule guarantees a
 By default
 [`Gonzalez()`](https://ms609.github.io/MaxMin/reference/Gonzalez.md)
 runs an ensemble of the cheap O(*N*) seeding strategies — `"centroid"`,
-`"peripheral"`, and three reproducible `"random_furthest"` starts — and
-returns whichever pass produced the highest T_(k) (a best-of-five
-selection). The `"centroid"` seed is computed from coordinates, so on a
-distance matrix such as `eurodist` it is dropped and the remaining seeds
-apply. The random starts pivot on points drawn from a fixed internal
-seed, so the default result is reproducible and does not disturb your
-random stream. Raise `n_random` for more random starts; pass a character
-vector to choose a custom ensemble, or a single name for one strategy.
+`"peripheral"`, and three `"random_furthest"` starts — and returns
+whichever pass produced the highest T_(k) (a best-of-five selection).
+The `"centroid"` seed is computed from coordinates, so on a distance
+matrix such as `eurodist` it is dropped and the remaining seeds apply.
+The random starts pivot on points drawn with the session RNG, so set a
+seed ([`set.seed()`](https://rdrr.io/r/base/Random.html)) for a
+reproducible selection. Pass a `pivots` vector for more (or your own)
+random starts — its length sets the number of starts, and `integer(0)`
+disables them; pass a character vector to `seed` to choose a custom
+ensemble, or a single name for one strategy.
 
 ``` r
 
+set.seed(1)
 idx_ens <- Gonzalez(eurodist, n = 6L)   # default: best-of-five O(N) seeds
 
 # Which seeding strategy won?
@@ -163,7 +166,7 @@ res_da$objective     # T_k achieved
 res_da$iters         # iterations completed
 #> [1] 516
 res_da$time_s        # wall-clock seconds
-#> [1] 0.0002498627
+#> [1] 0.0001935959
 ```
 
 `max_no_improve` is the main stopping knob: the algorithm terminates

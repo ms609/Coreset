@@ -8,12 +8,14 @@ strategies and keeps the selection with the largest minimum pairwise
 distance
 ([`TkScore()`](https://ms609.github.io/MaxMin/reference/TkScore.md)).
 The default ensemble is the two deterministic `O(N)` seeds `"centroid"`
-and `"peripheral"` together with `n_random` (3) reproducible
-`"random_furthest"` starts – a best-of-five selection. The `"centroid"`
-seed is computed from coordinates, so on a distance matrix the default
-drops it and keeps `"peripheral"` plus the random starts. Costlier
-`O(N^2)` anchors (`"diameter"`, `"anti_medoid"`, `"medoid"`, `"rowsum"`,
-`"rownorm"`) are available as opt-in `seed` strategies.
+and `"peripheral"` together with three `"random_furthest"` starts – a
+best-of-five selection. The random starts use the session RNG, so set a
+seed ([`set.seed()`](https://rdrr.io/r/base/Random.html)) for a
+reproducible selection. The `"centroid"` seed is computed from
+coordinates, so on a distance matrix the default drops it and keeps
+`"peripheral"` plus the random starts. Costlier `O(N^2)` anchors
+(`"diameter"`, `"anti_medoid"`, `"medoid"`, `"rowsum"`, `"rownorm"`) are
+available as opt-in `seed` strategies.
 
 ## Usage
 
@@ -22,7 +24,7 @@ Gonzalez(
   d = NULL,
   n,
   seed = .kDefaultEnsemble,
-  n_random = 3L,
+  pivots = NULL,
   points = NULL,
   N = NULL,
   progress = getOption("MaxMin.progress", interactive())
@@ -56,9 +58,9 @@ Gonzalez(
   [`TkScore()`](https://ms609.github.io/MaxMin/reference/TkScore.md) is
   returned with `strategy_results` and `winning_strategy` (character
   vector of all tied-best strategies) attributes. The
-  `"random_furthest"` token expands to `n_random` starts, labelled
-  `random_furthest1`, `random_furthest2`, ... Valid ensemble anchors:
-  any subset of
+  `"random_furthest"` token expands to one start per element of
+  `pivots`, labelled `random_furthest1`, `random_furthest2`, ... Valid
+  ensemble anchors: any subset of
   `c("centroid", "peripheral", "random_furthest", "diameter", "anti_medoid", "medoid", "rowsum", "rownorm")`
   (`"centroid"` requires `points`). Default:
   `c("centroid", "peripheral", "random_furthest")`. See
@@ -67,13 +69,16 @@ Gonzalez(
   integer `seed` is honoured; a named or ensemble `seed` there warns and
   falls back to the peripheral seed (see *Distance-column oracle*).
 
-- n_random:
+- pivots:
 
-  Integer; the number of fixed-seed random-furthest starts the
-  `"random_furthest"` ensemble token expands to. The random pivots are
-  drawn from a fixed internal seed, isolated from the ambient RNG, so
-  the default selection is reproducible across sessions and machines.
-  Default `3`; `0` contributes no random starts.
+  Integer vector of pivot indices over which the `"random_furthest"`
+  ensemble token expands: each pivot contributes one start, seeded at
+  the point furthest from it, so the vector's length sets the number of
+  random-furthest starts. Left unspecified, three pivots are drawn with
+  the session RNG (`sample.int(N, 3)`; set a seed for a reproducible
+  selection). Pass `integer(0)`, `NA`, or `NULL` to disable the random
+  starts, or an index vector to choose the pivots (and their count)
+  explicitly.
 
 - points:
 
@@ -154,7 +159,7 @@ pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
 # Default: best of the O(N) seeds (centroid, peripheral, 3 random-furthest):
 Gonzalez(d, 5L)
-#> [1]  4 14 26  5 28
+#> [1] 14  4 26  5 28
 #> attr(,"strategy_results")
 #> attr(,"strategy_results")$peripheral
 #> attr(,"strategy_results")$peripheral$s1
@@ -180,31 +185,31 @@ Gonzalez(d, 5L)
 #> 
 #> attr(,"strategy_results")$random_furthest2
 #> attr(,"strategy_results")$random_furthest2$s1
-#> [1] 26
+#> [1] 14
 #> 
 #> attr(,"strategy_results")$random_furthest2$idx
-#> [1] 26 24 15  3 18
+#> [1] 14  4 26  5 28
 #> 
 #> attr(,"strategy_results")$random_furthest2$t_k
-#> [1] 1.468498
-#> 
-#> 
-#> attr(,"strategy_results")$random_furthest3
-#> attr(,"strategy_results")$random_furthest3$s1
-#> [1] 4
-#> 
-#> attr(,"strategy_results")$random_furthest3$idx
-#> [1]  4 14 26  5 28
-#> 
-#> attr(,"strategy_results")$random_furthest3$t_k
 #> [1] 1.765223
 #> 
 #> 
+#> attr(,"strategy_results")$random_furthest3
+#> attr(,"strategy_results")$random_furthest3$s1
+#> [1] 26
+#> 
+#> attr(,"strategy_results")$random_furthest3$idx
+#> [1] 26 24 15  3 18
+#> 
+#> attr(,"strategy_results")$random_furthest3$t_k
+#> [1] 1.468498
+#> 
+#> 
 #> attr(,"winning_strategy")
-#> [1] "random_furthest3"
-# Raise the number of random-furthest starts:
-Gonzalez(d, 5L, n_random = 8L)
-#> [1]  4 14 26  5 28
+#> [1] "random_furthest2"
+# More random-furthest starts (length of `pivots` sets the count):
+Gonzalez(d, 5L, pivots = sample.int(nrow(as.matrix(d)), 8L))
+#> [1] 14  4 26  5 28
 #> attr(,"strategy_results")
 #> attr(,"strategy_results")$peripheral
 #> attr(,"strategy_results")$peripheral$s1
@@ -219,32 +224,32 @@ Gonzalez(d, 5L, n_random = 8L)
 #> 
 #> attr(,"strategy_results")$random_furthest1
 #> attr(,"strategy_results")$random_furthest1$s1
-#> [1] 24
+#> [1] 14
 #> 
 #> attr(,"strategy_results")$random_furthest1$idx
-#> [1] 24  4  1  5 14
+#> [1] 14  4 26  5 28
 #> 
 #> attr(,"strategy_results")$random_furthest1$t_k
-#> [1] 1.701019
+#> [1] 1.765223
 #> 
 #> 
 #> attr(,"strategy_results")$random_furthest2
 #> attr(,"strategy_results")$random_furthest2$s1
-#> [1] 26
+#> [1] 24
 #> 
 #> attr(,"strategy_results")$random_furthest2$idx
-#> [1] 26 24 15  3 18
+#> [1] 24  4  1  5 14
 #> 
 #> attr(,"strategy_results")$random_furthest2$t_k
-#> [1] 1.468498
+#> [1] 1.701019
 #> 
 #> 
 #> attr(,"strategy_results")$random_furthest3
 #> attr(,"strategy_results")$random_furthest3$s1
-#> [1] 4
+#> [1] 14
 #> 
 #> attr(,"strategy_results")$random_furthest3$idx
-#> [1]  4 14 26  5 28
+#> [1] 14  4 26  5 28
 #> 
 #> attr(,"strategy_results")$random_furthest3$t_k
 #> [1] 1.765223
@@ -252,21 +257,21 @@ Gonzalez(d, 5L, n_random = 8L)
 #> 
 #> attr(,"strategy_results")$random_furthest4
 #> attr(,"strategy_results")$random_furthest4$s1
-#> [1] 14
+#> [1] 24
 #> 
 #> attr(,"strategy_results")$random_furthest4$idx
-#> [1] 14  4 26  5 28
+#> [1] 24  4  1  5 14
 #> 
 #> attr(,"strategy_results")$random_furthest4$t_k
-#> [1] 1.765223
+#> [1] 1.701019
 #> 
 #> 
 #> attr(,"strategy_results")$random_furthest5
 #> attr(,"strategy_results")$random_furthest5$s1
-#> [1] 14
+#> [1] 5
 #> 
 #> attr(,"strategy_results")$random_furthest5$idx
-#> [1] 14  4 26  5 28
+#> [1]  5 26 14 21 28
 #> 
 #> attr(,"strategy_results")$random_furthest5$t_k
 #> [1] 1.765223
@@ -285,13 +290,13 @@ Gonzalez(d, 5L, n_random = 8L)
 #> 
 #> attr(,"strategy_results")$random_furthest7
 #> attr(,"strategy_results")$random_furthest7$s1
-#> [1] 24
+#> [1] 14
 #> 
 #> attr(,"strategy_results")$random_furthest7$idx
-#> [1] 24  4  1  5 14
+#> [1] 14  4 26  5 28
 #> 
 #> attr(,"strategy_results")$random_furthest7$t_k
-#> [1] 1.701019
+#> [1] 1.765223
 #> 
 #> 
 #> attr(,"strategy_results")$random_furthest8
@@ -306,7 +311,58 @@ Gonzalez(d, 5L, n_random = 8L)
 #> 
 #> 
 #> attr(,"winning_strategy")
-#> [1] "random_furthest3" "random_furthest4" "random_furthest5" "random_furthest6"
+#> [1] "random_furthest1" "random_furthest3" "random_furthest5" "random_furthest6"
+#> [5] "random_furthest7"
+# Or choose the pivots explicitly:
+Gonzalez(d, 5L, pivots = c(1L, 10L, 20L))
+#> [1]  5 26 14 21 28
+#> attr(,"strategy_results")
+#> attr(,"strategy_results")$peripheral
+#> attr(,"strategy_results")$peripheral$s1
+#> [1] 26
+#> 
+#> attr(,"strategy_results")$peripheral$idx
+#> [1] 26 24 15  3 18
+#> 
+#> attr(,"strategy_results")$peripheral$t_k
+#> [1] 1.468498
+#> 
+#> 
+#> attr(,"strategy_results")$random_furthest1
+#> attr(,"strategy_results")$random_furthest1$s1
+#> [1] 5
+#> 
+#> attr(,"strategy_results")$random_furthest1$idx
+#> [1]  5 26 14 21 28
+#> 
+#> attr(,"strategy_results")$random_furthest1$t_k
+#> [1] 1.765223
+#> 
+#> 
+#> attr(,"strategy_results")$random_furthest2
+#> attr(,"strategy_results")$random_furthest2$s1
+#> [1] 24
+#> 
+#> attr(,"strategy_results")$random_furthest2$idx
+#> [1] 24  4  1  5 14
+#> 
+#> attr(,"strategy_results")$random_furthest2$t_k
+#> [1] 1.701019
+#> 
+#> 
+#> attr(,"strategy_results")$random_furthest3
+#> attr(,"strategy_results")$random_furthest3$s1
+#> [1] 24
+#> 
+#> attr(,"strategy_results")$random_furthest3$idx
+#> [1] 24  4  1  5 14
+#> 
+#> attr(,"strategy_results")$random_furthest3$t_k
+#> [1] 1.701019
+#> 
+#> 
+#> attr(,"winning_strategy")
+#> [1] "random_furthest1"
 # Custom two-anchor ensemble:
 Gonzalez(d, 5L, seed = c("diameter", "anti_medoid"))
 #> [1] 14  4 26  5 28
