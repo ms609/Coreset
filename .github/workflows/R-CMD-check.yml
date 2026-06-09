@@ -153,14 +153,13 @@ jobs:
         with:
           needs: |
             check
+          # highs >= 1.13 calls base R's `%||%` (added in R 4.4.0) while still
+          # declaring `R (>= 4.0.0)`, so it errors on our R 4.1 leg with
+          # "could not find function '%||%'". Pin the last good version there
+          # until upstream fixes its declared R dependency (already done on
+          # their dev branch). Remove once a fixed highs reaches CRAN.
+          extra-packages: ${{ matrix.config.r == '4.1' && 'url::https://cran.r-project.org/src/contrib/Archive/highs/highs_1.12.0-3.tar.gz' || '' }}
 
-      # Windows is the only runner with the Quarto binary, so it is the only
-      # platform that builds the Quarto vignette (others skip via vweave_empty).
-      # When R CMD build renders the vignette, Quarto spawns its own R session
-      # that reads R_LIBS_USER but NOT the temporary library into which build
-      # installs MaxMin, so `library("MaxMin")` fails. Pre-installing MaxMin into
-      # R_LIBS_USER (where its dependencies already resolve) makes it visible to
-      # that subprocess. Remove once Quarto passes .libPaths() through on Windows.
       - name: Pre-install package for Quarto vignette subprocess
         if: runner.os == 'Windows'
         run: R CMD INSTALL .
