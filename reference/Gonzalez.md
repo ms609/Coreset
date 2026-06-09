@@ -1,11 +1,11 @@
 # Deterministic Gonzalez furthest-point selection
 
-Greedy k-centre selection (Gonzalez 1985). Iteratively selects the point
-furthest from the current selection, a 2-approximation to the k-centre
-problem. The quality of the result depends on the first (seed) point; by
-default `Gonzalez()` runs an **ensemble** of cheap `O(N)` seeding
-strategies and keeps the selection with the largest minimum pairwise
-distance
+Greedy k-centre selection (González 1985) . Iteratively selects the
+point furthest from the current selection, a 2-approximation to the
+k-centre problem. The quality of the result depends on the first (seed)
+point; by default `Gonzalez()` runs an **ensemble** of cheap `O(N)`
+seeding strategies and keeps the selection with the largest minimum
+pairwise distance
 ([`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md)).
 The default ensemble is three `"random_furthest"` starts – a
 best-of-three selection. The random starts use the session RNG, so set a
@@ -144,6 +144,13 @@ index) or a single deterministic two-sweep peripheral seed is reachable
 from an oracle; the other anchors need either coordinates or `O(N^2)`
 work. An explicitly named or ensemble `seed` on this path is ignored
 with a warning and the peripheral seed is used instead.
+
+## References
+
+González TF (1985). “Clustering to minimize the maximum intercluster
+distance.” *Theoretical Computer Science*, **38**, 293–306.
+[doi:10.1016/0304-3975(85)90224-5](https://doi.org/10.1016/0304-3975%2885%2990224-5)
+.
 
 ## See also
 

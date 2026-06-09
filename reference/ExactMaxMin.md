@@ -1,15 +1,15 @@
 # Exact Max-Min Diversity (MMDP) optimum on small instances
 
 Solves the Max-Min Diversity Problem (discrete p-dispersion) to proven
-optimality by iterated node-packing (Sayyady & Fathi 2016): the optimum
-is the largest threshold `lambda`, over the achieved distinct pairwise
-distances, for which the threshold graph `G(lambda)` (edges join pairs
-closer than `lambda`) contains an independent set of size at least `m`.
-A binary search over the sorted distances resolves that threshold; each
-probe solves a maximum-independent-set integer program with the `highs`
-MILP backend. The problem is NP-hard, so this is intended only as an
-external ground-truth reference on small instances, not a scalable
-method.
+optimality by iterated node-packing Sayyady and Fathi (2016) : the
+optimum is the largest threshold `lambda`, over the achieved distinct
+pairwise distances, for which the threshold graph `G(lambda)` (edges
+join pairs closer than `lambda`) contains an independent set of size at
+least `m`. A binary search over the sorted distances resolves that
+threshold; each probe solves a maximum-independent-set integer program
+with the `highs` MILP backend. The problem is NP-hard, so this is
+intended only as an external ground-truth reference on small instances,
+not a scalable method.
 
 ## Usage
 
@@ -84,6 +84,8 @@ A list with fields
 
 ## References
 
-Sayyady, F. & Fathi, Y. (2016). An integer programming approach for
-solving the p-dispersion problem. *European Journal of Operational
-Research* 253(1):216-225.
+Sayyady F, Fathi Y (2016). “An integer programming approach for solving
+the p-dispersion problem.” *European Journal of Operational Research*,
+**253**(1), 216–225.
+[doi:10.1016/j.ejor.2016.02.026](https://doi.org/10.1016/j.ejor.2016.02.026)
+.

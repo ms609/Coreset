@@ -3,13 +3,15 @@
 dense \(n \times n\) distance matrix. Each needed distance column
 \(d(\cdot, x)\) is recomputed from the supplied coordinates on the fly in
 \(O(n \cdot \mathrm{dim})\), giving \(O(n)\) working memory. This lets the
-SOTA MaxMin heuristic of Porumbel, Hao &amp;amp; Glover (2011) run on point sets far
+SOTA MaxMin heuristic of Porumbel et al. (2011)
+ run on point sets far
 larger than the matrix path can hold (R's as.matrix.dist overflows at
 \(n = 46340\); an \(n = 58000\) double matrix is roughly 27 GB)."><meta property="og:description" content="Coordinate-based counterpart of DropAddTS() that never materialises the
 dense \(n \times n\) distance matrix. Each needed distance column
 \(d(\cdot, x)\) is recomputed from the supplied coordinates on the fly in
 \(O(n \cdot \mathrm{dim})\), giving \(O(n)\) working memory. This lets the
-SOTA MaxMin heuristic of Porumbel, Hao &amp;amp; Glover (2011) run on point sets far
+SOTA MaxMin heuristic of Porumbel et al. (2011)
+ run on point sets far
 larger than the matrix path can hold (R's as.matrix.dist overflows at
 \(n = 46340\); an \(n = 58000\) double matrix is roughly 27 GB)."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -51,7 +53,8 @@ larger than the matrix path can hold (R's as.matrix.dist overflows at
 dense \(n \times n\) distance matrix. Each needed distance column
 \(d(\cdot, x)\) is recomputed from the supplied coordinates on the fly in
 \(O(n \cdot \mathrm{dim})\), giving \(O(n)\) working memory. This lets the
-SOTA MaxMin heuristic of Porumbel, Hao &amp; Glover (2011) run on point sets far
+SOTA MaxMin heuristic of Porumbel et al. (2011)
+ run on point sets far
 larger than the matrix path can hold (R's <code>as.matrix.dist</code> overflows at
 \(n = 46340\); an \(n = 58000\) double matrix is roughly 27 GB).</p>
     </div>
@@ -143,7 +146,8 @@ construction phase).</p></dd>
     <p>The construction (Algorithm 1), FIFO drop-add tabu search (Algorithm 2), and
 streamlined neighbour evaluation (Algorithms 3-4) are identical to
 <code><a href="DropAddTS.html">DropAddTS()</a></code>, including the exclusion of the just-dropped point from the add
-candidates for one iteration (Porumbel et al. 2011, p.281). The MMDPo
+candidates for one iteration (Porumbel et al. (2011)
+, p.281). The MMDPo
 objective optimised is
 $$\min_{x,y \in X} d(x,y) + \epsilon \sum_{x,y \in X} d(x,y),$$
 with \(\epsilon = 10^{-9}\).</p>
@@ -164,9 +168,11 @@ contraction settings.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
-    <p>Porumbel D, Hao J-K, Glover F (2011). A simple and effective algorithm for
-the MaxMin diversity problem. <em>Annals of Operations Research</em>
-186:275-293.</p>
+    <p>Porumbel D, Hao J, Glover F (2011).
+“A simple and effective algorithm for the MaxMin diversity problem.”
+<em>Annals of Operations Research</em>, <b>186</b>, 275–293.
+<a href="https://doi.org/10.1007/s10479-011-0898-z" class="external-link">doi:10.1007/s10479-011-0898-z</a>
+.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

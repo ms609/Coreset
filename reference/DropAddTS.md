@@ -1,6 +1,6 @@
 # DropAdd Tabu Search for the Max-Min Diversity Problem
 
-Implements the DropAdd-TS algorithm of Porumbel, Hao & Glover (2011) for
+Implements the DropAdd-TS algorithm of Porumbel et al. (2011) for
 selecting a maximally-dispersed subset of `m` points from a distance
 matrix. The procedure consists of a deterministic greedy construction
 (Algorithm 1) followed by a FIFO drop-add tabu search (Algorithm 2) with
@@ -120,6 +120,8 @@ initially-selected point is dropped exactly once before any re-eviction.
 
 ## References
 
-Porumbel D, Hao J-K, Glover F (2011). A simple and effective algorithm
-for the MaxMin diversity problem. *Annals of Operations Research*
-186:275-293.
+Porumbel D, Hao J, Glover F (2011). “A simple and effective algorithm
+for the MaxMin diversity problem.” *Annals of Operations Research*,
+**186**, 275–293.
+[doi:10.1007/s10479-011-0898-z](https://doi.org/10.1007/s10479-011-0898-z)
+.

@@ -1,6 +1,6 @@
 # Expand ensemble anchor names into labelled seed specs
 
-Maps each anchor name to a `list(label, s1, mask)` spec. The
+Maps each anchor name to a `list(label, s1)` spec. The
 `"random_furthest"` token expands to one spec per element of `pivots`,
 each seeded at the point furthest from that pivot (labelled
 `random_furthest1`, ...); an empty `pivots` contributes none.
@@ -24,7 +24,7 @@ each seeded at the point furthest from that pivot (labelled
 
 - anchor_seed:
 
-  Function mapping a deterministic anchor name to `list(s1, mask)`.
+  Function mapping a deterministic anchor name to an integer seed index.
 
 - rf_seed:
 
@@ -32,4 +32,4 @@ each seeded at the point furthest from that pivot (labelled
 
 ## Value
 
-List of `list(label, s1, mask)` specs.
+List of `list(label, s1)` specs.

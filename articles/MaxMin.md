@@ -20,13 +20,6 @@ from a database.
 install.packages("MaxMin")
 ```
 
-For the exact solver, also install **highs**:
-
-``` r
-
-install.packages("highs")
-```
-
 ## Quick start
 
 `eurodist` is a built-in R `dist` object containing road distances (km)
@@ -36,13 +29,15 @@ between 21 European cities.
 
 data(eurodist)
 
-# Select 4 maximally dispersed cities. The default ensemble uses random
-# starts, so set a seed for a reproducible selection.
+# Set a seed for a reproducible selection
 set.seed(1)
+
+# Select 4 maximally dispersed cities
 idx <- Gonzalez(eurodist, n = 4L)
 MinDist(eurodist, idx)
 #> [1] 2187
 
+# View distances between chosen cities
 as.matrix(eurodist)[idx, idx]
 #>           Athens Lisbon Stockholm Milan
 #> Athens         0   4532      3927  2282
@@ -59,7 +54,7 @@ reports that value explicitly.
 
 ## Methods at a glance
 
-MaxMin provides four solvers and two utilities:
+MaxMin provides four solvers, and a minimum-distance calculator:
 
 | Function | Quality | Speed | Stochastic? |
 |----|----|----|----|
@@ -67,19 +62,19 @@ MaxMin provides four solvers and two utilities:
 | [`DropAddTS()`](https://ms609.github.io/MaxMin/reference/DropAddTS.md) | High (≈ 99 % optimal) | Fast | No |
 | [`GraspPR()`](https://ms609.github.io/MaxMin/reference/GraspPR.md) | Highest | Moderate | Yes (`seed =`) |
 | [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md) | Optimal (NP-hard) | Slow | No |
-| [`PolishSelection()`](https://ms609.github.io/MaxMin/reference/PolishSelection.md) | Post-processing only | Very fast | No |
 | [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md) | Scoring only | Instant | No |
 
-The rest of this vignette walks through each in turn.
+We now walk through each of these in turn.
 
 ------------------------------------------------------------------------
 
 ## Gonzalez: fast greedy selection
 
-The **Gonzalez** (1985) algorithm builds the selection greedily: start
-from a seed point, then repeatedly add whichever unselected point is
-farthest from the current selection. This greedy rule guarantees a
-2-approximation to the optimal T_(k) and runs in O(*N* · *m*) time.
+The Gonzalez ([1985](#ref-Gonzalez1985)) algorithm builds the selection
+greedily: start from a seed point, then repeatedly add whichever
+unselected point is farthest from the current selection. This greedy
+rule guarantees a 2-approximation to the optimal T_(k) and runs in O(*N*
+· *m*) time.
 
 By default
 [`Gonzalez()`](https://ms609.github.io/MaxMin/reference/Gonzalez.md)
@@ -147,10 +142,11 @@ ensemble anchors need the whole matrix.
 
 ## DropAdd tabu search
 
-The **DropAdd** heuristic (Porumbel, Hao & Glover 2011) refines an
-initial selection by alternating *drop* and *add* moves guided by a FIFO
-tabu list that prevents short cycles. It is fully deterministic and
-reproducible, and typically reaches ≈ 99 % of the optimal T_(k).
+The **DropAdd** heuristic ([Porumbel et al., 2011](#ref-Porumbel2011))
+refines an initial selection by alternating *drop* and *add* moves
+guided by a FIFO tabu list that prevents short cycles. It is fully
+deterministic and reproducible, and typically reaches ≈ 99 % of the
+optimal T_(k).
 
 ``` r
 
@@ -163,7 +159,7 @@ res_da$objective     # T_k achieved
 res_da$iters         # iterations completed
 #> [1] 516
 res_da$time_s        # wall-clock seconds
-#> [1] 0.0002613068
+#> [1] 0.0002295971
 ```
 
 `max_no_improve` is the main stopping knob: the algorithm terminates
@@ -177,12 +173,13 @@ which accepts a coordinate matrix directly.
 
 ## GRASP with path relinking
 
-**GRASP + path relinking** (Resende et al. 2010) combines a *randomised*
-greedy construction phase with extended local search and then refines an
-elite set of good solutions by interpolating between elite-pair
-trajectories (*path relinking*). It achieves the highest T_(k) of the
-three heuristics, at a proportionally higher cost. Because the
-construction phase is stochastic, always set `seed` for reproducibility:
+**GRASP + path relinking** ([Resende et al., 2010](#ref-Resende2010))
+combines a *randomised* greedy construction phase with extended local
+search and then refines an elite set of good solutions by interpolating
+between elite-pair trajectories (*path relinking*). It achieves the
+highest T_(k) of the three heuristics, at a proportionally higher cost.
+Because the construction phase is stochastic, always set `seed` for
+reproducibility:
 
 ``` r
 
@@ -286,7 +283,15 @@ candidate set. A small jitter separates symbols at shared indices.
 For small instances (roughly N ≤ 25–30),
 [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
 solves the problem to proven optimality via a node-packing integer
-programme (Sayyady & Fathi 2016), using the **highs** solver.
+programme ([Sayyady & Fathi, 2016](#ref-Sayyady2016)), using the
+**highs** solver.
+
+First we must install **highs**:
+
+``` r
+
+install.packages("highs")
+```
 
 ``` r
 
@@ -393,3 +398,23 @@ can squeeze out further improvement at negligible cost.
 The CRAN package
 [**maximin**](https://CRAN.R-project.org/package=maximin) constructs
 continuous space-filling designs by generating new points.
+
+## References
+
+González, T. F. (1985). Clustering to minimize the maximum intercluster
+distance. *Theoretical Computer Science*, *38*, 293–306.
+<https://doi.org/10.1016/0304-3975(85)90224-5>
+
+Porumbel, D., Hao, J.-K., & Glover, F. (2011). A simple and effective
+algorithm for the MaxMin diversity problem. *Annals of Operations
+Research*, *186*, 275–293. <https://doi.org/10.1007/s10479-011-0898-z>
+
+Resende, M. G. C., Martí, R., Gallego, M., & Duarte, A. (2010). GRASP
+and path relinking for the max-min diversity problem. *Computers &
+Operations Research*, *37*(3), 498–508.
+<https://doi.org/10.1016/j.cor.2008.05.011>
+
+Sayyady, F., & Fathi, Y. (2016). An integer programming approach for
+solving the p-dispersion problem. *European Journal of Operational
+Research*, *253*(1), 216–225.
+<https://doi.org/10.1016/j.ejor.2016.02.026>
