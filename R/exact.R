@@ -54,52 +54,52 @@
 #                     independent set has size < m (witness = integer(0)),
 #   "inconclusive" -- the budget expired before either could be established
 #                     (witness = integer(0)).
-.MaxISVerdict <- function(d, n, lambda, m, time_limit) {
-  if (!is.finite(time_limit) || time_limit <= 0) { # nocov start
+.MaxISVerdict <- function(d, n, lambda, m, timeLimit) {
+  if (!is.finite(timeLimit) || timeLimit <= 0) { # nocov start
     return(list(verdict = "inconclusive", witness = integer(0)))
   } # nocov end
   # Edges of G(lambda): unordered pairs with d(i, j) < lambda. `<` (strict)
   # is exact here because lambda is itself an achieved pairwise distance and
   # both d and lambda come from the same matrix -- no rounding intervenes.
   edge <- which(d < lambda & upper.tri(d), arr.ind = TRUE)
-  n_edge <- nrow(edge)
+  nEdge <- nrow(edge)
 
-  if (n_edge == 0L) { # nocov start
+  if (nEdge == 0L) { # nocov start
     # Empty graph: every vertex is independent, so alpha = n. Feasible
     # whenever m <= n (guaranteed by the caller's guard). No solve needed.
     return(list(verdict = "feasible", witness = seq_len(n)))
   } # nocov end
 
   # One row per edge: x_i + x_j <= 1.
-  A <- matrix(0, nrow = n_edge, ncol = n)
-  A[cbind(seq_len(n_edge), edge[, 1L])] <- 1
-  A[cbind(seq_len(n_edge), edge[, 2L])] <- 1
+  A <- matrix(0, nrow = nEdge, ncol = n)
+  A[cbind(seq_len(nEdge), edge[, 1L])] <- 1
+  A[cbind(seq_len(nEdge), edge[, 2L])] <- 1
 
   res <- highs::highs_solve(
     L       = rep.int(1, n),
     lower   = rep.int(0, n),
     upper   = rep.int(1, n),
     A       = A,
-    lhs     = rep.int(-Inf, n_edge),
-    rhs     = rep.int(1, n_edge),
+    lhs     = rep.int(-Inf, nEdge),
+    rhs     = rep.int(1, nEdge),
     types   = rep.int("I", n),                # integer var on [0,1] = binary
     maximum = TRUE,
     control = list(
       threads    = 1L,                        # determinism
-      time_limit = time_limit
+      time_limit = timeLimit
     )
   )
 
   # Independent validation of the witness -- never trust the status alone.
   sel <- which(res$primal_solution > 0.5)
-  is_valid_independent <- if (length(sel) < 2L) {
+  isValidIndependent <- if (length(sel) < 2L) {
     TRUE  # nocov                         # 0 or 1 vertex: trivially independent
   } else {
     sub <- d[sel, sel, drop = FALSE]
     !any(sub[upper.tri(sub)] < lambda)
   }
 
-  if (is_valid_independent && length(sel) >= m) {
+  if (isValidIndependent && length(sel) >= m) {
     return(list(verdict = "feasible", witness = sel))
   }
 
@@ -107,7 +107,7 @@
   # certified maximum independent set is still smaller than m. A time-limit
   # hit with a too-small (or empty) incumbent proves nothing.
   optimal <- identical(res$status_message, "Optimal")
-  if (optimal && is_valid_independent && length(sel) < m) {
+  if (optimal && isValidIndependent && length(sel) < m) {
     return(list(verdict = "infeasible", witness = integer(0)))
   }
   list(verdict = "inconclusive", witness = integer(0))  # nocov
@@ -131,7 +131,7 @@
 #' @param m Integer target subset size, `2 <= m <= nrow(d)`.
 #' @param solver Solver to use. Currently only `"highs"` is implemented;
 #'   `NULL` selects it. Other values raise an error.
-#' @param time_budget_s Wall-clock budget in seconds for the whole search
+#' @param timeBudgetS Wall-clock budget in seconds for the whole search
 #'   (shared across all internal IP solves). If the budget expires before the
 #'   optimum is proven, the largest threshold proven feasible so far is
 #'   returned with `proven = FALSE`.
@@ -154,7 +154,7 @@
 #'   }
 #' @references \insertAllCited{}
 #' @export
-ExactMaxMin <- function(d, m, solver = NULL, time_budget_s = 60,
+ExactMaxMin <- function(d, m, solver = NULL, timeBudgetS = 60,
                         progress = getOption("MaxMin.progress", interactive())) {
   t0 <- Sys.time()
   if (is.null(solver)) solver <- "highs"
@@ -173,7 +173,7 @@ ExactMaxMin <- function(d, m, solver = NULL, time_budget_s = 60,
     stop("`m` must satisfy 2 <= m <= nrow(d)")
   }
 
-  elapsed <- function() as.numeric(Sys.time() - t0, units = "secs")
+  Elapsed <- function() as.numeric(Sys.time() - t0, units = "secs")
 
   # Candidate thresholds: the achieved distinct pairwise distances, ascending.
   # The optimum is necessarily one of these (it is a realised distance), so
@@ -182,15 +182,15 @@ ExactMaxMin <- function(d, m, solver = NULL, time_budget_s = 60,
   # holds whenever m <= n -- our guaranteed lower bound, established without
   # any IP solve.
   cand <- sort(unique(d[upper.tri(d)]))
-  n_cand <- length(cand)
+  nCand <- length(cand)
 
-  if (progress && n_cand > 1L) {
-    .pb <- cli::cli_progress_bar("ExactMaxMin", total = n_cand - 1L,
+  if (progress && nCand > 1L) {
+    .pb <- cli::cli_progress_bar("ExactMaxMin", total = nCand - 1L,
                                  .auto_close = FALSE)
   }
 
   # Helper to package a result for a proven-feasible candidate index.
-  recover <- function(witness, lambda, proven) {
+  Recover <- function(witness, lambda, proven) {
     idx <- sort(witness[seq_len(m)])
     sub <- d[idx, idx]
     diag(sub) <- Inf
@@ -208,7 +208,7 @@ ExactMaxMin <- function(d, m, solver = NULL, time_budget_s = 60,
       indices   = idx,
       objective = obj,
       proven    = proven,
-      time_s    = elapsed(),
+      time_s    = Elapsed(),
       solver    = solver,
       n         = n,
       m         = as.integer(m)
@@ -222,13 +222,13 @@ ExactMaxMin <- function(d, m, solver = NULL, time_budget_s = 60,
   # Invariant: cand[1] is always feasible (empty graph, m <= n), so best
   # starts at 1 and we never need to prove the bottom of the range.
   lo <- 2L
-  hi <- n_cand
-  best_idx <- 1L
-  best_witness <- seq_len(n)            # any m points are >= cand[1] apart
+  hi <- nCand
+  bestIdx <- 1L
+  bestWitness <- seq_len(n)            # any m points are >= cand[1] apart
   inconclusive <- FALSE
 
   while (lo <= hi) {
-    remaining <- time_budget_s - elapsed()
+    remaining <- timeBudgetS - Elapsed()
     if (remaining <= 0) { # nocov start
       inconclusive <- TRUE
       break
@@ -236,16 +236,16 @@ ExactMaxMin <- function(d, m, solver = NULL, time_budget_s = 60,
     mid <- (lo + hi) %/% 2L
     v <- .MaxISVerdict(d, n, cand[mid], m, remaining)
     if (identical(v$verdict, "feasible")) {
-      best_idx <- mid
-      best_witness <- v$witness
+      bestIdx <- mid
+      bestWitness <- v$witness
       lo <- mid + 1L
-      if (progress && n_cand > 1L) {
-        cli::cli_progress_update(id = .pb, set = (lo - 2L) + (n_cand - hi))
+      if (progress && nCand > 1L) {
+        cli::cli_progress_update(id = .pb, set = (lo - 2L) + (nCand - hi))
       }
     } else if (identical(v$verdict, "infeasible")) {
       hi <- mid - 1L
-      if (progress && n_cand > 1L) {
-        cli::cli_progress_update(id = .pb, set = (lo - 2L) + (n_cand - hi))
+      if (progress && nCand > 1L) {
+        cli::cli_progress_update(id = .pb, set = (lo - 2L) + (nCand - hi))
       }
     } else { # nocov start
       # Budget expired mid-solve: cannot place this candidate. Stop and
@@ -255,13 +255,13 @@ ExactMaxMin <- function(d, m, solver = NULL, time_budget_s = 60,
     } # nocov end
   }
 
-  if (progress && n_cand > 1L) {
+  if (progress && nCand > 1L) {
     cli::cli_progress_done(id = .pb)
   }
 
   # Optimality is proven iff the search closed the interval (lo > hi) without
-  # an inconclusive break: every candidate above best_idx was certified
-  # infeasible and best_idx itself certified feasible.
+  # an inconclusive break: every candidate above bestIdx was certified
+  # infeasible and bestIdx itself certified feasible.
   proven <- !inconclusive
-  recover(best_witness, cand[best_idx], proven)
+  Recover(bestWitness, cand[bestIdx], proven)
 }

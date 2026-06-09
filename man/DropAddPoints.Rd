@@ -7,9 +7,9 @@
 DropAddPoints(
   points,
   m,
-  max_no_improve = 5000L,
-  max_iter = NULL,
-  time_budget_s = Inf,
+  plateau = 5000L,
+  maxIter = NULL,
+  timeBudgetS = Inf,
   seed = NULL,
   progress = getOption("MaxMin.progress", interactive())
 )
@@ -21,16 +21,16 @@ coordinate path is defined only for complete Euclidean data.}
 
 \item{m}{Integer; subset size, \eqn{2 \le m \le n}.}
 
-\item{max_no_improve}{Integer; stop after this many consecutive drop-add
+\item{plateau}{Integer; stop after this many consecutive drop-add
 iterations that do not improve the best objective. The primary,
 deterministic stopping criterion. The search is RNG-free (ties broken by
 smallest index), so the result is reproducible and machine-independent.
 Default 5000.}
 
-\item{max_iter}{Optional integer hard cap on main-loop iterations (excluding
-construction). \code{NULL} (default) leaves \code{max_no_improve} in sole control.}
+\item{maxIter}{Optional integer hard cap on main-loop iterations (excluding
+construction). \code{NULL} (default) leaves \code{plateau} in sole control.}
 
-\item{time_budget_s}{Optional wall-clock ceiling in seconds, checked
+\item{timeBudgetS}{Optional wall-clock ceiling in seconds, checked
 periodically at iteration boundaries. Default \code{Inf} (no ceiling, fully
 reproducible). A finite value caps runtime but makes the result
 machine-dependent.}

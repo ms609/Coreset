@@ -145,26 +145,22 @@ arrestTypes[idx, ]
 ## DropAdd tabu search
 
 The **DropAdd** heuristic [@Porumbel2011] refines an initial
-selection by alternating *drop* and *add* moves guided by a FIFO tabu list
-that prevents short cycles.
-It is fully deterministic and reproducible, and typically reaches ≈ 99 % of
-the optimal T~k~.
+selection by alternately dropping and adding points from the selection; it 
+typically reaches ≈ 99 % of the optimal T~k~.
 
 ```{r}
 #| label: dropadd
-res_da <- DropAdd(eurodist, m = 6L, max_no_improve = 500L)
+picksDA <- DropAdd(eurodist, m = 6L, plateau = 500L)
 
-labels(eurodist)[res_da$indices]
-res_da$objective     # T_k achieved
-res_da$iters         # iterations completed
-res_da$time_s        # wall-clock seconds
+labels(eurodist)[picksDA$indices]
+picksDA$score        # T_k achieved
+picksDA$iters        # iterations completed
+picksDA$time_s       # wall-clock seconds
 ```
 
-`max_no_improve` is the main stopping knob: the algorithm terminates after
-this many consecutive iterations without an improvement in T~k~.
-For coordinate data where *N* is large enough to make the distance matrix
-infeasible (roughly N > 46 000), use `DropAddPoints()`, which accepts a
-coordinate matrix directly.
+The algorithm terminates after `plateau` iterations do not improve T~k~.
+Where *N* is too large for a distance matrix to fit in memory 
+(roughly N > 46 000), `DropAddPoints()` accepts a coordinate matrix directly.
 
 
 ## GRASP with path relinking
@@ -180,15 +176,15 @@ reproducibility:
 
 ```{r}
 #| label: grasp
-res_gr <- GraspPR(eurodist, m = 6L, max_no_improve = 50L, seed = 42L)
+res_gr <- GraspPR(eurodist, m = 6L, plateau = 50L, seed = 42L)
 
 labels(eurodist)[res_gr$indices]
 res_gr$objective
 res_gr$pr_calls   # path-relinking calls performed
 ```
 
-`max_no_improve` controls how many consecutive non-improving GRASP iterations
-trigger termination; `time_budget_s` is available as an absolute time cap for
+`plateau` controls how many consecutive non-improving GRASP iterations
+trigger termination; `timeBudgetS` is available as an absolute time cap for
 interactive or batch use.
 
 
@@ -208,8 +204,8 @@ m   <- 8L
 ```{r}
 #| label: compare-run
 idx_gonz <- Gonzalez(d50, n = m)
-res_da50 <- DropAdd(d50, m = m, max_no_improve = 500L)
-res_gr50 <- GraspPR(d50, m = m, max_no_improve = 50L, seed = 42L)
+res_da50 <- DropAdd(d50, m = m, plateau = 500L)
+res_gr50 <- GraspPR(d50, m = m, plateau = 50L, seed = 42L)
 ```
 
 Even a small difference in T~k~ can correspond to a meaningfully more
@@ -292,7 +288,7 @@ d30   <- dist(pts30)
 ```{r}
 #| label: exact
 #| eval: !expr requireNamespace("highs", quietly = TRUE)
-res_ex <- ExactMaxMin(d30, m = 6L, time_budget_s = 30L)
+res_ex <- ExactMaxMin(d30, m = 6L, timeBudgetS = 30L)
 
 res_ex$proven      # TRUE  ⟹  objective is the global optimum
 res_ex$objective

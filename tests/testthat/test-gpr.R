@@ -1,5 +1,5 @@
 # Tests for GraspPR (Resende et al. 2010, static variant) and its compiled
-# kernel. Termination is the deterministic stagnation rule (max_no_improve).
+# kernel. Termination is the deterministic stagnation rule (plateau).
 
 set.seed(42)
 pts30 <- matrix(rnorm(90), ncol = 3)
@@ -9,7 +9,7 @@ d30m  <- as.matrix(d30)
 # 1. Smoke test ------------------------------------------------------------
 
 test_that("GraspPR smoke: returns valid selection on 30 random 3-D points", {
-  res <- GraspPR(d30, m = 5L, max_no_improve = 20L, elite_size = 4L, seed = 1L)
+  res <- GraspPR(d30, m = 5L, plateau = 20L, eliteSize = 4L, seed = 1L)
   expect_type(res$indices, "integer")
   expect_length(res$indices, 5L)
   expect_true(all(res$indices %in% seq_len(30L)))
@@ -32,10 +32,10 @@ test_that("GraspPR_cpp == .GraspPR_R across seeds and parameters", {
     es  <- grid$es[r]
 
     set.seed(s)
-    ref <- MaxMin:::.GraspPR_R(d30m, m = 6L, max_no_improve = mni,
-                               elite_size = es, alpha = 0.8)
+    ref <- MaxMin:::.GraspPR_R(d30m, m = 6L, plateau = mni,
+                               eliteSize = es, alpha = 0.8)
     set.seed(s)
-    ker <- GraspPR(d30m, m = 6L, max_no_improve = mni, elite_size = es,
+    ker <- GraspPR(d30m, m = 6L, plateau = mni, eliteSize = es,
                    alpha = 0.8)
 
     info <- sprintf("seed=%d mni=%d es=%d", s, mni, es)
@@ -49,17 +49,17 @@ test_that("GraspPR_cpp == .GraspPR_R across seeds and parameters", {
 # 3. Determinism -----------------------------------------------------------
 
 test_that("GraspPR is reproducible from a seed (machine-independent)", {
-  a <- GraspPR(d30, m = 6L, max_no_improve = 30L, elite_size = 5L, seed = 17L)
-  b <- GraspPR(d30, m = 6L, max_no_improve = 30L, elite_size = 5L, seed = 17L)
+  a <- GraspPR(d30, m = 6L, plateau = 30L, eliteSize = 5L, seed = 17L)
+  b <- GraspPR(d30, m = 6L, plateau = 30L, eliteSize = 5L, seed = 17L)
   expect_identical(a$indices, b$indices)
   expect_identical(a$objective, b$objective)
   expect_identical(a$iters, b$iters)
 })
 
-# 4. max_iter = 0 short-circuits Phase B -----------------------------------
+# 4. maxIter = 0 short-circuits Phase B -----------------------------------
 
-test_that("GraspPR with max_iter = 0 runs Phase A + relinking only", {
-  res <- GraspPR(d30, m = 4L, max_iter = 0L, elite_size = 4L, seed = 7L)
+test_that("GraspPR with maxIter = 0 runs Phase A + relinking only", {
+  res <- GraspPR(d30, m = 4L, maxIter = 0L, eliteSize = 4L, seed = 7L)
   expect_length(res$indices, 4L)
   expect_true(res$objective > 0)
   expect_equal(res$iters, 0L)
@@ -67,11 +67,11 @@ test_that("GraspPR with max_iter = 0 runs Phase A + relinking only", {
 
 # 5. Stagnation criterion bounds the run -----------------------------------
 
-test_that("GraspPR stops within max_no_improve of its last improvement", {
-  # With max_iter as a hard cap we can assert iters never exceeds it; with the
+test_that("GraspPR stops within plateau of its last improvement", {
+  # With maxIter as a hard cap we can assert iters never exceeds it; with the
   # stagnation rule alone the loop must still terminate.
-  res <- GraspPR(d30, m = 6L, max_no_improve = 5L, max_iter = 200L,
-                 elite_size = 4L, seed = 3L)
+  res <- GraspPR(d30, m = 6L, plateau = 5L, maxIter = 200L,
+                 eliteSize = 4L, seed = 3L)
   expect_lte(res$iters, 200L)
   expect_length(res$indices, 6L)
 })
@@ -80,13 +80,13 @@ test_that("GraspPR stops within max_no_improve of its last improvement", {
 
 test_that(".GprLocalSearch never decreases the MaxMin objective", {
   centroid <- colMeans(pts30)
-  to_centroid <- sqrt(rowSums(sweep(pts30, 2L, centroid)^2))
-  bad_sel <- order(to_centroid)[1:5]
-  z_start <- MaxMin:::.GprObjective(d30m, bad_sel)
-  improved <- MaxMin:::.GprLocalSearch(d30m, bad_sel)
-  z_end <- MaxMin:::.GprObjective(d30m, improved)
-  expect_true(z_end >= z_start)
-  expect_true(z_end > z_start)
+  toCentroid <- sqrt(rowSums(sweep(pts30, 2L, centroid)^2))
+  badSel <- order(toCentroid)[1:5]
+  zStart <- MaxMin:::.GprObjective(d30m, badSel)
+  improved <- MaxMin:::.GprLocalSearch(d30m, badSel)
+  zEnd <- MaxMin:::.GprObjective(d30m, improved)
+  expect_true(zEnd >= zStart)
+  expect_true(zEnd > zStart)
   expect_length(improved, 5L)
   expect_equal(length(unique(improved)), 5L)
 })
@@ -103,20 +103,20 @@ test_that(".GprPathRelink keeps the best state along the path", {
   expect_true(pr$objective >= max(zx, zy))
 })
 
-# 8. GraspPR time_budget_s validation -------------------------------------
+# 8. GraspPR timeBudgetS validation -------------------------------------
 
-test_that("GraspPR validates time_budget_s", {
-  expect_error(GraspPR(d30, m = 4L, time_budget_s = 0),  "time_budget_s")
-  expect_error(GraspPR(d30, m = 4L, time_budget_s = -1), "time_budget_s")
-  expect_error(GraspPR(d30, m = 4L, time_budget_s = NA_real_), "time_budget_s")
+test_that("GraspPR validates timeBudgetS", {
+  expect_error(GraspPR(d30, m = 4L, timeBudgetS = 0),  "timeBudgetS")
+  expect_error(GraspPR(d30, m = 4L, timeBudgetS = -1), "timeBudgetS")
+  expect_error(GraspPR(d30, m = 4L, timeBudgetS = NA_real_), "timeBudgetS")
 })
 
-# 9. .GraspPR_R max_iter cap (line 389) -----------------------------------
+# 9. .GraspPR_R maxIter cap -----------------------------------
 
-test_that(".GraspPR_R stops exactly at max_iter", {
+test_that(".GraspPR_R stops exactly at maxIter", {
   set.seed(1)
-  ref <- MaxMin:::.GraspPR_R(d30m, m = 5L, max_no_improve = 1000L,
-                              max_iter = 3L, elite_size = 4L)
+  ref <- MaxMin:::.GraspPR_R(d30m, m = 5L, plateau = 1000L,
+                              maxIter = 3L, eliteSize = 4L)
   expect_lte(ref$iters, 3L)
 })
 
@@ -126,21 +126,21 @@ test_that(".GprLocalSearch reduces pair count when T_k is unchanged", {
   # Construct a matrix where two points are equidistant (forcing n_critical > 1),
   # and a swap outside preserves T_k but reduces the critical-pair count.
   # Four corners of a unit square: T_4 = 1, with 4 critical pairs (all sides).
-  pts_sq <- rbind(c(0,0), c(1,0), c(1,1), c(0,1), c(3,0.5))
-  d_sq   <- as.matrix(dist(pts_sq))
+  ptsSq <- rbind(c(0,0), c(1,0), c(1,1), c(0,1), c(3,0.5))
+  dSq   <- as.matrix(dist(ptsSq))
   sel    <- 1:4   # four corners; T_k = 1, 4 critical pairs
-  improved <- MaxMin:::.GprLocalSearch(d_sq, sel)
+  improved <- MaxMin:::.GprLocalSearch(dSq, sel)
   # After improvement T_k must be >= 1.
-  expect_gte(MaxMin:::.GprObjective(d_sq, improved),
-             MaxMin:::.GprObjective(d_sq, sel))
+  expect_gte(MaxMin:::.GprObjective(dSq, improved),
+             MaxMin:::.GprObjective(dSq, sel))
 })
 
 # 11. .GprTryInsert second acceptance condition and tail insertion ---------
 # Hand-crafted 4-point geometry guarantees both branches:
 #   P1=(0,0), P2=(1,0), P3=(0,0.5), P4=(0.3,0.5)
-#   d12=1.0  (z1), d34=0.3 (zb), d13=0.5 (sel_z) with zb < sel_z < z1
+#   d12=1.0  (z1), d34=0.3 (zb), d13=0.5 (selZ) with zb < selZ < z1
 #
-# Line 217 fires: sel_z=0.5 > zb=0.3 and sel_z <= z1=1.0, dmin=1 >= dth=1.
+# Line 217 fires: selZ=0.5 > zb=0.3 and selZ <= z1=1.0, dmin=1 >= dth=1.
 # Tie-break on Hamming removes s2={3,4} (lowest z=0.3), leaving ES=[{1,2}].
 # pos = sum([1.0] >= 0.5) + 1 = 2 > 1 = length(remaining) → tail (233-234).
 
@@ -152,20 +152,20 @@ test_that(".GprTryInsert line 217 (second condition) and lines 233-234 (tail ins
   z1   <- MaxMin:::.GprObjective(d4, s1)   # 1.0
   z2   <- MaxMin:::.GprObjective(d4, s2)   # 0.3
   ES   <- list(s1, s2)
-  ES_z <- c(z1, z2)   # already descending
+  esZ  <- c(z1, z2)   # already descending
 
-  sel   <- c(1L, 3L)
-  sel_z <- MaxMin:::.GprObjective(d4, sel) # 0.5  (between zb and z1)
-  dth   <- 1L
+  sel  <- c(1L, 3L)
+  selZ <- MaxMin:::.GprObjective(d4, sel) # 0.5  (between zb and z1)
+  dth  <- 1L
 
-  res <- MaxMin:::.GprTryInsert(d4, ES, ES_z, sel, sel_z, dth)
+  res <- MaxMin:::.GprTryInsert(d4, ES, esZ, sel, selZ, dth)
 
   expect_true(res$changed)
   expect_length(res$ES, 2L)
-  expect_equal(res$ES_z[2L], sel_z)   # sel inserted at tail position
+  expect_equal(res$esZ[2L], selZ)   # sel inserted at tail position
 })
 
-# 12. Path relinking improves best_sel (.GraspPR_R lines 422-423) ---------
+# 12. Path relinking improves bestSel (.GraspPR_R lines 422-423) ---------
 # Scan seeds until Phase C PR beats the Phase A best, confirming lines 422-423.
 # Phase A is replicated manually (same RNG path) to get the pre-PR ceiling;
 # Phase C is deterministic, so any gain must have fired those lines.
@@ -182,19 +182,19 @@ test_that(".GraspPR_R phase-C path relinking fires lines 422-423", {
 
     # Replicate Phase A: same RNG, same constructions -> same Phase A ceiling.
     set.seed(s)
-    phase_a_best <- -Inf
+    phaseABest <- -Inf
     for (b in seq_len(es)) {
       x  <- MaxMin:::.GprConstruct(d, m, alpha)
       xp <- MaxMin:::.GprLocalSearch(d, x)
-      phase_a_best <- max(phase_a_best, MaxMin:::.GprObjective(d, xp))
+      phaseABest <- max(phaseABest, MaxMin:::.GprObjective(d, xp))
     }
 
     # Full run (Phase A + C, no Phase B).
     set.seed(s)
-    res <- MaxMin:::.GraspPR_R(d, m = m, max_no_improve = 1000L,
-                                max_iter = 0L, elite_size = es, alpha = alpha)
+    res <- MaxMin:::.GraspPR_R(d, m = m, plateau = 1000L,
+                                maxIter = 0L, eliteSize = es, alpha = alpha)
 
-    if (res$objective > phase_a_best + 1e-9) {
+    if (res$objective > phaseABest + 1e-9) {
       found <- TRUE
       break
     }

@@ -63,14 +63,14 @@
   g <- d[, sel[1L]]
   g[sel[1L]] <- -Inf  # mark selected
   for (h in 2L:m) {
-    cand_mask <- is.finite(g) & g > -Inf
+    candMask <- is.finite(g) & g > -Inf
     # candidates are points with g > -Inf (i.e., not yet selected)
-    cand_idx <- which(g > -Inf)
-    gv <- g[cand_idx]
+    candIdx <- which(g > -Inf)
+    gv <- g[candIdx]
     gmax <- max(gv)
     gmin <- min(gv)
     thresh <- gmin + alpha * (gmax - gmin)
-    rcl <- cand_idx[gv >= thresh]
+    rcl <- candIdx[gv >= thresh]
     if (length(rcl) == 1L) {
       pick <- rcl
     } else {
@@ -102,40 +102,40 @@
   m <- length(sel)
   if (m < 2L) return(sel)  # nocov
   repeat {
-    sel_sorted <- sort(sel)
-    di <- .GprNearestInSel(d, sel_sorted)
+    selSorted <- sort(sel)
+    di <- .GprNearestInSel(d, selSorted)
     dstar <- min(di)
-    pair_count <- .GprMinPairCount(d, sel_sorted, dstar)
-    critical <- which(di <= dstar)  # indices into sel_sorted
-    in_sel <- logical(n); in_sel[sel_sorted] <- TRUE
-    out_idx <- which(!in_sel)
-    best_swap <- NULL
-    best_dstar <- dstar
-    best_paircount <- pair_count
+    pairCount <- .GprMinPairCount(d, selSorted, dstar)
+    critical <- which(di <= dstar)  # indices into selSorted
+    inSel <- logical(n); inSel[selSorted] <- TRUE
+    outIdx <- which(!inSel)
+    bestSwap <- NULL
+    bestDstar <- dstar
+    bestPaircount <- pairCount
     for (ci in critical) {
-      drop <- sel_sorted[ci]
-      remaining <- sel_sorted[-ci]
-      for (s in out_idx) {
+      drop <- selSorted[ci]
+      remaining <- selSorted[-ci]
+      for (s in outIdx) {
         cand <- c(remaining, s)
         # quick: compute d* directly
         sub <- d[cand, cand, drop = FALSE]
         diag(sub) <- Inf
-        new_dstar <- min(sub)
-        if (new_dstar > best_dstar) {
-          best_swap <- list(drop = drop, add = s)
-          best_dstar <- new_dstar
-          best_paircount <- sum(sub <= new_dstar) %/% 2L
-        } else if (new_dstar == best_dstar) {
-          new_paircount <- sum(sub <= new_dstar) %/% 2L
-          if (new_paircount < best_paircount) {
-            best_swap <- list(drop = drop, add = s)
-            best_paircount <- new_paircount
+        newDstar <- min(sub)
+        if (newDstar > bestDstar) {
+          bestSwap <- list(drop = drop, add = s)
+          bestDstar <- newDstar
+          bestPaircount <- sum(sub <= newDstar) %/% 2L
+        } else if (newDstar == bestDstar) {
+          newPaircount <- sum(sub <= newDstar) %/% 2L
+          if (newPaircount < bestPaircount) {
+            bestSwap <- list(drop = drop, add = s)
+            bestPaircount <- newPaircount
           }
         }
       }
     }
-    if (is.null(best_swap)) break
-    sel <- c(sel_sorted[sel_sorted != best_swap$drop], best_swap$add)
+    if (is.null(bestSwap)) break
+    sel <- c(selSorted[selSorted != bestSwap$drop], bestSwap$add)
   }
   sort(sel)
 }
@@ -155,42 +155,42 @@
   if (identical(x, y)) {
     return(list(best = x, objective = .GprObjective(d, x), intermediates = 0L))
   }
-  to_drop <- setdiff(x, y)  # |to_drop| = r
-  to_add  <- setdiff(y, x)
-  r <- length(to_drop)
+  toDrop <- setdiff(x, y)  # |toDrop| = r
+  toAdd  <- setdiff(y, x)
+  r <- length(toDrop)
   pk <- x
-  best_sel <- x
-  best_z <- .GprObjective(d, x)
-  z_y <- .GprObjective(d, y)
-  if (z_y > best_z) { best_sel <- y; best_z <- z_y }
+  bestSel <- x
+  bestZ <- .GprObjective(d, x)
+  zY <- .GprObjective(d, y)
+  if (zY > bestZ) { bestSel <- y; bestZ <- zY }
   intermediates <- 0L
   for (k in seq_len(r)) {
-    # pk_minus_y = to_drop intersect pk; pk_plus_y = to_add \ pk
-    drop_cands <- intersect(pk, to_drop)
-    add_cands  <- setdiff(to_add, pk)
-    best_pair <- NULL
-    best_pair_z <- -Inf
+    # pk_minus_y = toDrop intersect pk; pk_plus_y = toAdd \ pk
+    dropCands <- intersect(pk, toDrop)
+    addCands  <- setdiff(toAdd, pk)
+    bestPair <- NULL
+    bestPairZ <- -Inf
     # tie-breaker: lexicographic on (drop_index, add_index) -> iterate sorted
-    for (i in sort(drop_cands)) {
-      for (j in sort(add_cands)) {
+    for (i in sort(dropCands)) {
+      for (j in sort(addCands)) {
         cand <- c(pk[pk != i], j)
         sub <- d[cand, cand, drop = FALSE]
         diag(sub) <- Inf
         zc <- min(sub)
-        if (zc > best_pair_z) {
-          best_pair_z <- zc
-          best_pair <- c(i, j)
+        if (zc > bestPairZ) {
+          bestPairZ <- zc
+          bestPair <- c(i, j)
         }
       }
     }
-    pk <- sort(c(pk[pk != best_pair[1L]], best_pair[2L]))
+    pk <- sort(c(pk[pk != bestPair[1L]], bestPair[2L]))
     intermediates <- intermediates + 1L
-    if (best_pair_z > best_z) {
-      best_sel <- pk
-      best_z <- best_pair_z
+    if (bestPairZ > bestZ) {
+      bestSel <- pk
+      bestZ <- bestPairZ
     }
   }
-  list(best = best_sel, objective = best_z, intermediates = intermediates)
+  list(best = bestSel, objective = bestZ, intermediates = intermediates)
 }
 
 
@@ -207,36 +207,36 @@
 #'
 #' @return Updated ES (list of selections, sorted best-to-worst by z).
 #' @keywords internal
-.GprTryInsert <- function(d, ES, ES_z, sel, sel_z, dth) {
-  z1 <- ES_z[1L]
-  zb <- ES_z[length(ES_z)]
+.GprTryInsert <- function(d, ES, esZ, sel, selZ, dth) {
+  z1 <- esZ[1L]
+  zb <- esZ[length(esZ)]
   hamm <- .GprHammingToES(sel, ES)
   dmin <- min(hamm)
   accept <- FALSE
-  if (sel_z > z1) accept <- TRUE
-  else if (sel_z > zb && dmin >= dth) accept <- TRUE
+  if (selZ > z1) accept <- TRUE
+  else if (selZ > zb && dmin >= dth) accept <- TRUE
   # Don't admit a duplicate
   if (dmin == 0L) accept <- FALSE
-  if (!accept) return(list(ES = ES, ES_z = ES_z, changed = FALSE))
+  if (!accept) return(list(ES = ES, esZ = esZ, changed = FALSE))
   # remove the closest member (smallest Hamming distance); break ties on lowest z
   closest <- which(hamm == dmin)
   if (length(closest) > 1L) {
-    closest <- closest[which.min(ES_z[closest])]
+    closest <- closest[which.min(esZ[closest])]
   } else {
     closest <- closest[1L]
   }
   ES <- ES[-closest]
-  ES_z <- ES_z[-closest]
+  esZ <- esZ[-closest]
   # insert sorted (descending z)
-  pos <- sum(ES_z >= sel_z) + 1L
+  pos <- sum(esZ >= selZ) + 1L
   if (pos > length(ES)) {
     ES <- c(ES, list(sel))
-    ES_z <- c(ES_z, sel_z)
+    esZ <- c(esZ, selZ)
   } else {
     ES <- c(ES[seq_len(pos - 1L)], list(sel), ES[pos:length(ES)])
-    ES_z <- c(ES_z[seq_len(pos - 1L)], sel_z, ES_z[pos:length(ES_z)])
+    esZ <- c(esZ[seq_len(pos - 1L)], selZ, esZ[pos:length(esZ)])
   }
-  list(ES = ES, ES_z = ES_z, changed = TRUE)
+  list(ES = ES, esZ = esZ, changed = TRUE)
 }
 
 
@@ -253,12 +253,12 @@
 #' this package, at correspondingly higher cost.
 #'
 #' **Deterministic termination.** The refinement loop stops after
-#' `max_no_improve` consecutive GRASP iterations that fail to improve the best
+#' `plateau` consecutive GRASP iterations that fail to improve the best
 #' elite objective (rather than after a wall-clock budget). Given a fixed
 #' `seed`, the entire run — construction RNG, iteration count, and result — is
 #' therefore reproducible and machine-independent; `set.seed(seed)` controls
 #' the same random stream the compiled kernel consumes via R's RNG. An
-#' optional `time_budget_s` ceiling is available as a safety cap, but using a
+#' optional `timeBudgetS` ceiling is available as a safety cap, but using a
 #' finite value reintroduces machine-dependence and is off by default.
 #'
 #' This is a **dense-matrix-only** method: it materialises and repeatedly
@@ -272,16 +272,16 @@
 #'
 #' @param d Either a `dist` object or a square symmetric numeric matrix.
 #' @param m Integer subset size, `2 <= m <= nrow(d)`.
-#' @param max_no_improve Integer; stop after this many consecutive GRASP
+#' @param plateau Integer; stop after this many consecutive GRASP
 #'   iterations without an improvement to the best elite objective. The
 #'   primary, deterministic stopping criterion. Default 100.
-#' @param max_iter Optional integer hard cap on GRASP refinement iterations
+#' @param maxIter Optional integer hard cap on GRASP refinement iterations
 #'   (excluding the elite-set construction). `NULL` (default) leaves
-#'   `max_no_improve` in sole control.
-#' @param elite_size Size of the elite set |ES|. Default 10.
+#'   `plateau` in sole control.
+#' @param eliteSize Size of the elite set |ES|. Default 10.
 #' @param alpha RCL threshold; `alpha = 1` is pure greedy, `alpha = 0`
 #'   uniform random. Default 0.8.
-#' @param time_budget_s Optional wall-clock ceiling in seconds. Default `Inf`
+#' @param timeBudgetS Optional wall-clock ceiling in seconds. Default `Inf`
 #'   (no ceiling, fully reproducible). A finite value caps runtime but makes
 #'   the result machine-dependent.
 #' @param seed Optional integer; if supplied, `set.seed(seed)` is called at
@@ -302,35 +302,35 @@
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
-#' res <- GraspPR(dist(pts), m = 5L, max_no_improve = 20L, elite_size = 4L,
+#' res <- GraspPR(dist(pts), m = 5L, plateau = 20L, eliteSize = 4L,
 #'                seed = 1L)
 #' res$indices
 #' @export
-GraspPR <- function(d, m, max_no_improve = 100L, max_iter = NULL,
-                    elite_size = 10L, alpha = 0.8, time_budget_s = Inf,
+GraspPR <- function(d, m, plateau = 100L, maxIter = NULL,
+                    eliteSize = 10L, alpha = 0.8, timeBudgetS = Inf,
                     seed = NULL) {
   if (!is.null(seed)) set.seed(seed)
   d <- .AsDistMatrix(d)
   n <- nrow(d)
   m <- as.integer(m)
   stopifnot(m >= 2L, m <= n)
-  elite_size <- as.integer(elite_size)
-  stopifnot(elite_size >= 1L)
-  max_no_improve <- as.integer(max_no_improve)
-  stopifnot(max_no_improve >= 1L)
-  if (is.null(max_iter)) {
-    max_iter <- .Machine$integer.max
+  eliteSize <- as.integer(eliteSize)
+  stopifnot(eliteSize >= 1L)
+  plateau <- as.integer(plateau)
+  stopifnot(plateau >= 1L)
+  if (is.null(maxIter)) {
+    maxIter <- .Machine$integer.max
   } else {
-    max_iter <- as.integer(max_iter)
-    stopifnot(max_iter >= 0L)
+    maxIter <- as.integer(maxIter)
+    stopifnot(maxIter >= 0L)
   }
-  if (!is.numeric(time_budget_s) || length(time_budget_s) != 1L ||
-      is.na(time_budget_s) || time_budget_s <= 0) {
-    stop("`time_budget_s` must be a single positive numeric (or Inf)")
+  if (!is.numeric(timeBudgetS) || length(timeBudgetS) != 1L ||
+      is.na(timeBudgetS) || timeBudgetS <= 0) {
+    stop("`timeBudgetS` must be a single positive numeric (or Inf)")
   }
 
-  out <- GraspPR_cpp(d, m, max_no_improve, max_iter, elite_size,
-                     as.double(alpha), as.double(time_budget_s))
+  out <- GraspPR_cpp(d, m, plateau, maxIter, eliteSize,
+                     as.double(alpha), as.double(timeBudgetS))
   list(
     indices   = sort(as.integer(out$indices)),
     objective = as.numeric(out$objective),
@@ -347,79 +347,79 @@ GraspPR <- function(d, m, max_no_improve = 100L, max_iter = NULL,
 # use GraspPR().
 #
 # Termination is the deterministic stagnation rule: stop after
-# `max_no_improve` consecutive iterations that do not raise the best elite
-# objective ES_z[1] (which is monotone non-decreasing under .GprTryInsert()).
-# `max_iter` is an optional hard cap; `time_budget_s` an optional ceiling
+# `plateau` consecutive iterations that do not raise the best elite
+# objective esZ[1] (which is monotone non-decreasing under .GprTryInsert()).
+# `maxIter` is an optional hard cap; `timeBudgetS` an optional ceiling
 # (Inf = off) that leaves the result reproducible.
 #' @keywords internal
-.GraspPR_R <- function(d, m, max_no_improve, max_iter = .Machine$integer.max,
-                       elite_size = 10L, alpha = 0.8, time_budget_s = Inf) {
+.GraspPR_R <- function(d, m, plateau, maxIter = .Machine$integer.max,
+                       eliteSize = 10L, alpha = 0.8, timeBudgetS = Inf) {
   d <- .AsDistMatrix(d)
   n <- nrow(d)
   m <- as.integer(m)
-  elite_size <- as.integer(elite_size)
+  eliteSize <- as.integer(eliteSize)
   dth <- 5L
   t0 <- Sys.time()
-  elapsed <- function() as.numeric(Sys.time() - t0, units = "secs")
-  gated <- is.finite(time_budget_s)
+  Elapsed <- function() as.numeric(Sys.time() - t0, units = "secs")
+  gated <- is.finite(timeBudgetS)
 
   # Phase A: build initial elite set.
-  ES <- vector("list", elite_size)
-  ES_z <- numeric(elite_size)
-  for (b in seq_len(elite_size)) {
+  ES <- vector("list", eliteSize)
+  esZ <- numeric(eliteSize)
+  for (b in seq_len(eliteSize)) {
     x  <- .GprConstruct(d, m, alpha)
     xp <- .GprLocalSearch(d, x)
     ES[[b]] <- xp
-    ES_z[b] <- .GprObjective(d, xp)
+    esZ[b] <- .GprObjective(d, xp)
   }
-  ord <- order(ES_z, decreasing = TRUE)
-  ES <- ES[ord]; ES_z <- ES_z[ord]
+  ord <- order(esZ, decreasing = TRUE)
+  ES <- ES[ord]; esZ <- esZ[ord]
 
-  # Phase B: GRASP iterations until `max_no_improve` consecutive non-improving
+  # Phase B: GRASP iterations until `plateau` consecutive non-improving
   # iterations (the deterministic criterion), an optional iteration cap, or an
   # optional wall-clock ceiling.
   iters <- 0L
-  no_improve <- 0L
-  best_z_B <- ES_z[1L]
+  noImprove <- 0L
+  bestZB <- esZ[1L]
   repeat {
-    if (no_improve >= max_no_improve) break
-    if (iters >= max_iter) break
-    if (gated && elapsed() >= time_budget_s) break  # nocov
+    if (noImprove >= plateau) break
+    if (iters >= maxIter) break
+    if (gated && Elapsed() >= timeBudgetS) break  # nocov
     x  <- .GprConstruct(d, m, alpha)
     xp <- .GprLocalSearch(d, x)
     zp <- .GprObjective(d, xp)
-    res <- .GprTryInsert(d, ES, ES_z, xp, zp, dth)
-    ES <- res$ES; ES_z <- res$ES_z
+    res <- .GprTryInsert(d, ES, esZ, xp, zp, dth)
+    ES <- res$ES; esZ <- res$esZ
     iters <- iters + 1L
-    if (ES_z[1L] > best_z_B) {
-      best_z_B <- ES_z[1L]
-      no_improve <- 0L
+    if (esZ[1L] > bestZB) {
+      bestZB <- esZ[1L]
+      noImprove <- 0L
     } else {
-      no_improve <- no_improve + 1L
+      noImprove <- noImprove + 1L
     }
   }
 
   # Phase C: path relinking over all elite pairs (deterministic; no RNG).
-  best_sel <- ES[[1L]]
-  best_z   <- ES_z[1L]
-  pr_calls <- 0L
+  bestSel <- ES[[1L]]
+  bestZ   <- esZ[1L]
+  prCalls <- 0L
   k <- length(ES)
-  if (k >= 2L && !(gated && elapsed() >= time_budget_s)) {
+  if (k >= 2L && !(gated && Elapsed() >= timeBudgetS)) {
     done <- FALSE
     for (i in seq_len(k - 1L)) {
       if (done) break  # nocov
       for (j in (i + 1L):k) {
         pr1 <- .GprPathRelink(d, ES[[i]], ES[[j]])
         pr2 <- .GprPathRelink(d, ES[[j]], ES[[i]])
-        pr_calls <- pr_calls + 2L
-        y_sel <- if (pr1$objective >= pr2$objective) pr1$best else pr2$best
-        yp <- .GprLocalSearch(d, y_sel)
+        prCalls <- prCalls + 2L
+        ySel <- if (pr1$objective >= pr2$objective) pr1$best else pr2$best
+        yp <- .GprLocalSearch(d, ySel)
         zp <- .GprObjective(d, yp)
-        if (zp > best_z) {
-          best_z <- zp
-          best_sel <- yp
+        if (zp > bestZ) {
+          bestZ <- zp
+          bestSel <- yp
         }
-        if (gated && elapsed() >= time_budget_s) { # nocov start
+        if (gated && Elapsed() >= timeBudgetS) { # nocov start
           done <- TRUE
           break
         } # nocov end
@@ -428,10 +428,10 @@ GraspPR <- function(d, m, max_no_improve = 100L, max_iter = NULL,
   }
 
   list(
-    indices   = sort(as.integer(best_sel)),
-    objective = best_z,
-    time_s    = elapsed(),
+    indices   = sort(as.integer(bestSel)),
+    objective = bestZ,
+    time_s    = Elapsed(),
     iters     = iters,
-    pr_calls  = pr_calls
+    pr_calls  = prCalls
   )
 }

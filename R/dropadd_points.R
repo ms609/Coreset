@@ -55,14 +55,14 @@
 #'   object coercible to one via `as.matrix`). Must be complete (no `NA`); the
 #'   coordinate path is defined only for complete Euclidean data.
 #' @param m Integer; subset size, \eqn{2 \le m \le n}.
-#' @param max_no_improve Integer; stop after this many consecutive drop-add
+#' @param plateau Integer; stop after this many consecutive drop-add
 #'   iterations that do not improve the best objective. The primary,
 #'   deterministic stopping criterion. The search is RNG-free (ties broken by
 #'   smallest index), so the result is reproducible and machine-independent.
 #'   Default 5000.
-#' @param max_iter Optional integer hard cap on main-loop iterations (excluding
-#'   construction). `NULL` (default) leaves `max_no_improve` in sole control.
-#' @param time_budget_s Optional wall-clock ceiling in seconds, checked
+#' @param maxIter Optional integer hard cap on main-loop iterations (excluding
+#'   construction). `NULL` (default) leaves `plateau` in sole control.
+#' @param timeBudgetS Optional wall-clock ceiling in seconds, checked
 #'   periodically at iteration boundaries. Default `Inf` (no ceiling, fully
 #'   reproducible). A finite value caps runtime but makes the result
 #'   machine-dependent.
@@ -74,9 +74,9 @@
 #'   interactive sessions, `FALSE` otherwise
 #'   (`getOption("MaxMin.progress", interactive())`).
 #'
-#' @return List with elements
+#' @return An integer vector of length \code{m} containing the 1-based selected
+#'   indices (sorted ascending), with attributes:
 #'   \describe{
-#'     \item{indices}{integer(m), 1-based selected indices sorted ascending.}
 #'     \item{objective}{numeric(1), achieved MaxMin objective
 #'       \eqn{\min_{i \ne j \in S} d_{ij}}.}
 #'     \item{secondary}{numeric(1), achieved sum of pairwise distances over
@@ -90,9 +90,9 @@
 #'
 #' @seealso [DropAdd()] for the matrix-based path used on smaller instances.
 #' @export
-DropAddPoints <- function(points, m, max_no_improve = 5000L, max_iter = NULL,
-                            time_budget_s = Inf, seed = NULL,
-                            progress = getOption("MaxMin.progress", interactive())) {
+DropAddPoints <- function(points, m, plateau = 5000L, maxIter = NULL,
+                          timeBudgetS = Inf, seed = NULL,
+                          progress = getOption("MaxMin.progress", interactive())) {
   if (!is.null(seed)) {
     set.seed(seed)
   }
@@ -102,47 +102,46 @@ DropAddPoints <- function(points, m, max_no_improve = 5000L, max_iter = NULL,
   if (length(m) != 1L || is.na(m) || m < 2L || m > n) {
     stop("`m` must be a single integer with 2 <= m <= nrow(points)")
   }
-  max_no_improve <- as.integer(max_no_improve)
-  if (length(max_no_improve) != 1L || is.na(max_no_improve) ||
-      max_no_improve < 1L) {
-    stop("`max_no_improve` must be a single positive integer")
+  plateau <- as.integer(plateau)
+  if (length(plateau) != 1L || is.na(plateau) ||
+      plateau < 1L) {
+    stop("`plateau` must be a single positive integer")
   }
-  if (!is.null(max_iter)) {
-    max_iter <- as.integer(max_iter)
-    if (length(max_iter) != 1L || is.na(max_iter) || max_iter < 0L) {
-      stop("`max_iter` must be NULL or a single non-negative integer")
+  if (!is.null(maxIter)) {
+    maxIter <- as.integer(maxIter)
+    if (length(maxIter) != 1L || is.na(maxIter) || maxIter < 0L) {
+      stop("`maxIter` must be NULL or a single non-negative integer")
     }
   }
-  if (!is.numeric(time_budget_s) || length(time_budget_s) != 1L ||
-      is.na(time_budget_s) || time_budget_s <= 0) {
-    stop("`time_budget_s` must be a single positive numeric (or Inf)")
+  if (!is.numeric(timeBudgetS) || length(timeBudgetS) != 1L ||
+      is.na(timeBudgetS) || timeBudgetS <= 0) {
+    stop("`timeBudgetS` must be a single positive numeric (or Inf)")
   }
 
   t0 <- Sys.time()
-  cpp_max_iter <- if (is.null(max_iter)) .Machine$integer.max else max_iter
+  cppMaxIter <- if (is.null(maxIter)) .Machine$integer.max else maxIter
   if (progress) {
     cli::cli_process_start(
-      "DropAdd tabu search (n = {n}, m = {m}, budget = {time_budget_s}s)",
+      "DropAdd tabu search (n = {n}, m = {m}, budget = {timeBudgetS}s)",
       .auto_close = FALSE
     )
   }
-  out <- DropAdd_points_cpp(points, m, as.double(time_budget_s),
-                              cpp_max_iter, max_no_improve, FALSE)
-  time_s <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+  out <- DropAdd_points_cpp(points, m, as.double(timeBudgetS),
+                              cppMaxIter, plateau, FALSE)
+  timeS <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
   if (progress) {
-    iters_msg <- as.integer(out$iters)
-    tk_msg    <- as.numeric(out$objective)
+    itersMsg <- as.integer(out$iters)
+    tkMsg    <- as.numeric(out$objective)
     cli::cli_process_done(
-      msg = "DropAdd: {iters_msg} iters, T_k = {signif(tk_msg, 4)}, {round(time_s, 1)}s"
+      msg = "DropAdd: {itersMsg} iters, T_k = {signif(tkMsg, 4)}, {round(timeS, 1)}s"
     )
   }
 
-  # Return:
-  list(
-    indices   = sort(as.integer(out$indices)),
+  structure(
+    sort(as.integer(out$indices)),
     objective = as.numeric(out$objective),
     secondary = as.numeric(out$secondary),
-    time_s    = time_s,
+    time_s    = timeS,
     iters     = as.integer(out$iters)
   )
 }

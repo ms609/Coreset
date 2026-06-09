@@ -4,7 +4,7 @@
 \alias{.GprTryInsert}
 \title{Try to insert sel into the elite set ES.}
 \usage{
-.GprTryInsert(d, ES, ES_z, sel, sel_z, dth)
+.GprTryInsert(d, ES, esZ, sel, selZ, dth)
 }
 \value{
 Updated ES (list of selections, sorted best-to-worst by z).

@@ -220,11 +220,16 @@
 #' Gonzalez(d, 5L, seed = 1L)
 #' # Matrix-free coordinate path (identical result, O(N) memory):
 #' Gonzalez(n = 5L, points = pts, seed = 1L)
+#'
 #' # Distance-column oracle: supply one column at a time, never the full matrix.
-#' dm <- as.matrix(d)
-#' colFn <- function(i) dm[, i]
-#' identical(Gonzalez(colFn, 5L, N = nrow(dm), seed = 1L),
-#'           Gonzalez(d, 5L, seed = 1L))
+#' data("USArrests")
+#' arrestTypes <- USArrests[, c("Murder", "Assault", "Rape")]
+#' StateDist <- function(i) {
+#'   diffs <- sweep(arrestTypes, 2, unlist(arrestTypes[i, ]), "-")
+#'   sqrt(rowSums(diffs ^ 2))
+#' }
+#' idx <- Gonzalez(StateDist, n = 4L, N = nrow(arrestTypes), seed = 1L)
+#' arrestTypes[idx, ]
 #' @export
 Gonzalez <- function(d = NULL, n,
                      seed = .kDefaultEnsemble, pivots = NULL,
@@ -278,7 +283,7 @@ Gonzalez <- function(d = NULL, n,
   if (n >= nPts) return(seq_len(nPts))
   if (n == 0L)   return(integer(0))
 
-  greedy <- if (usePoints) {
+  Greedy <- if (usePoints) {
     function(s) .MaximinFromPoints(points, n, first = as.integer(s))
   } else {
     function(s) .MaximinFrom(d, n, first = as.integer(s))
@@ -286,7 +291,7 @@ Gonzalez <- function(d = NULL, n,
 
   # An explicit `first` is a single bare Gonzalez pass, overriding `seed`.
   if (!is.null(first)) {
-    return(greedy(first))
+    return(Greedy(first))
   }
 
   # The ensemble path runs each named anchor as a full Gonzalez pass and keeps
@@ -343,7 +348,7 @@ Gonzalez <- function(d = NULL, n,
          "`peripheral` on the distance-matrix path")
   }
   s <- if (usePoints) .MaxMinSeedPoints(points, seed) else .MaxMinSeed(d, seed)
-  greedy(s)
+  Greedy(s)
 }
 
 #' Gonzalez maximin from a distance-column oracle (worker)
@@ -415,21 +420,21 @@ Gonzalez <- function(d = NULL, n,
 .MaximinFromColumn <- function(colFn, N, n, first, progress = FALSE) {
   selected <- integer(n)
   selected[1L] <- first
-  min_dist <- as.numeric(colFn(first))
-  if (length(min_dist) != N) {
+  minDist <- as.numeric(colFn(first))
+  if (length(minDist) != N) {
     stop("`colFn` must return a numeric vector of length N = ", N,
-         "; got length ", length(min_dist))
+         "; got length ", length(minDist))
   }
-  min_dist[first] <- -Inf                 # mask seed before the loop
+  minDist[first] <- -Inf                 # mask seed before the loop
   if (progress) {
     .pb <- cli::cli_progress_bar("Gonzalez (column oracle)", total = n - 1L)
   }
   for (k in seq_len(n - 1L) + 1L) {
-    best <- which.max(min_dist)           # first global max (ties -> first)
+    best <- which.max(minDist)           # first global max (ties -> first)
     selected[k] <- best
-    min_dist[best] <- -Inf                # mask before pmin so self-dist 0
+    minDist[best] <- -Inf                # mask before pmin so self-dist 0
                                           # cannot overwrite -Inf
-    min_dist <- pmin.int(min_dist, as.numeric(colFn(best)))
+    minDist <- pmin.int(minDist, as.numeric(colFn(best)))
     if (progress) cli::cli_progress_update(id = .pb)
   }
   selected

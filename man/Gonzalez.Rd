@@ -131,11 +131,16 @@ Gonzalez(d, 5L, seed = "diameter")
 Gonzalez(d, 5L, seed = 1L)
 # Matrix-free coordinate path (identical result, O(N) memory):
 Gonzalez(n = 5L, points = pts, seed = 1L)
+
 # Distance-column oracle: supply one column at a time, never the full matrix.
-dm <- as.matrix(d)
-colFn <- function(i) dm[, i]
-identical(Gonzalez(colFn, 5L, N = nrow(dm), seed = 1L),
-          Gonzalez(d, 5L, seed = 1L))
+data("USArrests")
+arrestTypes <- USArrests[, c("Murder", "Assault", "Rape")]
+StateDist <- function(i) {
+  diffs <- sweep(arrestTypes, 2, unlist(arrestTypes[i, ]), "-")
+  sqrt(rowSums(diffs ^ 2))
+}
+idx <- Gonzalez(StateDist, n = 4L, N = nrow(arrestTypes), seed = 1L)
+arrestTypes[idx, ]
 }
 \references{
 \insertAllCited{}

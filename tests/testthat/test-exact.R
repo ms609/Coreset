@@ -13,17 +13,17 @@ skip_if_no_highs <- function() {
 }
 
 # Brute-force MaxMin objective for a selection.
-.maxmin_obj <- function(S, dmat) {
+.MaxminObj <- function(S, dmat) {
   sub <- dmat[S, S]
   diag(sub) <- Inf
   min(sub)
 }
 
 # Exhaustive optimum over all m-subsets of an n x n distance matrix.
-.brute_maxmin <- function(dmat, m) {
+.BruteMaxmin <- function(dmat, m) {
   n <- nrow(dmat)
   combos <- utils::combn(n, m)
-  objs <- apply(combos, 2L, .maxmin_obj, dmat = dmat)
+  objs <- apply(combos, 2L, .MaxminObj, dmat = dmat)
   list(objective = max(objs), best = combos[, which.max(objs)])
 }
 
@@ -43,8 +43,8 @@ test_that("ExactMaxMin matches the brute-force optimum (random instances)", {
     set.seed(cs$seed)
     pts <- matrix(stats::rnorm(cs$n * 4L), ncol = 4L)
     d <- as.matrix(stats::dist(pts))
-    res <- ExactMaxMin(d, m = cs$m, time_budget_s = 60)
-    oracle <- .brute_maxmin(d, cs$m)
+    res <- ExactMaxMin(d, m = cs$m, timeBudgetS = 60)
+    oracle <- .BruteMaxmin(d, cs$m)
 
     # The optimum value matches the exhaustive optimum.
     expect_true(res$proven, info = sprintf("n=%d m=%d", cs$n, cs$m))
@@ -53,7 +53,7 @@ test_that("ExactMaxMin matches the brute-force optimum (random instances)", {
     # The returned subset actually achieves that optimum.
     expect_length(res$indices, cs$m)
     expect_equal(length(unique(res$indices)), cs$m)
-    expect_equal(.maxmin_obj(res$indices, d), oracle$objective)
+    expect_equal(.MaxminObj(res$indices, d), oracle$objective)
     expect_false(is.unsorted(res$indices))
   }
 })

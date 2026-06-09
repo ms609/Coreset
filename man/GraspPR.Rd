@@ -7,11 +7,11 @@
 GraspPR(
   d,
   m,
-  max_no_improve = 100L,
-  max_iter = NULL,
-  elite_size = 10L,
+  plateau = 100L,
+  maxIter = NULL,
+  eliteSize = 10L,
   alpha = 0.8,
-  time_budget_s = Inf,
+  timeBudgetS = Inf,
   seed = NULL
 )
 }
@@ -20,20 +20,20 @@ GraspPR(
 
 \item{m}{Integer subset size, \verb{2 <= m <= nrow(d)}.}
 
-\item{max_no_improve}{Integer; stop after this many consecutive GRASP
+\item{plateau}{Integer; stop after this many consecutive GRASP
 iterations without an improvement to the best elite objective. The
 primary, deterministic stopping criterion. Default 100.}
 
-\item{max_iter}{Optional integer hard cap on GRASP refinement iterations
+\item{maxIter}{Optional integer hard cap on GRASP refinement iterations
 (excluding the elite-set construction). \code{NULL} (default) leaves
-\code{max_no_improve} in sole control.}
+\code{plateau} in sole control.}
 
-\item{elite_size}{Size of the elite set |ES|. Default 10.}
+\item{eliteSize}{Size of the elite set |ES|. Default 10.}
 
 \item{alpha}{RCL threshold; \code{alpha = 1} is pure greedy, \code{alpha = 0}
 uniform random. Default 0.8.}
 
-\item{time_budget_s}{Optional wall-clock ceiling in seconds. Default \code{Inf}
+\item{timeBudgetS}{Optional wall-clock ceiling in seconds. Default \code{Inf}
 (no ceiling, fully reproducible). A finite value caps runtime but makes
 the result machine-dependent.}
 
@@ -62,12 +62,12 @@ this package, at correspondingly higher cost.
 }
 \details{
 \strong{Deterministic termination.} The refinement loop stops after
-\code{max_no_improve} consecutive GRASP iterations that fail to improve the best
+\code{plateau} consecutive GRASP iterations that fail to improve the best
 elite objective (rather than after a wall-clock budget). Given a fixed
 \code{seed}, the entire run — construction RNG, iteration count, and result — is
 therefore reproducible and machine-independent; \code{set.seed(seed)} controls
 the same random stream the compiled kernel consumes via R's RNG. An
-optional \code{time_budget_s} ceiling is available as a safety cap, but using a
+optional \code{timeBudgetS} ceiling is available as a safety cap, but using a
 finite value reintroduces machine-dependence and is off by default.
 
 This is a \strong{dense-matrix-only} method: it materialises and repeatedly
@@ -82,7 +82,7 @@ far larger instances.
 \examples{
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
-res <- GraspPR(dist(pts), m = 5L, max_no_improve = 20L, elite_size = 4L,
+res <- GraspPR(dist(pts), m = 5L, plateau = 20L, eliteSize = 4L,
                seed = 1L)
 res$indices
 }

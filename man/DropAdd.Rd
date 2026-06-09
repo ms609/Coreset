@@ -7,9 +7,9 @@
 DropAdd(
   d,
   m,
-  max_no_improve = 5000L,
-  max_iter = NULL,
-  time_budget_s = Inf,
+  plateau = 5000L,
+  maxIter = NULL,
+  timeBudgetS = Inf,
   seed = NULL,
   progress = getOption("MaxMin.progress", interactive()),
   .verify = FALSE,
@@ -21,17 +21,17 @@ DropAdd(
 
 \item{m}{Integer; subset size, \eqn{2 \le m \le n}.}
 
-\item{max_no_improve}{Integer; stop after this many consecutive drop-add
+\item{plateau}{Integer; stop after this many consecutive drop-add
 iterations that do not improve the best objective. The primary,
 deterministic stopping criterion. The search is RNG-free (ties broken by
 smallest index), so for a given instance the result is reproducible and
 machine-independent. Default 5000.}
 
-\item{max_iter}{Optional integer hard cap on iterations (excluding
-construction). \code{NULL} (default) leaves \code{max_no_improve} in sole
+\item{maxIter}{Optional integer hard cap on iterations (excluding
+construction). \code{NULL} (default) leaves \code{plateau} in sole
 control.}
 
-\item{time_budget_s}{Optional wall-clock ceiling in seconds, checked at
+\item{timeBudgetS}{Optional wall-clock ceiling in seconds, checked at
 iteration boundaries. Default \code{Inf} (no ceiling, fully reproducible).
 A finite value caps runtime but makes the result machine-dependent.}
 
@@ -56,7 +56,7 @@ and added index sequences are written into it as \code{drops} and \code{adds}.}
 List with elements
 \describe{
 \item{indices}{integer(m), 1-based selected indices sorted ascending.}
-\item{objective}{numeric(1), achieved MaxMin objective
+\item{score}{numeric(1), achieved MaxMin objective
 \eqn{\min_{i \ne j \in S} d_{ij}}.}
 \item{secondary}{numeric(1), achieved sum of pairwise distances over
 \eqn{S} (upper-triangle sum).}
@@ -82,7 +82,7 @@ every point, set to the iteration at which the point last entered or
 left the selected set \eqn{X}. At each main-loop iteration the point with
 the smallest \code{iter} value (the oldest member, FIFO) is dropped, and
 the point in \eqn{Z \setminus X} maximising lexicographically
-\eqn{(\mathrm{min\_dist}, \mathrm{sum\_dist})} is added. The FIFO
+\eqn{(\mathrm{minDist}, \mathrm{sumDist})} is added. The FIFO
 invariant guarantees that across any window of \eqn{m} iterations every
 initially-selected point is dropped exactly once before any re-eviction.
 }

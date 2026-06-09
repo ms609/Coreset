@@ -44,23 +44,23 @@
 #' @param anchors Character vector of (de-duplicated) anchor names.
 #' @param pivots Integer vector of pivot indices the `"random_furthest"` token
 #'   expands over (one start per pivot).
-#' @param anchor_seed Function mapping a deterministic anchor name to an integer
+#' @param anchorSeed Function mapping a deterministic anchor name to an integer
 #'   seed index.
-#' @param rf_seed Function mapping a pivot index to the furthest-point seed.
+#' @param rfSeed Function mapping a pivot index to the furthest-point seed.
 #' @return List of `list(label, s1)` specs.
 #' @keywords internal
-.ExpandAnchors <- function(anchors, pivots, anchor_seed, rf_seed) {
+.ExpandAnchors <- function(anchors, pivots, anchorSeed, rfSeed) {
   specs <- list()
   for (name in anchors) {
     if (name == "random_furthest") {
       for (j in seq_along(pivots)) {
         specs[[length(specs) + 1L]] <- list(
           label = paste0("random_furthest", j),
-          s1    = as.integer(rf_seed(pivots[[j]]))
+          s1    = as.integer(rfSeed(pivots[[j]]))
         )
       }
     } else {
-      sd <- anchor_seed(name)
+      sd <- anchorSeed(name)
       specs[[length(specs) + 1L]] <- list(label = name, s1 = sd)
     }
   }
@@ -92,13 +92,13 @@
       as.integer(which.max(dd))
     },
     diameter = {
-      d_off <- d
-      diag(d_off) <- -Inf
-      d_max <- max(d_off)
-      if (!is.finite(d_max) || d_max <= 0) {
+      dOff <- d
+      diag(dOff) <- -Inf
+      dMax <- max(dOff)
+      if (!is.finite(dMax) || dMax <= 0) {
         1L
       } else {
-        as.integer(arrayInd(which.max(d_off), dim(d_off))[1L, 1L])
+        as.integer(arrayInd(which.max(dOff), dim(dOff))[1L, 1L])
       }
     },
     peripheral = {
@@ -247,96 +247,96 @@ MaxMinSeed <- function(d = NULL, points = NULL,
   if (n == 0L)   return(integer(0))
 
   lazy <- new.env(parent = emptyenv())
-  get_row_sums <- function() {
-    lazy$row_sums <- lazy$row_sums %||% rowSums(d)
-    lazy$row_sums
+  GetRowSums <- function() {
+    lazy$rowSums <- lazy$rowSums %||% rowSums(d)
+    lazy$rowSums
   }
-  get_row_sq_sums <- function() {
-    lazy$row_sq_sums <- lazy$row_sq_sums %||% rowSums(d ^ 2)
-    lazy$row_sq_sums
+  GetRowSqSums <- function() {
+    lazy$rowSqSums <- lazy$rowSqSums %||% rowSums(d ^ 2)
+    lazy$rowSqSums
   }
-  get_d_offdiag <- function() {
-    lazy$d_offdiag <- lazy$d_offdiag %||% { tmp <- d; diag(tmp) <- -Inf; tmp }
-    lazy$d_offdiag
+  GetDOffdiag <- function() {
+    lazy$dOffdiag <- lazy$dOffdiag %||% { tmp <- d; diag(tmp) <- -Inf; tmp }
+    lazy$dOffdiag
   }
-  get_medoid <- function() {
-    lazy$medoid <- lazy$medoid %||% as.integer(which.min(get_row_sums()))
+  GetMedoid <- function() {
+    lazy$medoid <- lazy$medoid %||% as.integer(which.min(GetRowSums()))
     lazy$medoid
   }
 
-  gonz_cache <- new.env(parent = emptyenv())
-  run_gonz <- function(s1) {
+  gonzCache <- new.env(parent = emptyenv())
+  RunGonz <- function(s1) {
     key <- as.character(s1)
-    gonz_cache[[key]] %||% {
+    gonzCache[[key]] %||% {
       idx <- .MaximinFrom(d, n, first = s1)
-      t_k <- if (length(idx) >= 2L) MinDist(d, idx) else NA_real_
-      res  <- list(idx = idx, t_k = t_k)
-      gonz_cache[[key]] <- res
+      tK <- if (length(idx) >= 2L) MinDist(d, idx) else NA_real_
+      res  <- list(idx = idx, tK = tK)
+      gonzCache[[key]] <- res
       res
     }
   }
 
-  anchor_seed <- function(name) {
+  AnchorSeed <- function(name) {
     switch(name,
       diameter = {
-        d_off <- get_d_offdiag()
-        d_max <- max(d_off)
-        if (!is.finite(d_max) || d_max <= 0) {
+        dOff <- GetDOffdiag()
+        dMax <- max(dOff)
+        if (!is.finite(dMax) || dMax <= 0) {
           1L
         } else {
-          as.integer(arrayInd(which.max(d_off), dim(d_off))[1L, 1L])
+          as.integer(arrayInd(which.max(dOff), dim(dOff))[1L, 1L])
         }
       },
       anti_medoid = {
-        med <- get_medoid()
-        dist_from_medoid <- d[, med]
-        dist_from_medoid[med] <- -Inf
-        as.integer(which.max(dist_from_medoid))
+        med <- GetMedoid()
+        distFromMedoid <- d[, med]
+        distFromMedoid[med] <- -Inf
+        as.integer(which.max(distFromMedoid))
       },
-      medoid  = get_medoid(),
+      medoid  = GetMedoid(),
       peripheral = {
         s1 <- which.max(d[, 1L])
         as.integer(which.max(d[, s1]))
       },
-      rowsum  = as.integer(which.max(get_row_sums())),
-      rownorm = as.integer(which.max(get_row_sq_sums()))
+      rowsum  = as.integer(which.max(GetRowSums())),
+      rownorm = as.integer(which.max(GetRowSqSums()))
     )
   }
 
-  expanded <- .ExpandAnchors(anchors, pivots, anchor_seed,
+  expanded <- .ExpandAnchors(anchors, pivots, AnchorSeed,
                              function(r) which.max(d[, r]))
   labels   <- vapply(expanded, `[[`, character(1L), "label")
-  strategy_results <- vector("list", length(expanded))
-  names(strategy_results) <- labels
+  strategyResults <- vector("list", length(expanded))
+  names(strategyResults) <- labels
   for (i in seq_along(expanded)) {
-    g <- run_gonz(expanded[[i]]$s1)
-    strategy_results[[i]] <- list(
+    g <- RunGonz(expanded[[i]]$s1)
+    strategyResults[[i]] <- list(
       s1  = expanded[[i]]$s1,
       idx = g$idx,
-      t_k = g$t_k
+      t_k = g$tK
     )
   }
 
-  best_i  <- 1L
-  best_tk <- strategy_results[[1L]]$t_k
-  for (i in seq_along(strategy_results)[-1L]) {
-    tk <- strategy_results[[i]]$t_k
+  bestI  <- 1L
+  bestTk <- strategyResults[[1L]]$t_k
+  for (i in seq_along(strategyResults)[-1L]) {
+    tk <- strategyResults[[i]]$t_k
     if (is.na(tk)) next
-    if (is.na(best_tk) || tk > best_tk) {
-      best_i  <- i
-      best_tk <- tk
+    if (is.na(bestTk) || tk > bestTk) {
+      bestI  <- i
+      bestTk <- tk
     }
   }
 
-  winners <- if (is.na(best_tk)) {
-    best_i
+  winners <- if (is.na(bestTk)) {
+    bestI
   } else {
-    which(vapply(strategy_results, function(r) isTRUE(r$t_k == best_tk),
+    which(vapply(strategyResults, function(r) isTRUE(r$t_k == bestTk),
                  logical(1L)))
   }
 
-  result <- strategy_results[[best_i]]$idx
-  attr(result, "strategy_results") <- strategy_results
+  result <- strategyResults[[bestI]]$idx
+  attr(result, "strategy_results") <- strategyResults
   attr(result, "winning_strategy") <- labels[winners]
   result
 }
@@ -375,43 +375,43 @@ MaxMinSeed <- function(d = NULL, points = NULL,
   if (n == 0L)   return(integer(0))
 
   lazy <- new.env(parent = emptyenv())
-  get_row_sums <- function() {
-    lazy$row_sums <- lazy$row_sums %||% RowSumsFromPoints_cpp(points)
-    lazy$row_sums
+  GetRowSums <- function() {
+    lazy$rowSums <- lazy$rowSums %||% RowSumsFromPoints_cpp(points)
+    lazy$rowSums
   }
-  get_row_sq_sums <- function() {
-    lazy$row_sq_sums <- lazy$row_sq_sums %||% RowSqSumsFromPoints_cpp(points)
-    lazy$row_sq_sums
+  GetRowSqSums <- function() {
+    lazy$rowSqSums <- lazy$rowSqSums %||% RowSqSumsFromPoints_cpp(points)
+    lazy$rowSqSums
   }
-  get_diameter <- function() {
+  GetDiameter <- function() {
     lazy$diameter <- lazy$diameter %||% DiameterFromPoints_cpp(points)
     lazy$diameter
   }
-  get_centroid_d2 <- function() {
-    lazy$centroid_d2 <- lazy$centroid_d2 %||% .CentroidSqDist(points)
-    lazy$centroid_d2
+  GetCentroidD2 <- function() {
+    lazy$centroidD2 <- lazy$centroidD2 %||% .CentroidSqDist(points)
+    lazy$centroidD2
   }
-  get_medoid <- function() {
-    lazy$medoid <- lazy$medoid %||% as.integer(which.min(get_row_sums()))
+  GetMedoid <- function() {
+    lazy$medoid <- lazy$medoid %||% as.integer(which.min(GetRowSums()))
     lazy$medoid
   }
 
-  gonz_cache <- new.env(parent = emptyenv())
-  run_gonz <- function(s1) {
+  gonzCache <- new.env(parent = emptyenv())
+  RunGonz <- function(s1) {
     key <- as.character(s1)
-    gonz_cache[[key]] %||% {
+    gonzCache[[key]] %||% {
       idx <- .MaximinFromPoints(points, n, first = s1)
-      t_k <- if (length(idx) >= 2L) MinDist(idx = idx, points = points) else NA_real_
-      res <- list(idx = idx, t_k = t_k)
-      gonz_cache[[key]] <- res
+      tK <- if (length(idx) >= 2L) MinDist(idx = idx, points = points) else NA_real_
+      res <- list(idx = idx, tK = tK)
+      gonzCache[[key]] <- res
       res
     }
   }
 
-  anchor_seed <- function(name) {
+  AnchorSeed <- function(name) {
     switch(name,
       diameter = {
-        diam <- get_diameter()
+        diam <- GetDiameter()
         if (!is.finite(diam[1L]) || diam[1L] <= 0) {
           1L
         } else {
@@ -419,58 +419,58 @@ MaxMinSeed <- function(d = NULL, points = NULL,
         }
       },
       anti_medoid = {
-        med <- get_medoid()
-        dist_from_medoid <- EuclidColFromPoints_cpp(points, med)
-        dist_from_medoid[med] <- -Inf
-        as.integer(which.max(dist_from_medoid))
+        med <- GetMedoid()
+        distFromMedoid <- EuclidColFromPoints_cpp(points, med)
+        distFromMedoid[med] <- -Inf
+        as.integer(which.max(distFromMedoid))
       },
-      centroid  = as.integer(which.max(get_centroid_d2())),
-      medoid    = get_medoid(),
+      centroid  = as.integer(which.max(GetCentroidD2())),
+      medoid    = GetMedoid(),
       peripheral = {
         s1 <- which.max(EuclidColFromPoints_cpp(points, 1L))
         as.integer(which.max(EuclidColFromPoints_cpp(points, s1)))
       },
-      rowsum  = as.integer(which.max(get_row_sums())),
-      rownorm = as.integer(which.max(get_row_sq_sums()))
+      rowsum  = as.integer(which.max(GetRowSums())),
+      rownorm = as.integer(which.max(GetRowSqSums()))
     )
   }
 
   expanded <- .ExpandAnchors(
-    anchors, pivots, anchor_seed,
+    anchors, pivots, AnchorSeed,
     function(r) which.max(EuclidColFromPoints_cpp(points, r))
   )
   labels   <- vapply(expanded, `[[`, character(1L), "label")
-  strategy_results <- vector("list", length(expanded))
-  names(strategy_results) <- labels
+  strategyResults <- vector("list", length(expanded))
+  names(strategyResults) <- labels
   for (i in seq_along(expanded)) {
-    g <- run_gonz(expanded[[i]]$s1)
-    strategy_results[[i]] <- list(
+    g <- RunGonz(expanded[[i]]$s1)
+    strategyResults[[i]] <- list(
       s1  = expanded[[i]]$s1,
       idx = g$idx,
-      t_k = g$t_k
+      t_k = g$tK
     )
   }
 
-  best_i  <- 1L
-  best_tk <- strategy_results[[1L]]$t_k
-  for (i in seq_along(strategy_results)[-1L]) {
-    tk <- strategy_results[[i]]$t_k
+  bestI  <- 1L
+  bestTk <- strategyResults[[1L]]$t_k
+  for (i in seq_along(strategyResults)[-1L]) {
+    tk <- strategyResults[[i]]$t_k
     if (is.na(tk)) next
-    if (is.na(best_tk) || tk > best_tk) {
-      best_i  <- i
-      best_tk <- tk
+    if (is.na(bestTk) || tk > bestTk) {
+      bestI  <- i
+      bestTk <- tk
     }
   }
 
-  winners <- if (is.na(best_tk)) {
-    best_i
+  winners <- if (is.na(bestTk)) {
+    bestI
   } else {
-    which(vapply(strategy_results, function(r) isTRUE(r$t_k == best_tk),
+    which(vapply(strategyResults, function(r) isTRUE(r$t_k == bestTk),
                  logical(1L)))
   }
 
-  result <- strategy_results[[best_i]]$idx
-  attr(result, "strategy_results") <- strategy_results
+  result <- strategyResults[[bestI]]$idx
+  attr(result, "strategy_results") <- strategyResults
   attr(result, "winning_strategy") <- labels[winners]
   result
 }
