@@ -8,7 +8,7 @@ each seeded at the point furthest from that pivot (labelled
 ## Usage
 
 ``` r
-.ExpandAnchors(anchors, pivots, anchor_seed, rf_seed)
+.ExpandAnchors(anchors, pivots, anchorSeed, rfSeed)
 ```
 
 ## Arguments
@@ -22,11 +22,11 @@ each seeded at the point furthest from that pivot (labelled
   Integer vector of pivot indices the `"random_furthest"` token expands
   over (one start per pivot).
 
-- anchor_seed:
+- anchorSeed:
 
   Function mapping a deterministic anchor name to an integer seed index.
 
-- rf_seed:
+- rfSeed:
 
   Function mapping a pivot index to the furthest-point seed.
 

@@ -8,16 +8,14 @@ materialising the matrix), or on an on-demand distance-column oracle.
 
 ## Solvers
 
-- [`Gonzalez()`](https://ms609.github.io/MaxMin/reference/Gonzalez.md):
+- [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md):
 
   Greedy farthest-first selection from a distance matrix, a coordinate
   matrix, or a distance-column oracle (for spaces with no coordinate
   embedding), with a choice of peripheral seeding strategies and a
   robust ensemble default.
 
-- [`DropAddTS()`](https://ms609.github.io/MaxMin/reference/DropAddTS.md)
-  /
-  [`DropAddTSPoints()`](https://ms609.github.io/MaxMin/reference/DropAddTSPoints.md):
+- [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md):
 
   DropAdd tabu search heuristic.
 

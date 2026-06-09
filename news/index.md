@@ -6,7 +6,7 @@
   (MMDP / discrete p-dispersion), extracted from the `FurthestPoint`
   study package so that it can be depended on by CRAN packages
   (e.g. `TreeSearch`).
-- [`Gonzalez()`](https://ms609.github.io/MaxMin/reference/Gonzalez.md):
+- [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md):
   deterministic farthest-first selection from a distance matrix,
   Euclidean coordinates (`points =`), or an on-demand **distance-column
   oracle** (pass a column function as `d`, with `N =`) for spaces with
@@ -19,11 +19,9 @@
   the costlier O(*N*²) anchors (`"diameter"`, `"anti_medoid"`,
   `"medoid"`, `"rowsum"`, `"rownorm"`) are available as opt-in
   strategies.
-- [`DropAddTS()`](https://ms609.github.io/MaxMin/reference/DropAddTS.md)
-  /
-  [`DropAddTSPoints()`](https://ms609.github.io/MaxMin/reference/DropAddTSPoints.md):
-  DropAdd tabu search (Porumbel et al. 2011), matrix and matrix-free
-  coordinate paths.
+- [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md):
+  DropAdd tabu search (Porumbel et al. 2011); accepts a `dist` object,
+  distance matrix, or coordinate matrix (`points =`).
 - [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md):
   exact node-packing optimum (Sayyady & Fathi 2016) via the `highs` MILP
   backend.

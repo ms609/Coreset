@@ -53,12 +53,7 @@
 <!-- badges: start -->
 
 <p><code>MaxMin</code> selects a maximally dispersed subset of a fixed set of candidate items under the Max-Min Diversity Problem (MMDP, the discrete <em>p</em>-dispersion objective): choose <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>n</mi><annotation encoding="application/x-tex">n</annotation></semantics></math> items so that the minimum pairwise distance within the selection is as large as possible.</p>
-<p>This dependency-light toolbox operates on three types of input:</p>
-<ul>
-<li>a distance matrix (or <code>dist</code> object);</li>
-<li>Euclidean coordinates, without ever materialising the distance matrix; or</li>
-<li>an on-demand distance-column oracle, for spaces with no coordinate embedding (e.g. phylogenetic trees), where the distance matrix would be too large to store in memory.</li>
-</ul>
+<p>The package supports precomputed distance matrices (<code>dist</code> objects), matrices of Euclidian coordinates, or lists of elements from which distances can be calculated.</p>
 <div class="section level2">
 <h2 id="solvers">Solvers<a class="anchor" aria-label="anchor" href="#solvers"></a>
 </h2>
@@ -75,16 +70,19 @@
 </tr></thead>
 <tbody>
 <tr>
-<td><code><a href="reference/Gonzalez.html">Gonzalez()</a></code></td>
-<td>Greedy farthest-first (Gonzalez 1985); default best-of-three ensemble of reproducible random-furthest starts (deterministic anchors such as centroid/peripheral are opt-in)</td>
-<td>Fast; matrix, coordinate, or distance-column-oracle input (the last for very large sets with no embedding)</td>
-</tr>
-<tr>
-<td>
-<code><a href="reference/DropAddTS.html">DropAddTS()</a></code> / <code><a href="reference/DropAddTSPoints.html">DropAddTSPoints()</a></code>
-</td>
+<td><code><a href="reference/DropAdd.html">DropAdd()</a></code></td>
 <td>DropAdd tabu search (Porumbel et al. 2011)</td>
 <td>~99%-optimal heuristic</td>
+</tr>
+<tr>
+<td><code><a href="reference/GraspPR.html">GraspPR()</a></code></td>
+<td>Highest</td>
+<td>Moderate</td>
+</tr>
+<tr>
+<td><code><a href="reference/FarFirst.html">FarFirst()</a></code></td>
+<td>Greedy farthest-first (Gonzalez 1985); default best-of-three ensemble of reproducible random-furthest starts (deterministic anchors such as centroid/peripheral are opt-in)</td>
+<td>Fast; matrix, coordinate, or distance-column-oracle input (the last for very large sets with no embedding)</td>
 </tr>
 <tr>
 <td><code><a href="reference/ExactMaxMin.html">ExactMaxMin()</a></code></td>

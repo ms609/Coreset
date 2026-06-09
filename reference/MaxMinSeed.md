@@ -2,7 +2,7 @@
 
 Returns the index of a single deterministic peripheral seed, the
 starting point used by
-[`Gonzalez()`](https://ms609.github.io/MaxMin/reference/Gonzalez.md)
+[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
 under the corresponding `seed` strategy. Useful when composing a custom
 selection pass.
 
@@ -54,7 +54,7 @@ Anchors:
   Two sweeps: the point furthest from point 1, then the point furthest
   from that (a diameter-endpoint approximation), in `O(N)`. The only
   anchor reachable from a distance-column oracle (the function path of
-  [`Gonzalez()`](https://ms609.github.io/MaxMin/reference/Gonzalez.md)).
+  [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)).
 
 - `"random_furthest"`:
 
@@ -88,7 +88,7 @@ Anchors:
 
 ## See also
 
-[`Gonzalez()`](https://ms609.github.io/MaxMin/reference/Gonzalez.md),
+[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md),
 which seeds and runs the greedy pass in one call.
 
 ## Examples
@@ -99,6 +99,6 @@ pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
 MaxMinSeed(d, method = "diameter")
 #> [1] 14
-Gonzalez(d, 5L, seed = MaxMinSeed(d, method = "diameter"))
+FarFirst(d, 5L, seed = MaxMinSeed(d, method = "diameter"))
 #> [1] 14  4 26  5 28
 ```

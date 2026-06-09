@@ -5,21 +5,17 @@ candidate items under the Max-Min Diversity Problem (MMDP, the discrete
 *p*-dispersion objective): choose $`n`$ items so that the minimum
 pairwise distance within the selection is as large as possible.
 
-This dependency-light toolbox operates on three types of input:
-
-- a distance matrix (or `dist` object);
-- Euclidean coordinates, without ever materialising the distance matrix;
-  or
-- an on-demand distance-column oracle, for spaces with no coordinate
-  embedding (e.g. phylogenetic trees), where the distance matrix would
-  be too large to store in memory.
+The package supports precomputed distance matrices (`dist` objects),
+matrices of Euclidian coordinates, or lists of elements from which
+distances can be calculated.
 
 ## Solvers
 
 | Function | Method | Use |
 |----|----|----|
-| [`Gonzalez()`](https://ms609.github.io/MaxMin/reference/Gonzalez.md) | Greedy farthest-first (Gonzalez 1985); default best-of-three ensemble of reproducible random-furthest starts (deterministic anchors such as centroid/peripheral are opt-in) | Fast; matrix, coordinate, or distance-column-oracle input (the last for very large sets with no embedding) |
-| [`DropAddTS()`](https://ms609.github.io/MaxMin/reference/DropAddTS.md) / [`DropAddTSPoints()`](https://ms609.github.io/MaxMin/reference/DropAddTSPoints.md) | DropAdd tabu search (Porumbel et al. 2011) | ~99%-optimal heuristic |
+| [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) | DropAdd tabu search (Porumbel et al. 2011) | ~99%-optimal heuristic |
+| [`GraspPR()`](https://ms609.github.io/MaxMin/reference/GraspPR.md) | Highest | Moderate |
+| [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) | Greedy farthest-first (Gonzalez 1985); default best-of-three ensemble of reproducible random-furthest starts (deterministic anchors such as centroid/peripheral are opt-in) | Fast; matrix, coordinate, or distance-column-oracle input (the last for very large sets with no embedding) |
 | [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md) | Node-packing integer program (Sayyady & Fathi 2016) | Proven optimum, small `n` (needs `highs`) |
 | [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md) | Minimum pairwise distance (the objective) | Score a selection |
 

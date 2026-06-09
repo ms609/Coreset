@@ -1,7 +1,7 @@
-# Gonzalez maximin from a distance-column oracle (worker)
+# Gonzalez maximin from a distance-column oracle
 
 Implements the distance-column oracle path of
-[`Gonzalez()`](https://ms609.github.io/MaxMin/reference/Gonzalez.md)
+[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
 (dispatched there when `d` is a function); see that function's
 *Distance-column oracle* section for the user-facing contract. At each
 greedy step the distances from the newly selected element to all `N`

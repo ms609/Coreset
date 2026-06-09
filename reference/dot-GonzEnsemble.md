@@ -2,7 +2,7 @@
 
 Runs Gonzalez from each requested peripheral anchor and returns the
 subset maximising \\T_k\\. Internal driver for the ensemble path of
-[`Gonzalez()`](https://ms609.github.io/MaxMin/reference/Gonzalez.md)
+[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
 (triggered when `seed` is a character vector of length \> 1). The
 `"random_furthest"` token expands to one start per element of `pivots`.
 The returned vector carries `strategy_results` and `winning_strategy`

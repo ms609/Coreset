@@ -14,11 +14,11 @@ this package, at correspondingly higher cost.
 GraspPR(
   d,
   m,
-  max_no_improve = 100L,
-  max_iter = NULL,
-  elite_size = 10L,
+  plateau = 100L,
+  maxIter = NULL,
+  eliteSize = 10L,
   alpha = 0.8,
-  time_budget_s = Inf,
+  timeBudgetS = Inf,
   seed = NULL
 )
 ```
@@ -33,19 +33,19 @@ GraspPR(
 
   Integer subset size, `2 <= m <= nrow(d)`.
 
-- max_no_improve:
+- plateau:
 
   Integer; stop after this many consecutive GRASP iterations without an
   improvement to the best elite objective. The primary, deterministic
   stopping criterion. Default 100.
 
-- max_iter:
+- maxIter:
 
   Optional integer hard cap on GRASP refinement iterations (excluding
-  the elite-set construction). `NULL` (default) leaves `max_no_improve`
-  in sole control.
+  the elite-set construction). `NULL` (default) leaves `plateau` in sole
+  control.
 
-- elite_size:
+- eliteSize:
 
   Size of the elite set \|ES\|. Default 10.
 
@@ -54,7 +54,7 @@ GraspPR(
   RCL threshold; `alpha = 1` is pure greedy, `alpha = 0` uniform random.
   Default 0.8.
 
-- time_budget_s:
+- timeBudgetS:
 
   Optional wall-clock ceiling in seconds. Default `Inf` (no ceiling,
   fully reproducible). A finite value caps runtime but makes the result
@@ -69,13 +69,10 @@ GraspPR(
 
 ## Value
 
-A list with elements
+An integer vector of length `m` (1-based, sorted ascending) with
+attributes:
 
-- indices:
-
-  Integer vector of length `m`, 1-based, sorted ascending.
-
-- objective:
+- score:
 
   Achieved MaxMin objective \\T_k\\.
 
@@ -93,23 +90,24 @@ A list with elements
 
 ## Details
 
-**Deterministic termination.** The refinement loop stops after
-`max_no_improve` consecutive GRASP iterations that fail to improve the
-best elite objective (rather than after a wall-clock budget). Given a
-fixed `seed`, the entire run — construction RNG, iteration count, and
-result — is therefore reproducible and machine-independent;
-`set.seed(seed)` controls the same random stream the compiled kernel
-consumes via R's RNG. An optional `time_budget_s` ceiling is available
-as a safety cap, but using a finite value reintroduces
-machine-dependence and is off by default.
+**Deterministic termination.** The refinement loop stops after `plateau`
+consecutive GRASP iterations that fail to improve the best elite
+objective (rather than after a wall-clock budget). Given a fixed `seed`,
+the entire run — construction RNG, iteration count, and result — is
+therefore reproducible and machine-independent; `set.seed(seed)`
+controls the same random stream the compiled kernel consumes via R's
+RNG. An optional `timeBudgetS` ceiling is available as a safety cap, but
+using a finite value reintroduces machine-dependence and is off by
+default.
 
 This is a **dense-matrix-only** method: it materialises and repeatedly
 subsets the full \\n \times n\\ distance matrix, so it is suited to
 instances small enough to hold that matrix. It offers no coordinate or
 column-oracle path. For the matrix-free regime where the dense matrix is
 infeasible, use
-[`DropAddTSPoints()`](https://ms609.github.io/MaxMin/reference/DropAddTSPoints.md)
-or [`Gonzalez()`](https://ms609.github.io/MaxMin/reference/Gonzalez.md)
+[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md)
+(coordinate path via `points =`) or
+[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
 (coordinate or distance-column oracle path), whose \\T_k\\ lands within
 roughly a percent on the benchmark while scaling to far larger
 instances.
@@ -124,10 +122,8 @@ Research*, **37**(3), 498–508.
 
 ## See also
 
-[`DropAddTS()`](https://ms609.github.io/MaxMin/reference/DropAddTS.md)
-and
-[`DropAddTSPoints()`](https://ms609.github.io/MaxMin/reference/DropAddTSPoints.md)
-for scalable refinement;
+[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) for
+scalable refinement;
 [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
 for the proven optimum on small instances.
 
@@ -136,8 +132,16 @@ for the proven optimum on small instances.
 ``` r
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
-res <- GraspPR(dist(pts), m = 5L, max_no_improve = 20L, elite_size = 4L,
+res <- GraspPR(dist(pts), m = 5L, plateau = 20L, eliteSize = 4L,
                seed = 1L)
-res$indices
+res
 #> [1]  3  4  5 24 25
+#> attr(,"score")
+#> [1] 1.77825
+#> attr(,"time_s")
+#> [1] 0.00016126
+#> attr(,"iters")
+#> [1] 20
+#> attr(,"pr_calls")
+#> [1] 12
 ```

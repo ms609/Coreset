@@ -17,7 +17,7 @@ the selection is identical to the matrix path on symmetric input.
 - colFn:
 
   Column oracle; see
-  [`Gonzalez()`](https://ms609.github.io/MaxMin/reference/Gonzalez.md).
+  [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md).
 
 - N:
 

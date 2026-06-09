@@ -39,6 +39,6 @@ Numeric scalar; `NA_real_` if `length(idx) < 2`.
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
-MinDist(d, Gonzalez(d, 5L))
+MinDist(d, FarFirst(d, 5L))
 #> [1] 1.765223
 ```
