@@ -309,7 +309,7 @@ time budget or should be tackled with the heuristics above.
 
 ---
 
-## Scoring and polish
+## Scoring
 
 ### `MinDist()`
 
@@ -324,25 +324,6 @@ MinDist(as.matrix(d50), idx_gonz)                    # from square matrix
 MinDist(points = pts, idx = idx_gonz)                # from coordinates
 ```
 
-### `PolishSelection()`
-
-`PolishSelection()` applies a 1-swap local search anchored on the *critical
-edge* — the pair realising T~k~ — and is a fast post-processor for any
-greedy selector.
-Applying it to a single-seed (weaker) Gonzalez result often recovers a few
-extra units of T~k~:
-
-```{r}
-#| label: polish
-idx_raw      <- Gonzalez(d50, n = m, seed = "first")   # single, weaker seed
-MinDist(d50, idx_raw)
-
-idx_polished <- PolishSelection(d50, idx_raw)
-MinDist(d50, idx_polished)
-
-attr(idx_polished, "swaps")   # number of improving swaps applied
-```
-
 ---
 
 ## When to use which method
@@ -355,7 +336,6 @@ attr(idx_polished, "swaps")   # number of improving swaps applied
 | N > 46 000 (distance matrix infeasible) | `DropAddTSPoints()` or `Gonzalez(points = ...)` |
 | Arbitrary metric with no coordinate embedding | `Gonzalez(<column function>, N = ...)` |
 | Proven optimum, N ≤ ~ 25–30, **highs** installed | `ExactMaxMin()` |
-| Post-process any selection cheaply | `PolishSelection()` |
 
 The heuristics are complementary:
 `Gonzalez()` is O(*N* · *m*) and deterministic — an instant first result.
@@ -364,8 +344,6 @@ The heuristics are complementary:
 tie-breaking, not the algorithm itself.
 `GraspPR()` is stochastic and usually edges out `DropAddTS()` on T~k~, but
 requires a `seed` for reproducibility.
-For any of these, `PolishSelection()` can squeeze out further improvement at
-negligible cost.
 
 ## Related packages
 

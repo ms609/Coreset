@@ -131,20 +131,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// PolishMaximin_cpp
-Rcpp::IntegerVector PolishMaximin_cpp(Rcpp::NumericMatrix d, Rcpp::IntegerVector S, int limit, int max_passes);
-RcppExport SEXP _MaxMin_PolishMaximin_cpp(SEXP dSEXP, SEXP SSEXP, SEXP limitSEXP, SEXP max_passesSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type d(dSEXP);
-    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type S(SSEXP);
-    Rcpp::traits::input_parameter< int >::type limit(limitSEXP);
-    Rcpp::traits::input_parameter< int >::type max_passes(max_passesSEXP);
-    rcpp_result_gen = Rcpp::wrap(PolishMaximin_cpp(d, S, limit, max_passes));
-    return rcpp_result_gen;
-END_RCPP
-}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_MaxMin_DropAddTS_cpp", (DL_FUNC) &_MaxMin_DropAddTS_cpp, 6},
@@ -156,7 +142,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MaxMin_RowSqSumsFromPoints_cpp", (DL_FUNC) &_MaxMin_RowSqSumsFromPoints_cpp, 1},
     {"_MaxMin_EuclidColFromPoints_cpp", (DL_FUNC) &_MaxMin_EuclidColFromPoints_cpp, 2},
     {"_MaxMin_DiameterFromPoints_cpp", (DL_FUNC) &_MaxMin_DiameterFromPoints_cpp, 1},
-    {"_MaxMin_PolishMaximin_cpp", (DL_FUNC) &_MaxMin_PolishMaximin_cpp, 4},
     {NULL, NULL, 0}
 };
 
