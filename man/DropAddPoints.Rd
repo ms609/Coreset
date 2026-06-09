@@ -45,10 +45,10 @@ interactive sessions, \code{FALSE} otherwise
 (\code{getOption("MaxMin.progress", interactive())}).}
 }
 \value{
-List with elements
+An integer vector of length \code{m} containing the 1-based selected
+indices (sorted ascending), with attributes:
 \describe{
-\item{indices}{integer(m), 1-based selected indices sorted ascending.}
-\item{objective}{numeric(1), achieved MaxMin objective
+\item{score}{numeric(1), achieved MaxMin objective
 \eqn{\min_{i \ne j \in S} d_{ij}}.}
 \item{secondary}{numeric(1), achieved sum of pairwise distances over
 \eqn{S} (upper-triangle sum).}

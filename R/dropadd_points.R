@@ -77,7 +77,7 @@
 #' @return An integer vector of length \code{m} containing the 1-based selected
 #'   indices (sorted ascending), with attributes:
 #'   \describe{
-#'     \item{objective}{numeric(1), achieved MaxMin objective
+#'     \item{score}{numeric(1), achieved MaxMin objective
 #'       \eqn{\min_{i \ne j \in S} d_{ij}}.}
 #'     \item{secondary}{numeric(1), achieved sum of pairwise distances over
 #'       \eqn{S} (upper-triangle sum).}
@@ -131,7 +131,7 @@ DropAddPoints <- function(points, m, plateau = 5000L, maxIter = NULL,
   timeS <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
   if (progress) {
     itersMsg <- as.integer(out$iters)
-    tkMsg    <- as.numeric(out$objective)
+    tkMsg    <- as.numeric(out$score)
     cli::cli_process_done(
       msg = "DropAdd: {itersMsg} iters, T_k = {signif(tkMsg, 4)}, {round(timeS, 1)}s"
     )
@@ -139,7 +139,7 @@ DropAddPoints <- function(points, m, plateau = 5000L, maxIter = NULL,
 
   structure(
     sort(as.integer(out$indices)),
-    objective = as.numeric(out$objective),
+    score     = as.numeric(out$score),
     secondary = as.numeric(out$secondary),
     time_s    = timeS,
     iters     = as.integer(out$iters)

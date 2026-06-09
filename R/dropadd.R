@@ -174,7 +174,7 @@
 #' @return An integer vector of length \code{m} containing the 1-based selected
 #'   indices (sorted ascending), with attributes:
 #'   \describe{
-#'     \item{objective}{numeric(1), achieved MaxMin objective
+#'     \item{score}{numeric(1), achieved MaxMin objective
 #'       \eqn{\min_{i \ne j \in S} d_{ij}}.}
 #'     \item{secondary}{numeric(1), achieved sum of pairwise distances over
 #'       \eqn{S} (upper-triangle sum).}
@@ -250,7 +250,7 @@ DropAdd <- function(d, m, plateau = 5000L, maxIter = NULL,
     }
     return(structure(
       sort(as.integer(out$indices)),
-      objective = as.numeric(out$score),
+      score     = as.numeric(out$score),
       secondary = as.numeric(out$secondary),
       time_s    = timeS,
       iters     = as.integer(out$iters)
@@ -443,7 +443,7 @@ DropAdd <- function(d, m, plateau = 5000L, maxIter = NULL,
   timeS <- unclass(Sys.time()) - t0Num
   structure(
     sort(as.integer(bestS)),
-    objective = as.numeric(bestMaxmin),
+    score     = as.numeric(bestMaxmin),
     secondary = as.numeric(bestSumpair),
     time_s    = timeS,
     iters     = as.integer(itersDone)

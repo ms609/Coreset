@@ -35,13 +35,13 @@ test_that("DropAddPoints objective equals recomputed min-pairwise distance", {
   set.seed(7)
   pts <- matrix(rnorm(80 * 5), ncol = 5)
   res <- DropAddPoints(pts, m = 8L, plateau = 500L)
-  expect_length(res$indices, 8L)
-  expect_equal(length(unique(res$indices)), 8L)
-  expect_true(all(res$indices %in% seq_len(80L)))
+  expect_length(res, 8L)
+  expect_equal(length(unique(res)), 8L)
+  expect_true(all(res %in% seq_len(80L)))
   # The reported objective is exactly the MaxMin over the returned selection.
-  expect_equal(res$objective, .MaxminPts(res$indices, pts), tolerance = 1e-12)
-  expect_gt(res$objective, 0)
-  expect_gte(res$iters, 1L)
+  expect_equal(attr(res, "objective"), .MaxminPts(res, pts), tolerance = 1e-12)
+  expect_gt(attr(res, "objective"), 0)
+  expect_gte(attr(res, "iters"), 1L)
 })
 
 # ---------------------------------------------------------------------------
@@ -65,8 +65,8 @@ test_that("DropAddPoints matches matrix path when seeds coincide", {
   rx <- DropAdd(dmat, m = 12L, plateau = 1000L)
   # Identical objective (bit-identical under a matched-FP toolchain; a hair of
   # tolerance guards against an aggressive-FP build where dist contracts FMAs).
-  expect_equal(rm$objective, rx$objective, tolerance = 1e-9)
-  expect_equal(rm$objective, .MaxminPts(rm$indices, pts), tolerance = 1e-12)
+  expect_equal(attr(rm, "objective"), attr(rx, "objective"), tolerance = 1e-9)
+  expect_equal(attr(rm, "objective"), .MaxminPts(rm, pts), tolerance = 1e-12)
 })
 
 # ---------------------------------------------------------------------------
@@ -87,8 +87,8 @@ test_that("DropAddPoints is within tolerance when seeds diverge", {
   tol <- 0.05    # documented comparability tolerance (5%)
   rm <- DropAddPoints(pts, m = 15L, plateau = 1000L)
   rx <- DropAdd(dmat, m = 15L, plateau = 1000L)
-  expect_gte(rm$objective, rx$objective * (1 - tol))
-  expect_equal(rm$objective, .MaxminPts(rm$indices, pts), tolerance = 1e-12)
+  expect_gte(attr(rm, "objective"), attr(rx, "objective") * (1 - tol))
+  expect_equal(attr(rm, "objective"), .MaxminPts(rm, pts), tolerance = 1e-12)
 })
 
 # ---------------------------------------------------------------------------
@@ -101,10 +101,10 @@ test_that("DropAddPoints respects timeBudgetS within reasonable slack", {
   # Disable stagnation so the wall-clock ceiling is the binding criterion.
   res <- DropAddPoints(pts, m = 20L, timeBudgetS = 1, plateau = 100000000L)
   elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
-  expect_lte(res$time_s, 1.5)
+  expect_lte(attr(res, "time_s"), 1.5)
   expect_lte(elapsed, 2.0)
-  expect_length(res$indices, 20L)
-  expect_gte(res$iters, 1L)
+  expect_length(res, 20L)
+  expect_gte(attr(res, "iters"), 1L)
 })
 
 # ---------------------------------------------------------------------------
@@ -114,9 +114,9 @@ test_that("DropAddPoints construction-only result matches its MaxMin score", {
   set.seed(11)
   pts <- matrix(rnorm(60 * 4), ncol = 4)
   res <- DropAddPoints(pts, m = 6L, maxIter = 0L)
-  expect_length(res$indices, 6L)
-  expect_equal(res$iters, 0L)
-  expect_equal(res$objective, .MaxminPts(res$indices, pts), tolerance = 1e-12)
+  expect_length(res, 6L)
+  expect_equal(attr(res, "iters"), 0L)
+  expect_equal(attr(res, "objective"), .MaxminPts(res, pts), tolerance = 1e-12)
 })
 
 # ---------------------------------------------------------------------------
@@ -132,11 +132,11 @@ test_that("DropAddPoints returns a meaningful result at n = 5000", {
   # Scale smoke: wall-clock-bounded run (stagnation disabled) confirming the
   # matrix-free path stays responsive at n = 5000 within a short budget.
   res <- DropAddPoints(pts, m = 10L, timeBudgetS = 2, plateau = 100000000L)
-  expect_length(res$indices, 10L)
-  expect_equal(length(unique(res$indices)), 10L)
-  expect_gt(res$objective, 0)
-  expect_equal(res$objective, .MaxminPts(res$indices, pts), tolerance = 1e-12)
-  expect_gte(res$iters, 100L)   # not iteration-starved
+  expect_length(res, 10L)
+  expect_equal(length(unique(res)), 10L)
+  expect_gt(attr(res, "objective"), 0)
+  expect_equal(attr(res, "objective"), .MaxminPts(res, pts), tolerance = 1e-12)
+  expect_gte(attr(res, "iters"), 100L)   # not iteration-starved
 })
 
 # ---------------------------------------------------------------------------
@@ -148,7 +148,7 @@ test_that("DropAddPoints seed parameter and input validation", {
   # seed: set.seed(1) path is executed
   r1 <- DropAddPoints(pts, m = 4L, maxIter = 0L, seed = 1L)
   r2 <- DropAddPoints(pts, m = 4L, maxIter = 0L, seed = 1L)
-  expect_identical(r1$indices, r2$indices)
+  expect_identical(r1, r2)
 
   # m validation
   expect_error(DropAddPoints(pts, m = 1L), "2 <= m")
@@ -189,8 +189,8 @@ test_that("DropAddPoints C++ construction covers sum_dist tie-break (lines 131-1
   # When A is added: d(P,A)=sqrt(2)==min_dist[P] -> line 152 (equality) fires.
   pts5 <- rbind(c(0, 0), c(3, 0), c(0, 2), c(1, 1), c(2, 1))
   res <- DropAddPoints(pts5, m = 4L, maxIter = 0L)
-  expect_length(res$indices, 4L)
-  expect_equal(res$iters, 0L)
+  expect_length(res, 4L)
+  expect_equal(attr(res, "iters"), 0L)
 })
 
 test_that("DropAddPoints C++ m=2 covers DROP else-branch (lines 263-264)", {
@@ -200,7 +200,7 @@ test_that("DropAddPoints C++ m=2 covers DROP else-branch (lines 263-264)", {
   # self-mask inside recompute leaves mns=Inf -> else branch (lines 263-264).
   pts_rh <- rbind(c(0, 0), c(1, 1), c(2, 0), c(1, -1))
   res <- DropAddPoints(pts_rh, m = 2L, maxIter = 4L)
-  expect_length(res$indices, 2L)
+  expect_length(res, 2L)
 })
 
 test_that("DropAddPoints C++ main-loop ADD covers tie-break (304-307) and equality (327)", {
@@ -210,6 +210,6 @@ test_that("DropAddPoints C++ main-loop ADD covers tie-break (304-307) and equali
   # lines 304-307 fire. When Y added: d(Y,W)=0.5==min_dist[W]=0.5 -> line 327.
   pts7 <- rbind(c(0, 0), c(4, 0), c(0, 4), c(10, 10), c(1, 0), c(3, 0), c(3.5, 0))
   res <- DropAddPoints(pts7, m = 4L, maxIter = 1L)
-  expect_length(res$indices, 4L)
-  expect_equal(res$iters, 1L)
+  expect_length(res, 4L)
+  expect_equal(attr(res, "iters"), 1L)
 })

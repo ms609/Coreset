@@ -53,9 +53,9 @@ Default \code{FALSE} (the C++ fast path).}
 and added index sequences are written into it as \code{drops} and \code{adds}.}
 }
 \value{
-List with elements
+An integer vector of length \code{m} containing the 1-based selected
+indices (sorted ascending), with attributes:
 \describe{
-\item{indices}{integer(m), 1-based selected indices sorted ascending.}
 \item{score}{numeric(1), achieved MaxMin objective
 \eqn{\min_{i \ne j \in S} d_{ij}}.}
 \item{secondary}{numeric(1), achieved sum of pairwise distances over
