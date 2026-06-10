@@ -334,6 +334,8 @@ test_that("DropAdd R reference loop and C++ port are bit-identical", {
   for (maxIter in c(0L, 1L, 5L, 50L, 200L)) {
     outR <- DropAdd(dmat, m = 8L, maxIter = maxIter, .verify = TRUE)
     outC <- DropAdd(dmat, m = 8L, maxIter = maxIter)
+    # Drop wall-clock `time_s`: nondeterministic, never expected to match.
+    attr(outR, "time_s") <- attr(outC, "time_s") <- NULL
     expect_identical(outR,                        outC)
     expect_identical(attr(outR, "score"),  attr(outC, "score"))
     expect_identical(attr(outR, "secondary"),  attr(outC, "secondary"))
@@ -346,6 +348,7 @@ test_that("DropAdd R reference loop and C++ port are bit-identical", {
   for (mni in c(5L, 25L, 100L)) {
     outR <- DropAdd(dmat, m = 8L, plateau = mni, .verify = TRUE)
     outC <- DropAdd(dmat, m = 8L, plateau = mni)
+    attr(outR, "time_s") <- attr(outC, "time_s") <- NULL
     expect_identical(outR,                        outC)
     expect_identical(attr(outR, "score"),  attr(outC, "score"))
     expect_identical(attr(outR, "secondary"),  attr(outC, "secondary"))

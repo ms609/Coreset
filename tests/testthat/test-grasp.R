@@ -39,6 +39,9 @@ test_that("Grasp_cpp == .Grasp_R across seeds and parameters", {
                    alpha = 0.8)
 
     info <- sprintf("seed=%d mni=%d es=%d", s, mni, es)
+    # Drop the wall-clock `time_s` attribute: it is genuinely nondeterministic
+    # and never expected to match. Every other attribute is asserted below.
+    attr(ker, "time_s") <- attr(ref, "time_s") <- NULL
     expect_identical(ker,                    ref,                    info = info)
     expect_identical(attr(ker, "score"),     attr(ref, "score"),     info = info)
     expect_identical(attr(ker, "iters"),     attr(ref, "iters"),     info = info)
@@ -51,6 +54,8 @@ test_that("Grasp_cpp == .Grasp_R across seeds and parameters", {
 test_that("Grasp is reproducible from a seed (machine-independent)", {
   a <- Grasp(d30, m = 6L, plateau = 30L, eliteSize = 5L, seed = 17L)
   b <- Grasp(d30, m = 6L, plateau = 30L, eliteSize = 5L, seed = 17L)
+  # Same seed => identical selection and objective; only wall-clock differs.
+  attr(a, "time_s") <- attr(b, "time_s") <- NULL
   expect_identical(a, b)
 })
 
