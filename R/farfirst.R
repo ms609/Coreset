@@ -2,8 +2,12 @@
 
 #' Coerce distance input to a square matrix, skipping the round-trip when
 #' already a matrix.
-#' @param d A `dist` object or a square symmetric numeric matrix.
+#' @param d A `dist` object or a square numeric matrix.
 #' @return A square numeric matrix.
+#' @details
+#' Symmetry is not checked; an `O(N^2)` check is intentionally omitted.
+#' Asymmetric matrices are silently accepted, and the algorithm treats
+#' \eqn{d_{ij}} and \eqn{d_{ji}} as independent values.
 #' @keywords internal
 .AsDistMatrix <- function(d) {
   if (inherits(d, "dist")) {
@@ -162,9 +166,11 @@
 #' The function will be called once per selected element, to avoid building a
 #' complete `N x N` matrix.
 #'
-#' @param d A `dist` object, a square symmetric numeric matrix of pairwise
-#'   distances, or a distance function (see
-#'   *§Distance function*). Ignored when `points` is supplied.
+#' @param d A `dist` object, a square numeric matrix of pairwise distances, or
+#'   a distance function (see *§Distance function*). Asymmetric matrices are
+#'   accepted; symmetry is not checked (an `O(N^2)` check is intentionally
+#'   omitted), and the algorithm treats \eqn{d_{ij}} and \eqn{d_{ji}} as
+#'   independent. Ignored when `points` is supplied.
 #' @param m Integer: number of points to select. If `m > N`, all `N` indices
 #'   are returned in Gonzalez (farthest-first) order.
 #' @param points Optional `N x dim` numeric coordinate matrix. When supplied,

@@ -139,8 +139,8 @@ List DropAdd_cpp(NumericMatrix dmat, int m, double time_budget_s,
 
   // -- Drop-Add tabu search (Algorithm 2) ---------------------------------
   int head = 0;                       // 0-based: drop position
-  int iters_done = 0;
-  int no_improve = 0;                 // consecutive non-improving iterations
+  long long iters_done = 0;
+  long long no_improve = 0;                 // consecutive non-improving iterations
 
   std::vector<double> d_xhash(n);     // cached column for x_hash row recompute
   std::vector<int> need_recompute;

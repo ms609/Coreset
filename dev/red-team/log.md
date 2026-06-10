@@ -87,4 +87,13 @@ All P0/P1/P2 findings from Rounds 1–7 that were in scope addressed in a single
 - **Remaining OPEN (out of scope this pass):** MF-03 (timeBudgetS overshoot), MF-04 (int overflow UB), FF-005/FF-006 (design/info), T7-01/T7-03/T7-04/T7-06/T7-07/T7-09/T7-10/T7-12/T7-14/T7-15/T7-16 (weak test gaps)
 - R CMD check: **Status OK** (0 errors, 0 warnings, 0 notes)
 
+### Fix pass — 0.0.0.9002  (2026-06-10)
+All remaining OPEN findings from Rounds 1–7 addressed:
+- FIXED (code): MF-04 (int→long long overflow UB in dropadd.cpp/dropadd_mf.cpp/grasp.cpp)
+- FIXED (doc): MF-03 (timeBudgetS 256-iter overshoot documented); FF-006 (asymmetric matrix accepted, now documented)
+- FIXED (behaviour): FF-005 (score=NA_real_ on all-points early return)
+- FIXED (test gaps/weakness): T7-01, T7-03, T7-04, T7-06, T7-07, T7-09, T7-10, T7-12, T7-14, T7-15, T7-16
+- R CMD check: Status OK (0 errors, 0 warnings, 0 notes)
+- No findings remain OPEN in Rounds 1–7.
+
 last_focus: 7

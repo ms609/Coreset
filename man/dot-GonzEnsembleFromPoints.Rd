@@ -6,7 +6,7 @@
 \usage{
 .GonzEnsembleFromPoints(
   points,
-  n,
+  m,
   anchors = .kDefaultEnsemble,
   pivots = integer(0)
 )
@@ -14,7 +14,7 @@
 \arguments{
 \item{points}{A \code{double} \verb{N x dim} coordinate matrix.}
 
-\item{n}{Integer subset size.}
+\item{m}{Integer subset size.}
 
 \item{anchors}{Character vector of anchor names.}
 

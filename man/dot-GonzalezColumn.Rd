@@ -7,7 +7,7 @@
 .GonzalezColumn(
   colFn,
   N,
-  n,
+  m,
   first = NULL,
   progress = getOption("MaxMin.progress", interactive())
 )
@@ -19,7 +19,7 @@ including \code{i}; or (ii) every other element. See \code{\link[=.DistColumn]{.
 
 \item{N}{Integer: the total number of elements.}
 
-\item{n}{Integer: number of elements to select. If \code{n > N}, all \code{N} indices
+\item{m}{Integer: number of elements to select. If \code{m > N}, all \code{N} indices
 are returned in Gonzalez (farthest-first) order.}
 
 \item{first}{Integer index of the first selected element, or \code{NULL}
@@ -30,7 +30,7 @@ from that (a diameter-endpoint approximation).}
 \item{progress}{Logical; show a progress bar during greedy selection.}
 }
 \value{
-Integer vector of length \code{min(n, N)} of selected indices.
+Integer vector of length \code{min(m, N)} of selected indices.
 }
 \description{
 Implements the distance-column oracle path of \code{\link[=FarFirst]{FarFirst()}} (dispatched there
@@ -38,6 +38,6 @@ when \code{d} is a function); see that function's \emph{Distance-column oracle} 
 for the user-facing contract. At each greedy step the distances from the
 newly selected element to all \code{N} elements are obtained from \code{colFn}, and a
 running nearest-distance vector is maintained, so the \verb{N x N} distance matrix
-is never materialised: \code{O(N * n)} oracle calls and \code{O(N)} memory.
+is never materialised: \code{O(N * m)} oracle calls and \code{O(N)} memory.
 }
 \keyword{internal}

@@ -4,14 +4,14 @@
 \alias{.MaximinFromPoints}
 \title{Gonzalez maximin from coordinates (matrix-free)}
 \usage{
-.MaximinFromPoints(points, n, first, mask = 0L)
+.MaximinFromPoints(points, m, first, mask = 0L)
 }
 \arguments{
 \item{points}{A \code{double} \verb{N x dim} coordinate matrix.}
 
-\item{n}{Integer subsample size.}
+\item{m}{Integer: target subsample size (\verb{>= 1}).}
 
-\item{first}{Integer index of the first selected point.}
+\item{first}{Integer: index of the first selected point.}
 
 \item{mask}{Integer 1-based index of a point to forbid from selection
 (\code{0L} = none); used by the anti-medoid path to exclude the medoid.}

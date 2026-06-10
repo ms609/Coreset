@@ -4,12 +4,12 @@
 \alias{.GonzEnsemble}
 \title{Ensemble Gonzalez over cheap peripheral-anchor strategies (distance matrix)}
 \usage{
-.GonzEnsemble(d, n, anchors = "peripheral", pivots = integer(0))
+.GonzEnsemble(d, m, anchors = "peripheral", pivots = integer(0))
 }
 \arguments{
 \item{d}{Square numeric distance matrix (already coerced).}
 
-\item{n}{Integer subset size (\verb{1 <= n < nrow(d)}).}
+\item{m}{Integer subset size (\verb{1 <= m < nrow(d)}).}
 
 \item{anchors}{Character vector of anchor names.}
 
