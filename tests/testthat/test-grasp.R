@@ -9,7 +9,8 @@ d30m  <- as.matrix(d30)
 # 1. Smoke test ------------------------------------------------------------
 
 test_that("Grasp smoke: returns valid selection on 30 random 3-D points", {
-  res <- Grasp(d30, m = 5L, plateau = 20L, eliteSize = 4L, seed = 1L)
+  set.seed(1)
+  res <- Grasp(d30, m = 5L, plateau = 20L, eliteSize = 4L)
   expect_type(res, "integer")
   expect_length(res, 5L)
   expect_true(all(res %in% seq_len(30L)))
@@ -22,23 +23,28 @@ test_that("Grasp smoke: returns valid selection on 30 random 3-D points", {
 # trajectories, iteration counts and selections must be identical.
 
 test_that("Grasp_cpp == .Grasp_R across seeds and parameters", {
-  grid <- expand.grid(seed = c(1L, 7L, 99L, 2024L),
-                      mni  = c(10L, 40L),
-                      es   = c(4L, 8L),
+  # alpha is swept including the extremes 0 (uniform random) and 1 (pure
+  # greedy): alpha = 1 is the FP-rounding empty-RCL trigger of GRASP-01, so its
+  # inclusion turns that crash into a detectable parity failure.
+  grid <- expand.grid(seed  = c(1L, 7L, 99L, 2024L),
+                      mni   = c(10L, 40L),
+                      es    = c(4L, 8L),
+                      alpha = c(0, 0.8, 1),
                       KEEP.OUT.ATTRS = FALSE)
   for (r in seq_len(nrow(grid))) {
     s   <- grid$seed[r]
     mni <- grid$mni[r]
     es  <- grid$es[r]
+    al  <- grid$alpha[r]
 
     set.seed(s)
     ref <- MaxMin:::.Grasp_R(d30m, m = 6L, plateau = mni,
-                               eliteSize = es, alpha = 0.8)
+                               eliteSize = es, alpha = al)
     set.seed(s)
     ker <- Grasp(d30m, m = 6L, plateau = mni, eliteSize = es,
-                   alpha = 0.8)
+                   alpha = al)
 
-    info <- sprintf("seed=%d mni=%d es=%d", s, mni, es)
+    info <- sprintf("seed=%d mni=%d es=%d alpha=%g", s, mni, es, al)
     # Drop the wall-clock `time_s` attribute: it is genuinely nondeterministic
     # and never expected to match. Every other attribute is asserted below.
     attr(ker, "time_s") <- attr(ref, "time_s") <- NULL
@@ -52,9 +58,10 @@ test_that("Grasp_cpp == .Grasp_R across seeds and parameters", {
 # 3. Determinism -----------------------------------------------------------
 
 test_that("Grasp is reproducible from a seed (machine-independent)", {
-  a <- Grasp(d30, m = 6L, plateau = 30L, eliteSize = 5L, seed = 17L)
-  b <- Grasp(d30, m = 6L, plateau = 30L, eliteSize = 5L, seed = 17L)
-  # Same seed => identical selection and objective; only wall-clock differs.
+  set.seed(17); a <- Grasp(d30, m = 6L, plateau = 30L, eliteSize = 5L)
+  set.seed(17); b <- Grasp(d30, m = 6L, plateau = 30L, eliteSize = 5L)
+  # set.seed() before each call => identical selection and objective; only
+  # wall-clock differs.
   attr(a, "time_s") <- attr(b, "time_s") <- NULL
   expect_identical(a, b)
 })
@@ -62,7 +69,8 @@ test_that("Grasp is reproducible from a seed (machine-independent)", {
 # 4. maxIter = 0 short-circuits Phase B -----------------------------------
 
 test_that("Grasp with maxIter = 0 runs Phase A + relinking only", {
-  res <- Grasp(d30, m = 4L, maxIter = 0L, eliteSize = 4L, seed = 7L)
+  set.seed(7)
+  res <- Grasp(d30, m = 4L, maxIter = 0L, eliteSize = 4L)
   expect_length(res, 4L)
   expect_true(attr(res, "score") > 0)
   expect_equal(attr(res, "iters"), 0L)
@@ -73,8 +81,9 @@ test_that("Grasp with maxIter = 0 runs Phase A + relinking only", {
 test_that("Grasp stops within plateau of its last improvement", {
   # With maxIter as a hard cap we can assert iters never exceeds it; with the
   # stagnation rule alone the loop must still terminate.
+  set.seed(3)
   res <- Grasp(d30, m = 6L, plateau = 5L, maxIter = 200L,
-                 eliteSize = 4L, seed = 3L)
+                 eliteSize = 4L)
   expect_lte(attr(res, "iters"), 200L)
   expect_length(res, 6L)
 })
@@ -112,6 +121,33 @@ test_that("Grasp validates timeBudgetS", {
   expect_error(Grasp(d30, m = 4L, timeBudgetS = 0),  "timeBudgetS")
   expect_error(Grasp(d30, m = 4L, timeBudgetS = -1), "timeBudgetS")
   expect_error(Grasp(d30, m = 4L, timeBudgetS = NA_real_), "timeBudgetS")
+})
+
+# 8b. GRASP-01: empty-RCL at alpha = 1 no longer crashes ---------------------
+# At the documented alpha = 1 (pure greedy), FP rounding can push the RCL
+# threshold ~1 ULP past gmax and empty the RCL; pre-fix the C++ kernel indexed
+# rcl[0] on an empty vector and SIGSEGV'd (uncatchable, killed the session),
+# while the R path threw. A bare-greedy fallback (no RNG draw) now selects the
+# argmax-g candidate in both. Sweeping seeds 1:30 exercises the rounding case
+# and asserts the kernel still matches the R reference bit-for-bit.
+test_that("Grasp survives alpha = 1 (empty-RCL fallback) and matches the R reference", {
+  for (s in 1:30) {
+    set.seed(s)
+    ref <- MaxMin:::.Grasp_R(d30m, m = 5L, plateau = 15L, eliteSize = 4L,
+                             alpha = 1)
+    set.seed(s)
+    ker <- Grasp(d30m, m = 5L, plateau = 15L, eliteSize = 4L, alpha = 1)
+    attr(ker, "time_s") <- attr(ref, "time_s") <- NULL
+    expect_identical(ker, ref, info = paste("seed", s))
+  }
+})
+
+# 8c. GRASP-02: alpha validation ---------------------------------------------
+test_that("Grasp validates alpha", {
+  expect_error(Grasp(d30, m = 4L, alpha = 2),         "alpha")
+  expect_error(Grasp(d30, m = 4L, alpha = -1),        "alpha")
+  expect_error(Grasp(d30, m = 4L, alpha = NA_real_),  "alpha")
+  expect_error(Grasp(d30, m = 4L, alpha = c(0.5, 0.8)), "alpha")
 })
 
 # 9. .Grasp_R maxIter cap -----------------------------------

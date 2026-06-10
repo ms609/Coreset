@@ -138,7 +138,10 @@
 #' @param progress Logical; show a progress bar during the binary search.
 #'   Default: `TRUE` in interactive sessions, `FALSE` otherwise
 #'   (`getOption("MaxMin.progress", interactive())`).
-#' @return A list with fields
+#' @return Unlike [DropAdd()], [Grasp()] and [FarFirst()] (which each return a
+#'   bare integer vector carrying a `score` attribute), `ExactMaxMin()`
+#'   deliberately returns a list, since it reports both the optimum and a proof
+#'   status. The fields are
 #'   \describe{
 #'     \item{indices}{Integer vector of length `m`, sorted ascending: the
 #'       selected points.}

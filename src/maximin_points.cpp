@@ -25,7 +25,7 @@
 // resolve to the same indices, and the reported T_k (sqrt'd once at the end) is
 // bit-identical to MinDist(). This identity is re-verified over a broad N x dim
 // x n x strategy battery by dev/profiling/drivers/verify.R (1620/1620 cases) in
-// addition to the cross-path expect_identical() tests in test-gonzalez.R.
+// addition to the cross-path expect_identical() tests in test-farfirst.R.
 //
 // The seed-anchor primitives further down (RowSums/RowSqSums/Diameter/EuclidCol)
 // still return true sqrt distances, bit-matching as.matrix(dist(points)) entry
@@ -93,6 +93,9 @@ Rcpp::IntegerVector MaximinFromPoints_cpp(Rcpp::NumericMatrix points,
                                           int n, int first, int mask) {
   int nPts = points.nrow();
   int dim  = points.ncol();
+  if (n < 1 || n > nPts) {                  // defensive: public wrapper guards
+    Rcpp::stop("'n' must be in [1, %d]; got %d", nPts, n);
+  }
   if (first < 1 || first > nPts) {
     Rcpp::stop("'first' must be in [1, %d]; got %d", nPts, first);
   }

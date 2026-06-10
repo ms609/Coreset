@@ -7,11 +7,11 @@ source("benchmark/_init.R")
 # a single named seed strategy.
 d2000 <- BenchDist(2000L, 10L, seed = 1L)
 Benchmark(FarFirst(d2000, 20L))                       # default: O(N) ensemble
-Benchmark(FarFirst(d2000, 20L, seed = "diameter"))
+Benchmark(FarFirst(d2000, 20L, method = "diameter"))
 
 # Coordinate (matrix-free) path: never materialises the N x N matrix.
 pts5000 <- BenchPoints(5000L, 10L, seed = 2L)
-Benchmark(FarFirst(points = pts5000, n = 30L))
+Benchmark(FarFirst(points = pts5000, m = 30L))
 
 # Distance-column oracle path (as used by TreeSearch on tree sets): pass a
 # closure as `d` and FarFirst() reads one column at a time, never a matrix.

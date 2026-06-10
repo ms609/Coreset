@@ -15,13 +15,13 @@ strip <- function(x) { attributes(x) <- NULL; x }
 for (n in c(2L, 5L, 10L)) {
   # matrix path
   chk(sprintf("diameter   matrix n=%d", n),
-      MaxMin::FarFirst(dm, n, seed = "diameter"),
+      MaxMin::FarFirst(dm, n, method = "diameter"),
       FurthestPoint::WideSampleGonzDiameter(dm, n))
   chk(sprintf("medoid     matrix n=%d", n),
-      MaxMin::FarFirst(dm, n, seed = "medoid"),
+      MaxMin::FarFirst(dm, n, method = "medoid"),
       FurthestPoint::WideSampleMedoidFirst(dm, n))
   chk(sprintf("antimedoid matrix n=%d", n),
-      MaxMin::FarFirst(dm, n, seed = "anti_medoid"),
+      MaxMin::FarFirst(dm, n, method = "anti_medoid"),
       FurthestPoint::WideSampleAntiMedoid(dm, n))
   chk(sprintf("ensemble   matrix n=%d", n),
       strip(MaxMin::FarFirst(dm, n)),
@@ -30,27 +30,27 @@ for (n in c(2L, 5L, 10L)) {
       attr(MaxMin::FarFirst(dm, n), "winning_strategy"),
       attr(FurthestPoint::WideSampleGonzEnsemble(dm, n), "winning_strategy"))
   chk(sprintf("first=1    matrix n=%d", n),
-      MaxMin::FarFirst(dm, n, seed = 1L),
+      MaxMin::FarFirst(dm, n, method = 1L),
       FurthestPoint::FarFirst(dm, n, first = 1L))
   # points path
   chk(sprintf("diameter   points n=%d", n),
-      MaxMin::FarFirst(n = n, points = pts, seed = "diameter"),
+      MaxMin::FarFirst(m = n, points = pts, method = "diameter"),
       FurthestPoint::WideSampleGonzDiameter(n = n, points = pts))
   chk(sprintf("medoid     points n=%d", n),
-      MaxMin::FarFirst(n = n, points = pts, seed = "medoid"),
+      MaxMin::FarFirst(m = n, points = pts, method = "medoid"),
       FurthestPoint::WideSampleMedoidFirst(n = n, points = pts))
   chk(sprintf("antimedoid points n=%d", n),
-      MaxMin::FarFirst(n = n, points = pts, seed = "anti_medoid"),
+      MaxMin::FarFirst(m = n, points = pts, method = "anti_medoid"),
       FurthestPoint::WideSampleAntiMedoid(n = n, points = pts))
   chk(sprintf("ensemble   points n=%d", n),
-      strip(MaxMin::FarFirst(n = n, points = pts)),
+      strip(MaxMin::FarFirst(m = n, points = pts)),
       strip(FurthestPoint::WideSampleGonzEnsemble(n = n, points = pts)))
 }
 
 # Distance-column oracle (now the function path of FarFirst())
 colFn <- function(i) dm[, i]
 chk("Gonzalez column-oracle first=1",
-    MaxMin::FarFirst(colFn, 8L, N = nrow(dm), seed = 1L),
+    MaxMin::FarFirst(colFn, 8L, N = nrow(dm), method = 1L),
     FurthestPoint::GonzalezColumn(colFn, nrow(dm), 8L, first = 1L))
 chk("Gonzalez column-oracle peripheral seed",
     MaxMin::FarFirst(colFn, 8L, N = nrow(dm)),

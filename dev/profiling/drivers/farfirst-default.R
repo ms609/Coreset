@@ -50,7 +50,7 @@ run_case <- function(N, dim, n, npiv = 3L) {
 
   # Integrated default call (fixed pivots for determinism)
   full <- function() {
-    FarFirst(n = n, points = pts, seed = "random_furthest", pivots = pivots)
+    FarFirst(m = n, points = pts, method = "random_furthest", pivots = pivots)
   }
 
   a <- bench1(seedA())

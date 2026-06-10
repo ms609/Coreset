@@ -44,8 +44,8 @@ for (dseed in 1:6) {
         for (st in strategies) {
           key <- paste(dseed, N, dim, n, st$kind,
                        paste(st$seed, collapse = "+"), sep = "|")
-          matSel <- FarFirst(d, n, seed = st$seed, pivots = fixedPivots)
-          ptSel  <- FarFirst(n = n, points = pts, seed = st$seed,
+          matSel <- FarFirst(d, n, method = st$seed, pivots = fixedPivots)
+          ptSel  <- FarFirst(m = n, points = pts, method = st$seed,
                              pivots = fixedPivots)
           # t_k fidelity: compare every reported strategy t_k to MinDist().
           tkErr <- NA_real_
@@ -77,9 +77,9 @@ for (dim in c(2L, 10L)) {
   d   <- as.matrix(dist(pts))
   piv <- c(11L, 222L, 3333L)
   for (n in c(60L, 300L, 1200L, 3000L)) {
-    fp <- function() FarFirst(n = n, points = pts, seed = "random_furthest",
+    fp <- function() FarFirst(m = n, points = pts, method = "random_furthest",
                               pivots = piv)
-    fm <- function() FarFirst(d, n, seed = "random_furthest", pivots = piv)
+    fm <- function() FarFirst(d, n, method = "random_furthest", pivots = piv)
     timing[[paste(dim, n, sep = "|")]] <- list(
       dim = dim, n = n, ratio = n / N,
       points_ms = round(bench1(fp), 2),

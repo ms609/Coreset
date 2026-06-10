@@ -68,6 +68,13 @@ List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
   if (m < 2 || m > n) stop("m must satisfy 2 <= m <= nrow(points)");
   const double *P = points.begin();    // column-major double storage
 
+  // The public DropAdd() guards NA/NaN via .AsPointsMatrix(); guard here too so
+  // a direct `:::DropAdd_points_cpp()` call cannot degrade the argmax (leaving
+  // x_new == -1 and writing in_S[-1] out of bounds; MF-01).
+  for (R_xlen_t i = 0; i < points.size(); ++i) {
+    if (ISNAN(P[i])) stop("`points` must not contain NA/NaN");
+  }
+
   const double eps = 1e-9;
 
   std::vector<int> S(m);

@@ -182,13 +182,14 @@ test_that("DropAdd respects timeBudgetS within reasonable slack", {
 # ---------------------------------------------------------------------------
 # 8. seed parameter, input validation, and progress output
 # ---------------------------------------------------------------------------
-test_that("DropAdd seed parameter and input validation", {
+test_that("DropAdd is deterministic and validates inputs", {
   set.seed(11)
   dmat <- as.matrix(dist(matrix(rnorm(20 * 3), ncol = 3)))
 
-  # seed path
-  r1 <- DropAdd(dmat, m = 4L, maxIter = 0L, seed = 1L)
-  r2 <- DropAdd(dmat, m = 4L, maxIter = 0L, seed = 1L)
+  # The search is RNG-free, so repeated calls are identical. (The old `seed`
+  # argument was a documented no-op and has been removed from the API.)
+  r1 <- DropAdd(dmat, m = 4L, maxIter = 0L)
+  r2 <- DropAdd(dmat, m = 4L, maxIter = 0L)
   expect_identical(r1, r2)
 
   # m validation
@@ -206,6 +207,13 @@ test_that("DropAdd seed parameter and input validation", {
 test_that("DropAdd progress = TRUE fires the cli hooks", {
   dmat <- as.matrix(dist(matrix(rnorm(15 * 2), ncol = 2)))
   expect_no_error(DropAdd(dmat, m = 3L, maxIter = 2L, progress = TRUE))
+})
+
+test_that("DropAdd rejects an NA distance matrix (FF-001 / T7-08)", {
+  # The matrix path coerces via .AsDistMatrix, which now guards against NA so
+  # the search cannot silently accept a corrupt matrix.
+  naMat <- matrix(c(0, 5, NA, 5, 0, NA, NA, NA, 0), 3L, 3L)
+  expect_error(DropAdd(naMat, m = 3L), "NA")
 })
 
 # ---------------------------------------------------------------------------

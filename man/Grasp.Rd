@@ -11,8 +11,7 @@ Grasp(
   maxIter = NULL,
   eliteSize = 10L,
   alpha = 0.8,
-  timeBudgetS = Inf,
-  seed = NULL
+  timeBudgetS = Inf
 )
 }
 \arguments{
@@ -36,13 +35,10 @@ uniform random. Default 0.8.}
 \item{timeBudgetS}{Optional wall-clock ceiling in seconds. Default \code{Inf}
 (no ceiling, fully reproducible). A finite value caps runtime but makes
 the result machine-dependent.}
-
-\item{seed}{Optional integer; if supplied, \code{set.seed(seed)} is called at
-entry. \code{Grasp} is genuinely stochastic (randomised construction and RCL
-sampling), so the seed governs the trajectory and the returned selection.}
 }
 \value{
-An integer vector of length \code{m} (1-based, sorted ascending)
+An integer vector of length \code{m} (1-based) \strong{sorted ascending}
+(unlike \code{\link[=FarFirst]{FarFirst()}}, which returns farthest-first order)
 with attributes:
 \describe{
 \item{score}{Achieved MaxMin objective \eqn{T_k}.}
@@ -63,10 +59,10 @@ this package, at correspondingly higher cost.
 \details{
 \strong{Deterministic termination.} The refinement loop stops after
 \code{plateau} consecutive GRASP iterations that fail to improve the best
-elite objective (rather than after a wall-clock budget). Given a fixed
-\code{seed}, the entire run — construction RNG, iteration count, and result — is
-therefore reproducible and machine-independent; \code{set.seed(seed)} controls
-the same random stream the compiled kernel consumes via R's RNG. An
+elite objective (rather than after a wall-clock budget). Call \code{set.seed()}
+before \code{Grasp()} for a reproducible run: the entire run — construction RNG,
+iteration count, and result — is then reproducible and machine-independent,
+because the compiled kernel draws from R's own session RNG stream. An
 optional \code{timeBudgetS} ceiling is available as a safety cap, but using a
 finite value reintroduces machine-dependence and is off by default.
 
@@ -82,8 +78,9 @@ far larger instances.
 \examples{
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
-res <- Grasp(dist(pts), m = 5L, plateau = 20L, eliteSize = 4L,
-               seed = 1L)
+# Call set.seed() before Grasp() for a reproducible run:
+set.seed(1)
+res <- Grasp(dist(pts), m = 5L, plateau = 20L, eliteSize = 4L)
 res
 }
 \references{

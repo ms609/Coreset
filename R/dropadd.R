@@ -165,10 +165,6 @@
 #' @param timeBudgetS Optional wall-clock ceiling in seconds, checked at
 #'   iteration boundaries. Default \code{Inf} (no ceiling, fully reproducible).
 #'   A finite value caps runtime but makes the result machine-dependent.
-#' @param seed Optional integer; if non-NULL, \code{set.seed(seed)} is called
-#'   at entry. The algorithm is deterministic up to ties (broken by smallest
-#'   index), so the seed has no observable effect on the solution; it is
-#'   exposed for API parity with stochastic methods.
 #' @param progress Logical; show a start/done status line. Default: `TRUE` in
 #'   interactive sessions, `FALSE` otherwise
 #'   (`getOption("MaxMin.progress", interactive())`). No effect when
@@ -180,7 +176,8 @@
 #'   and added index sequences are written into it as `drops` and `adds`.
 #'
 #' @return An integer vector of length \code{m} containing the 1-based selected
-#'   indices (sorted ascending), with attributes:
+#'   indices **sorted ascending** (unlike [FarFirst()], which returns
+#'   farthest-first order), with attributes:
 #'   \describe{
 #'     \item{score}{numeric(1), achieved MaxMin objective
 #'       \eqn{\min_{i \ne j \in S} d_{ij}}.}
@@ -195,14 +192,13 @@
 #'
 #' @export
 DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
-                      timeBudgetS = Inf, seed = NULL,
+                      timeBudgetS = Inf,
                       progress = getOption("MaxMin.progress", interactive()),
                       points = NULL,
                       .verify = FALSE, .trace = NULL) {
   if (!is.null(points) && !is.null(d)) {
     stop("supply `d` or `points`, not both")
   }
-  if (!is.null(seed)) set.seed(seed)
   usePoints <- !is.null(points)
   if (usePoints) {
     points <- .AsPointsMatrix(points)

@@ -142,12 +142,12 @@ test_that("DropAdd points path returns a meaningful result at n = 5000", {
 # ---------------------------------------------------------------------------
 # 6. seed parameter, input validation, and progress output
 # ---------------------------------------------------------------------------
-test_that("DropAdd points path: seed parameter and input validation", {
+test_that("DropAdd points path: deterministic and input validation", {
   pts <- matrix(rnorm(30 * 3), ncol = 3)
 
-  # seed: set.seed(1) path is executed
-  r1 <- DropAdd(points = pts, m = 4L, maxIter = 0L, seed = 1L)
-  r2 <- DropAdd(points = pts, m = 4L, maxIter = 0L, seed = 1L)
+  # RNG-free: repeated calls are identical (the no-op `seed` arg was removed).
+  r1 <- DropAdd(points = pts, m = 4L, maxIter = 0L)
+  r2 <- DropAdd(points = pts, m = 4L, maxIter = 0L)
   expect_identical(r1, r2)
 
   # m validation

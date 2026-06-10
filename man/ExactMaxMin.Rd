@@ -30,7 +30,10 @@ Default: \code{TRUE} in interactive sessions, \code{FALSE} otherwise
 (\code{getOption("MaxMin.progress", interactive())}).}
 }
 \value{
-A list with fields
+Unlike \code{\link[=DropAdd]{DropAdd()}}, \code{\link[=Grasp]{Grasp()}} and \code{\link[=FarFirst]{FarFirst()}} (which each return a
+bare integer vector carrying a \code{score} attribute), \code{ExactMaxMin()}
+deliberately returns a list, since it reports both the optimum and a proof
+status. The fields are
 \describe{
 \item{indices}{Integer vector of length \code{m}, sorted ascending: the
 selected points.}

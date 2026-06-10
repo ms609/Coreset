@@ -51,7 +51,7 @@ data(eurodist)
 set.seed(1)
 
 # Select 4 maximally dispersed cities
-idx <- FarFirst(eurodist, n = 4L)
+idx <- FarFirst(eurodist, m = 4L)
 MinDist(eurodist, idx)
 
 # View distances between chosen cities
@@ -70,7 +70,7 @@ MaxMin provides four solvers, and a minimum-distance calculator:
 |---|---|---|---|
 | `FarFirst()` | Good (2-approximation) | Very fast | No |
 | `DropAdd()` | High (≈ 99 % optimal) | Fast | No |
-| `Grasp()` | Highest | Moderate | Yes (`seed =`) |
+| `Grasp()` | Highest | Moderate | Yes (`set.seed()`) |
 | `ExactMaxMin()` | Optimal (NP-hard) | Slow | No |
 | `MinDist()` | Scoring only | Instant | No |
 
@@ -92,7 +92,7 @@ whichever pass produced the highest T~k~.
 ```{r}
 #| label: gonzalez-random
 set.seed(1)
-picks <- FarFirst(eurodist, n = 6L)   # default: best of three random starts
+picks <- FarFirst(eurodist, m = 6L)   # default: best of three random starts
 ```
 
 More random starts, or pivots of your own devising, can be accomplished by a
@@ -104,17 +104,17 @@ set.seed(1)
 nCities <- attr(eurodist, "Size")
 # Use 5 random starts
 pivots <- sample(nCities, 5)
-picks <- FarFirst(eurodist, n = 6L, pivots = pivots)
+picks <- FarFirst(eurodist, m = 6L, pivots = pivots)
 ```
 
 
 Peripheral seeds may also be selected by deterministic methods: one or more
-such methods can be selected via the `seed` argument. The best solution found
+such methods can be selected via the `method` argument. The best solution found
 will be returned.
 
 ```{r}
 #| label: gonzalez-seeds
-picks <- FarFirst(eurodist, n = 6L, seed = c("diameter", "anti_medoid"))
+picks <- FarFirst(eurodist, m = 6L, method = c("diameter", "anti_medoid"))
 MinDist(eurodist, picks)
 
 attr(picks, "winning_strategy")
@@ -126,7 +126,7 @@ would be too expensive, a function may be passed in place
 of the distance matrix. This function will be passed one index `i`, and should
 returns the distances from object `i` to all N objects — one column of the
 matrix.
-`FarFirst()` calls it $n$ times, so the full N×N matrix is never built.
+`FarFirst()` calls it $m$ times, so the full N×N matrix is never built.
 `N`, the number of objects, must be supplied.
 
 ```{r}
@@ -137,7 +137,7 @@ StateDist <- function(i) {
   diffs <- sweep(arrestTypes, 2, unlist(arrestTypes[i, ]), "-")
   sqrt(rowSums(diffs ^ 2))
 }
-idx <- FarFirst(StateDist, n = 4L, N = nrow(arrestTypes), seed = 1L)
+idx <- FarFirst(StateDist, m = 4L, N = nrow(arrestTypes), method = 1L)
 arrestTypes[idx, ]
 ```
 
@@ -171,12 +171,13 @@ set of good solutions by interpolating between elite-pair trajectories
 (*path relinking*).
 It achieves the highest T~k~ of the three heuristics, at a proportionally
 higher cost.
-Because the construction phase is stochastic, always set `seed` for
-reproducibility:
+Because the construction phase is stochastic, call `set.seed()` before
+`Grasp()` for a reproducible run:
 
 ```{r}
 #| label: grasp
-res_gr <- Grasp(eurodist, m = 6L, plateau = 50L, seed = 42L)
+set.seed(42)
+res_gr <- Grasp(eurodist, m = 6L, plateau = 50L)
 
 labels(eurodist)[res_gr]
 attr(res_gr, "score")
@@ -203,9 +204,10 @@ m   <- 8L
 
 ```{r}
 #| label: compare-run
-idx_ff <- FarFirst(d50, n = m)
+idx_ff <- FarFirst(d50, m)
 res_da50 <- DropAdd(d50, m = m, plateau = 500L)
-res_gr50 <- Grasp(d50, m = m, plateau = 50L, seed = 42L)
+set.seed(42)
+res_gr50 <- Grasp(d50, m = m, plateau = 50L)
 ```
 
 Even a small difference in T~k~ can correspond to a meaningfully more
@@ -294,7 +296,7 @@ res_ex$proven      # TRUE  ⟹  objective is the global optimum
 res_ex$objective
 
 # Compare to the greedy heuristic on the same instance
-res_ff30 <- FarFirst(d30, n = 6L)
+res_ff30 <- FarFirst(d30, m = 6L)
 c(exact    = res_ex$objective,
   Gonzalez = MinDist(d30, res_ff30))
 ```
@@ -326,18 +328,18 @@ MinDist(points = pts, idx = idx_ff)                # from coordinates
 |---|---|
 | Speed matters most, N up to a few thousand | `FarFirst()` (ensemble default) |
 | Deterministic, reproducible refinement | `DropAdd()` |
-| Best quality, set `seed` for reproducibility | `Grasp(seed = ...)` |
+| Best quality, `set.seed()` for reproducibility | `Grasp()` |
 | N > 46 000 (distance matrix infeasible) | `DropAdd(points = ...)` or `FarFirst(points = ...)` |
 | Arbitrary metric with no coordinate embedding | `FarFirst(<column function>, N = ...)` |
 | Proven optimum, N ≤ ~ 25–30, **highs** installed | `ExactMaxMin()` |
 
 The heuristics are complementary:
 `FarFirst()` is O(*N* · *m*) and deterministic — an instant first result.
-`DropAdd()` is deterministic and reproducible (no RNG), typically reaching
-≈ 99 % of optimal; the `seed` parameter governs only the RNG used for
-tie-breaking, not the algorithm itself.
-`Grasp()` is stochastic and usually edges out `DropAdd()` on T~k~, but
-requires a `seed` for reproducibility.
+`DropAdd()` is deterministic and reproducible (no RNG): ties are broken by
+smallest index, so a given instance always yields the same selection,
+typically reaching ≈ 99 % of optimal.
+`Grasp()` is stochastic and usually edges out `DropAdd()` on T~k~; call
+`set.seed()` before it for a reproducible run.
 
 ## Related packages
 

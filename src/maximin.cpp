@@ -12,6 +12,9 @@
 // [[Rcpp::export]]
 Rcpp::IntegerVector MaximinFrom_cpp(Rcpp::NumericMatrix d, int n, int first) {
   int nPts = d.nrow();
+  if (n < 1 || n > nPts) {                  // defensive: public wrapper guards
+    Rcpp::stop("'n' must be in [1, %d]; got %d", nPts, n);
+  }
   if (first < 1 || first > nPts) {
     Rcpp::stop("'first' must be in [1, %d]; got %d", nPts, first);
   }

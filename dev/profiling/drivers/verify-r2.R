@@ -21,8 +21,8 @@ for (ds in 1:4) {
       d <- as.matrix(dist(pts))
       for (n in c(2L, 8L, as.integer(N / 2), N - 1L)) {
         k <- paste("ff", ds, N, dim, n, sep = "_")
-        corr[[paste0(k, "_pt")]] <- as.integer(FarFirst(n = n, points = pts, seed = 1L))
-        corr[[paste0(k, "_mx")]] <- as.integer(FarFirst(d, n, seed = 1L))
+        corr[[paste0(k, "_pt")]] <- as.integer(FarFirst(m = n, points = pts, method = 1L))
+        corr[[paste0(k, "_mx")]] <- as.integer(FarFirst(d, n, method = 1L))
       }
       for (m in c(3L, 10L, as.integer(N / 2))) {
         da_m <- DropAdd(d, m, plateau = 200L, progress = FALSE)
@@ -34,7 +34,8 @@ for (ds in 1:4) {
       }
       for (m in c(5L, 20L, as.integer(N / 3))) {
         for (es in c(3L, 5L)) for (al in c(0.5, 0.8)) {
-          g <- Grasp(d, m, plateau = 10L, eliteSize = es, alpha = al, seed = 7L)
+          set.seed(7)
+          g <- Grasp(d, m, plateau = 10L, eliteSize = es, alpha = al)
           corr[[paste("gp", ds, N, dim, m, es, al, sep = "_")]] <-
             list(idx = as.integer(g), z = as.numeric(attr(g, "score")))
         }
@@ -59,7 +60,7 @@ for (cfg in list(c(200,50), c(200,100))) {
   pts <- matrix(rnorm(N * 2L), ncol = 2L); d <- as.matrix(dist(pts))
   timing[[paste0("grasp_n", N, "_m", m)]] <- list(
     what = "Grasp", N = N, m = m,
-    ms = ms(function() Grasp(d, m, plateau = 15L, eliteSize = 5L, seed = 1L), it = 5L))
+    ms = ms(function() { set.seed(1); Grasp(d, m, plateau = 15L, eliteSize = 5L) }, it = 5L))
 }
 # T-004 FarFirst points single pass (the column reorder), large N, both dims.
 set.seed(13)
@@ -68,7 +69,7 @@ for (dim in c(2L, 10L)) {
   for (n in c(300L, 1500L, 3000L)) {
     timing[[paste0("ff_pts_d", dim, "_n", n)]] <- list(
       what = "FarFirst points single pass", dim = dim, n = n,
-      ms = ms(function() FarFirst(n = n, points = pts, seed = 1L)))
+      ms = ms(function() FarFirst(m = n, points = pts, method = 1L)))
   }
 }
 

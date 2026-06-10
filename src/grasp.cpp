@@ -114,9 +114,10 @@ static std::vector<int> grasp_construct(const double* d, int n, int m, double al
   g[first] = NEG_INF;
   for (int h = 1; h < m; ++h) {
     double gmax = NEG_INF, gmin = POS_INF;
+    int gmax_idx = -1;                          // first index achieving gmax
     for (int i = 0; i < n; ++i) {
       if (g[i] > NEG_INF) {
-        if (g[i] > gmax) gmax = g[i];
+        if (g[i] > gmax) { gmax = g[i]; gmax_idx = i; }
         if (g[i] < gmin) gmin = g[i];
       }
     }
@@ -124,6 +125,12 @@ static std::vector<int> grasp_construct(const double* d, int n, int m, double al
     std::vector<int> rcl;
     for (int i = 0; i < n; ++i)
       if (g[i] > NEG_INF && g[i] >= thresh) rcl.push_back(i);
+    // FP rounding at the documented alpha = 1 (and deterministically for
+    // alpha > 1) can push thresh just past gmax, emptying the RCL — indexing
+    // rcl[0] on an empty vector would segfault. Fall back to the unique
+    // greedy-best (argmax-g, first index on ties) WITHOUT an R_unif_index draw,
+    // matching .GraspConstruct so the two stay bit-identical.
+    if (rcl.empty()) rcl.push_back(gmax_idx);
     int pick;
     if ((int)rcl.size() == 1) {
       pick = rcl[0];

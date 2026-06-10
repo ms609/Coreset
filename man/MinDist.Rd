@@ -25,9 +25,20 @@ Returns the minimum pairwise distance among selected points, the canonical
 k-centre objective \eqn{T_k}. Higher values indicate a more spread-out
 (better) selection.
 }
+\details{
+The solvers in this package (\code{\link[=FarFirst]{FarFirst()}}, \code{\link[=DropAdd]{DropAdd()}}, \code{\link[=Grasp]{Grasp()}})
+already attach the achieved \eqn{T_k} as a \code{score} attribute, so
+\code{MinDist()} is mainly for scoring a selection produced elsewhere -- a
+matrix-free or externally generated index set -- or for re-scoring an
+existing selection against a different distance matrix.
+}
 \examples{
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
 MinDist(d, FarFirst(d, 5L))
+}
+\seealso{
+\code{\link[=FarFirst]{FarFirst()}}, \code{\link[=DropAdd]{DropAdd()}}, \code{\link[=Grasp]{Grasp()}} and \code{\link[=ExactMaxMin]{ExactMaxMin()}}, whose
+results already carry the objective.
 }

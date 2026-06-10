@@ -58,7 +58,7 @@ set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
 MaxMinSeed(d, method = "diameter")
-FarFirst(d, 5L, seed = MaxMinSeed(d, method = "diameter"))
+FarFirst(d, 5L, method = MaxMinSeed(d, method = "diameter"))
 }
 \seealso{
 \code{\link[=FarFirst]{FarFirst()}}, which seeds and runs the greedy pass in one call.

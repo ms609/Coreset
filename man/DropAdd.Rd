@@ -10,7 +10,6 @@ DropAdd(
   plateau = 5000L,
   maxIter = NULL,
   timeBudgetS = Inf,
-  seed = NULL,
   progress = getOption("MaxMin.progress", interactive()),
   points = NULL,
   .verify = FALSE,
@@ -37,11 +36,6 @@ control.}
 iteration boundaries. Default \code{Inf} (no ceiling, fully reproducible).
 A finite value caps runtime but makes the result machine-dependent.}
 
-\item{seed}{Optional integer; if non-NULL, \code{set.seed(seed)} is called
-at entry. The algorithm is deterministic up to ties (broken by smallest
-index), so the seed has no observable effect on the solution; it is
-exposed for API parity with stochastic methods.}
-
 \item{progress}{Logical; show a start/done status line. Default: \code{TRUE} in
 interactive sessions, \code{FALSE} otherwise
 (\code{getOption("MaxMin.progress", interactive())}). No effect when
@@ -64,7 +58,8 @@ and added index sequences are written into it as \code{drops} and \code{adds}.}
 }
 \value{
 An integer vector of length \code{m} containing the 1-based selected
-indices (sorted ascending), with attributes:
+indices \strong{sorted ascending} (unlike \code{\link[=FarFirst]{FarFirst()}}, which returns
+farthest-first order), with attributes:
 \describe{
 \item{score}{numeric(1), achieved MaxMin objective
 \eqn{\min_{i \ne j \in S} d_{ij}}.}

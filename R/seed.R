@@ -2,7 +2,7 @@
 #
 # Peripheral seeding strategies for Gonzalez farthest-first selection, and the
 # ensemble driver that runs several and keeps the best by MinDist(). The single
-# anchors are exposed through MaxMinSeed(); FarFirst(seed = ) selects among them
+# anchors are exposed through MaxMinSeed(); FarFirst(method = ) selects among them
 # (or the ensemble) and runs the greedy pass.
 
 # The default seed ensemble: the `"random_furthest"` token alone, which expands
@@ -94,11 +94,19 @@
   # which.max() skips NA and first-wins on ties, matching the old hand-rolled
   # loop; all-NA (e.g. n == 1) falls back to the first strategy.
   tks     <- vapply(strategyResults, `[[`, numeric(1L), "t_k")
-  bestI   <- if (all(is.na(tks))) 1L else which.max(tks)
+  allNa   <- all(is.na(tks))
+  bestI   <- if (allNa) 1L else which.max(tks)
   bestTk  <- tks[[bestI]]
-  winners <- if (is.na(bestTk)) bestI else which(tks == bestTk)
+  # When every T_k is NA (e.g. n == 1, each pass selects a single point) all
+  # strategies are trivially tied-best, so report them all -- matching the
+  # documented "all tied-best strategies" contract (F-602). Otherwise the
+  # winners are the strategies achieving the best finite T_k.
+  winners <- if (allNa) seq_along(tks) else which(tks == bestTk)
 
   result <- strategyResults[[bestI]]$idx
+  # Expose the winning T_k as `score`, matching the bare FarFirst() pass and the
+  # DropAdd()/Grasp() return contract.
+  attr(result, "score")            <- bestTk
   attr(result, "strategy_results") <- strategyResults
   attr(result, "winning_strategy") <- labels[winners]
   result
@@ -229,7 +237,7 @@
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' d <- dist(pts)
 #' MaxMinSeed(d, method = "diameter")
-#' FarFirst(d, 5L, seed = MaxMinSeed(d, method = "diameter"))
+#' FarFirst(d, 5L, method = MaxMinSeed(d, method = "diameter"))
 #' @seealso [FarFirst()], which seeds and runs the greedy pass in one call.
 #' @export
 MaxMinSeed <- function(d = NULL, points = NULL,
@@ -277,7 +285,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
   ))
   nPts <- nrow(d)
   if (n >= nPts) return(seq_len(nPts))
-  if (n < 1L)   return(integer(0))
+  if (n == 0L)   return(integer(0))
 
   lazy <- new.env(parent = emptyenv())
   GetRowSums <- function() {

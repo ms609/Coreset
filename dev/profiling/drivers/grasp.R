@@ -41,7 +41,8 @@ med5 <- function(expr) {
 
 run_case <- function(d, m, plateau, eliteSize, label, n_timing = 5L) {
   # warm-up
-  r <- Grasp(d, m = m, plateau = plateau, eliteSize = eliteSize, seed = 1L)
+  set.seed(1)
+  r <- Grasp(d, m = m, plateau = plateau, eliteSize = eliteSize)
   iters    <- attr(r, "iters")
   pr_calls <- attr(r, "pr_calls")
   score    <- attr(r, "score")
@@ -49,7 +50,8 @@ run_case <- function(d, m, plateau, eliteSize, label, n_timing = 5L) {
   times <- numeric(n_timing)
   for (i in seq_len(n_timing)) {
     t0 <- proc.time()[[3L]]
-    Grasp(d, m = m, plateau = plateau, eliteSize = eliteSize, seed = 1L)
+    set.seed(1)
+    Grasp(d, m = m, plateau = plateau, eliteSize = eliteSize)
     times[i] <- proc.time()[[3L]] - t0
   }
   ms_med <- round(median(times) * 1000, 1)
@@ -136,15 +138,18 @@ cat("=== Phase discriminator: maxIter=0 at n=200, m=100, eliteSize=5 ===\n")
   phase_times <- numeric(5L)
   for (i in seq_len(5L)) {
     t0 <- proc.time()[[3L]]
-    Grasp(d200, m = 100L, plateau = 15L, eliteSize = 5L, maxIter = 0L, seed = 1L)
+    set.seed(1)
+    Grasp(d200, m = 100L, plateau = 15L, eliteSize = 5L, maxIter = 0L)
     phase_times[i] <- proc.time()[[3L]] - t0
   }
-  r_noB <- Grasp(d200, m = 100L, plateau = 15L, eliteSize = 5L, maxIter = 0L, seed = 1L)
+  set.seed(1)
+  r_noB <- Grasp(d200, m = 100L, plateau = 15L, eliteSize = 5L, maxIter = 0L)
 
   phaseA_only_times <- numeric(5L)
   for (i in seq_len(5L)) {
     t0 <- proc.time()[[3L]]
-    Grasp(d200, m = 100L, plateau = 15L, eliteSize = 1L, maxIter = 0L, seed = 1L)
+    set.seed(1)
+    Grasp(d200, m = 100L, plateau = 15L, eliteSize = 1L, maxIter = 0L)
     phaseA_only_times[i] <- proc.time()[[3L]] - t0
   }
 
@@ -176,7 +181,8 @@ if (requireNamespace("profvis", quietly = TRUE)) {
   cat("=== profvis: n=200, m=100, eliteSize=5, plateau=15, 3 reps ===\n")
   p <- profvis::profvis({
     for (i in 1:3) {
-      Grasp(d200, m = 100L, plateau = 15L, eliteSize = 5L, seed = 1L)
+      set.seed(1)
+      Grasp(d200, m = 100L, plateau = 15L, eliteSize = 5L)
     }
   })
   out_html <- file.path("dev/profiling/drivers", "grasp-profvis.html")

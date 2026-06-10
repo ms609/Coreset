@@ -62,24 +62,35 @@
   # nearest-selected distance for each candidate; Inf if no candidate available
   g <- d[, sel[1L]]
   g[sel[1L]] <- -Inf  # mark selected
-  for (h in 2L:m) {
-    candMask <- is.finite(g) & g > -Inf
-    # candidates are points with g > -Inf (i.e., not yet selected)
-    candIdx <- which(g > -Inf)
-    gv <- g[candIdx]
-    gmax <- max(gv)
-    gmin <- min(gv)
-    thresh <- gmin + alpha * (gmax - gmin)
-    rcl <- candIdx[gv >= thresh]
-    if (length(rcl) == 1L) {
-      pick <- rcl
-    } else {
-      pick <- rcl[sample.int(length(rcl), 1L)]
+  # `2L:m` counts *down* when m == 1L (-> c(2L, 1L)); guard so the helper is
+  # safe when called directly with m == 1L, matching the C++ `h < m` loop.
+  if (m >= 2L) {
+    for (h in 2L:m) {
+      # candidates are points with g > -Inf (i.e., not yet selected)
+      candIdx <- which(g > -Inf)
+      gv <- g[candIdx]
+      gmax <- max(gv)
+      gmin <- min(gv)
+      thresh <- gmin + alpha * (gmax - gmin)
+      rcl <- candIdx[gv >= thresh]
+      # FP rounding at the documented alpha = 1 (and deterministically for
+      # alpha > 1) can push thresh just past gmax, emptying the RCL. Fall back
+      # to the unique greedy-best (the argmax-g candidate, first on ties)
+      # WITHOUT an RNG draw, mirroring the size-1 branch and the C++ kernel so
+      # R and C++ stay bit-identical.
+      if (length(rcl) == 0L) {
+        rcl <- candIdx[which.max(gv)]
+      }
+      if (length(rcl) == 1L) {
+        pick <- rcl
+      } else {
+        pick <- rcl[sample.int(length(rcl), 1L)]
+      }
+      sel[h] <- pick
+      # update g: candidate's new "min-to-sel" is min(old g, d to new pick)
+      g <- pmin(g, d[, pick])
+      g[pick] <- -Inf
     }
-    sel[h] <- pick
-    # update g: candidate's new "min-to-sel" is min(old g, d to new pick)
-    g <- pmin(g, d[, pick])
-    g[pick] <- -Inf
   }
   sort(sel)
 }
@@ -254,10 +265,10 @@
 #'
 #' **Deterministic termination.** The refinement loop stops after
 #' `plateau` consecutive GRASP iterations that fail to improve the best
-#' elite objective (rather than after a wall-clock budget). Given a fixed
-#' `seed`, the entire run — construction RNG, iteration count, and result — is
-#' therefore reproducible and machine-independent; `set.seed(seed)` controls
-#' the same random stream the compiled kernel consumes via R's RNG. An
+#' elite objective (rather than after a wall-clock budget). Call `set.seed()`
+#' before `Grasp()` for a reproducible run: the entire run — construction RNG,
+#' iteration count, and result — is then reproducible and machine-independent,
+#' because the compiled kernel draws from R's own session RNG stream. An
 #' optional `timeBudgetS` ceiling is available as a safety cap, but using a
 #' finite value reintroduces machine-dependence and is off by default.
 #'
@@ -284,10 +295,8 @@
 #' @param timeBudgetS Optional wall-clock ceiling in seconds. Default `Inf`
 #'   (no ceiling, fully reproducible). A finite value caps runtime but makes
 #'   the result machine-dependent.
-#' @param seed Optional integer; if supplied, `set.seed(seed)` is called at
-#'   entry. `Grasp` is genuinely stochastic (randomised construction and RCL
-#'   sampling), so the seed governs the trajectory and the returned selection.
-#' @return An integer vector of length `m` (1-based, sorted ascending)
+#' @return An integer vector of length `m` (1-based) **sorted ascending**
+#'   (unlike [FarFirst()], which returns farthest-first order)
 #'   with attributes:
 #'   \describe{
 #'     \item{score}{Achieved MaxMin objective \eqn{T_k}.}
@@ -302,14 +311,13 @@
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
-#' res <- Grasp(dist(pts), m = 5L, plateau = 20L, eliteSize = 4L,
-#'                seed = 1L)
+#' # Call set.seed() before Grasp() for a reproducible run:
+#' set.seed(1)
+#' res <- Grasp(dist(pts), m = 5L, plateau = 20L, eliteSize = 4L)
 #' res
 #' @export
 Grasp <- function(d, m, plateau = 100L, maxIter = NULL,
-                    eliteSize = 10L, alpha = 0.8, timeBudgetS = Inf,
-                    seed = NULL) {
-  if (!is.null(seed)) set.seed(seed)
+                    eliteSize = 10L, alpha = 0.8, timeBudgetS = Inf) {
   d <- .AsDistMatrix(d)
   n <- nrow(d)
   m <- as.integer(m)
@@ -327,6 +335,13 @@ Grasp <- function(d, m, plateau = 100L, maxIter = NULL,
   if (!is.numeric(timeBudgetS) || length(timeBudgetS) != 1L ||
       is.na(timeBudgetS) || timeBudgetS <= 0) {
     stop("`timeBudgetS` must be a single positive numeric (or Inf)")
+  }
+  # `alpha` outside [0, 1] is meaningless for the RCL threshold and, for
+  # alpha > 1, deterministically empties the RCL (see .GraspConstruct); reject
+  # it before it reaches the kernel.
+  if (!is.numeric(alpha) || length(alpha) != 1L || is.na(alpha) ||
+      alpha < 0 || alpha > 1) {
+    stop("`alpha` must be a single number in [0, 1]")
   }
 
   out <- Grasp_cpp(d, m, plateau, maxIter, eliteSize,
