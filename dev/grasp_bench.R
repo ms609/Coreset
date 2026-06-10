@@ -1,4 +1,4 @@
-# Speedup of the compiled GraspPR kernel vs the pure-R reference, at identical
+# Speedup of the compiled Grasp kernel vs the pure-R reference, at identical
 # parameters and seed (so both do exactly the same work and return the same
 # answer). Confirms bit-identity and reports the C++/R wall-clock ratio.
 suppressPackageStartupMessages(library(MaxMin))
@@ -9,10 +9,10 @@ bench <- function(n, m, mni, es, seed = 1L) {
   d <- as.matrix(dist(pts))
 
   set.seed(seed)
-  tr <- system.time(ref <- MaxMin:::.GraspPR_R(d, m, max_no_improve = mni,
+  tr <- system.time(ref <- MaxMin:::.Grasp_R(d, m, max_no_improve = mni,
                                                elite_size = es))[["elapsed"]]
   set.seed(seed)
-  tk <- system.time(ker <- GraspPR(d, m, max_no_improve = mni,
+  tk <- system.time(ker <- Grasp(d, m, max_no_improve = mni,
                                    elite_size = es))[["elapsed"]]
 
   ok <- identical(ref$indices, ker$indices) &&
@@ -24,7 +24,7 @@ bench <- function(n, m, mni, es, seed = 1L) {
   invisible(ok)
 }
 
-cat("=== GraspPR: compiled kernel vs R reference (same seed/params) ===\n")
+cat("=== Grasp: compiled kernel vs R reference (same seed/params) ===\n")
 ok1 <- bench(100,  10, 50, 8)
 ok2 <- bench(200,  20, 50, 8)
 ok3 <- bench(300,  15, 40, 10)

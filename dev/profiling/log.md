@@ -142,9 +142,9 @@ last_focus: 3
 
 ---
 
-## Round 3 — 2026-06-10 — Area 3: GraspPR refinement
+## Round 3 — 2026-06-10 — Area 3: Grasp refinement
 
-**Question:** Where does GraspPR's time go — construction (phase A), GRASP
+**Question:** Where does Grasp's time go — construction (phase A), GRASP
 iterations + local search (phase B), or path relinking (phase C) — at small m
 and large m?
 
@@ -196,10 +196,10 @@ the result. Both the walk (m×m sub-matrix min per step) and the LS (m×m sub-
 matrix min per swap candidate) use the same O(m²) re-score primitive.
 
 **profvis verdict (n=200, m=100, eliteSize=5, plateau=15, 3 reps ≈ 6.6 s):**
-- 418/418 time-point samples have `GraspPR_cpp` at depth 2 (inside the .Call) →
+- 418/418 time-point samples have `Grasp_cpp` at depth 2 (inside the .Call) →
   **100% of wall time inside the C++ kernel**
 - R wrapper (set.seed + .AsDistMatrix + arg checks): 0 samples → unmeasurably fast
-- No R label > 2%. All actionable cost is in `GraspPR_cpp`.
+- No R label > 2%. All actionable cost is in `Grasp_cpp`.
 
 **Dominant phase by regime:**
 - **Small m (m=10):** All phases cheap (PR negligible). Total ~5.5 ms/call; PR
@@ -209,13 +209,13 @@ matrix min per swap candidate) use the same O(m²) re-score primitive.
   the LS on the PR result — the shared O(m²) re-score primitive is the hot kernel.
 
 **Finding (T-006) — REVISED:**
-`[Optimise]` The shared sub-matrix min-rescore primitive in `GraspPR_cpp` drives
+`[Optimise]` The shared sub-matrix min-rescore primitive in `Grasp_cpp` drives
 93.6% of wall time at large m (phase C) and 4.1% (phase B), both via the same
 O(m²) `min(d[cand,cand])` re-score. Replacing this with an incremental swap update
 (drop one row+col, add one row+col, maintain running row-min and global min → O(m)
 per candidate) would reduce both the PR walk and the local-search swap scan. The
 fix has two call sites (PR step loop and LS swap scan); both benefit. VTune line-
-level on `GraspPR_cpp` to confirm the sub-matrix min scan is the dominant hot line.
+level on `Grasp_cpp` to confirm the sub-matrix min scan is the dominant hot line.
 
 Status: Area 3 → PROFILED (then OPTIMISED in Round 4).
 
@@ -230,14 +230,14 @@ verification = "results match the baseline lib exactly". Drivers
 `drivers/verify-r2.R` (per-lib battery) + `drivers/compare-r2.R`.
 
 **Correctness — 416/416 bit-identical vs the prior (T-001/T-002) build:**
-FarFirst 128/128, DropAdd matrix 48/48, DropAdd points 48/48, GraspPR 192/192.
+FarFirst 128/128, DropAdd matrix 48/48, DropAdd points 48/48, Grasp 192/192.
 
 **Timing — old → new:**
 ```
 T-005 DropAdd matrix construction (maxIter=0):
   n=4000   116.1 ->  10.3 ms   (11.3x)
   n=6000   293.4 ->  22.4 ms   (13.1x)
-T-006 GraspPR (n=200):
+T-006 Grasp (n=200):
   m=50     315.5 ->  22.2 ms   (14.2x)
   m=100   1328.8 ->  85.0 ms   (15.6x)
 T-004 FarFirst points single pass (column reorder):

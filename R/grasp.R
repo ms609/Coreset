@@ -4,7 +4,7 @@
 # (Resende, Marti, Gallego & Duarte 2010, Computers & OR 37:498-508).
 # Implements the static variant of Fig. 4.
 #
-# Public entry point: GraspPR(). Internal helpers carry the .Gpr* prefix.
+# Public entry point: Grasp(). Internal helpers carry the .Grasp* prefix.
 #
 # This is a dense-matrix-only refinement metaheuristic: every phase
 # (construction, local search, path relinking) operates on a materialised
@@ -18,7 +18,7 @@
 
 #' Minimum pairwise distance over a selection.
 #' @keywords internal
-.GprObjective <- function(d, sel) {
+.GraspObjective <- function(d, sel) {
   if (length(sel) < 2L) return(NA_real_)  # nocov
   sub <- d[sel, sel, drop = FALSE]
   diag(sub) <- Inf
@@ -27,7 +27,7 @@
 
 #' For each i in sel, return its nearest-other-selected distance.
 #' @keywords internal
-.GprNearestInSel <- function(d, sel) {
+.GraspNearestInSel <- function(d, sel) {
   m <- length(sel)
   if (m < 2L) return(rep(Inf, m))  # nocov
   sub <- d[sel, sel, drop = FALSE]
@@ -37,7 +37,7 @@
 
 #' Count pairs at the minimum distance (used by extended-improvement LS).
 #' @keywords internal
-.GprMinPairCount <- function(d, sel, dstar) {
+.GraspMinPairCount <- function(d, sel, dstar) {
   if (length(sel) < 2L) return(0L)  # nocov
   sub <- d[sel, sel, drop = FALSE]
   diag(sub) <- Inf
@@ -55,7 +55,7 @@
 #' @param alpha RCL threshold parameter (alpha=1 -> greedy, alpha=0 -> random).
 #' @return Integer vector of length m.
 #' @keywords internal
-.GprConstruct <- function(d, m, alpha) {
+.GraspConstruct <- function(d, m, alpha) {
   n <- nrow(d)
   sel <- integer(m)
   sel[1L] <- sample.int(n, 1L)
@@ -97,15 +97,15 @@
 #' @param sel Integer vector of size m.
 #' @return Improved integer vector of size m.
 #' @keywords internal
-.GprLocalSearch <- function(d, sel) {
+.GraspLocalSearch <- function(d, sel) {
   n <- nrow(d)
   m <- length(sel)
   if (m < 2L) return(sel)  # nocov
   repeat {
     selSorted <- sort(sel)
-    di <- .GprNearestInSel(d, selSorted)
+    di <- .GraspNearestInSel(d, selSorted)
     dstar <- min(di)
-    pairCount <- .GprMinPairCount(d, selSorted, dstar)
+    pairCount <- .GraspMinPairCount(d, selSorted, dstar)
     critical <- which(di <= dstar)  # indices into selSorted
     inSel <- logical(n); inSel[selSorted] <- TRUE
     outIdx <- which(!inSel)
@@ -150,18 +150,18 @@
 #' @return list(best = best selection on path, intermediates = number of
 #'   intermediate states visited including endpoints).
 #' @keywords internal
-.GprPathRelink <- function(d, x, y) {
+.GraspPathRelink <- function(d, x, y) {
   x <- sort(x); y <- sort(y)
   if (identical(x, y)) {
-    return(list(best = x, objective = .GprObjective(d, x), intermediates = 0L))
+    return(list(best = x, objective = .GraspObjective(d, x), intermediates = 0L))
   }
   toDrop <- setdiff(x, y)  # |toDrop| = r
   toAdd  <- setdiff(y, x)
   r <- length(toDrop)
   pk <- x
   bestSel <- x
-  bestZ <- .GprObjective(d, x)
-  zY <- .GprObjective(d, y)
+  bestZ <- .GraspObjective(d, x)
+  zY <- .GraspObjective(d, y)
   if (zY > bestZ) { bestSel <- y; bestZ <- zY }
   intermediates <- 0L
   for (k in seq_len(r)) {
@@ -198,7 +198,7 @@
 
 #' Hamming distance in selection space: m - |intersection|.
 #' @keywords internal
-.GprHammingToES <- function(sel, ES) {
+.GraspHammingToES <- function(sel, ES) {
   m <- length(sel)
   vapply(ES, function(e) m - length(intersect(sel, e)), integer(1L))
 }
@@ -207,10 +207,10 @@
 #'
 #' @return Updated ES (list of selections, sorted best-to-worst by z).
 #' @keywords internal
-.GprTryInsert <- function(d, ES, esZ, sel, selZ, dth) {
+.GraspTryInsert <- function(d, ES, esZ, sel, selZ, dth) {
   z1 <- esZ[1L]
   zb <- esZ[length(esZ)]
-  hamm <- .GprHammingToES(sel, ES)
+  hamm <- .GraspHammingToES(sel, ES)
   dmin <- min(hamm)
   accept <- FALSE
   if (selZ > z1) accept <- TRUE
@@ -285,7 +285,7 @@
 #'   (no ceiling, fully reproducible). A finite value caps runtime but makes
 #'   the result machine-dependent.
 #' @param seed Optional integer; if supplied, `set.seed(seed)` is called at
-#'   entry. `GraspPR` is genuinely stochastic (randomised construction and RCL
+#'   entry. `Grasp` is genuinely stochastic (randomised construction and RCL
 #'   sampling), so the seed governs the trajectory and the returned selection.
 #' @return An integer vector of length `m` (1-based, sorted ascending)
 #'   with attributes:
@@ -302,11 +302,11 @@
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
-#' res <- GraspPR(dist(pts), m = 5L, plateau = 20L, eliteSize = 4L,
+#' res <- Grasp(dist(pts), m = 5L, plateau = 20L, eliteSize = 4L,
 #'                seed = 1L)
 #' res
 #' @export
-GraspPR <- function(d, m, plateau = 100L, maxIter = NULL,
+Grasp <- function(d, m, plateau = 100L, maxIter = NULL,
                     eliteSize = 10L, alpha = 0.8, timeBudgetS = Inf,
                     seed = NULL) {
   if (!is.null(seed)) set.seed(seed)
@@ -329,7 +329,7 @@ GraspPR <- function(d, m, plateau = 100L, maxIter = NULL,
     stop("`timeBudgetS` must be a single positive numeric (or Inf)")
   }
 
-  out <- GraspPR_cpp(d, m, plateau, maxIter, eliteSize,
+  out <- Grasp_cpp(d, m, plateau, maxIter, eliteSize,
                      as.double(alpha), as.double(timeBudgetS))
   structure(
     sort(as.integer(out$indices)),
@@ -340,19 +340,19 @@ GraspPR <- function(d, m, plateau = 100L, maxIter = NULL,
   )
 }
 
-# Pure-R reference implementation of GraspPR, used as the parity oracle for
-# the compiled kernel (see tests/testthat/test-gpr.R). It mirrors
-# GraspPR_cpp() step for step, including the construction RNG draws, so that
+# Pure-R reference implementation of Grasp, used as the parity oracle for
+# the compiled kernel (see tests/testthat/test-grasp.R). It mirrors
+# Grasp_cpp() step for step, including the construction RNG draws, so that
 # from a common `set.seed()` the two agree bit for bit. Not exported; callers
-# use GraspPR().
+# use Grasp().
 #
 # Termination is the deterministic stagnation rule: stop after
 # `plateau` consecutive iterations that do not raise the best elite
-# objective esZ[1] (which is monotone non-decreasing under .GprTryInsert()).
+# objective esZ[1] (which is monotone non-decreasing under .GraspTryInsert()).
 # `maxIter` is an optional hard cap; `timeBudgetS` an optional ceiling
 # (Inf = off) that leaves the result reproducible.
 #' @keywords internal
-.GraspPR_R <- function(d, m, plateau, maxIter = .Machine$integer.max,
+.Grasp_R <- function(d, m, plateau, maxIter = .Machine$integer.max,
                        eliteSize = 10L, alpha = 0.8, timeBudgetS = Inf) {
   d <- .AsDistMatrix(d)
   n <- nrow(d)
@@ -365,10 +365,10 @@ GraspPR <- function(d, m, plateau = 100L, maxIter = NULL,
   ES <- vector("list", eliteSize)
   esZ <- numeric(eliteSize)
   for (b in seq_len(eliteSize)) {
-    x  <- .GprConstruct(d, m, alpha)
-    xp <- .GprLocalSearch(d, x)
+    x  <- .GraspConstruct(d, m, alpha)
+    xp <- .GraspLocalSearch(d, x)
     ES[[b]] <- xp
-    esZ[b] <- .GprObjective(d, xp)
+    esZ[b] <- .GraspObjective(d, xp)
   }
   ord <- order(esZ, decreasing = TRUE)
   ES <- ES[ord]; esZ <- esZ[ord]
@@ -391,10 +391,10 @@ GraspPR <- function(d, m, plateau = 100L, maxIter = NULL,
     repeat {
       if (noImprove >= plateau) break
       if (iters >= maxIter) break
-      x  <- .GprConstruct(d, m, alpha)
-      xp <- .GprLocalSearch(d, x)
-      zp <- .GprObjective(d, xp)
-      res <- .GprTryInsert(d, ES, esZ, xp, zp, dth)
+      x  <- .GraspConstruct(d, m, alpha)
+      xp <- .GraspLocalSearch(d, x)
+      zp <- .GraspObjective(d, xp)
+      res <- .GraspTryInsert(d, ES, esZ, xp, zp, dth)
       ES <- res$ES; esZ <- res$esZ
       iters <- iters + 1L
       if (esZ[1L] > bestZ) {
@@ -413,12 +413,12 @@ GraspPR <- function(d, m, plateau = 100L, maxIter = NULL,
     if (k >= 2L) {
       for (i in seq_len(k - 1L)) {
         for (j in (i + 1L):k) {
-          pr1 <- .GprPathRelink(d, ES[[i]], ES[[j]])
-          pr2 <- .GprPathRelink(d, ES[[j]], ES[[i]])
+          pr1 <- .GraspPathRelink(d, ES[[i]], ES[[j]])
+          pr2 <- .GraspPathRelink(d, ES[[j]], ES[[i]])
           prCalls <- prCalls + 2L
           ySel <- if (pr1$objective >= pr2$objective) pr1$best else pr2$best
-          yp <- .GprLocalSearch(d, ySel)
-          zp <- .GprObjective(d, yp)
+          yp <- .GraspLocalSearch(d, ySel)
+          zp <- .GraspObjective(d, yp)
           if (zp > bestZ) {
             bestZ <- zp
             bestSel <- yp

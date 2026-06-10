@@ -28,7 +28,7 @@ Median wall time, `bench::mark`, R-devel, `-O2`. Refresh each round.
 
 (Pre-fix construction: 116 ms / 293 ms → 11.3× / 13.1×.)
 
-## Area 3 — GraspPR — AFTER T-006 (incremental swap)
+## Area 3 — Grasp — AFTER T-006 (incremental swap)
 
 | case | metric | ms |
 |------|--------|---:|

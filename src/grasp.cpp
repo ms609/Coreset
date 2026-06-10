@@ -1,14 +1,14 @@
 // grasp.cpp
 //
-// Compiled kernel for GraspPR(): GRASP with path relinking for the Max-Min
+// Compiled kernel for Grasp(): GRASP with path relinking for the Max-Min
 // Diversity Problem (Resende, Marti, Gallego & Duarte 2010, static variant).
 //
-// This mirrors the pure-R reference .GraspPR_R() / .Gpr* helpers step for
+// This mirrors the pure-R reference .Grasp_R() / .Grasp* helpers step for
 // step. Crucially, the randomised construction draws its random indices from
 // R's own RNG via R_unif_index(), exactly as R's sample.int(k, 1L) does, so
 // that from a common set.seed() the kernel and the R reference consume the
 // identical random stream and return bit-identical selections. The parity is
-// asserted in tests/testthat/test-gpr.R.
+// asserted in tests/testthat/test-grasp.R.
 //
 // Termination is the deterministic stagnation rule: the refinement loop stops
 // after max_no_improve consecutive iterations that do not raise the best
@@ -32,7 +32,7 @@ static inline double D(const double* dptr, int n, int i, int j) {
   return dptr[(size_t)i + (size_t)j * (size_t)n];
 }
 
-// Minimum pairwise distance over a (sorted) selection; matches .GprObjective.
+// Minimum pairwise distance over a (sorted) selection; matches .GraspObjective.
 static double objective_of(const double* d, int n, const std::vector<int>& sel) {
   int m = (int)sel.size();
   if (m < 2) return NA_REAL;
@@ -57,7 +57,7 @@ static inline double min_to_set(const double* d, int n, int x,
 }
 
 // #unordered pairs in (rem ∪ {s}) with distance <= thr — the extended-
-// improvement tie-break count (.GprMinPairCount on cand = rem ++ s). Only paid
+// improvement tie-break count (.GraspMinPairCount on cand = rem ++ s). Only paid
 // for the rare candidate that can actually win a swap (nd >= best_dstar).
 // Counts the rem×rem pairs and the s×rem pairs over the same set.
 static int count_pairs_le(const double* d, int n, const std::vector<int>& rem,
@@ -83,9 +83,9 @@ static int intersect_count(const std::vector<int>& a, const std::vector<int>& b)
   return c;
 }
 
-// One randomised greedy construction; matches .GprConstruct. Uses R_unif_index
+// One randomised greedy construction; matches .GraspConstruct. Uses R_unif_index
 // so the draw stream matches R's sample.int(k, 1L). Returns ascending sel.
-static std::vector<int> gpr_construct(const double* d, int n, int m, double alpha) {
+static std::vector<int> grasp_construct(const double* d, int n, int m, double alpha) {
   std::vector<int> sel;
   sel.reserve(m);
   int first = (int)R_unif_index((double)n);
@@ -122,8 +122,8 @@ static std::vector<int> gpr_construct(const double* d, int n, int m, double alph
   return sel;
 }
 
-// Extended-improvement local search; matches .GprLocalSearch. `sel` ascending.
-static std::vector<int> gpr_local_search(const double* d, int n,
+// Extended-improvement local search; matches .GraspLocalSearch. `sel` ascending.
+static std::vector<int> grasp_local_search(const double* d, int n,
                                          std::vector<int> sel) {
   int m = (int)sel.size();
   if (m < 2) return sel;
@@ -189,8 +189,8 @@ static std::vector<int> gpr_local_search(const double* d, int n,
 
 struct PRResult { std::vector<int> best; double objective; };
 
-// Greedy path relinking from x toward y; matches .GprPathRelink. x, y ascending.
-static PRResult gpr_path_relink(const double* d, int n,
+// Greedy path relinking from x toward y; matches .GraspPathRelink. x, y ascending.
+static PRResult grasp_path_relink(const double* d, int n,
                                 const std::vector<int>& x,
                                 const std::vector<int>& y) {
   if (x == y) return { x, objective_of(d, n, x) };
@@ -262,8 +262,8 @@ static PRResult gpr_path_relink(const double* d, int n,
   return { best_sel, best_z };
 }
 
-// Elite-set insertion; matches .GprTryInsert. ES descending by ESz.
-static void gpr_try_insert(std::vector<std::vector<int>>& ES,
+// Elite-set insertion; matches .GraspTryInsert. ES descending by ESz.
+static void grasp_try_insert(std::vector<std::vector<int>>& ES,
                            std::vector<double>& ESz,
                            const std::vector<int>& sel, double sel_z, int dth) {
   int B = (int)ES.size();
@@ -300,7 +300,7 @@ static void gpr_try_insert(std::vector<std::vector<int>>& ES,
 }
 
 // [[Rcpp::export]]
-List GraspPR_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter,
+List Grasp_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter,
                  int elite_size, double alpha, double time_budget_s) {
   Rcpp::RNGScope scope;                       // GetRNGstate / PutRNGstate
   int n = dmat.nrow();
@@ -317,8 +317,8 @@ List GraspPR_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter,
   std::vector<std::vector<int>> ES(elite_size);
   std::vector<double> ESz(elite_size);
   for (int b = 0; b < elite_size; ++b) {
-    std::vector<int> x  = gpr_construct(d, n, m, alpha);
-    std::vector<int> xp = gpr_local_search(d, n, x);
+    std::vector<int> x  = grasp_construct(d, n, m, alpha);
+    std::vector<int> xp = grasp_local_search(d, n, x);
     ESz[b] = objective_of(d, n, xp);
     ES[b]  = xp;
   }
@@ -345,10 +345,10 @@ List GraspPR_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter,
     if (no_improve >= max_no_improve) break;
     if (iters >= max_iter) break;
     if (gated && elapsed() >= time_budget_s) break;
-    std::vector<int> x  = gpr_construct(d, n, m, alpha);
-    std::vector<int> xp = gpr_local_search(d, n, x);
+    std::vector<int> x  = grasp_construct(d, n, m, alpha);
+    std::vector<int> xp = grasp_local_search(d, n, x);
     double zp = objective_of(d, n, xp);
-    gpr_try_insert(ES, ESz, xp, zp, dth);
+    grasp_try_insert(ES, ESz, xp, zp, dth);
     ++iters;
     if (ESz[0] > best_z_B) { best_z_B = ESz[0]; no_improve = 0; }
     else ++no_improve;
@@ -363,12 +363,12 @@ List GraspPR_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter,
     bool done = false;
     for (int i = 0; i < K - 1 && !done; ++i) {
       for (int j = i + 1; j < K; ++j) {
-        PRResult pr1 = gpr_path_relink(d, n, ES[i], ES[j]);
-        PRResult pr2 = gpr_path_relink(d, n, ES[j], ES[i]);
+        PRResult pr1 = grasp_path_relink(d, n, ES[i], ES[j]);
+        PRResult pr2 = grasp_path_relink(d, n, ES[j], ES[i]);
         pr_calls += 2;
         std::vector<int>& y_sel = (pr1.objective >= pr2.objective) ? pr1.best
                                                                    : pr2.best;
-        std::vector<int> yp = gpr_local_search(d, n, y_sel);
+        std::vector<int> yp = grasp_local_search(d, n, y_sel);
         double zp = objective_of(d, n, yp);
         if (zp > best_z) { best_z = zp; best_sel = yp; }
         if (gated && elapsed() >= time_budget_s) { done = true; break; }

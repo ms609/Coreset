@@ -1,5 +1,5 @@
-# Driver: GraspPR refinement (dense-matrix only)
-# Question: Where does GraspPR time go — construction / local search (phase B)
+# Driver: Grasp refinement (dense-matrix only)
+# Question: Where does Grasp time go — construction / local search (phase B)
 # vs path relinking (phase C) — at small m and large m?
 #
 # Design:
@@ -41,7 +41,7 @@ med5 <- function(expr) {
 
 run_case <- function(d, m, plateau, eliteSize, label, n_timing = 5L) {
   # warm-up
-  r <- GraspPR(d, m = m, plateau = plateau, eliteSize = eliteSize, seed = 1L)
+  r <- Grasp(d, m = m, plateau = plateau, eliteSize = eliteSize, seed = 1L)
   iters    <- attr(r, "iters")
   pr_calls <- attr(r, "pr_calls")
   score    <- attr(r, "score")
@@ -49,7 +49,7 @@ run_case <- function(d, m, plateau, eliteSize, label, n_timing = 5L) {
   times <- numeric(n_timing)
   for (i in seq_len(n_timing)) {
     t0 <- proc.time()[[3L]]
-    GraspPR(d, m = m, plateau = plateau, eliteSize = eliteSize, seed = 1L)
+    Grasp(d, m = m, plateau = plateau, eliteSize = eliteSize, seed = 1L)
     times[i] <- proc.time()[[3L]] - t0
   }
   ms_med <- round(median(times) * 1000, 1)
@@ -72,7 +72,7 @@ d500 <- (d500 + t(d500)) / 2; diag(d500) <- 0
 
 # ---- timing table ----------------------------------------------------------
 
-cat("\n=== GraspPR timing table ===\n\n")
+cat("\n=== Grasp timing table ===\n\n")
 cat(sprintf("%-30s  %-5s  %-5s  %-10s  %-8s  %-7s  %-9s  %-10s  %-7s\n",
             "label", "n", "m", "eliteSize", "plateau", "iters", "pr_calls", "ms_median", "score"))
 cat(strrep("-", 120), "\n")
@@ -136,15 +136,15 @@ cat("=== Phase discriminator: maxIter=0 at n=200, m=100, eliteSize=5 ===\n")
   phase_times <- numeric(5L)
   for (i in seq_len(5L)) {
     t0 <- proc.time()[[3L]]
-    GraspPR(d200, m = 100L, plateau = 15L, eliteSize = 5L, maxIter = 0L, seed = 1L)
+    Grasp(d200, m = 100L, plateau = 15L, eliteSize = 5L, maxIter = 0L, seed = 1L)
     phase_times[i] <- proc.time()[[3L]] - t0
   }
-  r_noB <- GraspPR(d200, m = 100L, plateau = 15L, eliteSize = 5L, maxIter = 0L, seed = 1L)
+  r_noB <- Grasp(d200, m = 100L, plateau = 15L, eliteSize = 5L, maxIter = 0L, seed = 1L)
 
   phaseA_only_times <- numeric(5L)
   for (i in seq_len(5L)) {
     t0 <- proc.time()[[3L]]
-    GraspPR(d200, m = 100L, plateau = 15L, eliteSize = 1L, maxIter = 0L, seed = 1L)
+    Grasp(d200, m = 100L, plateau = 15L, eliteSize = 1L, maxIter = 0L, seed = 1L)
     phaseA_only_times[i] <- proc.time()[[3L]] - t0
   }
 
@@ -176,7 +176,7 @@ if (requireNamespace("profvis", quietly = TRUE)) {
   cat("=== profvis: n=200, m=100, eliteSize=5, plateau=15, 3 reps ===\n")
   p <- profvis::profvis({
     for (i in 1:3) {
-      GraspPR(d200, m = 100L, plateau = 15L, eliteSize = 5L, seed = 1L)
+      Grasp(d200, m = 100L, plateau = 15L, eliteSize = 5L, seed = 1L)
     }
   })
   out_html <- file.path("dev/profiling/drivers", "grasp-profvis.html")
@@ -185,23 +185,23 @@ if (requireNamespace("profvis", quietly = TRUE)) {
 
   # Identify R vs C++ split by analysing call-stack depths.
   # profvis records each sample as a set of rows (one per stack frame) sharing
-  # the same `time` value.  depth=1 is the outermost R frame (GraspPR), depth=2
-  # is the C++ kernel frame (GraspPR_cpp).  A time-point with depth=2 labelled
-  # "GraspPR_cpp" means we are inside the .Call — counted as C++ time.
-  # A time-point that only reaches depth=1 ("GraspPR") means we are in the
+  # the same `time` value.  depth=1 is the outermost R frame (Grasp), depth=2
+  # is the C++ kernel frame (Grasp_cpp).  A time-point with depth=2 labelled
+  # "Grasp_cpp" means we are inside the .Call — counted as C++ time.
+  # A time-point that only reaches depth=1 ("Grasp") means we are in the
   # R-wrapper overhead.
   pd <- p$x$message$prof
   if (!is.null(pd)) {
     all_times <- unique(pd$time)
     in_cpp <- vapply(all_times, function(t) {
-      any(pd$label[pd$time == t] == "GraspPR_cpp")
+      any(pd$label[pd$time == t] == "Grasp_cpp")
     }, logical(1L))
     cpp_pct <- 100 * mean(in_cpp)
     r_pct   <- 100 * mean(!in_cpp)
     cat(sprintf("  Total time-point samples  : %d\n", length(all_times)))
     cat(sprintf("  Inside C++ kernel         : %d (%.1f%%)\n", sum(in_cpp),  cpp_pct))
     cat(sprintf("  R-wrapper only            : %d (%.1f%%)\n", sum(!in_cpp), r_pct))
-    # Report any R frame (depth=1, not GraspPR) that appears in >2% of samples
+    # Report any R frame (depth=1, not Grasp) that appears in >2% of samples
     r_only_times <- all_times[!in_cpp]
     if (length(r_only_times) > 0) {
       r_labels <- pd$label[pd$time %in% r_only_times & pd$depth == 1L]

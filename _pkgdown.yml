@@ -19,7 +19,7 @@ reference:
   - title: Heuristic and exact solvers
     contents:
       - DropAdd
-      - GraspPR
+      - Grasp
       - ExactMaxMin
   - title: Scoring
     contents:

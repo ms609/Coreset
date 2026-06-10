@@ -9,8 +9,8 @@ DropAdd_points_cpp <- function(points, m, time_budget_s, max_iter, max_no_improv
     .Call(`_MaxMin_DropAdd_points_cpp`, points, m, time_budget_s, max_iter, max_no_improve, want_trace)
 }
 
-GraspPR_cpp <- function(dmat, m, max_no_improve, max_iter, elite_size, alpha, time_budget_s) {
-    .Call(`_MaxMin_GraspPR_cpp`, dmat, m, max_no_improve, max_iter, elite_size, alpha, time_budget_s)
+Grasp_cpp <- function(dmat, m, max_no_improve, max_iter, elite_size, alpha, time_budget_s) {
+    .Call(`_MaxMin_Grasp_cpp`, dmat, m, max_no_improve, max_iter, elite_size, alpha, time_budget_s)
 }
 
 MaximinFrom_cpp <- function(d, n, first) {

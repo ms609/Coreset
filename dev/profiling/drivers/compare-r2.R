@@ -6,7 +6,7 @@ keys <- union(names(old$corr), names(new$corr))
 ident <- vapply(keys, function(k) identical(old$corr[[k]], new$corr[[k]]),
                 logical(1L))
 cat("=== Correctness: bit-identity vs baseline ===\n")
-cat(sprintf("identical: %d / %d  (FarFirst + DropAdd + GraspPR)\n",
+cat(sprintf("identical: %d / %d  (FarFirst + DropAdd + Grasp)\n",
             sum(ident), length(keys)))
 grp <- function(p) {
   ks <- keys[startsWith(keys, p)]
