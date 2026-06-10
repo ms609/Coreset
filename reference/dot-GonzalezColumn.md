@@ -39,8 +39,8 @@ materialised: `O(N * n)` oracle calls and `O(N)` memory.
 
 - n:
 
-  Integer: number of elements to select. If `n >= N`, all indices are
-  returned.
+  Integer: number of elements to select. If `n > N`, all `N` indices are
+  returned in Gonzalez (farthest-first) order.
 
 - first:
 

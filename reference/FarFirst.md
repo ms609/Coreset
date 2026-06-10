@@ -33,8 +33,8 @@ FarFirst(
 
 - n:
 
-  Integer: number of points to select. If `n >= N`, all indices are
-  returned.
+  Integer: number of points to select. If `n > N`, all `N` indices are
+  returned in Gonzalez (farthest-first) order.
 
 - seed:
 
