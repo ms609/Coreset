@@ -18,8 +18,7 @@ Grasp(
   maxIter = NULL,
   eliteSize = 10L,
   alpha = 0.8,
-  timeBudgetS = Inf,
-  seed = NULL
+  timeBudgetS = Inf
 )
 ```
 
@@ -60,17 +59,11 @@ Grasp(
   fully reproducible). A finite value caps runtime but makes the result
   machine-dependent.
 
-- seed:
-
-  Optional integer; if supplied, `set.seed(seed)` is called at entry.
-  `Grasp` is genuinely stochastic (randomised construction and RCL
-  sampling), so the seed governs the trajectory and the returned
-  selection.
-
 ## Value
 
-An integer vector of length `m` (1-based, sorted ascending) with
-attributes:
+An integer vector of length `m` (1-based) **sorted ascending** (unlike
+[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md),
+which returns farthest-first order) with attributes:
 
 - score:
 
@@ -92,13 +85,13 @@ attributes:
 
 **Deterministic termination.** The refinement loop stops after `plateau`
 consecutive GRASP iterations that fail to improve the best elite
-objective (rather than after a wall-clock budget). Given a fixed `seed`,
-the entire run — construction RNG, iteration count, and result — is
-therefore reproducible and machine-independent; `set.seed(seed)`
-controls the same random stream the compiled kernel consumes via R's
-RNG. An optional `timeBudgetS` ceiling is available as a safety cap, but
-using a finite value reintroduces machine-dependence and is off by
-default.
+objective (rather than after a wall-clock budget). Call
+[`set.seed()`](https://rdrr.io/r/base/Random.html) before `Grasp()` for
+a reproducible run: the entire run — construction RNG, iteration count,
+and result — is then reproducible and machine-independent, because the
+compiled kernel draws from R's own session RNG stream. An optional
+`timeBudgetS` ceiling is available as a safety cap, but using a finite
+value reintroduces machine-dependence and is off by default.
 
 This is a **dense-matrix-only** method: it materialises and repeatedly
 subsets the full \\n \times n\\ distance matrix, so it is suited to
@@ -132,14 +125,15 @@ for the proven optimum on small instances.
 ``` r
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
-res <- Grasp(dist(pts), m = 5L, plateau = 20L, eliteSize = 4L,
-               seed = 1L)
+# Call set.seed() before Grasp() for a reproducible run:
+set.seed(1)
+res <- Grasp(dist(pts), m = 5L, plateau = 20L, eliteSize = 4L)
 res
 #> [1]  3  4  5 24 25
 #> attr(,"score")
 #> [1] 1.77825
 #> attr(,"time_s")
-#> [1] 0.000104176
+#> [1] 0.000126217
 #> attr(,"iters")
 #> [1] 20
 #> attr(,"pr_calls")

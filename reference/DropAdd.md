@@ -15,7 +15,6 @@ DropAdd(
   plateau = 5000L,
   maxIter = NULL,
   timeBudgetS = Inf,
-  seed = NULL,
   progress = getOption("MaxMin.progress", interactive()),
   points = NULL,
   .verify = FALSE,
@@ -53,13 +52,6 @@ DropAdd(
   boundaries. Default `Inf` (no ceiling, fully reproducible). A finite
   value caps runtime but makes the result machine-dependent.
 
-- seed:
-
-  Optional integer; if non-NULL, `set.seed(seed)` is called at entry.
-  The algorithm is deterministic up to ties (broken by smallest index),
-  so the seed has no observable effect on the solution; it is exposed
-  for API parity with stochastic methods.
-
 - progress:
 
   Logical; show a start/done status line. Default: `TRUE` in interactive
@@ -91,7 +83,9 @@ DropAdd(
 ## Value
 
 An integer vector of length `m` containing the 1-based selected indices
-(sorted ascending), with attributes:
+**sorted ascending** (unlike
+[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md),
+which returns farthest-first order), with attributes:
 
 - score:
 

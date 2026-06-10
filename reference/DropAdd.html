@@ -17,7 +17,7 @@ the streamlined neighbour-evaluation tricks of Algorithms 3 and 4."></head><body
 
     <a class="navbar-brand me-2" href="../index.html">MaxMin</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -61,7 +61,6 @@ the streamlined neighbour-evaluation tricks of Algorithms 3 and 4.</p>
 <span>  plateau <span class="op">=</span> <span class="fl">5000L</span>,</span>
 <span>  maxIter <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  timeBudgetS <span class="op">=</span> <span class="cn">Inf</span>,</span>
-<span>  seed <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  progress <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"MaxMin.progress"</span>, <span class="fu"><a href="https://rdrr.io/r/base/interactive.html" class="external-link">interactive</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  points <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  .verify <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -102,13 +101,6 @@ iteration boundaries. Default <code>Inf</code> (no ceiling, fully reproducible).
 A finite value caps runtime but makes the result machine-dependent.</p></dd>
 
 
-<dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
-<dd><p>Optional integer; if non-NULL, <code>set.seed(seed)</code> is called
-at entry. The algorithm is deterministic up to ties (broken by smallest
-index), so the seed has no observable effect on the solution; it is
-exposed for API parity with stochastic methods.</p></dd>
-
-
 <dt id="arg-progress">progress<a class="anchor" aria-label="anchor" href="#arg-progress"></a></dt>
 <dd><p>Logical; show a start/done status line. Default: <code>TRUE</code> in
 interactive sessions, <code>FALSE</code> otherwise
@@ -140,7 +132,8 @@ and added index sequences are written into it as <code>drops</code> and <code>ad
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>An integer vector of length <code>m</code> containing the 1-based selected
-indices (sorted ascending), with attributes:</p><dl><dt>score</dt>
+indices <strong>sorted ascending</strong> (unlike <code><a href="FarFirst.html">FarFirst()</a></code>, which returns
+farthest-first order), with attributes:</p><dl><dt>score</dt>
 <dd><p>numeric(1), achieved MaxMin objective
 \(\min_{i \ne j \in S} d_{ij}\).</p></dd>
 

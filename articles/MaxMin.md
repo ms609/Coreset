@@ -33,7 +33,7 @@ data(eurodist)
 set.seed(1)
 
 # Select 4 maximally dispersed cities
-idx <- FarFirst(eurodist, n = 4L)
+idx <- FarFirst(eurodist, m = 4L)
 MinDist(eurodist, idx)
 #> [1] 2187
 
@@ -60,7 +60,7 @@ MaxMin provides four solvers, and a minimum-distance calculator:
 |----|----|----|----|
 | [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) | Good (2-approximation) | Very fast | No |
 | [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) | High (≈ 99 % optimal) | Fast | No |
-| [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) | Highest | Moderate | Yes (`seed =`) |
+| [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) | Highest | Moderate | Yes ([`set.seed()`](https://rdrr.io/r/base/Random.html)) |
 | [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md) | Optimal (NP-hard) | Slow | No |
 | [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md) | Scoring only | Instant | No |
 
@@ -83,7 +83,7 @@ pass produced the highest T_(k).
 ``` r
 
 set.seed(1)
-picks <- FarFirst(eurodist, n = 6L)   # default: best of three random starts
+picks <- FarFirst(eurodist, m = 6L)   # default: best of three random starts
 ```
 
 More random starts, or pivots of your own devising, can be accomplished
@@ -95,16 +95,16 @@ set.seed(1)
 nCities <- attr(eurodist, "Size")
 # Use 5 random starts
 pivots <- sample(nCities, 5)
-picks <- FarFirst(eurodist, n = 6L, pivots = pivots)
+picks <- FarFirst(eurodist, m = 6L, pivots = pivots)
 ```
 
 Peripheral seeds may also be selected by deterministic methods: one or
-more such methods can be selected via the `seed` argument. The best
+more such methods can be selected via the `method` argument. The best
 solution found will be returned.
 
 ``` r
 
-picks <- FarFirst(eurodist, n = 6L, seed = c("diameter", "anti_medoid"))
+picks <- FarFirst(eurodist, m = 6L, method = c("diameter", "anti_medoid"))
 MinDist(eurodist, picks)
 #> [1] 1014
 
@@ -119,7 +119,7 @@ distance matrix. This function will be passed one index `i`, and should
 returns the distances from object `i` to all N objects — one column of
 the matrix.
 [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
-calls it $`n`$ times, so the full N×N matrix is never built. `N`, the
+calls it $`m`$ times, so the full N×N matrix is never built. `N`, the
 number of objects, must be supplied.
 
 ``` r
@@ -130,7 +130,7 @@ StateDist <- function(i) {
   diffs <- sweep(arrestTypes, 2, unlist(arrestTypes[i, ]), "-")
   sqrt(rowSums(diffs ^ 2))
 }
-idx <- FarFirst(StateDist, n = 4L, N = nrow(arrestTypes), seed = 1L)
+idx <- FarFirst(StateDist, m = 4L, N = nrow(arrestTypes), method = 1L)
 arrestTypes[idx, ]
 #>                Murder Assault Rape
 #> Alabama          13.2     236 21.2
@@ -156,7 +156,7 @@ attr(picksDA, "score")  # T_k achieved
 attr(picksDA, "iters")      # iterations completed
 #> [1] 516
 attr(picksDA, "time_s")     # wall-clock seconds
-#> [1] 0.001
+#> [1] 0
 ```
 
 The algorithm terminates after `plateau` iterations do not improve
@@ -171,12 +171,15 @@ combines a *randomised* greedy construction phase with extended local
 search and then refines an elite set of good solutions by interpolating
 between elite-pair trajectories (*path relinking*). It achieves the
 highest T_(k) of the three heuristics, at a proportionally higher cost.
-Because the construction phase is stochastic, always set `seed` for
-reproducibility:
+Because the construction phase is stochastic, call
+[`set.seed()`](https://rdrr.io/r/base/Random.html) before
+[`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) for a
+reproducible run:
 
 ``` r
 
-res_gr <- Grasp(eurodist, m = 6L, plateau = 50L, seed = 42L)
+set.seed(42)
+res_gr <- Grasp(eurodist, m = 6L, plateau = 50L)
 
 labels(eurodist)[res_gr]
 #> [1] "Athens"    "Barcelona" "Calais"    "Lisbon"    "Stockholm" "Vienna"
@@ -205,9 +208,10 @@ m   <- 8L
 
 ``` r
 
-idx_ff <- FarFirst(d50, n = m)
+idx_ff <- FarFirst(d50, m)
 res_da50 <- DropAdd(d50, m = m, plateau = 500L)
-res_gr50 <- Grasp(d50, m = m, plateau = 50L, seed = 42L)
+set.seed(42)
+res_gr50 <- Grasp(d50, m = m, plateau = 50L)
 ```
 
 Even a small difference in T_(k) can correspond to a meaningfully more
@@ -299,7 +303,7 @@ res_ex$objective
 #> [1] 1.616311
 
 # Compare to the greedy heuristic on the same instance
-res_ff30 <- FarFirst(d30, n = 6L)
+res_ff30 <- FarFirst(d30, m = 6L)
 c(exact    = res_ex$objective,
   Gonzalez = MinDist(d30, res_ff30))
 #>    exact Gonzalez 
@@ -336,7 +340,7 @@ MinDist(points = pts, idx = idx_ff)                # from coordinates
 |----|----|
 | Speed matters most, N up to a few thousand | [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) (ensemble default) |
 | Deterministic, reproducible refinement | [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) |
-| Best quality, set `seed` for reproducibility | `Grasp(seed = ...)` |
+| Best quality, [`set.seed()`](https://rdrr.io/r/base/Random.html) for reproducibility | [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) |
 | N \> 46 000 (distance matrix infeasible) | `DropAdd(points = ...)` or `FarFirst(points = ...)` |
 | Arbitrary metric with no coordinate embedding | `FarFirst(<column function>, N = ...)` |
 | Proven optimum, N ≤ ~ 25–30, **highs** installed | [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md) |
@@ -345,13 +349,14 @@ The heuristics are complementary:
 [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) is
 O(*N* · *m*) and deterministic — an instant first result.
 [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) is
-deterministic and reproducible (no RNG), typically reaching ≈ 99 % of
-optimal; the `seed` parameter governs only the RNG used for
-tie-breaking, not the algorithm itself.
+deterministic and reproducible (no RNG): ties are broken by smallest
+index, so a given instance always yields the same selection, typically
+reaching ≈ 99 % of optimal.
 [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) is
 stochastic and usually edges out
 [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) on
-T_(k), but requires a `seed` for reproducibility.
+T_(k); call [`set.seed()`](https://rdrr.io/r/base/Random.html) before it
+for a reproducible run.
 
 ## Related packages
 

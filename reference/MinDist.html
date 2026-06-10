@@ -11,7 +11,7 @@ k-centre objective \(T_k\). Higher values indicate a more spread-out
 
     <a class="navbar-brand me-2" href="../index.html">MaxMin</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -72,6 +72,19 @@ unused). For Euclidean data the result is identical to the matrix path.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>Numeric scalar; <code>NA_real_</code> if <code>length(idx) &lt; 2</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>The solvers in this package (<code><a href="FarFirst.html">FarFirst()</a></code>, <code><a href="DropAdd.html">DropAdd()</a></code>, <code><a href="Grasp.html">Grasp()</a></code>)
+already attach the achieved \(T_k\) as a <code>score</code> attribute, so
+<code>MinDist()</code> is mainly for scoring a selection produced elsewhere – a
+matrix-free or externally generated index set – or for re-scoring an
+existing selection against a different distance matrix.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="FarFirst.html">FarFirst()</a></code>, <code><a href="DropAdd.html">DropAdd()</a></code>, <code><a href="Grasp.html">Grasp()</a></code> and <code><a href="ExactMaxMin.html">ExactMaxMin()</a></code>, whose
+results already carry the objective.</p></div>
     </div>
 
     <div class="section level2">

@@ -14,8 +14,8 @@ peripheral seeds. The deterministic `O(N)` anchors (`"centroid"`,
 ``` r
 FarFirst(
   d = NULL,
-  n,
-  seed = .kDefaultEnsemble,
+  m,
+  method = .kDefaultEnsemble,
   pivots = NULL,
   points = NULL,
   N = NULL,
@@ -31,22 +31,25 @@ FarFirst(
   distances, or a distance function (see *§Distance function*). Ignored
   when `points` is supplied.
 
-- n:
+- m:
 
-  Integer: number of points to select. If `n > N`, all `N` indices are
+  Integer: number of points to select. If `m > N`, all `N` indices are
   returned in Gonzalez (farthest-first) order.
 
-- seed:
+- method:
 
-  Integer or character (scalar or vector). An **integer** gives the
-  explicit 1-based index of the first selected point (a single bare
-  Gonzalez pass). A **length-1 character** names a single deterministic
-  seeding strategy run as one bare pass: `"centroid"` (coordinates
-  only), `"peripheral"` (two-sweep diameter-endpoint approximation),
-  `"diameter"`, `"anti_medoid"`, `"medoid"`, `"rowsum"`, `"rownorm"`, or
-  `"first"` (index 1). A **length \> 1 character vector** – or the lone
-  `"random_furthest"` token – requests an ensemble: each named anchor
-  runs a full Gonzalez pass and the best result by
+  Integer or character (scalar or vector); how to seed the greedy pass
+  (matching the `method` argument of
+  [`MaxMinSeed()`](https://ms609.github.io/MaxMin/reference/MaxMinSeed.md)).
+  An **integer** gives the explicit 1-based index of the first selected
+  point (a single bare Gonzalez pass). A **length-1 character** names a
+  single deterministic seeding strategy run as one bare pass:
+  `"centroid"` (coordinates only), `"peripheral"` (two-sweep
+  diameter-endpoint approximation), `"diameter"`, `"anti_medoid"`,
+  `"medoid"`, `"rowsum"`, `"rownorm"`, or `"first"` (index 1). A
+  **length \> 1 character vector** – or the lone `"random_furthest"`
+  token – requests an ensemble: each named anchor runs a full Gonzalez
+  pass and the best result by
   [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md) is
   returned with `strategy_results` and `winning_strategy` (character
   vector of all tied-best strategies) attributes. The
@@ -61,8 +64,8 @@ FarFirst(
   random starts; see `pivots`). See
   [`MaxMinSeed()`](https://ms609.github.io/MaxMin/reference/MaxMinSeed.md)
   for anchor definitions. On the distance-column oracle path only an
-  integer `seed` is honoured; a named or ensemble `seed` there warns and
-  falls back to the peripheral seed (see *Distance-column oracle*).
+  integer `method` is honoured; a named or ensemble `method` there warns
+  and falls back to the peripheral seed (see *Distance-column oracle*).
 
 - pivots:
 
@@ -74,13 +77,13 @@ FarFirst(
   selection). Pass `integer(0)`, `NA`, or `NULL` to disable the random
   starts, or an index vector to choose the pivots (and their count)
   explicitly. Disabling the random starts errors under the default
-  `seed` (which names only `"random_furthest"`, leaving no anchor); pair
-  it with a deterministic `seed` such as `"peripheral"`.
+  `method` (which names only `"random_furthest"`, leaving no anchor);
+  pair it with a deterministic `method` such as `"peripheral"`.
 
 - points:
 
   Optional `N x dim` numeric coordinate matrix. When supplied, the
-  selection is computed directly from coordinates in `O(N * n * dim)`
+  selection is computed directly from coordinates in `O(N * m * dim)`
   time and `O(N)` memory, never materialising the `N x N` distance
   matrix (`d` is then unused). For Euclidean data the returned indices
   are identical to the matrix path. Only complete (non-`NA`) data is
@@ -101,7 +104,14 @@ FarFirst(
 
 ## Value
 
-Integer vector of length `min(n, N)` of selected indices.
+Integer vector of length `min(m, N)` of selected indices, in
+farthest-first (greedy) selection order – **not** sorted (unlike
+[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md),
+[`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) and
+`ExactMaxMin()$indices`, which return ascending indices). The achieved
+\\T_k\\ (the selection's minimum pairwise distance) is attached as
+attribute `score`. An ensemble `method` additionally carries
+`strategy_results` and `winning_strategy` attributes.
 
 ## Details
 
@@ -157,6 +167,8 @@ d <- dist(pts)
 # Default: best of three random-furthest starts (set.seed for reproducibility):
 FarFirst(d, 5L)
 #> [1] 14  4 26  5 28
+#> attr(,"score")
+#> [1] 1.765223
 #> attr(,"strategy_results")
 #> attr(,"strategy_results")$random_furthest1
 #> attr(,"strategy_results")$random_furthest1$s1
@@ -196,6 +208,8 @@ FarFirst(d, 5L)
 # More random-furthest starts (length of `pivots` sets the count):
 FarFirst(d, 5L, pivots = sample.int(nrow(as.matrix(d)), 8L))
 #> [1] 14  4 26  5 28
+#> attr(,"score")
+#> [1] 1.765223
 #> attr(,"strategy_results")
 #> attr(,"strategy_results")$random_furthest1
 #> attr(,"strategy_results")$random_furthest1$s1
@@ -291,6 +305,8 @@ FarFirst(d, 5L, pivots = sample.int(nrow(as.matrix(d)), 8L))
 # Or choose the pivots explicitly:
 FarFirst(d, 5L, pivots = c(1L, 10L, 20L))
 #> [1]  5 26 14 21 28
+#> attr(,"score")
+#> [1] 1.765223
 #> attr(,"strategy_results")
 #> attr(,"strategy_results")$random_furthest1
 #> attr(,"strategy_results")$random_furthest1$s1
@@ -328,8 +344,10 @@ FarFirst(d, 5L, pivots = c(1L, 10L, 20L))
 #> attr(,"winning_strategy")
 #> [1] "random_furthest1"
 # Custom two-anchor ensemble:
-FarFirst(d, 5L, seed = c("diameter", "anti_medoid"))
+FarFirst(d, 5L, method = c("diameter", "anti_medoid"))
 #> [1] 14  4 26  5 28
+#> attr(,"score")
+#> [1] 1.765223
 #> attr(,"strategy_results")
 #> attr(,"strategy_results")$diameter
 #> attr(,"strategy_results")$diameter$s1
@@ -356,14 +374,20 @@ FarFirst(d, 5L, seed = c("diameter", "anti_medoid"))
 #> attr(,"winning_strategy")
 #> [1] "diameter"    "anti_medoid"
 # A single strategy:
-FarFirst(d, 5L, seed = "diameter")
+FarFirst(d, 5L, method = "diameter")
 #> [1] 14  4 26  5 28
-# An explicit start index (integer seed):
-FarFirst(d, 5L, seed = 1L)
+#> attr(,"score")
+#> [1] 1.765223
+# An explicit start index (integer method):
+FarFirst(d, 5L, method = 1L)
 #> [1]  1  5 24  4 14
+#> attr(,"score")
+#> [1] 1.701019
 # Matrix-free coordinate path (identical result, O(N) memory):
-FarFirst(n = 5L, points = pts, seed = 1L)
+FarFirst(m = 5L, points = pts, method = 1L)
 #> [1]  1  5 24  4 14
+#> attr(,"score")
+#> [1] 1.701019
 
 # Distance-column oracle: supply one column at a time, never the full matrix.
 data("USArrests")
@@ -372,7 +396,7 @@ StateDist <- function(i) {
   diffs <- sweep(arrestTypes, 2, unlist(arrestTypes[i, ]), "-")
   sqrt(rowSums(diffs ^ 2))
 }
-idx <- FarFirst(StateDist, n = 4L, N = nrow(arrestTypes), seed = 1L)
+idx <- FarFirst(StateDist, m = 4L, N = nrow(arrestTypes), method = 1L)
 arrestTypes[idx, ]
 #>                Murder Assault Rape
 #> Alabama          13.2     236 21.2

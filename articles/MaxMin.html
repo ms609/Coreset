@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">MaxMin</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -82,7 +82,7 @@
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Select 4 maximally dispersed cities</span></span>
-<span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">eurodist</span>, n <span class="op">=</span> <span class="fl">4L</span><span class="op">)</span></span>
+<span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">eurodist</span>, m <span class="op">=</span> <span class="fl">4L</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/MinDist.html">MinDist</a></span><span class="op">(</span><span class="va">eurodist</span>, <span class="va">idx</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 2187</span></span>
 <span></span>
@@ -122,7 +122,7 @@
 <td><code><a href="../reference/Grasp.html">Grasp()</a></code></td>
 <td>Highest</td>
 <td>Moderate</td>
-<td>Yes (<code>seed =</code>)</td>
+<td>Yes (<code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code>)</td>
 </tr>
 <tr class="even">
 <td><code><a href="../reference/ExactMaxMin.html">ExactMaxMin()</a></code></td>
@@ -146,7 +146,7 @@
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
-<span><span class="va">picks</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">eurodist</span>, n <span class="op">=</span> <span class="fl">6L</span><span class="op">)</span>   <span class="co"># default: best of three random starts</span></span></code></pre></div>
+<span><span class="va">picks</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">eurodist</span>, m <span class="op">=</span> <span class="fl">6L</span><span class="op">)</span>   <span class="co"># default: best of three random starts</span></span></code></pre></div>
 </div>
 <p>More random starts, or pivots of your own devising, can be accomplished by a vector of pivot points to a <code>pivots</code> vector.</p>
 <div class="cell">
@@ -155,19 +155,19 @@
 <span><span class="va">nCities</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">eurodist</span>, <span class="st">"Size"</span><span class="op">)</span></span>
 <span><span class="co"># Use 5 random starts</span></span>
 <span><span class="va">pivots</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="va">nCities</span>, <span class="fl">5</span><span class="op">)</span></span>
-<span><span class="va">picks</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">eurodist</span>, n <span class="op">=</span> <span class="fl">6L</span>, pivots <span class="op">=</span> <span class="va">pivots</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">picks</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">eurodist</span>, m <span class="op">=</span> <span class="fl">6L</span>, pivots <span class="op">=</span> <span class="va">pivots</span><span class="op">)</span></span></code></pre></div>
 </div>
-<p>Peripheral seeds may also be selected by deterministic methods: one or more such methods can be selected via the <code>seed</code> argument. The best solution found will be returned.</p>
+<p>Peripheral seeds may also be selected by deterministic methods: one or more such methods can be selected via the <code>method</code> argument. The best solution found will be returned.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">picks</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">eurodist</span>, n <span class="op">=</span> <span class="fl">6L</span>, seed <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"diameter"</span>, <span class="st">"anti_medoid"</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">picks</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">eurodist</span>, m <span class="op">=</span> <span class="fl">6L</span>, method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"diameter"</span>, <span class="st">"anti_medoid"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/MinDist.html">MinDist</a></span><span class="op">(</span><span class="va">eurodist</span>, <span class="va">picks</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 1014</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">picks</span>, <span class="st">"winning_strategy"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "diameter"    "anti_medoid"</span></span></code></pre></div>
 </div>
-<p>When only pairwise distances between objects are known — there are no coordinates to work from — and computing or storing all N×N distances at once would be too expensive, a function may be passed in place of the distance matrix. This function will be passed one index <code>i</code>, and should returns the distances from object <code>i</code> to all N objects — one column of the matrix. <code><a href="../reference/FarFirst.html">FarFirst()</a></code> calls it <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>n</mi><annotation encoding="application/x-tex">n</annotation></semantics></math> times, so the full N×N matrix is never built. <code>N</code>, the number of objects, must be supplied.</p>
+<p>When only pairwise distances between objects are known — there are no coordinates to work from — and computing or storing all N×N distances at once would be too expensive, a function may be passed in place of the distance matrix. This function will be passed one index <code>i</code>, and should returns the distances from object <code>i</code> to all N objects — one column of the matrix. <code><a href="../reference/FarFirst.html">FarFirst()</a></code> calls it <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>m</mi><annotation encoding="application/x-tex">m</annotation></semantics></math> times, so the full N×N matrix is never built. <code>N</code>, the number of objects, must be supplied.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"USArrests"</span><span class="op">)</span></span>
@@ -176,7 +176,7 @@
 <span>  <span class="va">diffs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sweep.html" class="external-link">sweep</a></span><span class="op">(</span><span class="va">arrestTypes</span>, <span class="fl">2</span>, <span class="fu"><a href="https://rdrr.io/r/base/unlist.html" class="external-link">unlist</a></span><span class="op">(</span><span class="va">arrestTypes</span><span class="op">[</span><span class="va">i</span>, <span class="op">]</span><span class="op">)</span>, <span class="st">"-"</span><span class="op">)</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowSums</a></span><span class="op">(</span><span class="va">diffs</span> <span class="op">^</span> <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
-<span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">StateDist</span>, n <span class="op">=</span> <span class="fl">4L</span>, N <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">arrestTypes</span><span class="op">)</span>, seed <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
+<span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">StateDist</span>, m <span class="op">=</span> <span class="fl">4L</span>, N <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">arrestTypes</span><span class="op">)</span>, method <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
 <span><span class="va">arrestTypes</span><span class="op">[</span><span class="va">idx</span>, <span class="op">]</span></span>
 <span><span class="co">#&gt;                Murder Assault Rape</span></span>
 <span><span class="co">#&gt; Alabama          13.2     236 21.2</span></span>
@@ -198,15 +198,16 @@
 <span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">picksDA</span>, <span class="st">"iters"</span><span class="op">)</span>      <span class="co"># iterations completed</span></span>
 <span><span class="co">#&gt; [1] 516</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">picksDA</span>, <span class="st">"time_s"</span><span class="op">)</span>     <span class="co"># wall-clock seconds</span></span>
-<span><span class="co">#&gt; [1] 0.001</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0</span></span></code></pre></div>
 </div>
 <p>The algorithm terminates after <code>plateau</code> iterations do not improve T<sub>k</sub>. Where <em>N</em> is too large for a distance matrix to fit in memory (roughly N &gt; 46 000), pass a coordinate matrix via <code>DropAdd(points = ...)</code>.</p>
 </section><section class="level2"><h2 id="grasp-with-path-relinking">GRASP with path relinking<a class="anchor" aria-label="anchor" href="#grasp-with-path-relinking"></a>
 </h2>
-<p><strong>GRASP + path relinking</strong> <span class="citation" data-cites="Resende2010">(<a href="#ref-Resende2010" role="doc-biblioref">Resende et al., 2010</a>)</span> combines a <em>randomised</em> greedy construction phase with extended local search and then refines an elite set of good solutions by interpolating between elite-pair trajectories (<em>path relinking</em>). It achieves the highest T<sub>k</sub> of the three heuristics, at a proportionally higher cost. Because the construction phase is stochastic, always set <code>seed</code> for reproducibility:</p>
+<p><strong>GRASP + path relinking</strong> <span class="citation" data-cites="Resende2010">(<a href="#ref-Resende2010" role="doc-biblioref">Resende et al., 2010</a>)</span> combines a <em>randomised</em> greedy construction phase with extended local search and then refines an elite set of good solutions by interpolating between elite-pair trajectories (<em>path relinking</em>). It achieves the highest T<sub>k</sub> of the three heuristics, at a proportionally higher cost. Because the construction phase is stochastic, call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> before <code><a href="../reference/Grasp.html">Grasp()</a></code> for a reproducible run:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">res_gr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Grasp.html">Grasp</a></span><span class="op">(</span><span class="va">eurodist</span>, m <span class="op">=</span> <span class="fl">6L</span>, plateau <span class="op">=</span> <span class="fl">50L</span>, seed <span class="op">=</span> <span class="fl">42L</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
+<span><span class="va">res_gr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Grasp.html">Grasp</a></span><span class="op">(</span><span class="va">eurodist</span>, m <span class="op">=</span> <span class="fl">6L</span>, plateau <span class="op">=</span> <span class="fl">50L</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/labels.html" class="external-link">labels</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span><span class="op">[</span><span class="va">res_gr</span><span class="op">]</span></span>
 <span><span class="co">#&gt; [1] "Athens"    "Barcelona" "Calais"    "Lisbon"    "Stockholm" "Vienna"</span></span>
@@ -228,9 +229,10 @@
 </div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">idx_ff</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">d50</span>, n <span class="op">=</span> <span class="va">m</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">idx_ff</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">d50</span>, <span class="va">m</span><span class="op">)</span></span>
 <span><span class="va">res_da50</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/DropAdd.html">DropAdd</a></span><span class="op">(</span><span class="va">d50</span>, m <span class="op">=</span> <span class="va">m</span>, plateau <span class="op">=</span> <span class="fl">500L</span><span class="op">)</span></span>
-<span><span class="va">res_gr50</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Grasp.html">Grasp</a></span><span class="op">(</span><span class="va">d50</span>, m <span class="op">=</span> <span class="va">m</span>, plateau <span class="op">=</span> <span class="fl">50L</span>, seed <span class="op">=</span> <span class="fl">42L</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
+<span><span class="va">res_gr50</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Grasp.html">Grasp</a></span><span class="op">(</span><span class="va">d50</span>, m <span class="op">=</span> <span class="va">m</span>, plateau <span class="op">=</span> <span class="fl">50L</span><span class="op">)</span></span></code></pre></div>
 </div>
 <p>Even a small difference in T<sub>k</sub> can correspond to a meaningfully more dispersed selection.</p>
 <div class="cell">
@@ -305,7 +307,7 @@
 <span><span class="co">#&gt; [1] 1.616311</span></span>
 <span></span>
 <span><span class="co"># Compare to the greedy heuristic on the same instance</span></span>
-<span><span class="va">res_ff30</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">d30</span>, n <span class="op">=</span> <span class="fl">6L</span><span class="op">)</span></span>
+<span><span class="va">res_ff30</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">d30</span>, m <span class="op">=</span> <span class="fl">6L</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>exact    <span class="op">=</span> <span class="va">res_ex</span><span class="op">$</span><span class="va">objective</span>,</span>
 <span>  Gonzalez <span class="op">=</span> <span class="fu"><a href="../reference/MinDist.html">MinDist</a></span><span class="op">(</span><span class="va">d30</span>, <span class="va">res_ff30</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    exact Gonzalez </span></span>
@@ -349,8 +351,8 @@
 <td><code><a href="../reference/DropAdd.html">DropAdd()</a></code></td>
 </tr>
 <tr class="odd">
-<td>Best quality, set <code>seed</code> for reproducibility</td>
-<td><code>Grasp(seed = ...)</code></td>
+<td>Best quality, <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> for reproducibility</td>
+<td><code><a href="../reference/Grasp.html">Grasp()</a></code></td>
 </tr>
 <tr class="even">
 <td>N &gt; 46 000 (distance matrix infeasible)</td>
@@ -368,7 +370,7 @@
 </tr>
 </tbody>
 </table>
-<p>The heuristics are complementary: <code><a href="../reference/FarFirst.html">FarFirst()</a></code> is O(<em>N</em> · <em>m</em>) and deterministic — an instant first result. <code><a href="../reference/DropAdd.html">DropAdd()</a></code> is deterministic and reproducible (no RNG), typically reaching ≈ 99 % of optimal; the <code>seed</code> parameter governs only the RNG used for tie-breaking, not the algorithm itself. <code><a href="../reference/Grasp.html">Grasp()</a></code> is stochastic and usually edges out <code><a href="../reference/DropAdd.html">DropAdd()</a></code> on T<sub>k</sub>, but requires a <code>seed</code> for reproducibility.</p>
+<p>The heuristics are complementary: <code><a href="../reference/FarFirst.html">FarFirst()</a></code> is O(<em>N</em> · <em>m</em>) and deterministic — an instant first result. <code><a href="../reference/DropAdd.html">DropAdd()</a></code> is deterministic and reproducible (no RNG): ties are broken by smallest index, so a given instance always yields the same selection, typically reaching ≈ 99 % of optimal. <code><a href="../reference/Grasp.html">Grasp()</a></code> is stochastic and usually edges out <code><a href="../reference/DropAdd.html">DropAdd()</a></code> on T<sub>k</sub>; call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> before it for a reproducible run.</p>
 </section><section class="level2"><h2 id="related-packages">Related packages<a class="anchor" aria-label="anchor" href="#related-packages"></a>
 </h2>
 <p>The CRAN package <a href="https://CRAN.R-project.org/package=maximin" class="external-link"><strong>maximin</strong></a> constructs continuous space-filling designs by generating new points.</p>

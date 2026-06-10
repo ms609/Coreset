@@ -99,6 +99,8 @@ pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
 MaxMinSeed(d, method = "diameter")
 #> [1] 14
-FarFirst(d, 5L, seed = MaxMinSeed(d, method = "diameter"))
+FarFirst(d, 5L, method = MaxMinSeed(d, method = "diameter"))
 #> [1] 14  4 26  5 28
+#> attr(,"score")
+#> [1] 1.765223
 ```

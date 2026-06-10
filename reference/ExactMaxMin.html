@@ -25,7 +25,7 @@ external ground-truth reference on small instances, not a scalable method."></he
 
     <a class="navbar-brand me-2" href="../index.html">MaxMin</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -108,7 +108,10 @@ Default: <code>TRUE</code> in interactive sessions, <code>FALSE</code> otherwise
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A list with fields</p><dl><dt>indices</dt>
+    <p>Unlike <code><a href="DropAdd.html">DropAdd()</a></code>, <code><a href="Grasp.html">Grasp()</a></code> and <code><a href="FarFirst.html">FarFirst()</a></code> (which each return a
+bare integer vector carrying a <code>score</code> attribute), <code>ExactMaxMin()</code>
+deliberately returns a list, since it reports both the optimum and a proof
+status. The fields are</p><dl><dt>indices</dt>
 <dd><p>Integer vector of length <code>m</code>, sorted ascending: the
 selected points.</p></dd>
 

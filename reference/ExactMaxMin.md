@@ -53,7 +53,13 @@ ExactMaxMin(
 
 ## Value
 
-A list with fields
+Unlike
+[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md),
+[`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) and
+[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
+(which each return a bare integer vector carrying a `score` attribute),
+`ExactMaxMin()` deliberately returns a list, since it reports both the
+optimum and a proof status. The fields are
 
 - indices:
 

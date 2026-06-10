@@ -33,6 +33,25 @@ MinDist(d = NULL, idx, points = NULL)
 
 Numeric scalar; `NA_real_` if `length(idx) < 2`.
 
+## Details
+
+The solvers in this package
+([`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md),
+[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md),
+[`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md)) already
+attach the achieved \\T_k\\ as a `score` attribute, so `MinDist()` is
+mainly for scoring a selection produced elsewhere – a matrix-free or
+externally generated index set – or for re-scoring an existing selection
+against a different distance matrix.
+
+## See also
+
+[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md),
+[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md),
+[`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) and
+[`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md),
+whose results already carry the objective.
+
 ## Examples
 
 ``` r
