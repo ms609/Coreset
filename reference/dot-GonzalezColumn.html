@@ -4,12 +4,12 @@ when d is a function); see that function's Distance-column oracle section
 for the user-facing contract. At each greedy step the distances from the
 newly selected element to all N elements are obtained from colFn, and a
 running nearest-distance vector is maintained, so the N x N distance matrix
-is never materialised: O(N * n) oracle calls and O(N) memory."><meta property="og:description" content="Implements the distance-column oracle path of FarFirst() (dispatched there
+is never materialised: O(N * m) oracle calls and O(N) memory."><meta property="og:description" content="Implements the distance-column oracle path of FarFirst() (dispatched there
 when d is a function); see that function's Distance-column oracle section
 for the user-facing contract. At each greedy step the distances from the
 newly selected element to all N elements are obtained from colFn, and a
 running nearest-distance vector is maintained, so the N x N distance matrix
-is never materialised: O(N * n) oracle calls and O(N) memory."></head><body>
+is never materialised: O(N * m) oracle calls and O(N) memory."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -17,7 +17,7 @@ is never materialised: O(N * n) oracle calls and O(N) memory."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">MaxMin</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9001</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,7 +50,7 @@ when <code>d</code> is a function); see that function's <em>Distance-column orac
 for the user-facing contract. At each greedy step the distances from the
 newly selected element to all <code>N</code> elements are obtained from <code>colFn</code>, and a
 running nearest-distance vector is maintained, so the <code>N x N</code> distance matrix
-is never materialised: <code>O(N * n)</code> oracle calls and <code>O(N)</code> memory.</p>
+is never materialised: <code>O(N * m)</code> oracle calls and <code>O(N)</code> memory.</p>
     </div>
 
     <div class="section level2">
@@ -58,7 +58,7 @@ is never materialised: <code>O(N * n)</code> oracle calls and <code>O(N)</code> 
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">.GonzalezColumn</span><span class="op">(</span></span>
 <span>  <span class="va">colFn</span>,</span>
 <span>  <span class="va">N</span>,</span>
-<span>  <span class="va">n</span>,</span>
+<span>  <span class="va">m</span>,</span>
 <span>  first <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  progress <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"MaxMin.progress"</span>, <span class="fu"><a href="https://rdrr.io/r/base/interactive.html" class="external-link">interactive</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -78,8 +78,8 @@ including <code>i</code>; or (ii) every other element. See <code><a href="dot-Di
 <dd><p>Integer: the total number of elements.</p></dd>
 
 
-<dt id="arg-n">n<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
-<dd><p>Integer: number of elements to select. If <code>n &gt; N</code>, all <code>N</code> indices
+<dt id="arg-m">m<a class="anchor" aria-label="anchor" href="#arg-m"></a></dt>
+<dd><p>Integer: number of elements to select. If <code>m &gt; N</code>, all <code>N</code> indices
 are returned in Gonzalez (farthest-first) order.</p></dd>
 
 
@@ -96,7 +96,7 @@ from that (a diameter-endpoint approximation).</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Integer vector of length <code>min(n, N)</code> of selected indices.</p>
+    <p>Integer vector of length <code>min(m, N)</code> of selected indices.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

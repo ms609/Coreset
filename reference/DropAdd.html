@@ -17,7 +17,7 @@ the streamlined neighbour-evaluation tricks of Algorithms 3 and 4."></head><body
 
     <a class="navbar-brand me-2" href="../index.html">MaxMin</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9001</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -163,6 +163,11 @@ the point in \(Z \setminus X\) maximising lexicographically
 \((\mathrm{minDist}, \mathrm{sumDist})\) is added. The FIFO
 invariant guarantees that across any window of \(m\) iterations every
 initially-selected point is dropped exactly once before any re-eviction.</p>
+<p>Time budget behaviour. The time budget (<code>timeBudgetS</code>) is checked at
+most once every 256 iterations (matrix-free path) or 1024 iterations
+(matrix path). On large instances where each iteration is slow, the actual
+elapsed time may exceed the specified budget by up to one iteration's worth
+of computation.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

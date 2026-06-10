@@ -9,7 +9,7 @@ Bit-identical selection to the matrix path on Euclidean data.
 ## Usage
 
 ``` r
-.MaximinFromPoints(points, n, first, mask = 0L)
+.MaximinFromPoints(points, m, first, mask = 0L)
 ```
 
 ## Arguments
@@ -18,13 +18,13 @@ Bit-identical selection to the matrix path on Euclidean data.
 
   A `double` `N x dim` coordinate matrix.
 
-- n:
+- m:
 
-  Integer subsample size.
+  Integer: target subsample size (`>= 1`).
 
 - first:
 
-  Integer index of the first selected point.
+  Integer: index of the first selected point.
 
 - mask:
 

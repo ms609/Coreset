@@ -12,7 +12,7 @@ the `"random_furthest"` starts also match the matrix path.
 ``` r
 .GonzEnsembleFromPoints(
   points,
-  n,
+  m,
   anchors = .kDefaultEnsemble,
   pivots = integer(0)
 )
@@ -24,7 +24,7 @@ the `"random_furthest"` starts also match the matrix path.
 
   A `double` `N x dim` coordinate matrix.
 
-- n:
+- m:
 
   Integer subset size.
 

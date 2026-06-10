@@ -13,8 +13,14 @@ already a matrix.
 
 - d:
 
-  A `dist` object or a square symmetric numeric matrix.
+  A `dist` object or a square numeric matrix.
 
 ## Value
 
 A square numeric matrix.
+
+## Details
+
+Symmetry is not checked; an `O(N^2)` check is intentionally omitted.
+Asymmetric matrices are silently accepted, and the algorithm treats
+\\d\_{ij}\\ and \\d\_{ji}\\ as independent values.

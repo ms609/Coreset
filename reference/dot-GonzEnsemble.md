@@ -12,7 +12,7 @@ labelled `random_furthest1`, `random_furthest2`, ...) attributes.
 ## Usage
 
 ``` r
-.GonzEnsemble(d, n, anchors = "peripheral", pivots = integer(0))
+.GonzEnsemble(d, m, anchors = "peripheral", pivots = integer(0))
 ```
 
 ## Arguments
@@ -21,9 +21,9 @@ labelled `random_furthest1`, `random_furthest2`, ...) attributes.
 
   Square numeric distance matrix (already coerced).
 
-- n:
+- m:
 
-  Integer subset size (`1 <= n < nrow(d)`).
+  Integer subset size (`1 <= m < nrow(d)`).
 
 - anchors:
 
