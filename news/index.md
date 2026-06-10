@@ -11,27 +11,22 @@
 - [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
   documents that asymmetric distance matrices are accepted.
 - Ensemble functions now attach a `score = NA_real_` attribute on the
-  trivial all-points early return (when ).
-- Integer iteration counters in the C++ kernels changed from to to avoid
-  signed-integer overflow UB at extreme values.
+  trivial all-points early return (when `m >= N`).
+- Integer iteration counters in the C++ kernels changed from `int` to
+  `long long` to avoid signed-integer overflow upper bound at extreme
+  `maxIter` values.
 - Test suite: improved coverage of path relinking (strict improvement),
-  DropAdd attribute formula, budget-expiry branch, and various weak /
-  vacuous assertions tightened.
+  DropAdd `secondary` attribute formula, `ExactMaxMin` budget-expiry
+  branch, and various weak / vacuous assertions tightened.
 
 ## MaxMin 0.0.0.9001 (development)
 
 ### Bug fixes
 
 - [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) no
-  longer crashes at the documented `alpha = 1` (pure greedy). A
-  floating-point rounding of the RCL threshold could empty the
-  restricted candidate list, and the compiled kernel then indexed an
-  empty vector, causing an uncatchable segfault. Construction now falls
-  back to the greedy-best candidate when the list is empty, in both the
-  R reference and the C++ kernel (preserving their bit-for-bit parity).
+  longer crashes at the documented `alpha = 1` (pure greedy).
 - [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) now
-  validates `alpha`, rejecting values outside `[0, 1]` (which could
-  segfault for `alpha > 1` or silently misbehave for `alpha < 0`).
+  validates `alpha`, rejecting values outside `[0, 1]`.
 - [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md),
   [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md),
   [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) and

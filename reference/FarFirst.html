@@ -23,7 +23,7 @@ costlier O(N^2) anchors ("diameter", "anti_medoid", "medoid",
 
     <a class="navbar-brand me-2" href="../index.html">MaxMin</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9002</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -80,11 +80,9 @@ costlier <code>O(N^2)</code> anchors (<code>"diameter"</code>, <code>"anti_medoi
 
 
 <dl><dt id="arg-d">d<a class="anchor" aria-label="anchor" href="#arg-d"></a></dt>
-<dd><p>A <code>dist</code> object, a square numeric matrix of pairwise distances, or
-a distance function (see <em>§Distance function</em>). Asymmetric matrices are
-accepted; symmetry is not checked (an <code>O(N^2)</code> check is intentionally
-omitted), and the algorithm treats \(d_{ij}\) and \(d_{ji}\) as
-independent. Ignored when <code>points</code> is supplied.</p></dd>
+<dd><p>A <code>dist</code> object, a square symmetric numeric matrix of pairwise
+distances, or a distance function (see
+<em>§Distance function</em>). Ignored when <code>points</code> is supplied.</p></dd>
 
 
 <dt id="arg-m">m<a class="anchor" aria-label="anchor" href="#arg-m"></a></dt>
@@ -180,14 +178,11 @@ may be computed on demand.</p></dd>
     <h2 id="distance-function">Distance function<a class="anchor" aria-label="anchor" href="#distance-function"></a></h2>
 
 
-<p>When <code>d</code> is a function it is treated as a closure <code>ColFn(i)</code> returning, for a
-single 1-based index <code>i</code>, the distances from element <code>i</code> to every element.
-The self-distance may be reported or omitted, whichever is simpler to
-compute: a length-<code>N</code> return is taken to include it (the <code>i</code>-th entry, any
-value, is ignored), and a length-<code>N - 1</code> return to omit it (the distances to
-the other elements, in index order). Both yield identical selections.
-<code>FarFirst()</code> calls <code>ColFn(i)</code> once per selected element, maintaining a running
-nearest-distance vector to avoid building a complete <code>N x N</code> matrix.</p>
+<p>When <code>d</code> is a function, it will be passed a single 1-based index <code>i</code>, and
+should return the distances from element <code>i</code> to every element in turn,
+optionally omitting entry <code>i</code>, the self-distance.
+The function will be called once per selected element, to avoid building a
+complete <code>N x N</code> matrix.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

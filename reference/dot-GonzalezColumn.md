@@ -25,17 +25,14 @@ materialised: `O(N * n)` oracle calls and `O(N)` memory.
 
 - colFn:
 
-  A function of a single 1-based index `i` returning the distances from
-  element `i` to every element: either a length-`N` vector including the
-  self-distance (the `i`-th entry, any value, is masked before use) or a
-  length-`N - 1` vector omitting it (the distances to the other
-  elements, in index order). See
+  A function that, when passed an index `i`, must return a vector of
+  distances from element `i` to either (i) every element in turn,
+  including `i`; or (ii) every other element. See
   [`.DistColumn()`](https://ms609.github.io/MaxMin/reference/dot-DistColumn.md).
 
 - N:
 
-  Integer: the total number of elements. It cannot be inferred from
-  `colFn`, so it must be supplied.
+  Integer: the total number of elements.
 
 - n:
 

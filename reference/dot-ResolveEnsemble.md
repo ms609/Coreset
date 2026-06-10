@@ -1,7 +1,7 @@
 # Resolve an expanded ensemble into the winning subset
 
 Shared tail of the two ensemble drivers: solves each expanded spec via
-the driver's `RunGonz` closure (which deduplicates repeated seeds
+the driver's `RunGonz` closure (which de-duplicates repeated seeds
 through its own cache), then returns the subset maximising \\T_k\\. The
 returned vector carries the `strategy_results` (one record per label)
 and `winning_strategy` (all tied-best labels) attributes.

@@ -27,11 +27,9 @@ FarFirst(
 
 - d:
 
-  A `dist` object, a square numeric matrix of pairwise distances, or a
-  distance function (see *§Distance function*). Asymmetric matrices are
-  accepted; symmetry is not checked (an `O(N^2)` check is intentionally
-  omitted), and the algorithm treats \\d\_{ij}\\ and \\d\_{ji}\\ as
-  independent. Ignored when `points` is supplied.
+  A `dist` object, a square symmetric numeric matrix of pairwise
+  distances, or a distance function (see *§Distance function*). Ignored
+  when `points` is supplied.
 
 - m:
 
@@ -135,15 +133,11 @@ Distances may be provided as:
 
 ## Distance function
 
-When `d` is a function it is treated as a closure `ColFn(i)` returning,
-for a single 1-based index `i`, the distances from element `i` to every
-element. The self-distance may be reported or omitted, whichever is
-simpler to compute: a length-`N` return is taken to include it (the
-`i`-th entry, any value, is ignored), and a length-`N - 1` return to
-omit it (the distances to the other elements, in index order). Both
-yield identical selections. `FarFirst()` calls `ColFn(i)` once per
-selected element, maintaining a running nearest-distance vector to avoid
-building a complete `N x N` matrix.
+When `d` is a function, it will be passed a single 1-based index `i`,
+and should return the distances from element `i` to every element in
+turn, optionally omitting entry `i`, the self-distance. The function
+will be called once per selected element, to avoid building a complete
+`N x N` matrix.
 
 ## References
 

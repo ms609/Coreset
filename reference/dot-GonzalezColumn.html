@@ -17,7 +17,7 @@ is never materialised: O(N * n) oracle calls and O(N) memory."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">MaxMin</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9002</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,16 +69,13 @@ is never materialised: <code>O(N * n)</code> oracle calls and <code>O(N)</code> 
 
 
 <dl><dt id="arg-colfn">colFn<a class="anchor" aria-label="anchor" href="#arg-colfn"></a></dt>
-<dd><p>A function of a single 1-based index <code>i</code> returning the distances
-from element <code>i</code> to every element: either a length-<code>N</code> vector including the
-self-distance (the <code>i</code>-th entry, any value, is masked before use) or a
-length-<code>N - 1</code> vector omitting it (the distances to the other elements, in
-index order). See <code><a href="dot-DistColumn.html">.DistColumn()</a></code>.</p></dd>
+<dd><p>A function that, when passed an index <code>i</code>, must return a
+vector of distances from element <code>i</code> to either (i) every element in turn,
+including <code>i</code>; or (ii) every other element. See <code><a href="dot-DistColumn.html">.DistColumn()</a></code>.</p></dd>
 
 
 <dt id="arg-n">N<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
-<dd><p>Integer: the total number of elements. It cannot be inferred from
-<code>colFn</code>, so it must be supplied.</p></dd>
+<dd><p>Integer: the total number of elements.</p></dd>
 
 
 <dt id="arg-n">n<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
