@@ -71,6 +71,39 @@
   specs
 }
 
+#' Resolve an expanded ensemble into the winning subset
+#'
+#' Shared tail of the two ensemble drivers: solves each expanded spec via the
+#' driver's `RunGonz` closure (which deduplicates repeated seeds through its own
+#' cache), then returns the subset maximising \eqn{T_k}. The returned vector
+#' carries the `strategy_results` (one record per label) and `winning_strategy`
+#' (all tied-best labels) attributes.
+#' @param expanded List of `list(label, s1)` specs from [.ExpandAnchors()].
+#' @param labels Character vector of labels (one per spec).
+#' @param RunGonz Closure mapping a seed `s1` to `list(idx, tK)`.
+#' @return Integer vector of selected indices with attributes.
+#' @keywords internal
+.ResolveEnsemble <- function(expanded, labels, RunGonz) {
+  strategyResults <- lapply(expanded, function(e) {
+    g <- RunGonz(e$s1)
+    list(s1 = e$s1, idx = g$idx, t_k = g$tK)
+  })
+  names(strategyResults) <- labels
+
+  # Maximise T_k (the selection's min pairwise distance; larger = better spread).
+  # which.max() skips NA and first-wins on ties, matching the old hand-rolled
+  # loop; all-NA (e.g. n == 1) falls back to the first strategy.
+  tks     <- vapply(strategyResults, `[[`, numeric(1L), "t_k")
+  bestI   <- if (all(is.na(tks))) 1L else which.max(tks)
+  bestTk  <- tks[[bestI]]
+  winners <- if (is.na(bestTk)) bestI else which(tks == bestTk)
+
+  result <- strategyResults[[bestI]]$idx
+  attr(result, "strategy_results") <- strategyResults
+  attr(result, "winning_strategy") <- labels[winners]
+  result
+}
+
 #' Peripheral seed index for Gonzalez selection (distance matrix)
 #'
 #' @param d Square numeric distance matrix.
@@ -309,39 +342,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
   expanded <- .ExpandAnchors(anchors, pivots, AnchorSeed,
                              function(r) which.max(d[, r]))
   labels   <- vapply(expanded, `[[`, character(1L), "label")
-  strategyResults <- vector("list", length(expanded))
-  names(strategyResults) <- labels
-  for (i in seq_along(expanded)) {
-    g <- RunGonz(expanded[[i]]$s1)
-    strategyResults[[i]] <- list(
-      s1  = expanded[[i]]$s1,
-      idx = g$idx,
-      t_k = g$tK
-    )
-  }
-
-  bestI  <- 1L
-  bestTk <- strategyResults[[1L]]$t_k
-  for (i in seq_along(strategyResults)[-1L]) {
-    tk <- strategyResults[[i]]$t_k
-    if (is.na(tk)) next
-    if (is.na(bestTk) || tk > bestTk) {
-      bestI  <- i
-      bestTk <- tk
-    }
-  }
-
-  winners <- if (is.na(bestTk)) {
-    bestI
-  } else {
-    which(vapply(strategyResults, function(r) isTRUE(r$t_k == bestTk),
-                 logical(1L)))
-  }
-
-  result <- strategyResults[[bestI]]$idx
-  attr(result, "strategy_results") <- strategyResults
-  attr(result, "winning_strategy") <- labels[winners]
-  result
+  .ResolveEnsemble(expanded, labels, RunGonz)
 }
 
 #' Coordinate (matrix-free) multi-anchor Gonzalez ensemble
@@ -447,37 +448,5 @@ MaxMinSeed <- function(d = NULL, points = NULL,
     function(r) which.max(EuclidColFromPoints_cpp(points, r))
   )
   labels   <- vapply(expanded, `[[`, character(1L), "label")
-  strategyResults <- vector("list", length(expanded))
-  names(strategyResults) <- labels
-  for (i in seq_along(expanded)) {
-    g <- RunGonz(expanded[[i]]$s1)
-    strategyResults[[i]] <- list(
-      s1  = expanded[[i]]$s1,
-      idx = g$idx,
-      t_k = g$tK
-    )
-  }
-
-  bestI  <- 1L
-  bestTk <- strategyResults[[1L]]$t_k
-  for (i in seq_along(strategyResults)[-1L]) {
-    tk <- strategyResults[[i]]$t_k
-    if (is.na(tk)) next
-    if (is.na(bestTk) || tk > bestTk) {
-      bestI  <- i
-      bestTk <- tk
-    }
-  }
-
-  winners <- if (is.na(bestTk)) {
-    bestI
-  } else {
-    which(vapply(strategyResults, function(r) isTRUE(r$t_k == bestTk),
-                 logical(1L)))
-  }
-
-  result <- strategyResults[[bestI]]$idx
-  attr(result, "strategy_results") <- strategyResults
-  attr(result, "winning_strategy") <- labels[winners]
-  result
+  .ResolveEnsemble(expanded, labels, RunGonz)
 }
