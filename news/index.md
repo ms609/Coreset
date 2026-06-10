@@ -10,10 +10,12 @@
   deterministic farthest-first selection from a distance matrix,
   Euclidean coordinates (`points =`), or an on-demand **distance-column
   oracle** (pass a column function as `d`, with `N =`) for spaces with
-  no coordinate embedding. The default `seed` runs a best-of-three
-  ensemble of `"random_furthest"` starts (whose pivots are drawn with
-  the session RNG; set a seed for a reproducible selection, or supply
-  them via the `pivots` argument) and keeps the best by
+  no coordinate embedding; the oracle may report the self-distance
+  (length `N`) or omit it (length `N - 1`), whichever is simpler to
+  compute. The default `seed` runs a best-of-three ensemble of
+  `"random_furthest"` starts (whose pivots are drawn with the session
+  RNG; set a seed for a reproducible selection, or supply them via the
+  `pivots` argument) and keeps the best by
   [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md).
   The deterministic O(*N*) anchors (`"centroid"`, `"peripheral"`) and
   the costlier O(*N*²) anchors (`"diameter"`, `"anti_medoid"`,
@@ -25,8 +27,8 @@
 - [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md):
   exact node-packing optimum (Sayyady & Fathi 2016) via the `highs` MILP
   backend.
-- [`GraspPR()`](https://ms609.github.io/MaxMin/reference/GraspPR.md):
-  GRASP with path relinking (Resende et al. 2010), a dense-matrix-only
+- [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md): GRASP
+  with path relinking (Resende et al. 2010), a dense-matrix-only
   refinement metaheuristic that attains the highest `T_k` of the
   package’s methods on small to medium instances.
 - [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md):

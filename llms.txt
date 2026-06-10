@@ -14,8 +14,8 @@ distances can be calculated.
 | Function | Method | Use |
 |----|----|----|
 | [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) | DropAdd tabu search (Porumbel et al. 2011) | ~99%-optimal heuristic |
-| [`GraspPR()`](https://ms609.github.io/MaxMin/reference/GraspPR.md) | Highest | Moderate |
-| [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) | Greedy farthest-first (Gonzalez 1985); default best-of-three ensemble of reproducible random-furthest starts (deterministic anchors such as centroid/peripheral are opt-in) | Fast; matrix, coordinate, or distance-column-oracle input (the last for very large sets with no embedding) |
+| [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) | GRASP with path-relinking metaheuristic (Resende et al. 2010) | Slow but powerful heuristic |
+| [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) | Greedy farthest-first (Gonzalez 1985); default best of three random peripheral starts | Fast; matrix, coordinate, or distance-column-oracle input (the last for very large sets with no embedding) |
 | [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md) | Node-packing integer program (Sayyady & Fathi 2016) | Proven optimum, small `n` (needs `highs`) |
 | [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md) | Minimum pairwise distance (the objective) | Score a selection |
 
@@ -48,8 +48,8 @@ Farthest-first (Gonzalez) selection and its seeding strategies.
 
 - [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) :
   DropAdd Tabu Search for the Max-Min Diversity Problem
-- [`GraspPR()`](https://ms609.github.io/MaxMin/reference/GraspPR.md) :
-  GRASP with Path Relinking for the Max-Min Diversity Problem
+- [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) : GRASP
+  with Path Relinking for the Max-Min Diversity Problem
 - [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
   : Exact Max-Min Diversity (MMDP) optimum on small instances
 

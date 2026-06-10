@@ -52,7 +52,7 @@
       <h1>Introduction to MaxMin</h1>
 
       <p class="author">Martin R. Smith</p>
-      <p class="date">2026-06-09</p>
+      <p class="date">2026-06-10</p>
 
       <small class="dont-index">Source: <a href="https://github.com/ms609/MaxMin/blob/main/vignettes/MaxMin.qmd" class="external-link"><code>vignettes/MaxMin.qmd</code></a></small>
       <div class="d-none name"><code></code></div>
@@ -119,7 +119,7 @@
 <td>No</td>
 </tr>
 <tr class="odd">
-<td><code><a href="../reference/GraspPR.html">GraspPR()</a></code></td>
+<td><code><a href="../reference/Grasp.html">Grasp()</a></code></td>
 <td>Highest</td>
 <td>Moderate</td>
 <td>Yes (<code>seed =</code>)</td>
@@ -198,7 +198,7 @@
 <span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">picksDA</span>, <span class="st">"iters"</span><span class="op">)</span>      <span class="co"># iterations completed</span></span>
 <span><span class="co">#&gt; [1] 516</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">picksDA</span>, <span class="st">"time_s"</span><span class="op">)</span>     <span class="co"># wall-clock seconds</span></span>
-<span><span class="co">#&gt; [1] 0.0002551079</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0</span></span></code></pre></div>
 </div>
 <p>The algorithm terminates after <code>plateau</code> iterations do not improve T<sub>k</sub>. Where <em>N</em> is too large for a distance matrix to fit in memory (roughly N &gt; 46 000), pass a coordinate matrix via <code>DropAdd(points = ...)</code>.</p>
 </section><section class="level2"><h2 id="grasp-with-path-relinking">GRASP with path relinking<a class="anchor" aria-label="anchor" href="#grasp-with-path-relinking"></a>
@@ -206,7 +206,7 @@
 <p><strong>GRASP + path relinking</strong> <span class="citation" data-cites="Resende2010">(<a href="#ref-Resende2010" role="doc-biblioref">Resende et al., 2010</a>)</span> combines a <em>randomised</em> greedy construction phase with extended local search and then refines an elite set of good solutions by interpolating between elite-pair trajectories (<em>path relinking</em>). It achieves the highest T<sub>k</sub> of the three heuristics, at a proportionally higher cost. Because the construction phase is stochastic, always set <code>seed</code> for reproducibility:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">res_gr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/GraspPR.html">GraspPR</a></span><span class="op">(</span><span class="va">eurodist</span>, m <span class="op">=</span> <span class="fl">6L</span>, plateau <span class="op">=</span> <span class="fl">50L</span>, seed <span class="op">=</span> <span class="fl">42L</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">res_gr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Grasp.html">Grasp</a></span><span class="op">(</span><span class="va">eurodist</span>, m <span class="op">=</span> <span class="fl">6L</span>, plateau <span class="op">=</span> <span class="fl">50L</span>, seed <span class="op">=</span> <span class="fl">42L</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/labels.html" class="external-link">labels</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span><span class="op">[</span><span class="va">res_gr</span><span class="op">]</span></span>
 <span><span class="co">#&gt; [1] "Athens"    "Barcelona" "Calais"    "Lisbon"    "Stockholm" "Vienna"</span></span>
@@ -230,7 +230,7 @@
 <div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">idx_ff</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">d50</span>, n <span class="op">=</span> <span class="va">m</span><span class="op">)</span></span>
 <span><span class="va">res_da50</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/DropAdd.html">DropAdd</a></span><span class="op">(</span><span class="va">d50</span>, m <span class="op">=</span> <span class="va">m</span>, plateau <span class="op">=</span> <span class="fl">500L</span><span class="op">)</span></span>
-<span><span class="va">res_gr50</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/GraspPR.html">GraspPR</a></span><span class="op">(</span><span class="va">d50</span>, m <span class="op">=</span> <span class="va">m</span>, plateau <span class="op">=</span> <span class="fl">50L</span>, seed <span class="op">=</span> <span class="fl">42L</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">res_gr50</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Grasp.html">Grasp</a></span><span class="op">(</span><span class="va">d50</span>, m <span class="op">=</span> <span class="va">m</span>, plateau <span class="op">=</span> <span class="fl">50L</span>, seed <span class="op">=</span> <span class="fl">42L</span><span class="op">)</span></span></code></pre></div>
 </div>
 <p>Even a small difference in T<sub>k</sub> can correspond to a meaningfully more dispersed selection.</p>
 <div class="cell">
@@ -238,10 +238,10 @@
 <code class="sourceCode R"><span><span class="va">scores</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  FarFirst  <span class="op">=</span> <span class="fu"><a href="../reference/MinDist.html">MinDist</a></span><span class="op">(</span><span class="va">d50</span>, <span class="va">idx_ff</span><span class="op">)</span>,</span>
 <span>  DropAdd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">res_da50</span>, <span class="st">"score"</span><span class="op">)</span>,</span>
-<span>  GraspPR   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">res_gr50</span>, <span class="st">"score"</span><span class="op">)</span></span>
+<span>  Grasp   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">res_gr50</span>, <span class="st">"score"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">scores</span>, <span class="fl">3</span><span class="op">)</span></span>
-<span><span class="co">#&gt; FarFirst  DropAdd  GraspPR </span></span>
+<span><span class="co">#&gt; FarFirst  DropAdd    Grasp </span></span>
 <span><span class="co">#&gt;    1.416    1.428    1.428</span></span></code></pre></div>
 </div>
 <p>Plotting the selections against the point cloud makes the differences concrete. When two methods select the same index, their symbols overlap; the T<sub>k</sub> table above captures the quality distinction even when the visual overlap is high.</p>
@@ -250,13 +250,13 @@
 <code class="sourceCode R"><span><span class="va">methods</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  FarFirst  <span class="op">=</span> <span class="va">idx_ff</span>,</span>
 <span>  DropAdd <span class="op">=</span> <span class="va">res_da50</span>,</span>
-<span>  GraspPR   <span class="op">=</span> <span class="va">res_gr50</span></span>
+<span>  Grasp   <span class="op">=</span> <span class="va">res_gr50</span></span>
 <span><span class="op">)</span></span>
-<span><span class="va">cols</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>FarFirst <span class="op">=</span> <span class="st">"#E41A1C"</span>, DropAdd <span class="op">=</span> <span class="st">"#377EB8"</span>, GraspPR <span class="op">=</span> <span class="st">"#4DAF4A"</span><span class="op">)</span></span>
-<span><span class="va">pchs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>FarFirst <span class="op">=</span> <span class="fl">24L</span>, DropAdd <span class="op">=</span> <span class="fl">21L</span>, GraspPR <span class="op">=</span> <span class="fl">22L</span><span class="op">)</span></span>
+<span><span class="va">cols</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>FarFirst <span class="op">=</span> <span class="st">"#E41A1C"</span>, DropAdd <span class="op">=</span> <span class="st">"#377EB8"</span>, Grasp <span class="op">=</span> <span class="st">"#4DAF4A"</span><span class="op">)</span></span>
+<span><span class="va">pchs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>FarFirst <span class="op">=</span> <span class="fl">24L</span>, DropAdd <span class="op">=</span> <span class="fl">21L</span>, Grasp <span class="op">=</span> <span class="fl">22L</span><span class="op">)</span></span>
 <span><span class="co"># Small per-method shift so coincident selections remain distinguishable</span></span>
-<span><span class="va">dx</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>FarFirst <span class="op">=</span> <span class="fl">0</span>, DropAdd <span class="op">=</span>  <span class="fl">0.04</span>, GraspPR <span class="op">=</span> <span class="op">-</span><span class="fl">0.04</span><span class="op">)</span></span>
-<span><span class="va">dy</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>FarFirst <span class="op">=</span> <span class="fl">0</span>, DropAdd <span class="op">=</span> <span class="op">-</span><span class="fl">0.04</span>, GraspPR <span class="op">=</span>  <span class="fl">0.04</span><span class="op">)</span></span>
+<span><span class="va">dx</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>FarFirst <span class="op">=</span> <span class="fl">0</span>, DropAdd <span class="op">=</span>  <span class="fl">0.04</span>, Grasp <span class="op">=</span> <span class="op">-</span><span class="fl">0.04</span><span class="op">)</span></span>
+<span><span class="va">dy</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>FarFirst <span class="op">=</span> <span class="fl">0</span>, DropAdd <span class="op">=</span> <span class="op">-</span><span class="fl">0.04</span>, Grasp <span class="op">=</span>  <span class="fl">0.04</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pts</span>, pch <span class="op">=</span> <span class="fl">1L</span>, col <span class="op">=</span> <span class="st">"grey75"</span>, asp <span class="op">=</span> <span class="fl">1L</span>,</span>
 <span>     xlab <span class="op">=</span> <span class="st">"x"</span>, ylab <span class="op">=</span> <span class="st">"y"</span>,</span>
@@ -350,7 +350,7 @@
 </tr>
 <tr class="odd">
 <td>Best quality, set <code>seed</code> for reproducibility</td>
-<td><code>GraspPR(seed = ...)</code></td>
+<td><code>Grasp(seed = ...)</code></td>
 </tr>
 <tr class="even">
 <td>N &gt; 46 000 (distance matrix infeasible)</td>
@@ -368,7 +368,7 @@
 </tr>
 </tbody>
 </table>
-<p>The heuristics are complementary: <code><a href="../reference/FarFirst.html">FarFirst()</a></code> is O(<em>N</em> · <em>m</em>) and deterministic — an instant first result. <code><a href="../reference/DropAdd.html">DropAdd()</a></code> is deterministic and reproducible (no RNG), typically reaching ≈ 99 % of optimal; the <code>seed</code> parameter governs only the RNG used for tie-breaking, not the algorithm itself. <code><a href="../reference/GraspPR.html">GraspPR()</a></code> is stochastic and usually edges out <code><a href="../reference/DropAdd.html">DropAdd()</a></code> on T<sub>k</sub>, but requires a <code>seed</code> for reproducibility.</p>
+<p>The heuristics are complementary: <code><a href="../reference/FarFirst.html">FarFirst()</a></code> is O(<em>N</em> · <em>m</em>) and deterministic — an instant first result. <code><a href="../reference/DropAdd.html">DropAdd()</a></code> is deterministic and reproducible (no RNG), typically reaching ≈ 99 % of optimal; the <code>seed</code> parameter governs only the RNG used for tie-breaking, not the algorithm itself. <code><a href="../reference/Grasp.html">Grasp()</a></code> is stochastic and usually edges out <code><a href="../reference/DropAdd.html">DropAdd()</a></code> on T<sub>k</sub>, but requires a <code>seed</code> for reproducibility.</p>
 </section><section class="level2"><h2 id="related-packages">Related packages<a class="anchor" aria-label="anchor" href="#related-packages"></a>
 </h2>
 <p>The CRAN package <a href="https://CRAN.R-project.org/package=maximin" class="external-link"><strong>maximin</strong></a> constructs continuous space-filling designs by generating new points.</p>

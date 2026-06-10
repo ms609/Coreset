@@ -13,8 +13,8 @@ Farthest-first (Gonzalez) selection and its seeding strategies.
 
 - [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) :
   DropAdd Tabu Search for the Max-Min Diversity Problem
-- [`GraspPR()`](https://ms609.github.io/MaxMin/reference/GraspPR.md) :
-  GRASP with Path Relinking for the Max-Min Diversity Problem
+- [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) : GRASP
+  with Path Relinking for the Max-Min Diversity Problem
 - [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
   : Exact Max-Min Diversity (MMDP) optimum on small instances
 

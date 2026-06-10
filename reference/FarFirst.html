@@ -169,6 +169,19 @@ may be computed on demand.</p></dd>
 
 </dl></div>
     <div class="section level2">
+    <h2 id="distance-function">Distance function<a class="anchor" aria-label="anchor" href="#distance-function"></a></h2>
+
+
+<p>When <code>d</code> is a function it is treated as a closure <code>ColFn(i)</code> returning, for a
+single 1-based index <code>i</code>, the distances from element <code>i</code> to every element.
+The self-distance may be reported or omitted, whichever is simpler to
+compute: a length-<code>N</code> return is taken to include it (the <code>i</code>-th entry, any
+value, is ignored), and a length-<code>N - 1</code> return to omit it (the distances to
+the other elements, in index order). Both yield identical selections.
+<code>FarFirst()</code> calls <code>ColFn(i)</code> once per selected element, maintaining a running
+nearest-distance vector to avoid building a complete <code>N x N</code> matrix.</p>
+    </div>
+    <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
     <p>González TF (1985).
 “Clustering to minimize the maximum intercluster distance.”

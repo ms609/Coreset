@@ -60,7 +60,7 @@ MaxMin provides four solvers, and a minimum-distance calculator:
 |----|----|----|----|
 | [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) | Good (2-approximation) | Very fast | No |
 | [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) | High (≈ 99 % optimal) | Fast | No |
-| [`GraspPR()`](https://ms609.github.io/MaxMin/reference/GraspPR.md) | Highest | Moderate | Yes (`seed =`) |
+| [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) | Highest | Moderate | Yes (`seed =`) |
 | [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md) | Optimal (NP-hard) | Slow | No |
 | [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md) | Scoring only | Instant | No |
 
@@ -156,7 +156,7 @@ attr(picksDA, "score")  # T_k achieved
 attr(picksDA, "iters")      # iterations completed
 #> [1] 516
 attr(picksDA, "time_s")     # wall-clock seconds
-#> [1] 0.0002551079
+#> [1] 0
 ```
 
 The algorithm terminates after `plateau` iterations do not improve
@@ -176,7 +176,7 @@ reproducibility:
 
 ``` r
 
-res_gr <- GraspPR(eurodist, m = 6L, plateau = 50L, seed = 42L)
+res_gr <- Grasp(eurodist, m = 6L, plateau = 50L, seed = 42L)
 
 labels(eurodist)[res_gr]
 #> [1] "Athens"    "Barcelona" "Calais"    "Lisbon"    "Stockholm" "Vienna"
@@ -207,7 +207,7 @@ m   <- 8L
 
 idx_ff <- FarFirst(d50, n = m)
 res_da50 <- DropAdd(d50, m = m, plateau = 500L)
-res_gr50 <- GraspPR(d50, m = m, plateau = 50L, seed = 42L)
+res_gr50 <- Grasp(d50, m = m, plateau = 50L, seed = 42L)
 ```
 
 Even a small difference in T_(k) can correspond to a meaningfully more
@@ -218,10 +218,10 @@ dispersed selection.
 scores <- c(
   FarFirst  = MinDist(d50, idx_ff),
   DropAdd = attr(res_da50, "score"),
-  GraspPR   = attr(res_gr50, "score")
+  Grasp   = attr(res_gr50, "score")
 )
 round(scores, 3)
-#> FarFirst  DropAdd  GraspPR 
+#> FarFirst  DropAdd    Grasp 
 #>    1.416    1.428    1.428
 ```
 
@@ -235,13 +235,13 @@ visual overlap is high.
 methods <- list(
   FarFirst  = idx_ff,
   DropAdd = res_da50,
-  GraspPR   = res_gr50
+  Grasp   = res_gr50
 )
-cols <- c(FarFirst = "#E41A1C", DropAdd = "#377EB8", GraspPR = "#4DAF4A")
-pchs <- c(FarFirst = 24L, DropAdd = 21L, GraspPR = 22L)
+cols <- c(FarFirst = "#E41A1C", DropAdd = "#377EB8", Grasp = "#4DAF4A")
+pchs <- c(FarFirst = 24L, DropAdd = 21L, Grasp = 22L)
 # Small per-method shift so coincident selections remain distinguishable
-dx   <- c(FarFirst = 0, DropAdd =  0.04, GraspPR = -0.04)
-dy   <- c(FarFirst = 0, DropAdd = -0.04, GraspPR =  0.04)
+dx   <- c(FarFirst = 0, DropAdd =  0.04, Grasp = -0.04)
+dy   <- c(FarFirst = 0, DropAdd = -0.04, Grasp =  0.04)
 
 plot(pts, pch = 1L, col = "grey75", asp = 1L,
      xlab = "x", ylab = "y",
@@ -336,7 +336,7 @@ MinDist(points = pts, idx = idx_ff)                # from coordinates
 |----|----|
 | Speed matters most, N up to a few thousand | [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) (ensemble default) |
 | Deterministic, reproducible refinement | [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) |
-| Best quality, set `seed` for reproducibility | `GraspPR(seed = ...)` |
+| Best quality, set `seed` for reproducibility | `Grasp(seed = ...)` |
 | N \> 46 000 (distance matrix infeasible) | `DropAdd(points = ...)` or `FarFirst(points = ...)` |
 | Arbitrary metric with no coordinate embedding | `FarFirst(<column function>, N = ...)` |
 | Proven optimum, N ≤ ~ 25–30, **highs** installed | [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md) |
@@ -348,7 +348,7 @@ O(*N* · *m*) and deterministic — an instant first result.
 deterministic and reproducible (no RNG), typically reaching ≈ 99 % of
 optimal; the `seed` parameter governs only the RNG used for
 tie-breaking, not the algorithm itself.
-[`GraspPR()`](https://ms609.github.io/MaxMin/reference/GraspPR.md) is
+[`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) is
 stochastic and usually edges out
 [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) on
 T_(k), but requires a `seed` for reproducibility.

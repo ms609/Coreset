@@ -121,6 +121,18 @@ Distances may be provided as:
   for metrics with neither a stored matrix nor a coordinate embedding,
   where distances may be computed on demand.
 
+## Distance function
+
+When `d` is a function it is treated as a closure `ColFn(i)` returning,
+for a single 1-based index `i`, the distances from element `i` to every
+element. The self-distance may be reported or omitted, whichever is
+simpler to compute: a length-`N` return is taken to include it (the
+`i`-th entry, any value, is ignored), and a length-`N - 1` return to
+omit it (the distances to the other elements, in index order). Both
+yield identical selections. `FarFirst()` calls `ColFn(i)` once per
+selected element, maintaining a running nearest-distance vector to avoid
+building a complete `N x N` matrix.
+
 ## References
 
 González TF (1985). “Clustering to minimize the maximum intercluster

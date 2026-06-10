@@ -69,10 +69,11 @@ is never materialised: <code>O(N * n)</code> oracle calls and <code>O(N)</code> 
 
 
 <dl><dt id="arg-colfn">colFn<a class="anchor" aria-label="anchor" href="#arg-colfn"></a></dt>
-<dd><p>A function of a single 1-based index <code>i</code> returning a length-<code>N</code>
-numeric vector of distances from element <code>i</code> to every element. The
-self-distance at position <code>i</code> may take any non-negative value; it is
-masked before use.</p></dd>
+<dd><p>A function of a single 1-based index <code>i</code> returning the distances
+from element <code>i</code> to every element: either a length-<code>N</code> vector including the
+self-distance (the <code>i</code>-th entry, any value, is masked before use) or a
+length-<code>N - 1</code> vector omitting it (the distances to the other elements, in
+index order). See <code><a href="dot-DistColumn.html">.DistColumn()</a></code>.</p></dd>
 
 
 <dt id="arg-n">N<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>

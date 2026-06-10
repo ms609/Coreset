@@ -75,13 +75,13 @@
 <td>~99%-optimal heuristic</td>
 </tr>
 <tr>
-<td><code><a href="reference/GraspPR.html">GraspPR()</a></code></td>
-<td>Highest</td>
-<td>Moderate</td>
+<td><code><a href="reference/Grasp.html">Grasp()</a></code></td>
+<td>GRASP with path-relinking metaheuristic (Resende et al. 2010)</td>
+<td>Slow but powerful heuristic</td>
 </tr>
 <tr>
 <td><code><a href="reference/FarFirst.html">FarFirst()</a></code></td>
-<td>Greedy farthest-first (Gonzalez 1985); default best-of-three ensemble of reproducible random-furthest starts (deterministic anchors such as centroid/peripheral are opt-in)</td>
+<td>Greedy farthest-first (Gonzalez 1985); default best of three random peripheral starts</td>
 <td>Fast; matrix, coordinate, or distance-column-oracle input (the last for very large sets with no embedding)</td>
 </tr>
 <tr>
