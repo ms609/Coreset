@@ -19,8 +19,8 @@ FarFirst(
 distances, or a distance function (see
 \emph{§Distance function}). Ignored when \code{points} is supplied.}
 
-\item{n}{Integer: number of points to select. If \code{n >= N}, all indices are
-returned.}
+\item{n}{Integer: number of points to select. If \code{n > N}, all \code{N} indices
+are returned in Gonzalez (farthest-first) order.}
 
 \item{seed}{Integer or character (scalar or vector). An \strong{integer} gives the
 explicit 1-based index of the first selected point (a single bare Gonzalez

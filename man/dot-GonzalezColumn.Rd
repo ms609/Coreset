@@ -22,8 +22,8 @@ index order). See \code{\link[=.DistColumn]{.DistColumn()}}.}
 \item{N}{Integer: the total number of elements. It cannot be inferred from
 \code{colFn}, so it must be supplied.}
 
-\item{n}{Integer: number of elements to select. If \code{n >= N}, all indices are
-returned.}
+\item{n}{Integer: number of elements to select. If \code{n > N}, all \code{N} indices
+are returned in Gonzalez (farthest-first) order.}
 
 \item{first}{Integer index of the first selected element, or \code{NULL}
 (default) to use a deterministic peripheral seed computed from two oracle
