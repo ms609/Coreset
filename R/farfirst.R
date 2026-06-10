@@ -26,12 +26,12 @@
 #' index.
 #'
 #' @param d Square pairwise distance matrix.
-#' @param n Integer: target subsample size (`>= 1`).
+#' @param m Integer: target subsample size (`>= 1`).
 #' @param first Integer: index of the first selected point.
-#' @return Integer vector of length `n` of selected row/col indices.
+#' @return Integer vector of length `m` of selected row/col indices.
 #' @keywords internal
-.MaximinFrom <- function(d, n, first) {
-  MaximinFrom_cpp(d, as.integer(n), as.integer(first))
+.MaximinFrom <- function(d, m, first) {
+  MaximinFrom_cpp(d, as.integer(m), as.integer(first))
 }
 
 #' Coerce coordinate input for the on-the-fly (matrix-free) samplers
@@ -67,14 +67,13 @@
 #' matrix path on Euclidean data.
 #'
 #' @param points A `double` `N x dim` coordinate matrix.
-#' @param n Integer subsample size.
-#' @param first Integer index of the first selected point.
+#' @inheritParams .MaximinFrom
 #' @param mask Integer 1-based index of a point to forbid from selection
 #'   (`0L` = none); used by the anti-medoid path to exclude the medoid.
 #' @return Integer vector of selected indices.
 #' @keywords internal
-.MaximinFromPoints <- function(points, n, first, mask = 0L) {
-  MaximinFromPoints_cpp(points, as.integer(n), as.integer(first),
+.MaximinFromPoints <- function(points, m, first, mask = 0L) {
+  MaximinFromPoints_cpp(points, as.integer(m), as.integer(first),
                         as.integer(mask))
 }
 
@@ -157,14 +156,11 @@
 #' }
 #'
 #' @section Distance function:
-#' When `d` is a function it is treated as a closure `ColFn(i)` returning, for a
-#' single 1-based index `i`, the distances from element `i` to every element.
-#' The self-distance may be reported or omitted, whichever is simpler to
-#' compute: a length-`N` return is taken to include it (the `i`-th entry, any
-#' value, is ignored), and a length-`N - 1` return to omit it (the distances to
-#' the other elements, in index order). Both yield identical selections.
-#' `FarFirst()` calls `ColFn(i)` once per selected element, maintaining a running
-#' nearest-distance vector to avoid building a complete `N x N` matrix.
+#' When `d` is a function, it will be passed a single 1-based index `i`, and
+#' should return the distances from element `i` to every element in turn,
+#' optionally omitting entry `i`, the self-distance.
+#' The function will be called once per selected element, to avoid building a
+#' complete `N x N` matrix.
 #'
 #' @param d A `dist` object, a square symmetric numeric matrix of pairwise
 #'   distances, or a distance function (see
@@ -304,7 +300,7 @@ FarFirst <- function(d = NULL, m,
       warning("distance-column oracle path: only an integer `method` (a `first` ",
               "index) is honoured; using the deterministic peripheral seed")
     }
-    return(.GonzalezColumn(colFn = d, N = N, n = m, first = first,
+    return(.GonzalezColumn(colFn = d, N = N, m = m, first = first,
                            progress = progress))
   }
 
@@ -438,25 +434,22 @@ FarFirst <- function(d = NULL, m,
 #' for the user-facing contract. At each greedy step the distances from the
 #' newly selected element to all `N` elements are obtained from `colFn`, and a
 #' running nearest-distance vector is maintained, so the `N x N` distance matrix
-#' is never materialised: `O(N * n)` oracle calls and `O(N)` memory.
+#' is never materialised: `O(N * m)` oracle calls and `O(N)` memory.
 #'
-#' @param colFn A function of a single 1-based index `i` returning the distances
-#'   from element `i` to every element: either a length-`N` vector including the
-#'   self-distance (the `i`-th entry, any value, is masked before use) or a
-#'   length-`N - 1` vector omitting it (the distances to the other elements, in
-#'   index order). See [.DistColumn()].
-#' @param N Integer: the total number of elements. It cannot be inferred from
-#'   `colFn`, so it must be supplied.
-#' @param n Integer: number of elements to select. If `n > N`, all `N` indices
+#' @param colFn A function that, when passed an index `i`, must return a
+#' vector of distances from element `i` to either (i) every element in turn,
+#' including `i`; or (ii) every other element. See [.DistColumn()].
+#' @param N Integer: the total number of elements.
+#' @param m Integer: number of elements to select. If `m > N`, all `N` indices
 #'   are returned in Gonzalez (farthest-first) order.
 #' @param first Integer index of the first selected element, or `NULL`
 #'   (default) to use a deterministic peripheral seed computed from two oracle
 #'   sweeps: the element furthest from element 1, then the element furthest
 #'   from that (a diameter-endpoint approximation).
 #' @param progress Logical; show a progress bar during greedy selection.
-#' @return Integer vector of length `min(n, N)` of selected indices.
+#' @return Integer vector of length `min(m, N)` of selected indices.
 #' @keywords internal
-.GonzalezColumn <- function(colFn, N, n, first = NULL,
+.GonzalezColumn <- function(colFn, N, m, first = NULL,
                             progress = getOption("MaxMin.progress", interactive())) {
   if (!is.function(colFn)) {
     stop("`colFn` must be a function of one index returning numeric(N)")
@@ -466,15 +459,15 @@ FarFirst <- function(d = NULL, m,
          "distance-column function")
   }
   N <- as.integer(N)
-  n <- as.integer(n)
+  m <- as.integer(m)
   if (length(N) != 1L || is.na(N) || N < 1L) {
     stop("`N` must be a single positive integer")
   }
-  if (length(n) != 1L || is.na(n) || n < 0L) {
-    stop("`n` must be a single non-negative integer")
+  if (length(m) != 1L || is.na(m) || m < 0L) {
+    stop("`m` must be a single non-negative integer")
   }
-  n <- min(n, N)
-  if (n == 0L) return(integer(0))
+  m <- min(m, N)
+  if (m == 0L) return(integer(0))
   if (is.null(first)) {
     first <- .PeripheralSeedColumn(colFn, N)
   }
@@ -483,9 +476,9 @@ FarFirst <- function(d = NULL, m,
     stop("`first` must be a single index in [1, N]")
   }
   # A single point has no pairwise distance; report score = NA, matching the
-  # matrix/coordinate kernels' n < 2 behaviour.
-  if (n == 1L) return(structure(first, score = NA_real_))
-  .MaximinFromColumn(colFn, N, n, first, progress = progress)
+  # matrix/coordinate kernels' m < 2 behaviour.
+  if (m == 1L) return(structure(first, score = NA_real_))
+  .MaximinFromColumn(colFn, N, m, first, progress = progress)
 }
 
 #' Gonzalez maximin from a distance-column oracle (worker)
@@ -496,22 +489,22 @@ FarFirst <- function(d = NULL, m,
 #' selection is identical to the matrix path on symmetric input.
 #' @param colFn Column oracle; see [FarFirst()].
 #' @param N Integer element count.
-#' @param n Integer subset size (`>= 2`).
+#' @param m Integer subset size (`>= 2`).
 #' @param first Integer seed index.
 #' @return Integer vector of selected indices.
 #' @keywords internal
-.MaximinFromColumn <- function(colFn, N, n, first, progress = FALSE) {
-  selected <- integer(n)
+.MaximinFromColumn <- function(colFn, N, m, first, progress = FALSE) {
+  selected <- integer(m)
   selected[1L] <- first
   minDist <- .DistColumn(colFn, first, N)  # seed column, self already masked
   if (progress) {
-    .pb <- cli::cli_progress_bar("Gonzalez (column oracle)", total = n - 1L)
+    .pb <- cli::cli_progress_bar("Gonzalez (column oracle)", total = m - 1L)
   }
   # T_k = min over greedy steps of the chosen element's insertion distance
   # (minDist[best] before the pmin update), mirroring MaximinFrom_cpp's `tk` so
   # the `score` attribute matches the matrix path bit-for-bit.
   tk <- Inf
-  for (k in seq_len(n - 1L) + 1L) {
+  for (k in seq_len(m - 1L) + 1L) {
     best <- which.max(minDist)           # first global max (ties -> first)
     selected[k] <- best
     if (minDist[best] < tk) tk <- minDist[best]

@@ -13,14 +13,11 @@
 )
 }
 \arguments{
-\item{colFn}{A function of a single 1-based index \code{i} returning the distances
-from element \code{i} to every element: either a length-\code{N} vector including the
-self-distance (the \code{i}-th entry, any value, is masked before use) or a
-length-\code{N - 1} vector omitting it (the distances to the other elements, in
-index order). See \code{\link[=.DistColumn]{.DistColumn()}}.}
+\item{colFn}{A function that, when passed an index \code{i}, must return a
+vector of distances from element \code{i} to either (i) every element in turn,
+including \code{i}; or (ii) every other element. See \code{\link[=.DistColumn]{.DistColumn()}}.}
 
-\item{N}{Integer: the total number of elements. It cannot be inferred from
-\code{colFn}, so it must be supplied.}
+\item{N}{Integer: the total number of elements.}
 
 \item{n}{Integer: number of elements to select. If \code{n > N}, all \code{N} indices
 are returned in Gonzalez (farthest-first) order.}

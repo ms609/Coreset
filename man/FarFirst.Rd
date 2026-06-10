@@ -102,14 +102,11 @@ may be computed on demand.}
 }
 \section{Distance function}{
 
-When \code{d} is a function it is treated as a closure \code{ColFn(i)} returning, for a
-single 1-based index \code{i}, the distances from element \code{i} to every element.
-The self-distance may be reported or omitted, whichever is simpler to
-compute: a length-\code{N} return is taken to include it (the \code{i}-th entry, any
-value, is ignored), and a length-\code{N - 1} return to omit it (the distances to
-the other elements, in index order). Both yield identical selections.
-\code{FarFirst()} calls \code{ColFn(i)} once per selected element, maintaining a running
-nearest-distance vector to avoid building a complete \verb{N x N} matrix.
+When \code{d} is a function, it will be passed a single 1-based index \code{i}, and
+should return the distances from element \code{i} to every element in turn,
+optionally omitting entry \code{i}, the self-distance.
+The function will be called once per selected element, to avoid building a
+complete \verb{N x N} matrix.
 }
 
 \examples{

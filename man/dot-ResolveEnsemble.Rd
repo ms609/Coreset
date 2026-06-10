@@ -18,8 +18,8 @@ Integer vector of selected indices with attributes.
 }
 \description{
 Shared tail of the two ensemble drivers: solves each expanded spec via the
-driver's \code{RunGonz} closure (which deduplicates repeated seeds through its own
-cache), then returns the subset maximising \eqn{T_k}. The returned vector
+driver's \code{RunGonz} closure (which de-duplicates repeated seeds through its
+own cache), then returns the subset maximising \eqn{T_k}. The returned vector
 carries the \code{strategy_results} (one record per label) and \code{winning_strategy}
 (all tied-best labels) attributes.
 }

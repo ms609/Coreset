@@ -2,14 +2,8 @@
 
 ## Bug fixes
 
-- `Grasp()` no longer crashes at the documented `alpha = 1` (pure greedy). A
-  floating-point rounding of the RCL threshold could empty the restricted
-  candidate list, and the compiled kernel then indexed an empty vector, causing
-  an uncatchable segfault. Construction now falls back to the greedy-best
-  candidate when the list is empty, in both the R reference and the C++ kernel
-  (preserving their bit-for-bit parity).
-- `Grasp()` now validates `alpha`, rejecting values outside `[0, 1]` (which
-  could segfault for `alpha > 1` or silently misbehave for `alpha < 0`).
+- `Grasp()` no longer crashes at the documented `alpha = 1` (pure greedy).
+- `Grasp()` now validates `alpha`, rejecting values outside `[0, 1]`.
 - `FarFirst()`, `DropAdd()`, `Grasp()` and `MinDist()` now reject a distance
   matrix containing `NA`/`NaN`/`Inf` instead of silently returning a selection
   with a repeated index; the distance-column oracle path of `FarFirst()`

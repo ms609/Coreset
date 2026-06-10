@@ -74,8 +74,8 @@
 #' Resolve an expanded ensemble into the winning subset
 #'
 #' Shared tail of the two ensemble drivers: solves each expanded spec via the
-#' driver's `RunGonz` closure (which deduplicates repeated seeds through its own
-#' cache), then returns the subset maximising \eqn{T_k}. The returned vector
+#' driver's `RunGonz` closure (which de-duplicates repeated seeds through its
+#' own cache), then returns the subset maximising \eqn{T_k}. The returned vector
 #' carries the `strategy_results` (one record per label) and `winning_strategy`
 #' (all tied-best labels) attributes.
 #' @param expanded List of `list(label, s1)` specs from [.ExpandAnchors()].
@@ -263,17 +263,17 @@ MaxMinSeed <- function(d = NULL, points = NULL,
 #' vector of all tied-best strategies, with random starts labelled
 #' `random_furthest1`, `random_furthest2`, ...) attributes.
 #' @param d Square numeric distance matrix (already coerced).
-#' @param n Integer subset size (`1 <= n < nrow(d)`).
+#' @param m Integer subset size (`1 <= m < nrow(d)`).
 #' @param anchors Character vector of anchor names.
 #' @param pivots Integer vector of pivot indices the `"random_furthest"` token
 #'   expands over (empty contributes none).
 #' @return Integer vector of selected indices with attributes.
 #' @keywords internal
-.GonzEnsemble <- function(d, n, anchors = "peripheral", pivots = integer(0)) {
+.GonzEnsemble <- function(d, m, anchors = "peripheral", pivots = integer(0)) {
   d <- .AsDistMatrix(d)
-  n <- as.integer(n)
-  if (length(n) != 1L || is.na(n) || n < 0L) {
-    stop("`n` must be a single non-negative integer")
+  m <- as.integer(m)
+  if (length(m) != 1L || is.na(m) || m < 0L) {
+    stop("`m` must be a single non-negative integer")
   }
   if (is.null(anchors) || length(anchors) == 0L) {
     stop("`anchors` must name at least one strategy")
@@ -284,8 +284,8 @@ MaxMinSeed <- function(d = NULL, points = NULL,
     several.ok = TRUE
   ))
   nPts <- nrow(d)
-  if (n >= nPts) return(seq_len(nPts))
-  if (n == 0L)   return(integer(0))
+  if (m >= nPts) return(seq_len(nPts))
+  if (m == 0L)   return(integer(0))
 
   lazy <- new.env(parent = emptyenv())
   GetRowSums <- function() {
@@ -309,7 +309,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
   RunGonz <- function(s1) {
     key <- as.character(s1)
     gonzCache[[key]] %||% {
-      idx <- .MaximinFrom(d, n, first = s1)
+      idx <- .MaximinFrom(d, m, first = s1)
       # The kernel computes T_k (min pairwise distance) for free during the
       # greedy pass; read it rather than re-scoring with a d[idx, idx] subset.
       tK  <- attr(idx, "t_k") %||% NA_real_
@@ -361,18 +361,16 @@ MaxMinSeed <- function(d = NULL, points = NULL,
 #' `pivots` indexes points directly, so the `"random_furthest"` starts also
 #' match the matrix path.
 #' @param points A `double` `N x dim` coordinate matrix.
-#' @param n Integer subset size.
-#' @param anchors Character vector of anchor names.
-#' @param pivots Integer vector of pivot indices the `"random_furthest"` token
-#'   expands over (empty contributes none).
+#' @param m Integer subset size.
+#' @inheritParams .GonzEnsemble
 #' @return Integer vector of selected indices with attributes.
 #' @keywords internal
-.GonzEnsembleFromPoints <- function(points, n, anchors = .kDefaultEnsemble,
+.GonzEnsembleFromPoints <- function(points, m, anchors = .kDefaultEnsemble,
                                     pivots = integer(0)) {
   points <- .AsPointsMatrix(points)
-  n <- as.integer(n)
-  if (length(n) != 1L || is.na(n) || n < 0L) {
-    stop("`n` must be a single non-negative integer")
+  m <- as.integer(m)
+  if (length(m) != 1L || is.na(m) || m < 0L) {
+    stop("`m` must be a single non-negative integer")
   }
   if (is.null(anchors) || length(anchors) == 0L) {
     stop("`anchors` must name at least one strategy")
@@ -383,8 +381,8 @@ MaxMinSeed <- function(d = NULL, points = NULL,
     several.ok = TRUE
   ))
   nPts <- nrow(points)
-  if (n >= nPts) return(seq_len(nPts))
-  if (n == 0L)   return(integer(0))
+  if (m >= nPts) return(seq_len(nPts))
+  if (m == 0L)   return(integer(0))
 
   lazy <- new.env(parent = emptyenv())
   GetRowSums <- function() {
@@ -412,7 +410,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
   RunGonz <- function(s1) {
     key <- as.character(s1)
     gonzCache[[key]] %||% {
-      idx <- .MaximinFromPoints(points, n, first = s1)
+      idx <- .MaximinFromPoints(points, m, first = s1)
       # The kernel computes T_k (min pairwise distance) for free during the
       # greedy pass; read it rather than re-running stats::dist() on the
       # selected sub-coordinates.
