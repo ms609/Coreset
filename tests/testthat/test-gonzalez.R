@@ -113,7 +113,10 @@ test_that("pivots vector controls the random-furthest starts", {
 test_that("trivial cardinalities are handled", {
   dat <- MakeData(N = 10)
   expect_identical(FarFirst(dat$d, 0L), integer(0))
-  expect_identical(FarFirst(dat$d, 20L), seq_len(10L))
+  # n > N: all N indices returned in Gonzalez order (a permutation of 1:N).
+  over <- FarFirst(dat$d, 20L, seed = 1L)
+  expect_length(over, 10L)
+  expect_setequal(over, seq_len(10L))
   expect_length(FarFirst(dat$d, 1L, seed = "medoid"), 1L)
   # n == 1 under ensemble: all t_k are NA, first anchor wins.
   expect_length(FarFirst(dat$d, 1L), 1L)
@@ -181,7 +184,10 @@ test_that("column-oracle guards and contract", {
   dat <- MakeData(N = 12)
   colFn <- function(i) dat$d[, i]
   expect_identical(FarFirst(colFn, 0L, N = 12L), integer(0))
-  expect_identical(FarFirst(colFn, 20L, N = 12L), seq_len(12L))
+  # n > N: all N indices returned in Gonzalez order (a permutation of 1:N).
+  over <- FarFirst(colFn, 20L, N = 12L, seed = 1L)
+  expect_length(over, 12L)
+  expect_setequal(over, seq_len(12L))
   expect_length(FarFirst(colFn, 1L, N = 12L, seed = 4L), 1L)
   # N is required on the oracle path: it cannot be inferred from the closure.
   expect_error(FarFirst(colFn, 3L), "N")
@@ -277,4 +283,31 @@ test_that(".SubsetScore mean_pairwise returns mean of lower-triangle entries", {
 test_that(".GonzalezColumn rejects a non-function colFn", {
   expect_error(MaxMin:::.GonzalezColumn("not_a_function", N = 10L, n = 3L),
                "function")
+})
+
+# ---- downsample consistency -------------------------------------------------
+
+test_that("FarFirst(n = N)[1:5] equals FarFirst(n = 5) on all paths", {
+  dat <- MakeData()
+  N <- nrow(dat$d)
+
+  # Matrix path, single integer seed (bare Gonzalez pass).
+  full_mat <- FarFirst(dat$d, N, seed = 1L)
+  five_mat <- FarFirst(dat$d, 5L, seed = 1L)
+  expect_identical(full_mat[1:5], five_mat)
+
+  # Points path, same seed.
+  full_pts <- FarFirst(n = N, points = dat$pts, seed = 1L)
+  five_pts <- FarFirst(n = 5L, points = dat$pts, seed = 1L)
+  expect_identical(full_pts[1:5], five_pts)
+
+  # Oracle path, integer seed.
+  colFn <- function(i) dat$d[, i]
+  full_col <- FarFirst(colFn, N, N = N, seed = 1L)
+  five_col <- FarFirst(colFn, 5L, N = N, seed = 1L)
+  expect_identical(full_col[1:5], five_col)
+
+  # n > N also satisfies the same prefix property.
+  over_mat <- FarFirst(dat$d, N + 10L, seed = 1L)
+  expect_identical(over_mat[1:5], five_mat)
 })

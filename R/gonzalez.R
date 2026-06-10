@@ -160,8 +160,8 @@
 #' @param d A `dist` object, a square symmetric numeric matrix of pairwise
 #'   distances, or a distance function (see
 #'   *§Distance function*). Ignored when `points` is supplied.
-#' @param n Integer: number of points to select. If `n >= N`, all indices are
-#'  returned.
+#' @param n Integer: number of points to select. If `n > N`, all `N` indices
+#'   are returned in Gonzalez (farthest-first) order.
 #' @param points Optional `N x dim` numeric coordinate matrix. When supplied,
 #'   the selection is computed directly from coordinates in `O(N * n * dim)`
 #'   time and `O(N)` memory, never materialising the `N x N` distance matrix
@@ -287,8 +287,8 @@ FarFirst <- function(d = NULL, n,
   if (length(n) != 1L || is.na(n) || n < 0L) {
     stop("`n` must be a single non-negative integer")
   }
-  if (n >= nPts) return(seq_len(nPts))
-  if (n == 0L)   return(integer(0))
+  n <- min(n, nPts)
+  if (n == 0L) return(integer(0))
 
   # The kernels attach a `t_k` attribute (the selection's min pairwise distance,
   # computed for free) for the ensemble driver. A bare single pass returns just
@@ -405,8 +405,8 @@ FarFirst <- function(d = NULL, n,
 #'   index order). See [.DistColumn()].
 #' @param N Integer: the total number of elements. It cannot be inferred from
 #'   `colFn`, so it must be supplied.
-#' @param n Integer: number of elements to select. If `n >= N`, all indices are
-#'   returned.
+#' @param n Integer: number of elements to select. If `n > N`, all `N` indices
+#'   are returned in Gonzalez (farthest-first) order.
 #' @param first Integer index of the first selected element, or `NULL`
 #'   (default) to use a deterministic peripheral seed computed from two oracle
 #'   sweeps: the element furthest from element 1, then the element furthest
@@ -431,7 +431,7 @@ FarFirst <- function(d = NULL, n,
   if (length(n) != 1L || is.na(n) || n < 0L) {
     stop("`n` must be a single non-negative integer")
   }
-  if (n >= N) return(seq_len(N))
+  n <- min(n, N)
   if (n == 0L) return(integer(0))
   if (is.null(first)) {
     first <- .PeripheralSeedColumn(colFn, N)
