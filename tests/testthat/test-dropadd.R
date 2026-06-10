@@ -192,6 +192,7 @@ test_that("DropAdd is deterministic and validates inputs", {
   r1 <- DropAdd(dmat, m = 4L, maxIter = 0L)
   set.seed(999)
   r2 <- DropAdd(dmat, m = 4L, maxIter = 0L)
+  attr(r1, "time_s") <- attr(r2, "time_s") <- NULL
   expect_identical(r1, r2, label = "DropAdd is RNG-independent: different seeds give identical result")
 
   # m validation
