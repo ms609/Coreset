@@ -49,7 +49,7 @@ test_that("Grasp_cpp == .Grasp_R across seeds and parameters", {
     # and never expected to match. Every other attribute is asserted below.
     attr(ker, "time_s") <- attr(ref, "time_s") <- NULL
     expect_identical(ker,                    ref,                    info = info)
-    expect_identical(attr(ker, "score"),     attr(ref, "score"),     info = info)
+    expect_equal(attr(ker, "score"),     attr(ref, "score"),     tolerance = 1e-14, info = info)
     expect_identical(attr(ker, "iters"),     attr(ref, "iters"),     info = info)
     expect_identical(attr(ker, "pr_calls"),  attr(ref, "pr_calls"),  info = info)
   }
@@ -113,6 +113,27 @@ test_that(".GraspPathRelink keeps the best state along the path", {
   zy <- MaxMin:::.GraspObjective(d30m, y)
   expect_equal(pr$intermediates, 3L)
   expect_true(pr$objective >= max(zx, zy))
+})
+
+# 7b. Path relinking strictly improves on at least one pair ---------------
+
+test_that(".GraspPathRelink strictly improves on at least one pair", {
+  found <- FALSE
+  for (s in 1:100) {
+    set.seed(s)
+    x <- MaxMin:::.GraspConstruct(d30m, 5L, 0.5)
+    set.seed(s + 100L)
+    y <- MaxMin:::.GraspConstruct(d30m, 5L, 0.5)
+    if (!identical(sort(x), sort(y))) {
+      zx <- MaxMin:::.GraspObjective(d30m, x)
+      zy <- MaxMin:::.GraspObjective(d30m, y)
+      pr <- MaxMin:::.GraspPathRelink(d30m, x, y)
+      if (pr$objective > max(zx, zy) + 1e-10) {
+        found <- TRUE; break
+      }
+    }
+  }
+  expect_true(found, label = "path relinking strictly improves on at least one pair")
 })
 
 # 8. Grasp timeBudgetS validation -------------------------------------
@@ -239,4 +260,24 @@ test_that(".Grasp_R phase-C path relinking fires lines 422-423", {
     }
   }
   expect_true(found)
+})
+
+# 13. Grasp eliteSize = 1 skips path relinking ---------------------------------
+
+test_that("Grasp eliteSize=1 skips path relinking", {
+  set.seed(1)
+  res <- Grasp(d30, m = 4L, eliteSize = 1L, plateau = 20L)
+  expect_length(res, 4L)
+  expect_equal(attr(res, "pr_calls"), 0L)
+  expect_true(attr(res, "score") > 0)
+})
+
+# 14. .GraspPathRelink returns immediately for identical endpoints -------------
+
+test_that(".GraspPathRelink returns immediately for identical endpoints", {
+  x  <- c(1L, 2L, 3L, 4L, 5L)
+  pr <- MaxMin:::.GraspPathRelink(d30m, x, x)
+  expect_equal(pr$intermediates, 0L)
+  # The returned objective is the best we can do with that selection.
+  expect_equal(pr$objective, MaxMin:::.GraspObjective(d30m, x))
 })

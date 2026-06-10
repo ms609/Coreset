@@ -152,26 +152,31 @@ test_that(".MaxMinSeed and .MaxMinSeedPoints stop on an unknown method", {
 
 # ---- .GonzEnsemble internal guards (bypassed by FarFirst() validation) -----
 
-test_that(".GonzEnsemble validates n and anchors and handles trivial n", {
+test_that(".GonzEnsemble validates m and anchors and handles trivial m", {
   dat <- MakeData()
   d   <- dat$d
   n   <- nrow(d)
   expect_error(MaxMin:::.GonzEnsemble(d, -1L, "peripheral"), "non-negative")
   expect_error(MaxMin:::.GonzEnsemble(d, 3L, character(0)), "at least one")
-  expect_identical(MaxMin:::.GonzEnsemble(d, n, "peripheral"), seq_len(n))
+  # m >= nPts: all points returned with score = NA_real_ (FF-005)
+  trivial <- MaxMin:::.GonzEnsemble(d, n, "peripheral")
+  expect_identical(as.integer(trivial), seq_len(n))
+  expect_true(is.na(attr(trivial, "score")))
   expect_identical(MaxMin:::.GonzEnsemble(d, 0L, "peripheral"), integer(0))
 })
 
 # ---- .GonzEnsembleFromPoints internal guards --------------------------------
 
-test_that(".GonzEnsembleFromPoints validates n and anchors and handles trivial n", {
+test_that(".GonzEnsembleFromPoints validates m and anchors and handles trivial m", {
   dat  <- MakeData()
   pts  <- dat$pts
   nPts <- nrow(pts)
   expect_error(MaxMin:::.GonzEnsembleFromPoints(pts, -1L, "peripheral"), "non-negative")
   expect_error(MaxMin:::.GonzEnsembleFromPoints(pts, 3L, character(0)), "at least one")
-  expect_identical(MaxMin:::.GonzEnsembleFromPoints(pts, nPts, "peripheral"),
-                   seq_len(nPts))
+  # m >= nPts: all points returned with score = NA_real_ (FF-005)
+  trivial <- MaxMin:::.GonzEnsembleFromPoints(pts, nPts, "peripheral")
+  expect_identical(as.integer(trivial), seq_len(nPts))
+  expect_true(is.na(attr(trivial, "score")))
   expect_identical(MaxMin:::.GonzEnsembleFromPoints(pts, 0L, "peripheral"), integer(0))
 })
 
@@ -189,10 +194,10 @@ test_that(".GonzEnsemble stops when random_furthest only and pivots is empty", {
   )
 })
 
-# ---- n = 1 ensemble on the points path (.GonzEnsembleFromPoints line 360,
+# ---- m = 1 ensemble on the points path (.GonzEnsembleFromPoints line 360,
 #       368) -----------------------------------------------------------------
 
-test_that(".GonzEnsembleFromPoints n=1 propagates NA t_k through all strategies", {
+test_that(".GonzEnsembleFromPoints m=1 propagates NA t_k through all strategies", {
   dat <- MakeData()
   # Each strategy returns one point -> t_k = NA -> is.na(tk) next fires for
   # every non-first strategy (line 360); is.na(bestTk) selects bestI (line 368).

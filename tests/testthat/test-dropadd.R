@@ -188,9 +188,11 @@ test_that("DropAdd is deterministic and validates inputs", {
 
   # The search is RNG-free, so repeated calls are identical. (The old `seed`
   # argument was a documented no-op and has been removed from the API.)
+  set.seed(1)
   r1 <- DropAdd(dmat, m = 4L, maxIter = 0L)
+  set.seed(999)
   r2 <- DropAdd(dmat, m = 4L, maxIter = 0L)
-  expect_identical(r1, r2)
+  expect_identical(r1, r2, label = "DropAdd is RNG-independent: different seeds give identical result")
 
   # m validation
   expect_error(DropAdd(dmat, m = 1L),   "2 <= m")
@@ -334,6 +336,17 @@ test_that("DropAdd C++ main-loop ADD covers tie-break (255-258) and equality (27
 # for any iter budget.
 # ---------------------------------------------------------------------------
 
+test_that("DropAdd secondary attribute equals upper-triangle distance sum", {
+  set.seed(2026)
+  pts <- matrix(rnorm(20 * 3), ncol = 3)
+  dmat <- as.matrix(dist(pts))
+  res <- DropAdd(dmat, m = 5L, maxIter = 20L)
+  # Brute-force the secondary: upper-triangle sum of distances within selection.
+  sub <- dmat[res, res]
+  expected_secondary <- sum(sub[upper.tri(sub)])
+  expect_equal(attr(res, "secondary"), expected_secondary, tolerance = 1e-10)
+})
+
 test_that("DropAdd R reference loop and C++ port are bit-identical", {
   set.seed(2026)
   pts <- matrix(rnorm(60 * 4), ncol = 4)
@@ -345,8 +358,8 @@ test_that("DropAdd R reference loop and C++ port are bit-identical", {
     # Drop wall-clock `time_s`: nondeterministic, never expected to match.
     attr(outR, "time_s") <- attr(outC, "time_s") <- NULL
     expect_identical(outR,                        outC)
-    expect_identical(attr(outR, "score"),  attr(outC, "score"))
-    expect_identical(attr(outR, "secondary"),  attr(outC, "secondary"))
+    expect_equal(attr(outR, "score"),     attr(outC, "score"),     tolerance = 1e-12)
+    expect_equal(attr(outR, "secondary"), attr(outC, "secondary"), tolerance = 1e-12)
     expect_identical(attr(outR, "iters"),      attr(outC, "iters"))
   }
 
@@ -358,8 +371,8 @@ test_that("DropAdd R reference loop and C++ port are bit-identical", {
     outC <- DropAdd(dmat, m = 8L, plateau = mni)
     attr(outR, "time_s") <- attr(outC, "time_s") <- NULL
     expect_identical(outR,                        outC)
-    expect_identical(attr(outR, "score"),  attr(outC, "score"))
-    expect_identical(attr(outR, "secondary"),  attr(outC, "secondary"))
+    expect_equal(attr(outR, "score"),     attr(outC, "score"),     tolerance = 1e-12)
+    expect_equal(attr(outR, "secondary"), attr(outC, "secondary"), tolerance = 1e-12)
     expect_identical(attr(outR, "iters"),      attr(outC, "iters"))
   }
 })

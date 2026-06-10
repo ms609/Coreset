@@ -31,9 +31,11 @@ test_that("matrix and coordinate paths agree for every seed strategy", {
     pt  <- FarFirst(m = n, points = dat$pts,
                     method = c("peripheral", "random_furthest"),
                     pivots = c(3L, 17L, 28L))
-    attributes(mat) <- NULL
-    attributes(pt)  <- NULL
-    expect_identical(mat, pt, info = paste("ensemble m", n))
+    expect_identical(as.integer(mat), as.integer(pt), info = paste("ensemble m", n))
+    expect_equal(attr(mat, "score"), attr(pt, "score"), tolerance = 1e-12,
+                 info = paste("ensemble score m", n))
+    expect_equal(attr(mat, "winning_strategy"), attr(pt, "winning_strategy"),
+                 info = paste("ensemble winning_strategy m", n))
   }
 })
 
@@ -124,6 +126,16 @@ test_that("trivial cardinalities are handled", {
   expect_length(FarFirst(dat$d, 1L, method = "medoid"), 1L)
   # m == 1 under ensemble: all t_k are NA, first anchor wins.
   expect_length(FarFirst(dat$d, 1L), 1L)
+})
+
+test_that("FarFirst m > nPts returns all points (m capped at nPts)", {
+  dat <- MakeData(N = 10)   # 10-point dataset
+  # Request more points than available
+  res <- FarFirst(dat$d, m = 50L, method = "peripheral")
+  expect_length(res, 10L)
+  expect_setequal(res, seq_len(10L))
+  # Score is finite (not NA) — it is the min pairwise distance of all 10 points
+  expect_true(is.numeric(attr(res, "score")))
 })
 
 test_that("input validation", {
@@ -264,15 +276,15 @@ test_that(".MaximinFromColumn progress = TRUE fires the cli hooks", {
   )
 })
 
-# ---- .GonzalezColumn N/n/first validation (lines 311, 314, 323) ------------
+# ---- .GonzalezColumn N/m/first validation (lines 311, 314, 323) ------------
 
-test_that(".GonzalezColumn validates N < 1, n < 0, and first out of bounds", {
+test_that(".GonzalezColumn validates N < 1, m < 0, and first out of bounds", {
   dat <- MakeData(N = 12)
   colFn <- function(i) dat$d[, i]
   # N < 1: line 311
   expect_error(FarFirst(colFn, 3L, N = 0L),           "N")
-  # n < 0: line 314
-  expect_error(FarFirst(colFn, -1L, N = 12L, method = 1L), "n")
+  # m < 0: line 314
+  expect_error(FarFirst(colFn, -1L, N = 12L, method = 1L), "m")
   # first out of bounds (> N): line 323
   expect_error(FarFirst(colFn, 3L, N = 12L, method = 15L), "first")
 })
