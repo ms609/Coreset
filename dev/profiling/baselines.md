@@ -28,14 +28,15 @@ Median wall time, `bench::mark`, R-devel, `-O2`. Refresh each round.
 
 (Pre-fix construction: 116 ms / 293 ms → 11.3× / 13.1×.)
 
-## Area 3 — Grasp — AFTER T-006 (incremental swap)
+## Area 3 — Grasp — AFTER T-007 (base_z min-edge witness hoist)
 
 | case | metric | ms |
 |------|--------|---:|
-| n=200, m=50, eliteSize=5, plateau=15 | median | 22.2 |
-| n=200, m=100, eliteSize=5, plateau=15 | median | 85.0 |
+| n=200, m=50, eliteSize=5, plateau=15 | median | 16.4 |
+| n=200, m=100, eliteSize=5, plateau=15 | median | 39.5 |
 
-(Pre-fix: 315 ms / 1329 ms → 14.2× / 15.6×.)
+(T-006→T-007: 22.2→16.4 ms / 85.0→39.5 ms → 1.34× / 2.07×, 416/416 bit-identical.
+ Cumulative vs pre-T-006: 315→16.4 ms / 1329→39.5 ms → 19.2× / 33.6×.)
 
 ## Area 1 — FarFirst single pass — AFTER T-004 (column reorder, AT-LIMIT)
 

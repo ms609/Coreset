@@ -56,6 +56,25 @@ static inline double min_to_set(const double* d, int n, int x,
   return best;
 }
 
+// Global minimum pairwise distance within `sel`, returning the witness edge as
+// the two selected vertices (wa, wb) that realise it. O(m^2); for m < 2 returns
+// POS_INF with wa = wb = -1. Used to hoist the per-drop objective_of(sel\{v})
+// rescore in path-relink / local-search: dropping any vertex other than the
+// witness leaves the global-min edge intact, so the post-drop min is unchanged
+// (and bit-identical, since min just re-selects that surviving D() value).
+static double min_edge_witness(const double* d, int n,
+                               const std::vector<int>& sel, int& wa, int& wb) {
+  int m = (int)sel.size();
+  double best = POS_INF;
+  wa = -1; wb = -1;
+  for (int a = 0; a < m; ++a)
+    for (int b = a + 1; b < m; ++b) {
+      double v = D(d, n, sel[a], sel[b]);
+      if (v < best) { best = v; wa = sel[a]; wb = sel[b]; }
+    }
+  return best;
+}
+
 // #unordered pairs in (rem ∪ {s}) with distance <= thr — the extended-
 // improvement tie-break count (.GraspMinPairCount on cand = rem ++ s). Only paid
 // for the rare candidate that can actually win a swap (nd >= best_dstar).
@@ -131,12 +150,16 @@ static std::vector<int> grasp_local_search(const double* d, int n,
   for (int v : sel) in_sel[v] = 1;
   for (;;) {
     // sel is kept ascending. di[k] = nearest-other-selected distance.
+    // (wa, wb) is a witness for the global min edge, reused to hoist base_z.
     std::vector<double> di(m, POS_INF);
+    int wa = -1, wb = -1;
+    double gmin = POS_INF;
     for (int a = 0; a < m; ++a)
       for (int b = a + 1; b < m; ++b) {
         double v = D(d, n, sel[a], sel[b]);
         if (v < di[a]) di[a] = v;
         if (v < di[b]) di[b] = v;
+        if (v < gmin) { gmin = v; wa = sel[a]; wb = sel[b]; }
       }
     double dstar = POS_INF;
     for (int k = 0; k < m; ++k) if (di[k] < dstar) dstar = di[k];
@@ -153,10 +176,14 @@ static std::vector<int> grasp_local_search(const double* d, int n,
       if (di[ci] > dstar) continue;
       int drop = sel[ci];
       // remaining = sel without position ci. Its internal min pairwise distance
-      // (base_z) is constant across all candidate adds, so compute it once.
+      // (base_z) equals the global min dstar unless we dropped a witness vertex,
+      // in which case the surviving min must be rescored.
       rem.clear();
       for (int t = 0; t < m; ++t) if (t != ci) rem.push_back(sel[t]);
-      double base_z = (rem.size() >= 2) ? objective_of(d, n, rem) : POS_INF;
+      double base_z;
+      if (rem.size() < 2) base_z = POS_INF;
+      else if (drop == wa || drop == wb) base_z = objective_of(d, n, rem);
+      else base_z = dstar;
       for (int s = 0; s < n; ++s) {            // out-of-selection, ascending
         if (in_sel[s]) continue;
         // nd = min(base_z, min dist from s to remaining); identical to
@@ -234,15 +261,23 @@ static PRResult grasp_path_relink(const double* d, int n,
     }
     double best_pair_z = NEG_INF;
     int bi = -1, bj = -1;
+    // Global min edge of pk, with a witness. Dropping any vertex other than the
+    // witness leaves that edge intact, so base_z == gmin without an O(m^2)
+    // rescore; only the (<=2) witness vertices need objective_of. Bit-identical,
+    // since min just re-selects the surviving D() value.
+    int wa, wb;
+    double gmin = min_edge_witness(d, n, pk, wa, wb);
     std::vector<int> rem;
     rem.reserve((int)pk.size());
     for (int ii = 0; ii < (int)drop_cands.size(); ++ii) {
       int di_ = drop_cands[ii];
-      // remaining = pk without di_; its internal min pairwise (base_z) is
-      // constant across the add candidates, so hoist it out of the inner loop.
+      // remaining = pk without di_; base_z is its internal min pairwise distance.
       rem.clear();
       for (int v : pk) if (v != di_) rem.push_back(v);
-      double base_z = (rem.size() >= 2) ? objective_of(d, n, rem) : POS_INF;
+      double base_z;
+      if (rem.size() < 2) base_z = POS_INF;
+      else if (di_ == wa || di_ == wb) base_z = objective_of(d, n, rem);
+      else base_z = gmin;
       for (int jj = 0; jj < (int)add_cands.size(); ++jj) {
         int dj_ = add_cands[jj];
         double cross = min_to_set(d, n, dj_, rem);

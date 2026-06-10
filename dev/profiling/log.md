@@ -268,3 +268,35 @@ Status: Area 2 → OPTIMISED, Area 3 → OPTIMISED, Area 1 pass → AT-LIMIT.
 last_focus: 3
 
 Status: Area 3 → PROFILED.
+
+## Round (T-007) — 2026-06-10 — Area 3: Grasp base_z hoist (from salvaged audit)
+
+**Origin:** an independent peak-optimality audit (subagent, killed mid-run by
+token depletion before its verdict) surfaced one un-chased lead: in
+`grasp_path_relink`, `base_z = objective_of(pk \ {di_})` is recomputed O(m²)
+**per drop candidate** — T-006 had only hoisted it out of the inner *add* loop.
+Confirmed by reading the kernel; the same pattern lives in `grasp_local_search`.
+
+**Fix:** new `min_edge_witness(sel, &wa, &wb)` returns the global min pairwise
+edge of `sel` and the two vertices realising it (O(m²), once per step). For any
+drop `di_ ∉ {wa,wb}` the witness edge survives in `pk\{di_}`, so the post-drop
+min is unchanged → `base_z = gmin` in O(1); only the ≤2 witness vertices rescore.
+Applied at `grasp.cpp:245` (PR walk) and `:159` (LS, reusing the di-loop's min).
+Per-step base_z: O(|drop_cands|·m²) → O(m²). Size guard kept first.
+
+**Why bit-identical:** `min` re-selects the identical surviving `D()` value (same
+matrix cell; `sel`/`rem` ascending, witness read at `a<b`). No arithmetic.
+
+**Verified (verify-r2.R old vs new):**
+```
+correctness  416/416 identical   (gp 192/192; ff/da untouched)
+grasp_n200_m50    21.92 -> 16.35 ms   (1.34x)
+grasp_n200_m100   81.90 -> 39.52 ms   (2.07x)
+all FarFirst/DropAdd timing flat (<=1.03x)
+```
+Win grows with m (PR phase = 93.6% of wall); analytic worst case r=m ≈ 2.3–2.5×
+on the PR walk. Comfortably above the 5% floor.
+
+Status: Area 3 → OPTIMISED (T-007). Rotation current: all areas OPTIMISED/AT-LIMIT.
+
+last_focus: 3
