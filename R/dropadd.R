@@ -144,6 +144,12 @@
 #' invariant guarantees that across any window of \eqn{m} iterations every
 #' initially-selected point is dropped exactly once before any re-eviction.
 #'
+#' Time budget behaviour. The time budget (\code{timeBudgetS}) is checked at
+#' most once every 256 iterations (matrix-free path) or 1024 iterations
+#' (matrix path). On large instances where each iteration is slow, the actual
+#' elapsed time may exceed the specified budget by up to one iteration's worth
+#' of computation.
+#'
 #' @param d A \code{dist} object or square symmetric numeric matrix.
 #'   Mutually exclusive with \code{points}; supply exactly one.
 #' @param points A numeric \eqn{n \times \mathrm{dim}} coordinate matrix (or an

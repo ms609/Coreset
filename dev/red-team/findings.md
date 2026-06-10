@@ -21,8 +21,8 @@ Non-trivial bugs and performance issues, filed **only after verification** (triv
 | ID | Severity | Status | Type | Title | Location & detail | Verifier |
 |----|----------|--------|------|-------|-------------------|----------|
 | MF-01 | low | FIXED 9001 | Bug | `DropAdd_points_cpp` accepts NaN via direct `:::` call → possible OOB write `in_S[-1]` | [src/dropadd_mf.cpp](../../src/dropadd_mf.cpp) — public `DropAdd()` is guarded by `.AsPointsMatrix` (`anyNA`), but the `[[Rcpp::export]]`ed core has no internal NaN guard; argmax degrades, `x_new` can stay `-1`. Only reachable via direct internal call. | REAL (haiku) |
-| MF-03 | low | OPEN | Perf | `timeBudgetS` overshoot up to ~256 iterations at large n | [src/dropadd_mf.cpp:201](../../src/dropadd_mf.cpp) — timer checked only every `check_every=256`; at manuscript-scale n each iter is O(n·dim), so a 1 s budget can overshoot by seconds. Magnitude undocumented. | REAL (haiku) |
-| MF-04 | low | OPEN | Bug | Signed-int overflow UB on `iters_done` at `max_iter=.Machine$integer.max` | [src/dropadd_mf.cpp:183](../../src/dropadd_mf.cpp) (also dropadd.cpp) — `int` counter wraps → UB; practically unreachable (billions of iters). Use `int64_t`/`size_t`. | REAL (haiku) |
+| MF-03 | low | FIXED 9002 | Perf | `timeBudgetS` overshoot up to ~256 iterations at large n | [src/dropadd_mf.cpp:201](../../src/dropadd_mf.cpp) — timer checked only every `check_every=256`; at manuscript-scale n each iter is O(n·dim), so a 1 s budget can overshoot by seconds. Magnitude undocumented. | REAL (haiku) |
+| MF-04 | low | FIXED 9002 | Bug | Signed-int overflow UB on `iters_done` at `max_iter=.Machine$integer.max` | [src/dropadd_mf.cpp:183](../../src/dropadd_mf.cpp) (also dropadd.cpp) — `int` counter wraps → UB; practically unreachable (billions of iters). Use `int64_t`/`size_t`. | REAL (haiku) |
 
 ## Round 3 — area #3 GRASP (see also headline GRASP-01/02)
 
@@ -38,8 +38,8 @@ Non-trivial bugs and performance issues, filed **only after verification** (triv
 | FF-002 | low | FIXED 9001 | Bug | `seed=NA/NaN` reaches C++ as `INT_MIN` → opaque error | [R/farfirst.R:247-248](../../R/farfirst.R) — `is.integer(NA_integer_)` is TRUE so `as.integer(NA)`→NA→INT_MIN. Add `anyNA`/`is.finite` check. | REAL (haiku) |
 | FF-003 | low | FIXED 9001 | Bug | `seed=integer(0)`/`c(1L,2L)` → opaque Rcpp "Expecting a single value" | [R/farfirst.R:247-248](../../R/farfirst.R) — missing `length(seed)==1` check. | REAL (haiku) |
 | FF-004 | low | FIXED 9001 | Bug | `n=Inf` → spurious base-R coercion warning before package error | [R/farfirst.R:286](../../R/farfirst.R) — pre-check `is.finite(n)` before `as.integer`. | REAL (haiku) |
-| FF-005 | info | OPEN | Design | Ensemble returns bare `seq_len(nPts)` (no `strategy_results`/`winning_strategy`) when `n>=nPts` | [R/seed.R:279,378](../../R/seed.R) — inconsistent with documented "with attributes" return. (= F-603.) | REAL (haiku) |
-| FF-006 | info | OPEN | Design | Asymmetric distance matrix silently accepted | [R/farfirst.R:8-14](../../R/farfirst.R) — `nrow==ncol` only, no symmetry check. O(N²) to check; if intentional, document. | REAL (haiku) |
+| FF-005 | info | FIXED 9002 | Design | Ensemble returns bare `seq_len(nPts)` (no `strategy_results`/`winning_strategy`) when `n>=nPts` | [R/seed.R:279,378](../../R/seed.R) — inconsistent with documented "with attributes" return. (= F-603.) | REAL (haiku) |
+| FF-006 | info | FIXED 9002 | Design | Asymmetric distance matrix silently accepted | [R/farfirst.R:8-14](../../R/farfirst.R) — `nrow==ncol` only, no symmetry check. O(N²) to check; if intentional, document. | REAL (haiku) |
 
 ## Round 5 — area #5 Exact + maximin core  (seam ran DRY at sonnet → next visit escalates to opus)
 
@@ -61,17 +61,17 @@ Non-trivial bugs and performance issues, filed **only after verification** (triv
 | ID | Severity | Status | Type | Title | Location & detail | Verifier |
 |----|----------|--------|------|-------|-------------------|----------|
 | T7-08 | high (gap) | FIXED 9001 | Gap | No test for NA in a distance matrix (= FF-001 root) | [tests/testthat/](../../tests/testthat) + `.AsDistMatrix` — add `expect_error(DropAdd(na_mat,m=3),"NA")` / `FarFirst(na_mat,3)` once the guard lands. | REAL (haiku) |
-| T7-01 | med | OPEN | Weak | Path-relink `>= max(endpoints)` assertion holds by construction | [test-grasp.R:106](../../tests/testthat/test-grasp.R) — `bestZ` initialised to `max(zX,zY)` and only increases. Use `>` on a geometry where an intermediate improves. | REAL (haiku) |
-| T7-04 | med | OPEN | Weak | DropAdd seed-reproducibility test is vacuous (no RNG draws) | [test-dropadd.R:190-193](../../tests/testthat/test-dropadd.R), test-dropadd-mf.R:149-151 — DropAdd is deterministic; same-seed identity is trivial. (The dead `seed` arg is being removed by the API task.) | REAL (haiku) |
-| T7-06 | med | OPEN | Weak | `expect_identical` on float `score`/`secondary` (FP-fragile; root of the known flakiness) | [test-dropadd.R:339-355](../../tests/testthat/test-dropadd.R) — split: `expect_identical` on integer indices, `expect_equal(tolerance=)` on floats. | REAL (haiku) |
-| T7-07 | med | OPEN | Weak | `expect_identical` on float `score` (FP-fragile) | [test-grasp.R:45](../../tests/testthat/test-grasp.R) — same fix as T7-06. | REAL (haiku) |
-| T7-09 | med | OPEN | Gap | `secondary` attribute never checked against the brute-force upper-triangle sum | [test-dropadd.R](../../tests/testthat/test-dropadd.R) — parity tests catch cross-path divergence, not a shared formula bug. | REAL (haiku) |
-| T7-10 | med | OPEN | Gap | ExactMaxMin `proven=FALSE` (budget-expiry) branch untested | [test-exact.R](../../tests/testthat/test-exact.R) — add a `timeBudgetS=1e-6` test asserting `!proven`. | REAL (haiku) |
-| T7-12 | med | OPEN | Weak | farfirst test strips attributes before compare, hiding `strategy_results` divergence | [test-farfirst.R:34-35](../../tests/testthat/test-farfirst.R) | REAL (haiku) |
-| T7-03 | low | OPEN | Weak | Exact `m=n` → `1:8` is structurally forced | [test-exact.R:91](../../tests/testthat/test-exact.R) — assert `objective` instead. | REAL (haiku) |
-| T7-14 | low | OPEN | Gap | FarFirst `n>N` tail order (positions 6..N) untested | [test-farfirst.R](../../tests/testthat/test-farfirst.R) | REAL (haiku) |
-| T7-15 | low | OPEN | Gap | Grasp `eliteSize=1` (PR skipped, `pr_calls=0`) untested | [test-grasp.R](../../tests/testthat/test-grasp.R) | REAL (haiku) |
-| T7-16 | low | OPEN | Gap | `.GraspPathRelink` identical-input early return untested | [R/grasp.R:155-157](../../R/grasp.R) | REAL (haiku) |
+| T7-01 | med | FIXED 9002 | Weak | Path-relink `>= max(endpoints)` assertion holds by construction | [test-grasp.R:106](../../tests/testthat/test-grasp.R) — `bestZ` initialised to `max(zX,zY)` and only increases. Use `>` on a geometry where an intermediate improves. | REAL (haiku) |
+| T7-04 | med | FIXED 9002 | Weak | DropAdd seed-reproducibility test is vacuous (no RNG draws) | [test-dropadd.R:190-193](../../tests/testthat/test-dropadd.R), test-dropadd-mf.R:149-151 — DropAdd is deterministic; same-seed identity is trivial. (The dead `seed` arg is being removed by the API task.) | REAL (haiku) |
+| T7-06 | med | FIXED 9002 | Weak | `expect_identical` on float `score`/`secondary` (FP-fragile; root of the known flakiness) | [test-dropadd.R:339-355](../../tests/testthat/test-dropadd.R) — split: `expect_identical` on integer indices, `expect_equal(tolerance=)` on floats. | REAL (haiku) |
+| T7-07 | med | FIXED 9002 | Weak | `expect_identical` on float `score` (FP-fragile) | [test-grasp.R:45](../../tests/testthat/test-grasp.R) — same fix as T7-06. | REAL (haiku) |
+| T7-09 | med | FIXED 9002 | Gap | `secondary` attribute never checked against the brute-force upper-triangle sum | [test-dropadd.R](../../tests/testthat/test-dropadd.R) — parity tests catch cross-path divergence, not a shared formula bug. | REAL (haiku) |
+| T7-10 | med | FIXED 9002 | Gap | ExactMaxMin `proven=FALSE` (budget-expiry) branch untested | [test-exact.R](../../tests/testthat/test-exact.R) — add a `timeBudgetS=1e-6` test asserting `!proven`. | REAL (haiku) |
+| T7-12 | med | FIXED 9002 | Weak | farfirst test strips attributes before compare, hiding `strategy_results` divergence | [test-farfirst.R:34-35](../../tests/testthat/test-farfirst.R) | REAL (haiku) |
+| T7-03 | low | FIXED 9002 | Weak | Exact `m=n` → `1:8` is structurally forced | [test-exact.R:91](../../tests/testthat/test-exact.R) — assert `objective` instead. | REAL (haiku) |
+| T7-14 | low | FIXED 9002 | Gap | FarFirst `n>N` tail order (positions 6..N) untested | [test-farfirst.R](../../tests/testthat/test-farfirst.R) | REAL (haiku) |
+| T7-15 | low | FIXED 9002 | Gap | Grasp `eliteSize=1` (PR skipped, `pr_calls=0`) untested | [test-grasp.R](../../tests/testthat/test-grasp.R) | REAL (haiku) |
+| T7-16 | low | FIXED 9002 | Gap | `.GraspPathRelink` identical-input early return untested | [R/grasp.R:155-157](../../R/grasp.R) | REAL (haiku) |
 
 ---
 

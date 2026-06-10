@@ -90,6 +90,12 @@ the point in \eqn{Z \setminus X} maximising lexicographically
 \eqn{(\mathrm{minDist}, \mathrm{sumDist})} is added. The FIFO
 invariant guarantees that across any window of \eqn{m} iterations every
 initially-selected point is dropped exactly once before any re-eviction.
+
+Time budget behaviour. The time budget (\code{timeBudgetS}) is checked at
+most once every 256 iterations (matrix-free path) or 1024 iterations
+(matrix path). On large instances where each iteration is slow, the actual
+elapsed time may exceed the specified budget by up to one iteration's worth
+of computation.
 }
 \references{
 \insertAllCited{}

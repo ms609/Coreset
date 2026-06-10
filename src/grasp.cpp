@@ -380,8 +380,8 @@ List Grasp_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter,
 
   // Phase B: refine until max_no_improve consecutive non-improving iterations
   // (deterministic), an optional iteration cap, or an optional time ceiling.
-  int iters = 0;
-  int no_improve = 0;
+  long long iters = 0;
+  long long no_improve = 0;
   double best_z_B = ESz[0];
   for (;;) {
     if (no_improve >= max_no_improve) break;

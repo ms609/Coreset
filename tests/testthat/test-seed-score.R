@@ -158,7 +158,10 @@ test_that(".GonzEnsemble validates n and anchors and handles trivial n", {
   n   <- nrow(d)
   expect_error(MaxMin:::.GonzEnsemble(d, -1L, "peripheral"), "non-negative")
   expect_error(MaxMin:::.GonzEnsemble(d, 3L, character(0)), "at least one")
-  expect_identical(MaxMin:::.GonzEnsemble(d, n, "peripheral"), seq_len(n))
+  # n >= nPts: all points returned with score = NA_real_ (FF-005)
+  trivial <- MaxMin:::.GonzEnsemble(d, n, "peripheral")
+  expect_identical(as.integer(trivial), seq_len(n))
+  expect_true(is.na(attr(trivial, "score")))
   expect_identical(MaxMin:::.GonzEnsemble(d, 0L, "peripheral"), integer(0))
 })
 
@@ -170,8 +173,10 @@ test_that(".GonzEnsembleFromPoints validates n and anchors and handles trivial n
   nPts <- nrow(pts)
   expect_error(MaxMin:::.GonzEnsembleFromPoints(pts, -1L, "peripheral"), "non-negative")
   expect_error(MaxMin:::.GonzEnsembleFromPoints(pts, 3L, character(0)), "at least one")
-  expect_identical(MaxMin:::.GonzEnsembleFromPoints(pts, nPts, "peripheral"),
-                   seq_len(nPts))
+  # n >= nPts: all points returned with score = NA_real_ (FF-005)
+  trivial <- MaxMin:::.GonzEnsembleFromPoints(pts, nPts, "peripheral")
+  expect_identical(as.integer(trivial), seq_len(nPts))
+  expect_true(is.na(attr(trivial, "score")))
   expect_identical(MaxMin:::.GonzEnsembleFromPoints(pts, 0L, "peripheral"), integer(0))
 })
 

@@ -15,9 +15,11 @@ FarFirst(
 )
 }
 \arguments{
-\item{d}{A \code{dist} object, a square symmetric numeric matrix of pairwise
-distances, or a distance function (see
-\emph{§Distance function}). Ignored when \code{points} is supplied.}
+\item{d}{A \code{dist} object, a square numeric matrix of pairwise distances, or
+a distance function (see \emph{§Distance function}). Asymmetric matrices are
+accepted; symmetry is not checked (an \code{O(N^2)} check is intentionally
+omitted), and the algorithm treats \eqn{d_{ij}} and \eqn{d_{ji}} as
+independent. Ignored when \code{points} is supplied.}
 
 \item{m}{Integer: number of points to select. If \code{m > N}, all \code{N} indices
 are returned in Gonzalez (farthest-first) order.}

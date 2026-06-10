@@ -8,7 +8,7 @@ already a matrix.}
 .AsDistMatrix(d)
 }
 \arguments{
-\item{d}{A \code{dist} object or a square symmetric numeric matrix.}
+\item{d}{A \code{dist} object or a square numeric matrix.}
 }
 \value{
 A square numeric matrix.
@@ -16,5 +16,10 @@ A square numeric matrix.
 \description{
 Coerce distance input to a square matrix, skipping the round-trip when
 already a matrix.
+}
+\details{
+Symmetry is not checked; an \code{O(N^2)} check is intentionally omitted.
+Asymmetric matrices are silently accepted, and the algorithm treats
+\eqn{d_{ij}} and \eqn{d_{ji}} as independent values.
 }
 \keyword{internal}

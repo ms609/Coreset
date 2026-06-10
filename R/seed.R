@@ -284,7 +284,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
     several.ok = TRUE
   ))
   nPts <- nrow(d)
-  if (n >= nPts) return(seq_len(nPts))
+  if (n >= nPts) return(structure(seq_len(nPts), score = NA_real_))
   if (n == 0L)   return(integer(0))
 
   lazy <- new.env(parent = emptyenv())
@@ -383,7 +383,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
     several.ok = TRUE
   ))
   nPts <- nrow(points)
-  if (n >= nPts) return(seq_len(nPts))
+  if (n >= nPts) return(structure(seq_len(nPts), score = NA_real_))
   if (n == 0L)   return(integer(0))
 
   lazy <- new.env(parent = emptyenv())
