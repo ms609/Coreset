@@ -25,6 +25,11 @@ Rcpp::IntegerVector MaximinFrom_cpp(Rcpp::NumericMatrix d, int n, int first) {
   }
   min_dist[first0] = R_NegInf;      // mask seed before entering loop
 
+  // T_k = min over greedy steps of the chosen point's insertion distance
+  // (best_val), which equals the selection's minimum pairwise distance. Tracked
+  // here so the ensemble driver need not re-score with a d[idx, idx] subset.
+  double tk = R_PosInf;
+
   for (int k = 1; k < n; k++) {
     // which.max: first index of the global maximum (strict >, so ties → first)
     int best = 0;
@@ -36,6 +41,7 @@ Rcpp::IntegerVector MaximinFrom_cpp(Rcpp::NumericMatrix d, int n, int first) {
       }
     }
     selected[k] = best + 1;         // back to 1-based
+    if (best_val < tk) tk = best_val;   // running min insertion distance
 
     // Mask new point before pmin so d(best, best) = 0 cannot overwrite -Inf.
     min_dist[best] = R_NegInf;
@@ -47,6 +53,9 @@ Rcpp::IntegerVector MaximinFrom_cpp(Rcpp::NumericMatrix d, int n, int first) {
     }
     // min_dist[best] stays -Inf: pmin(-Inf, d(best,best)=0) = -Inf. ✓
   }
+
+  // T_k (min pairwise distance of the selection), free; NA for n < 2.
+  selected.attr("t_k") = (n >= 2 && R_finite(tk)) ? tk : NA_REAL;
 
   return selected;
 }

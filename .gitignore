@@ -23,3 +23,11 @@ revdep/
 /doc/
 /Meta/
 /.agent*
+
+# /profile skill throwaway artifacts
+dev/profiling/.vtune-lib-*/
+dev/profiling/result_*/
+dev/profiling/verify-*.rds
+dev/profiling/.libdir
+dev/profiling/.libdir-new
+dev/profiling/drivers/*profvis*

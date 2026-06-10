@@ -269,7 +269,10 @@ MaxMinSeed <- function(d = NULL, points = NULL,
     key <- as.character(s1)
     gonzCache[[key]] %||% {
       idx <- .MaximinFrom(d, n, first = s1)
-      tK <- if (length(idx) >= 2L) MinDist(d, idx) else NA_real_
+      # The kernel computes T_k (min pairwise distance) for free during the
+      # greedy pass; read it rather than re-scoring with a d[idx, idx] subset.
+      tK  <- attr(idx, "t_k") %||% NA_real_
+      attr(idx, "t_k") <- NULL
       res  <- list(idx = idx, tK = tK)
       gonzCache[[key]] <- res
       res
@@ -401,7 +404,11 @@ MaxMinSeed <- function(d = NULL, points = NULL,
     key <- as.character(s1)
     gonzCache[[key]] %||% {
       idx <- .MaximinFromPoints(points, n, first = s1)
-      tK <- if (length(idx) >= 2L) MinDist(idx = idx, points = points) else NA_real_
+      # The kernel computes T_k (min pairwise distance) for free during the
+      # greedy pass; read it rather than re-running stats::dist() on the
+      # selected sub-coordinates.
+      tK  <- attr(idx, "t_k") %||% NA_real_
+      attr(idx, "t_k") <- NULL
       res <- list(idx = idx, tK = tK)
       gonzCache[[key]] <- res
       res

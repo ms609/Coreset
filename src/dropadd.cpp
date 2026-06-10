@@ -47,13 +47,21 @@ List DropAdd_cpp(NumericMatrix dmat, int m, double time_budget_s,
 
   // -- Construction (Algorithm 1) -----------------------------------------
   // Seed: argmax over rows of row-sum; ties broken by smallest index.
+  // Accumulate row-sums column-sequentially. dmat is column-major, so the
+  // naive i-outer/j-inner loop reads D(i,j)=dp[i+j*n] with stride n (a cache
+  // miss per step at large n); sweeping j outer / i inner over the contiguous
+  // column `dp + j*n` is sequential. Each rs[i] still accumulates over j in
+  // increasing order, so the sums — and the argmax seed — are bit-identical.
   int seed = 0;
   {
+    std::vector<double> rs(n, 0.0);
+    for (int j = 0; j < n; ++j) {
+      const double *col = dp + (std::size_t)j * n;
+      for (int i = 0; i < n; ++i) rs[i] += col[i];
+    }
     double best_rs = R_NegInf;
     for (int i = 0; i < n; ++i) {
-      double rs = 0;
-      for (int j = 0; j < n; ++j) rs += D(i, j);
-      if (rs > best_rs) { best_rs = rs; seed = i; }
+      if (rs[i] > best_rs) { best_rs = rs[i]; seed = i; }
     }
   }
   S[0] = seed;

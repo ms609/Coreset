@@ -1,5 +1,6 @@
 #include <Rcpp.h>
 #include <cmath>
+#include <vector>
 
 // Coordinate-based greedy furthest-point (maximin) selection.
 //
@@ -9,23 +10,34 @@
 // most-recently-selected point; for Euclidean data that column is recomputed
 // from coordinates in O(N*dim), so the dense matrix is never built.
 //
-// Bit-exact equivalence with the matrix path is required (identical selection
-// indices). stats::dist() computes each Euclidean distance as
+// Identical selection indices to the matrix path are required. stats::dist()
+// computes each Euclidean distance as
 //   sqrt( sum_j (x[i,j] - x[c,j])^2 )
 // accumulating dev*dev in a plain double over dimensions in increasing column
-// order (R's R_euclidean in src/library/stats/src/distance.c). EuclidCol below
-// mirrors that accumulation exactly, so each on-the-fly distance is the same
-// double as the corresponding as.matrix(dist(points)) entry. Because the
-// running min_dist vector is then built from identical doubles, the strict-`>`
-// argmax resolves ties to the same index as the matrix kernel.
+// order (R's R_euclidean in src/library/stats/src/distance.c).
+//
+// The greedy pass below makes every decision through which.max(min_dist) and an
+// elementwise pmin; both are monotone under sqrt, so the pass runs in SQUARED-
+// distance space (EuclidColSq, no per-element sqrt -- the dominant inner-loop
+// cost at low dim) and still selects the same indices. The squared accumulation
+// `sum_j dev*dev` is the exact argument R passes to sqrt, so the ordering of the
+// squared values matches the ordering of the matrix entries: argmax and pmin
+// resolve to the same indices, and the reported T_k (sqrt'd once at the end) is
+// bit-identical to MinDist(). This identity is re-verified over a broad N x dim
+// x n x strategy battery by dev/profiling/drivers/verify.R (1620/1620 cases) in
+// addition to the cross-path expect_identical() tests in test-gonzalez.R.
+//
+// The seed-anchor primitives further down (RowSums/RowSqSums/Diameter/EuclidCol)
+// still return true sqrt distances, bit-matching as.matrix(dist(points)) entry
+// for entry, since their callers compare those values directly, not just rank.
 //
 // FP-flag sensitivity: the only way EuclidCol can diverge from R_euclidean is if
 // one of them contracts `s + dev*dev` into a single-rounding FMA and the other
 // does not (sqrt is correctly rounded everywhere). A user ~/.R/Makevars with
-// -march=native / -Ofast can introduce exactly this. Bit-identity must therefore
-// be re-confirmed on each deployment toolchain by running test-points-path.R;
-// do NOT pre-emptively force -ffp-contract=off (it would itself cause divergence
-// if R's stats was built with FMA). See dev/profiling/round7_points_kernel.md.
+// -march=native / -Ofast can introduce exactly this. Identity must therefore be
+// re-confirmed on each deployment toolchain by running the test suite; do NOT
+// pre-emptively force -ffp-contract=off (it would itself cause divergence if R's
+// stats was built with FMA).
 //
 // Arguments mirror .MaximinFromPoints() in R/samplers.R:
 //   points  N x dim coordinate matrix (column-major double storage)
@@ -48,6 +60,34 @@ static inline double EuclidCol(const double* P, int nPts, int dim,
   return std::sqrt(s);
 }
 
+// Squared-Euclidean column for the greedy pass, WITHOUT the final sqrt. The
+// pass makes its decisions purely through which.max(min_dist) and the pmin
+// update, both monotone under sqrt, so running it in squared-distance space
+// yields the same selection while skipping one sqrt per (point, step) -- the
+// dominant cost of the inner loop at low dim. The reported T_k is sqrt()'d once
+// at the end. (The other primitives below still need true distances; they keep
+// EuclidCol, with the sqrt.)
+//
+// Fill dcol[i] = squared distance from point i to centre c, for all i, by
+// accumulating dimension-by-dimension over contiguous columns. Summing dev*dev
+// over j ascending matches stats::dist()'s order, so dcol[i] equals the squared
+// matrix entry -- but every access is sequential: one vectorisable pass per
+// dimension over the contiguous column `P + j*nPts`, instead of `dim` strided
+// streams gathered per point. This is the cache/SIMD-friendly shape of the hot
+// column.
+static inline void EuclidColSqInto(const double* P, int nPts, int dim, int c,
+                                   double* dcol) {
+  for (int i = 0; i < nPts; i++) dcol[i] = 0.0;
+  for (int j = 0; j < dim; j++) {
+    const double* pj = P + (R_xlen_t)j * nPts;     // contiguous column j
+    double cj = pj[c];
+    for (int i = 0; i < nPts; i++) {
+      double dev = pj[i] - cj;
+      dcol[i] += dev * dev;
+    }
+  }
+}
+
 // [[Rcpp::export]]
 Rcpp::IntegerVector MaximinFromPoints_cpp(Rcpp::NumericMatrix points,
                                           int n, int first, int mask) {
@@ -65,14 +105,21 @@ Rcpp::IntegerVector MaximinFromPoints_cpp(Rcpp::NumericMatrix points,
   selected[0] = first;
   int first0 = first - 1;           // convert to 0-based once
 
+  // min_dist holds SQUARED nearest-selected distances throughout the pass; the
+  // selection is identical to working in true distances (sqrt is monotone) but
+  // skips n*N sqrt calls. T_k is recovered with a single sqrt at the end.
   Rcpp::NumericVector min_dist(nPts);
-  for (int i = 0; i < nPts; i++) {
-    min_dist[i] = EuclidCol(P, nPts, dim, i, first0);
-  }
+  double* md = min_dist.begin();
+  EuclidColSqInto(P, nPts, dim, first0, md);
+  std::vector<double> dcol(nPts);   // reused per step for the new point's column
   min_dist[first0] = R_NegInf;      // mask seed before entering loop
   if (mask >= 1) {                                   // LCOV_EXCL_START
     min_dist[mask - 1] = R_NegInf;  // pin forbidden point (anti-medoid medoid)
   }                                                  // LCOV_EXCL_STOP
+
+  // T_k = min over greedy steps of the chosen point's insertion distance, which
+  // is exactly best_val at each step. Tracked in squared space, sqrt'd once.
+  double tk_sq = R_PosInf;
 
   for (int k = 1; k < n; k++) {
     // which.max: first index of the global maximum (strict >, so ties -> first)
@@ -85,16 +132,23 @@ Rcpp::IntegerVector MaximinFromPoints_cpp(Rcpp::NumericMatrix points,
       }
     }
     selected[k] = best + 1;         // back to 1-based
+    if (best_val < tk_sq) tk_sq = best_val;   // running min insertion distance
 
     // Mask new point before the pmin update so its self-distance (0) cannot
     // overwrite -Inf. A pinned `mask` point keeps -Inf for the same reason:
     // any non-negative distance is never < -Inf.
     min_dist[best] = R_NegInf;
+    EuclidColSqInto(P, nPts, dim, best, dcol.data());
     for (int i = 0; i < nPts; i++) {
-      double dval = EuclidCol(P, nPts, dim, i, best);
-      if (dval < min_dist[i]) min_dist[i] = dval;
+      if (dcol[i] < md[i]) md[i] = dcol[i];
     }
   }
+
+  // T_k (min pairwise distance of the selection), computed for free; NA for
+  // n < 2. The ensemble driver reads this attribute instead of re-running a
+  // full stats::dist() over the selection (see .GonzEnsembleFromPoints).
+  selected.attr("t_k") = (n >= 2 && R_finite(tk_sq))
+    ? std::sqrt(tk_sq < 0.0 ? 0.0 : tk_sq) : NA_REAL;
 
   // Return:
   return selected;

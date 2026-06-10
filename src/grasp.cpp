@@ -46,21 +46,29 @@ static double objective_of(const double* d, int n, const std::vector<int>& sel) 
   return best;
 }
 
-// dstar = min pairwise distance; pc = #unordered pairs at distance <= dstar.
-// Mirrors min(.GprNearestInSel) and .GprMinPairCount on the same set.
-static void eval_cand(const double* d, int n, const std::vector<int>& cand,
-                      double& dstar, int& pc) {
-  int m = (int)cand.size();
-  dstar = POS_INF;
-  for (int a = 0; a < m; ++a)
-    for (int b = a + 1; b < m; ++b) {
-      double v = D(d, n, cand[a], cand[b]);
-      if (v < dstar) dstar = v;
-    }
-  pc = 0;
-  for (int a = 0; a < m; ++a)
-    for (int b = a + 1; b < m; ++b)
-      if (D(d, n, cand[a], cand[b]) <= dstar) ++pc;
+// min over k in `set` of d(x, k); POS_INF if set empty. The incremental piece
+// of a one-element swap: adding `x` to a base selection lowers its min pairwise
+// distance to min(base_min, min_to_set(x, base)).
+static inline double min_to_set(const double* d, int n, int x,
+                                const std::vector<int>& set) {
+  double best = POS_INF;
+  for (int k : set) { double v = D(d, n, x, k); if (v < best) best = v; }
+  return best;
+}
+
+// #unordered pairs in (rem ∪ {s}) with distance <= thr — the extended-
+// improvement tie-break count (.GprMinPairCount on cand = rem ++ s). Only paid
+// for the rare candidate that can actually win a swap (nd >= best_dstar).
+// Counts the rem×rem pairs and the s×rem pairs over the same set.
+static int count_pairs_le(const double* d, int n, const std::vector<int>& rem,
+                          int s, double thr) {
+  int c = 0, mm = (int)rem.size();
+  for (int a = 0; a < mm; ++a) {
+    if (D(d, n, s, rem[a]) <= thr) ++c;
+    for (int b = a + 1; b < mm; ++b)
+      if (D(d, n, rem[a], rem[b]) <= thr) ++c;
+  }
+  return c;
 }
 
 // |intersection| of two ascending-sorted index vectors.
@@ -139,22 +147,28 @@ static std::vector<int> gpr_local_search(const double* d, int n,
 
     double best_dstar = dstar;
     int best_pc = pair_count, best_drop = -1, best_add = -1;
-    std::vector<int> cand;
-    cand.reserve(m);
+    std::vector<int> rem;
+    rem.reserve(m);
     for (int ci = 0; ci < m; ++ci) {           // critical positions, ascending
       if (di[ci] > dstar) continue;
       int drop = sel[ci];
-      cand.clear();
-      for (int t = 0; t < m; ++t) if (t != ci) cand.push_back(sel[t]);
+      // remaining = sel without position ci. Its internal min pairwise distance
+      // (base_z) is constant across all candidate adds, so compute it once.
+      rem.clear();
+      for (int t = 0; t < m; ++t) if (t != ci) rem.push_back(sel[t]);
+      double base_z = (rem.size() >= 2) ? objective_of(d, n, rem) : POS_INF;
       for (int s = 0; s < n; ++s) {            // out-of-selection, ascending
         if (in_sel[s]) continue;
-        cand.push_back(s);
-        double nd; int npc;
-        eval_cand(d, n, cand, nd, npc);
-        cand.pop_back();
+        // nd = min(base_z, min dist from s to remaining); identical to
+        // eval_cand's dstar on (rem ∪ {s}) but O(m) not O(m^2). The pc tie-break
+        // is only needed when this candidate can win (nd >= best_dstar).
+        double cross = min_to_set(d, n, s, rem);
+        double nd = base_z < cross ? base_z : cross;
         if (nd > best_dstar) {
-          best_dstar = nd; best_pc = npc; best_drop = drop; best_add = s;
+          best_dstar = nd; best_pc = count_pairs_le(d, n, rem, s, nd);
+          best_drop = drop; best_add = s;
         } else if (nd == best_dstar) {
+          int npc = count_pairs_le(d, n, rem, s, nd);
           if (npc < best_pc) { best_pc = npc; best_drop = drop; best_add = s; }
         }
       }
@@ -220,17 +234,19 @@ static PRResult gpr_path_relink(const double* d, int n,
     }
     double best_pair_z = NEG_INF;
     int bi = -1, bj = -1;
-    std::vector<int> cand;
-    cand.reserve((int)pk.size());
+    std::vector<int> rem;
+    rem.reserve((int)pk.size());
     for (int ii = 0; ii < (int)drop_cands.size(); ++ii) {
       int di_ = drop_cands[ii];
-      cand.clear();
-      for (int v : pk) if (v != di_) cand.push_back(v);
+      // remaining = pk without di_; its internal min pairwise (base_z) is
+      // constant across the add candidates, so hoist it out of the inner loop.
+      rem.clear();
+      for (int v : pk) if (v != di_) rem.push_back(v);
+      double base_z = (rem.size() >= 2) ? objective_of(d, n, rem) : POS_INF;
       for (int jj = 0; jj < (int)add_cands.size(); ++jj) {
         int dj_ = add_cands[jj];
-        cand.push_back(dj_);
-        double zc = objective_of(d, n, cand);
-        cand.pop_back();
+        double cross = min_to_set(d, n, dj_, rem);
+        double zc = base_z < cross ? base_z : cross;   // == objective_of(rem ∪ {dj_})
         if (zc > best_pair_z) { best_pair_z = zc; bi = di_; bj = dj_; }
       }
     }

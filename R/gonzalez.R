@@ -71,6 +71,20 @@
                         as.integer(mask))
 }
 
+#' Read and detach the kernel's free `t_k` score
+#'
+#' The maximin kernels attach the selection's minimum pairwise distance as a
+#' `t_k` attribute (computed during the greedy pass at no extra cost). The
+#' ensemble drivers read it via [base::attr()]; bare single passes strip it with
+#' [.StripScore()] so the returned indices carry no incidental attribute.
+#' @param idx Integer vector returned by a maximin kernel.
+#' @return `idx` with its `t_k` attribute removed.
+#' @keywords internal
+.StripScore <- function(idx) {
+  attr(idx, "t_k") <- NULL
+  idx
+}
+
 #' Minimum pairwise distance within a selection, from coordinates
 #'
 #' Coordinate counterpart of `.SubsetScore(d, idx, "min_pairwise")`. Computes
@@ -276,10 +290,13 @@ FarFirst <- function(d = NULL, n,
   if (n >= nPts) return(seq_len(nPts))
   if (n == 0L)   return(integer(0))
 
+  # The kernels attach a `t_k` attribute (the selection's min pairwise distance,
+  # computed for free) for the ensemble driver. A bare single pass returns just
+  # the indices, so strip it here; the ensemble path keeps and uses it.
   Greedy <- if (usePoints) {
-    function(s) .MaximinFromPoints(points, n, first = as.integer(s))
+    function(s) .StripScore(.MaximinFromPoints(points, n, first = as.integer(s)))
   } else {
-    function(s) .MaximinFrom(d, n, first = as.integer(s))
+    function(s) .StripScore(.MaximinFrom(d, n, first = as.integer(s)))
   }
 
   # An explicit `first` is a single bare Gonzalez pass, overriding `seed`.
