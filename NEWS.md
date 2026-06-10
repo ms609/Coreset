@@ -6,7 +6,9 @@
 - `FarFirst()`: deterministic farthest-first selection from a distance matrix,
   Euclidean coordinates (`points =`), or an on-demand **distance-column oracle**
   (pass a column function as `d`, with `N =`) for spaces with no coordinate
-  embedding. The default `seed` runs a best-of-three ensemble of
+  embedding; the oracle may report the self-distance (length `N`) or omit it
+  (length `N - 1`), whichever is simpler to compute. The default `seed` runs a
+  best-of-three ensemble of
   `"random_furthest"` starts (whose pivots are drawn with the session RNG; set a
   seed for a reproducible selection, or supply them via the `pivots` argument)
   and keeps the best by `MinDist()`. The deterministic O(*N*) anchors

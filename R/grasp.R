@@ -359,7 +359,7 @@ GraspPR <- function(d, m, plateau = 100L, maxIter = NULL,
   m <- as.integer(m)
   eliteSize <- as.integer(eliteSize)
   dth <- 5L
-  t0 <- Sys.time()
+  t0 <- proc.time()[[3L]]
 
   # Phase A: build initial elite set.
   ES <- vector("list", eliteSize)
@@ -379,7 +379,7 @@ GraspPR <- function(d, m, plateau = 100L, maxIter = NULL,
   prCalls <- 0L
   on.exit(setTimeLimit(), add = TRUE)
   if (is.finite(timeBudgetS)) {
-    setTimeLimit(elapsed = max(0, timeBudgetS - as.numeric(Sys.time() - t0, units = "secs")),
+    setTimeLimit(elapsed = max(0, timeBudgetS - (proc.time()[[3L]] - t0)),
                  transient = TRUE)
   }
 
@@ -434,7 +434,7 @@ GraspPR <- function(d, m, plateau = 100L, maxIter = NULL,
   structure(
     sort(as.integer(bestSel)),
     score    = bestZ,
-    time_s   = as.numeric(Sys.time() - t0, units = "secs"),
+    time_s   = proc.time()[[3L]] - t0,
     iters    = iters,
     pr_calls = prCalls
   )

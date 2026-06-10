@@ -156,7 +156,7 @@
 #' @export
 ExactMaxMin <- function(d, m, solver = NULL, timeBudgetS = 60,
                         progress = getOption("MaxMin.progress", interactive())) {
-  t0 <- Sys.time()
+  t0 <- proc.time()[[3L]]
   if (is.null(solver)) solver <- "highs"
   if (!identical(solver, "highs")) {
     stop("Unsupported `solver`: ", solver, ". Only \"highs\" is implemented.")
@@ -173,7 +173,7 @@ ExactMaxMin <- function(d, m, solver = NULL, timeBudgetS = 60,
     stop("`m` must satisfy 2 <= m <= nrow(d)")
   }
 
-  Elapsed <- function() as.numeric(Sys.time() - t0, units = "secs")
+  Elapsed <- function() proc.time()[[3L]] - t0
 
   # Candidate thresholds: the achieved distinct pairwise distances, ascending.
   # The optimum is necessarily one of these (it is a realised distance), so

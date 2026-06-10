@@ -150,6 +150,21 @@ test_that("the column-oracle path matches the matrix path given the same seed", 
   }
 })
 
+test_that("a self-distance-omitting (length N-1) colFn matches the matrix path", {
+  dat <- MakeData()
+  N <- nrow(dat$d)
+  colN   <- function(i) dat$d[, i]      # self reported (length N)
+  colNm1 <- function(i) dat$d[-i, i]    # self omitted  (length N-1), others in order
+  for (n in c(2L, 5L, 15L)) {
+    ref <- FarFirst(dat$d, n, seed = 1L)
+    expect_identical(FarFirst(colNm1, n, N = N, seed = 1L), ref)
+    expect_identical(FarFirst(colN,   n, N = N, seed = 1L), ref)
+  }
+  # The deterministic peripheral seed must also splice correctly (it touches
+  # both i = 1 and a downstream index).
+  expect_identical(FarFirst(colNm1, 7L, N = N), FarFirst(dat$d, 7L, seed = "peripheral"))
+})
+
 test_that("column-oracle peripheral seed is deterministic and matrix-matched", {
   dat <- MakeData()
   colFn <- function(i) dat$d[, i]

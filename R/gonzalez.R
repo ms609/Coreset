@@ -133,11 +133,13 @@
 #'     may be computed on demand.}
 #' }
 #'
-#' @section Distance function
+#' @section Distance function:
 #' When `d` is a function it is treated as a closure `ColFn(i)` returning, for a
-#' single 1-based index `i`, the length-`N` vector of distances from element `i`
-#' to every element. (The self-distance to `i` may be omitted; if provided,
-#' it is ignored.)
+#' single 1-based index `i`, the distances from element `i` to every element.
+#' The self-distance may be reported or omitted, whichever is simpler to
+#' compute: a length-`N` return is taken to include it (the `i`-th entry, any
+#' value, is ignored), and a length-`N - 1` return to omit it (the distances to
+#' the other elements, in index order). Both yield identical selections.
 #' `FarFirst()` calls `ColFn(i)` once per selected element, maintaining a running
 #' nearest-distance vector to avoid building a complete `N x N` matrix.
 #'
@@ -342,6 +344,34 @@ FarFirst <- function(d = NULL, n,
   Greedy(s)
 }
 
+#' Normalise a distance-column oracle result to a masked length-`N` vector
+#'
+#' The user's `colFn(i)` may either report the self-distance (a length-`N`
+#' vector, position `i` ignored) or omit it (a length-`N - 1` vector of the
+#' distances to the other elements, in index order). Either way this returns a
+#' length-`N` numeric vector with position `i` set to `-Inf`, so the downstream
+#' `which.max()` / `pmin.int()` never re-select `i`. The mask invariant for the
+#' oracle path lives here, not in the callers.
+#' @param colFn Column oracle; see [FarFirst()].
+#' @param i Integer 1-based index whose distance column is requested.
+#' @param N Integer element count.
+#' @return Numeric vector of length `N`, masked to `-Inf` at position `i`.
+#' @keywords internal
+.DistColumn <- function(colFn, i, N) {
+  col <- as.numeric(colFn(i))
+  len <- length(col)
+  if (len == N) {
+    col[i] <- -Inf                       # self reported; ignore and mask it
+  } else if (len == N - 1L) {
+    col <- append(col, -Inf, after = i - 1L)  # self omitted; splice the mask in
+  } else {
+    stop("`colFn(", i, ")` must return a numeric vector of length N = ", N,
+         " (self-distance included) or N - 1 (self-distance omitted); got ",
+         "length ", len)
+  }
+  col
+}
+
 #' Gonzalez maximin from a distance-column oracle
 #'
 #' Implements the distance-column oracle path of [FarFirst()] (dispatched there
@@ -351,10 +381,11 @@ FarFirst <- function(d = NULL, n,
 #' running nearest-distance vector is maintained, so the `N x N` distance matrix
 #' is never materialised: `O(N * n)` oracle calls and `O(N)` memory.
 #'
-#' @param colFn A function of a single 1-based index `i` returning a length-`N`
-#'   numeric vector of distances from element `i` to every element. The
-#'   self-distance at position `i` may take any non-negative value; it is
-#'   masked before use.
+#' @param colFn A function of a single 1-based index `i` returning the distances
+#'   from element `i` to every element: either a length-`N` vector including the
+#'   self-distance (the `i`-th entry, any value, is masked before use) or a
+#'   length-`N - 1` vector omitting it (the distances to the other elements, in
+#'   index order). See [.DistColumn()].
 #' @param N Integer: the total number of elements. It cannot be inferred from
 #'   `colFn`, so it must be supplied.
 #' @param n Integer: number of elements to select. If `n >= N`, all indices are
@@ -411,21 +442,16 @@ FarFirst <- function(d = NULL, n,
 .MaximinFromColumn <- function(colFn, N, n, first, progress = FALSE) {
   selected <- integer(n)
   selected[1L] <- first
-  minDist <- as.numeric(colFn(first))
-  if (length(minDist) != N) {
-    stop("`colFn` must return a numeric vector of length N = ", N,
-         "; got length ", length(minDist))
-  }
-  minDist[first] <- -Inf                 # mask seed before the loop
+  minDist <- .DistColumn(colFn, first, N)  # seed column, self already masked
   if (progress) {
     .pb <- cli::cli_progress_bar("Gonzalez (column oracle)", total = n - 1L)
   }
   for (k in seq_len(n - 1L) + 1L) {
     best <- which.max(minDist)           # first global max (ties -> first)
     selected[k] <- best
-    minDist[best] <- -Inf                # mask before pmin so self-dist 0
-                                          # cannot overwrite -Inf
-    minDist <- pmin.int(minDist, as.numeric(colFn(best)))
+    # `.DistColumn` masks position `best` to -Inf, so pmin propagates the mask
+    # and `best` cannot be re-selected; no explicit `minDist[best]` needed.
+    minDist <- pmin.int(minDist, .DistColumn(colFn, best, N))
     if (progress) cli::cli_progress_update(id = .pb)
   }
   selected
@@ -443,6 +469,6 @@ FarFirst <- function(d = NULL, n,
 #' @return Integer index of the seed.
 #' @keywords internal
 .PeripheralSeedColumn <- function(colFn, N) {
-  s1 <- which.max(as.numeric(colFn(1L)))
-  which.max(as.numeric(colFn(s1)))
+  s1 <- which.max(.DistColumn(colFn, 1L, N))
+  which.max(.DistColumn(colFn, s1, N))
 }

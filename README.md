@@ -20,8 +20,8 @@ can be calculated.
 | Function | Method | Use |
 |---|---|---|
 | `DropAdd()` | DropAdd tabu search (Porumbel et al. 2011) | ~99%-optimal heuristic |
-| `GraspPR()` | Highest | Moderate | Yes (`seed =`) |
-| `FarFirst()` | Greedy farthest-first (Gonzalez 1985); default best-of-three ensemble of reproducible random-furthest starts (deterministic anchors such as centroid/peripheral are opt-in) | Fast; matrix, coordinate, or distance-column-oracle input (the last for very large sets with no embedding) |
+| `Grasp()` |  GRASP with path-relinking metaheuristic (Resende et al. 2010) | Slow but powerful heuristic |
+| `FarFirst()` | Greedy farthest-first (Gonzalez 1985); default best of three random peripheral starts | Fast; matrix, coordinate, or distance-column-oracle input (the last for very large sets with no embedding) |
 | `ExactMaxMin()` | Node-packing integer program (Sayyady & Fathi 2016) | Proven optimum, small `n` (needs `highs`) |
 | `MinDist()` | Minimum pairwise distance (the objective) | Score a selection |
 

@@ -231,7 +231,7 @@ DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
     stop("`timeBudgetS` must be a single positive numeric (or Inf)")
   }
 
-  t0 <- Sys.time()
+  t0 <- proc.time()[[3L]]
   eps <- 1e-9
 
   # --- Matrix-free (coordinate) path ----------------------------------------
@@ -245,7 +245,7 @@ DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
     }
     out <- DropAdd_points_cpp(points, m, as.double(timeBudgetS),
                                 cppMaxIter, plateau, FALSE)
-    timeS <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+    timeS <- proc.time()[[3L]] - t0
     if (progress) {
       itersMsg <- as.integer(out$iters)
       tkMsg    <- as.numeric(out$objective)
@@ -278,7 +278,7 @@ DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
       .trace$drops <- out$drops
       .trace$adds  <- out$adds
     }
-    timeS <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+    timeS <- proc.time()[[3L]] - t0
     if (progress) {
       itersMsg <- as.integer(out$iters)
       tkMsg    <- as.numeric(out$objective)
@@ -347,7 +347,7 @@ DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
 
   on.exit(setTimeLimit(), add = TRUE)
   if (is.finite(timeBudgetS)) {
-    setTimeLimit(elapsed = max(0, timeBudgetS - as.numeric(Sys.time() - t0, units = "secs")),
+    setTimeLimit(elapsed = max(0, timeBudgetS - (proc.time()[[3L]] - t0)),
                  transient = TRUE)
   }
   tryCatch(repeat {
@@ -475,7 +475,7 @@ DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
     if (!grepl("time limit", conditionMessage(e), ignore.case = TRUE)) stop(e)
   }) # nocov end
 
-  timeS <- as.numeric(Sys.time() - t0, units = "secs")
+  timeS <- proc.time()[[3L]] - t0
   structure(
     sort(as.integer(bestS)),
     score     = as.numeric(bestMaxmin),

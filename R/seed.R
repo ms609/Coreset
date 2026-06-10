@@ -244,7 +244,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
   ))
   nPts <- nrow(d)
   if (n >= nPts) return(seq_len(nPts))
-  if (n == 0L)   return(integer(0))
+  if (n < 1L)   return(integer(0))
 
   lazy <- new.env(parent = emptyenv())
   GetRowSums <- function() {
