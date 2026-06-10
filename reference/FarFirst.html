@@ -23,7 +23,7 @@ costlier O(N^2) anchors ("diameter", "anti_medoid", "medoid",
 
     <a class="navbar-brand me-2" href="../index.html">MaxMin</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9001</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -80,9 +80,11 @@ costlier <code>O(N^2)</code> anchors (<code>"diameter"</code>, <code>"anti_medoi
 
 
 <dl><dt id="arg-d">d<a class="anchor" aria-label="anchor" href="#arg-d"></a></dt>
-<dd><p>A <code>dist</code> object, a square symmetric numeric matrix of pairwise
-distances, or a distance function (see
-<em>§Distance function</em>). Ignored when <code>points</code> is supplied.</p></dd>
+<dd><p>A <code>dist</code> object, a square numeric matrix of pairwise distances, or
+a distance function (see <em>§Distance function</em>). Asymmetric matrices are
+accepted; symmetry is not checked (an <code>O(N^2)</code> check is intentionally
+omitted), and the algorithm treats \(d_{ij}\) and \(d_{ji}\) as
+independent. Ignored when <code>points</code> is supplied.</p></dd>
 
 
 <dt id="arg-m">m<a class="anchor" aria-label="anchor" href="#arg-m"></a></dt>

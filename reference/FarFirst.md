@@ -27,9 +27,11 @@ FarFirst(
 
 - d:
 
-  A `dist` object, a square symmetric numeric matrix of pairwise
-  distances, or a distance function (see *§Distance function*). Ignored
-  when `points` is supplied.
+  A `dist` object, a square numeric matrix of pairwise distances, or a
+  distance function (see *§Distance function*). Asymmetric matrices are
+  accepted; symmetry is not checked (an `O(N^2)` check is intentionally
+  omitted), and the algorithm treats \\d\_{ij}\\ and \\d\_{ji}\\ as
+  independent. Ignored when `points` is supplied.
 
 - m:
 

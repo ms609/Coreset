@@ -1,5 +1,23 @@
 # Changelog
 
+## MaxMin 0.0.0.9002 (development)
+
+### Improvements
+
+- [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) now
+  documents that `timeBudgetS` is checked every 256 iterations and may
+  overshoot by up to one iteration’s worth of computation on large
+  instances.
+- [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
+  documents that asymmetric distance matrices are accepted.
+- Ensemble functions now attach a `score = NA_real_` attribute on the
+  trivial all-points early return (when ).
+- Integer iteration counters in the C++ kernels changed from to to avoid
+  signed-integer overflow UB at extreme values.
+- Test suite: improved coverage of path relinking (strict improvement),
+  DropAdd attribute formula, budget-expiry branch, and various weak /
+  vacuous assertions tightened.
+
 ## MaxMin 0.0.0.9001 (development)
 
 ### Bug fixes
