@@ -307,7 +307,7 @@ test_that(".SubsetScore mean_pairwise returns mean of lower-triangle entries", {
 # ---- .GonzalezColumn non-function guard -------------------------------------
 
 test_that(".GonzalezColumn rejects a non-function colFn", {
-  expect_error(MaxMin:::.GonzalezColumn("not_a_function", N = 10L, n = 3L),
+  expect_error(MaxMin:::.GonzalezColumn("not_a_function", N = 10L, m = 3L),
                "function")
 })
 
