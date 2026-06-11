@@ -2,7 +2,7 @@
 % Please edit documentation in R/score.R
 \name{MinDist}
 \alias{MinDist}
-\title{Minimum pairwise distance within a selection (T_k = k-centre objective)}
+\title{Minimum pairwise distance within a selection}
 \usage{
 MinDist(d = NULL, idx, points = NULL)
 }
@@ -21,9 +21,8 @@ unused). For Euclidean data the result is identical to the matrix path.}
 Numeric scalar; \code{NA_real_} if \code{length(idx) < 2}.
 }
 \description{
-Returns the minimum pairwise distance among selected points, the canonical
-k-centre objective \eqn{T_k}. Higher values indicate a more spread-out
-(better) selection.
+Returns the minimum pairwise distance among selected points \eqn{T_k}.
+A set of points that is more dispersed will exhibit a higher value.
 }
 \details{
 The solvers in this package (\code{\link[=FarFirst]{FarFirst()}}, \code{\link[=DropAdd]{DropAdd()}}, \code{\link[=Grasp]{Grasp()}})
