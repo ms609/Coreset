@@ -132,6 +132,7 @@
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' FarFirst(dist(pts), 5L)
 #' @name print.MaxMin
+#' @family reporting functions
 #' @export
 format.MaxMinSelection <- function(x, ...) {
   idx <- as.integer(x)
@@ -229,6 +230,7 @@ print.MaxMinExact <- function(x, ...) {
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' summary(FarFirst(dist(pts), 5L))
 #' @name summary.MaxMin
+#' @family reporting functions
 #' @export
 summary.MaxMinSelection <- function(object, ...) {
   cat(format(object), "\n", sep = "")

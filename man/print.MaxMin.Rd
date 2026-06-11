@@ -42,3 +42,9 @@ set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 FarFirst(dist(pts), 5L)
 }
+\seealso{
+Other reporting functions:
+\code{\link{print.KCentre}},
+\code{\link{summary.MaxMin}}
+}
+\concept{reporting functions}

@@ -26,5 +26,4 @@ reference:
       - MinDist
   - title: Reporting
     contents:
-      - print.MaxMin
-      - summary.MaxMin
+      - has_concept("reporting functions")

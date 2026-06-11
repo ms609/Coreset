@@ -360,3 +360,55 @@ Status: Area 4 → OPTIMISED (T-008). Headline 19.6× ≫ 10% floor; further lev
 not pursued. Rotation current: all areas OPTIMISED/AT-LIMIT.
 
 last_focus: 4
+
+---
+
+## Round 6 — 2026-06-11 — Area 5: KCentre CDSh kernel (user-requested, new code)
+
+**Context:** new discrete k-centre solvers added to the package (`KCentre`/CDSh,
+`ExactKCentre`, `KCentreRadius`). CDSh beats the Gonzalez 2-approximation that
+`FarFirst` gives for this objective by 17–45% on real data (matches the proven
+optimum at k=5/8 on an iris subset). User asked to `/profile` the new code; this
+round profiles the CDSh kernel `KCentreCDSh_cpp`.
+
+**Driver:** `drivers/kcentre.R` — clustered Gaussian n=2004, dim=10, 12 clusters
+(representative threshold-graph density), k=20, 4 reps (~5 s bare). Built against
+the optimised `-O2` install at `…/Temp/maxmin-optlib` (default-lib MaxMin.dll was
+locked by an active long-running R process; do NOT install to the default lib).
+**profvis:** `drivers/kcentre-profvis.R`. **Verify:** `drivers/kcentre-verify.R`
+(OLD `optlib` vs NEW `optlib2`) + `drivers/kcentre-compare.R`.
+
+**profvis verdict (n=2004 k=20):**
+- `KCentreCDSh_cpp` (C++ kernel) = 233 samples (~71%) — the dominant cost.
+- `.KCentreCandidates` (R) = ~91 samples (~28%): `unique.default` 40 + `sort` 29 +
+  `order` 24 + `upper.tri` 17 — i.e. `sort(unique(d[upper.tri(d)]))` allocates an
+  n×n logical mask and churns ~n²/2 values through R's unique/order.
+- `.KCentrePeripheralSeeds` (FarFirst seed) = 3, coercion = ~15: negligible.
+
+**Two stacked levers (T-010), both bit-identical (symmetric, column-major d):**
+1. **Kernel cache reorder.** The score-init (`score[i]=#{j:d(i,j)≤r}`) and the
+   domination-decrement inner loop read *rows* of a column-major matrix (stride-n,
+   a cache miss per access — the T-005 pattern). Since `d(i,j)=d(j,i)`, read them
+   through the column pointer `P+i*n` (stride-1). Bit-identical.
+2. **Candidate enumeration → C++.** `KCentreCandidates_cpp` extracts the upper
+   triangle column-sequentially then `std::sort`+`std::unique`, dropping the R
+   logical mask and unique/order overhead. Same sorted distinct set.
+
+**Result (verified, `kcentre-verify.R` OLD vs NEW, n=2004 k=20, 6 reps):**
+```
+per-call  1275 ms -> 307 ms   (4.16x)
+centres + radius bit-identical at k = 5, 20, 50  (kcentre-compare.R)
+```
+Correctness on the optimised source: `test_local(filter=kcentre)` 70/70 green
+(KCentreRadius vs brute force; CDSh ≤ Gonzalez; ExactKCentre == brute-force
+optimum; edge cases). Full suite unaffected (kcentre is new; existing solvers
+untouched).
+
+**Open (T-011):** `ExactKCentre` not yet profiled — by analogy to T-008 (its dual
+node-packing solver) the cost will be the `highs` covering-IP solves, with the
+per-probe `which(d <= r, arr.ind=TRUE)` (n×n logical) the actionable R lever.
+Next rotation target for area 5.
+
+Status: Area 5 CDSh → OPTIMISED (T-010); ExactKCentre → PENDING (T-011).
+
+last_focus: 5

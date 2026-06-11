@@ -13,6 +13,14 @@ Grasp_cpp <- function(dmat, m, max_no_improve, max_iter, elite_size, alpha, time
     .Call(`_MaxMin_Grasp_cpp`, dmat, m, max_no_improve, max_iter, elite_size, alpha, time_budget_s)
 }
 
+KCentreCandidates_cpp <- function(d) {
+    .Call(`_MaxMin_KCentreCandidates_cpp`, d)
+}
+
+KCentreCDSh_cpp <- function(d, k, seed, cand) {
+    .Call(`_MaxMin_KCentreCDSh_cpp`, d, k, seed, cand)
+}
+
 MaximinFrom_cpp <- function(d, n, first) {
     .Call(`_MaxMin_MaximinFrom_cpp`, d, n, first)
 }

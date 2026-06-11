@@ -61,3 +61,14 @@ k=2 solves need **zero** IP solves (heuristic attains the diameter) → ~100–1
 Correctness: 56/56 proven optima bit-identical to OLD; brute-force oracle + full
 suite (598) green. Worst case tc20_zoo k=4 (n=101): 0.59→0.67 s (0.88×, warm-start
 overhead on a tiny instance; irrelevant at the n≥342 job sizes).
+
+## Area 5 — KCentre (CDSh) — AFTER T-010 (cache reorder + C++ candidates)
+
+Clustered Gaussian n=2004, dim=10, k=20; per-call median (6 reps), `-O2`.
+
+| case | OLD ms | NEW ms | speedup |
+|------|-------:|-------:|--------:|
+| KCentre, n=2004, dim=10, k=20 | 1275 | 307 | 4.16× |
+
+Centres + radius bit-identical at k∈{5,20,50}. `test_local(filter=kcentre)` 70/70.
+ExactKCentre baseline pending (T-011).

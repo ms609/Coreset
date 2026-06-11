@@ -18,14 +18,30 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 library("MaxMin")
 ```
 
-The **Max-Min Diversity Problem** (MMDP) asks: given a fixed set of *N* candidate
-items and a distance between every pair, choose *m* items so that the
-closest pair in the selection is as far apart as possible.
-The objective — often written T~k~ — is the minimum pairwise distance within
-the chosen subset; a larger T~k~ means a more spread-out, representative
-selection.
+MaxMin selects a representative subset from a fixed pool of *N* items, given a
+distance between every pair. It addresses two complementary — and often
+conflated — facility-location objectives.
 
-This problem arises naturally wherever you want a diverse sample from a fixed
+The **Max-Min Diversity Problem** (MMDP, or *p*-dispersion) asks: choose *m*
+items so that the closest pair in the selection is as far apart as possible.
+The objective — often written T~k~ — is the minimum pairwise distance within
+the chosen subset; a larger T~k~ means a more spread-out selection. This is a
+*packing* objective: it depends only on the chosen items, and rewards picks
+that push out to the extremes.
+
+The **k-centre problem** (*p*-centre) asks the dual, *covering* question: choose
+*k* items so that every item in the pool lies as close as possible to its
+nearest chosen item. Its objective is the covering radius *R* — the largest
+distance from any point to its nearest centre — and a smaller *R* means tighter
+coverage. This depends on *all N* items, and pulls the selection inward so that
+no region is left unrepresented.
+
+Greedy farthest-point selection [@Gonzalez1985] is a 2-approximation to *both*
+objectives, which is why they are so often conflated; but their exact optima
+differ — dispersion spreads to the extremes, covering reaches into the interior.
+MaxMin provides dedicated near-optimal and exact solvers for each.
+
+These objectives arise wherever you want a representative sample from a fixed
 pool: selecting field-survey sites to cover a landscape, picking biological
 specimens for sequencing that span the available genetic diversity, or choosing
 a representative subset of protein structures from a database.
@@ -64,17 +80,20 @@ distance within the selection is largest.
 
 ## Methods at a glance
 
-MaxMin provides four solvers, and a minimum-distance calculator:
+MaxMin provides solvers and a scorer for each objective:
 
-| Function | Quality | Speed | Stochastic? |
-|---|---|---|---|
-| `FarFirst()` | Good (2-approximation) | Very fast | No |
-| `DropAdd()` | High (≈ 99 % optimal) | Fast | No |
-| `Grasp()` | Highest | Moderate | Yes (`set.seed()`) |
-| `ExactMaxMin()` | Optimal (NP-hard) | Slow | No |
-| `MinDist()` | Scoring only | Instant | No |
+| Function | Objective | Quality | Speed | Stochastic? |
+|---|---|---|---|---|
+| `FarFirst()` | dispersion (MMDP) | Good (2-approximation) | Very fast | No |
+| `DropAdd()` | dispersion (MMDP) | High (≈ 99 % optimal) | Fast | No |
+| `Grasp()` | dispersion (MMDP) | Highest | Moderate | Yes (`set.seed()`) |
+| `ExactMaxMin()` | dispersion (MMDP) | Optimal (NP-hard) | Slow | No |
+| `MinDist()` | dispersion (MMDP) | Scoring only | Instant | No |
+| `KCentre()` | covering (k-centre) | Near-optimal (CDSh) | Fast | No |
+| `ExactKCentre()` | covering (k-centre) | Optimal (NP-hard) | Slow | No |
+| `KCentreRadius()` | covering (k-centre) | Scoring only | Instant | No |
 
-We now walk through each of these in turn.
+We walk through the dispersion methods first, then the k-centre methods.
 
 
 ## Gonzalez: fast greedy selection
@@ -322,7 +341,84 @@ MinDist(points = pts, idx = idx_ff)                # from coordinates
 ```
 
 
+## Covering: the k-centre problem
+
+Every method above pursues *dispersion* — it spreads the selection so its
+members are mutually far apart. The **k-centre** problem instead pursues
+*coverage*: it minimises the covering radius *R*, the largest distance from any
+point to its nearest chosen centre, so that no point of the pool is left far
+from a representative [@Gonzalez1985; @Hochbaum1985]. Where dispersion reaches
+for the extremes, covering reaches into the interior, so on the same data the
+two optima are generally different selections.
+
+### `KCentre()`: near-optimal covering
+
+`KCentre()` chooses `k` centres with the deterministic CDSh heuristic
+[@GarciaDiaz2019; @GarciaDiaz2017], which typically lands within 1–3.5 % of the
+optimum — an order of magnitude tighter than the Gonzalez 2-approximation that
+`FarFirst()` gives for this objective.
+
+```{r}
+#| label: kcentre
+centres <- KCentre(eurodist, k = 4L)
+labels(eurodist)[centres]
+centres
+```
+
+`KCentreRadius()` scores any centre set by its covering radius (lower is
+better). CDSh covers at least as tightly as the Gonzalez 2-approximation
+baseline:
+
+```{r}
+#| label: kcentre-radius
+ff <- FarFirst(eurodist, m = 4L, method = "peripheral")
+c(KCentre  = KCentreRadius(eurodist, centres),
+  FarFirst = KCentreRadius(eurodist, ff))
+```
+
+Like `MinDist()`, `KCentreRadius()` also accepts a `points` coordinate matrix,
+in which case it never materialises the full *N × N* matrix — so it can score a
+selection well past the size at which the solvers' distance matrix would fit in
+memory.
+
+### `ExactKCentre()`: proven covering optimum
+
+For small instances, `ExactKCentre()` solves the covering problem to proven
+optimality with a sequence of minimum-set-cover integer programs — the covering
+dual of `ExactMaxMin()`'s node-packing programme — warm-started from the
+`KCentre()` radius and bisected down to the smallest feasible radius. Like
+`ExactMaxMin()`, it uses the **highs** solver.
+
+```{r}
+#| label: exact-kcentre
+#| eval: !expr requireNamespace("highs", quietly = TRUE)
+res_kc <- ExactKCentre(eurodist, k = 4L, progress = FALSE)
+res_kc
+res_kc$proven      # TRUE  ⟹  radius is the global covering optimum
+```
+
+The covering optimum is sometimes attained by fewer than `k` centres (once every
+point is covered, extra centres cannot lower the radius); `indices` then has
+length below `k`, and the reported `radius` is still the proven optimum.
+`ExactKCentre()` is NP-hard, so — like `ExactMaxMin()` — it is a ground-truth
+reference for small instances, not a scalable method.
+
+The dispersion and covering optima differ even on this small example: dispersion
+selects cities at the rim of the map, while covering pulls inward to keep every
+city near a centre.
+
+```{r}
+#| label: dispersion-vs-covering
+#| eval: !expr requireNamespace("highs", quietly = TRUE)
+disp <- sort(ExactMaxMin(eurodist, m = 4L)$indices)
+labels(eurodist)[disp]            # dispersion: pushed to the extremes
+labels(eurodist)[sort(res_kc$indices)]  # covering: pulled toward the interior
+```
+
+
 ## When to use which method
+
+For **dispersion** (spread the selection; maximise T~k~):
 
 | Scenario | Recommended |
 |---|---|
@@ -332,8 +428,18 @@ MinDist(points = pts, idx = idx_ff)                # from coordinates
 | N > 46 000 (distance matrix infeasible) | `DropAdd(points = ...)` or `FarFirst(points = ...)` |
 | Arbitrary metric with no coordinate embedding | `FarFirst(<column function>, N = ...)` |
 | Proven optimum, N ≤ ~ 25–30, **highs** installed | `ExactMaxMin()` |
+| Score a selection's T~k~ | `MinDist()` |
 
-The heuristics are complementary:
+For **covering** (minimise the radius; no point far from a centre):
+
+| Scenario | Recommended |
+|---|---|
+| Near-optimal covering, fast and deterministic | `KCentre()` (CDSh) |
+| A quick 2-approximation baseline | `FarFirst(method = "peripheral")` |
+| Proven optimum, small N, **highs** installed | `ExactKCentre()` |
+| Score a centre set's covering radius (matrix-free at large N) | `KCentreRadius(points = ...)` |
+
+The dispersion heuristics are complementary:
 `FarFirst()` is O(*N* · *m*) and deterministic — an instant first result.
 `DropAdd()` is deterministic and reproducible (no RNG): ties are broken by
 smallest index, so a given instance always yields the same selection,
