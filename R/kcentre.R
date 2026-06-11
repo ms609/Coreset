@@ -147,10 +147,10 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' The achieved covering radius is not monotone in the trial radius, so the binary
 #' search can occasionally miss the best candidate. Two safeguards keep the result
 #' robust: for a small candidate grid (`n` up to ~150) every radius is scanned
-#' exhaustively, and the result is always floored against a deterministic Gonzalez
-#' pass, so `KCentre()` is **never worse than the 2-approximation**. For a tighter
-#' result at larger `n` raise `nstart`; for the proven optimum on a small instance
-#' use [ExactKCentre()].
+#' exhaustively, and the result is floored against a Gonzalez pass (the `effort`
+#' argument, on by default), so `KCentre()` is **never worse than the
+#' 2-approximation**. For a tighter result at larger `n` raise `nstart` or
+#' `effort`; for the proven optimum on a small instance use [ExactKCentre()].
 #'
 #' The construction is otherwise fully deterministic: where the reference seeds its
 #' first critical vertex at random, `KCentre()` uses deterministic peripheral
@@ -162,6 +162,11 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' @param k Integer number of centres, `1 <= k <= nrow(d)`.
 #' @param nstart Integer; how many deterministic peripheral seeds to try, keeping
 #'   the lowest-radius result. Default `1`. Ignored if `seeds` is supplied.
+#' @param effort Integer; controls the Gonzalez floor that keeps the result no
+#'   worse than the 2-approximation. `0` disables it (raw CDSh, fastest, no
+#'   guarantee); `1` (default) runs one deterministic peripheral Gonzalez pass;
+#'   `> 1` runs a distinct-seed Gonzalez restart with `nseeds = effort` (a tighter
+#'   floor that draws on the session RNG -- call [set.seed()] to reproduce).
 #' @param seeds Optional integer vector of explicit 1-based seed vertices for the
 #'   construction's first critical vertex (overrides `nstart`).
 #' @return Integer vector of length `<= k` (ascending): the chosen centres. The
@@ -180,7 +185,7 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' # CDSh covers at least as tightly as the Gonzalez 2-approximation:
 #' KCentreRadius(d, FarFirst(d, 5L, method = "peripheral"))
 #' @export
-KCentre <- function(d, k, nstart = 1L, seeds = NULL) {
+KCentre <- function(d, k, nstart = 1L, effort = 1L, seeds = NULL) {
   needSymCheck <- !inherits(d, "dist")          # a dist object is symmetric
   d <- .AsDistMatrix(d)
   if (needSymCheck) .KCentreRequireSymmetric(d)
@@ -191,6 +196,10 @@ KCentre <- function(d, k, nstart = 1L, seeds = NULL) {
   k <- as.integer(k)
   if (k > n) {
     stop("`k` must satisfy 1 <= k <= nrow(d)")
+  }
+  effort <- as.integer(effort)
+  if (length(effort) != 1L || is.na(effort) || effort < 0L) {
+    stop("`effort` must be a single non-negative integer")
   }
   # k == n: every point is its own centre; the covering radius is 0.
   if (k == n) {
@@ -220,20 +229,29 @@ KCentre <- function(d, k, nstart = 1L, seeds = NULL) {
       best <- as.integer(res)
     }
   }
-  # Gonzalez floor (KC-001): the binary-search CDSh can occasionally return a
-  # covering radius ABOVE the Gonzalez 2-approximation it is documented to beat
-  # (the feasibility predicate is non-monotone). Take the better of CDSh and a
-  # cheap deterministic Gonzalez pass, guaranteeing the result is never worse
-  # than the 2-approximation at O(n*k) extra cost.
-  gonz <- as.integer(FarFirst(d, k, method = "peripheral"))
-  gonzR <- KCentreRadius(d, gonz)
-  if (gonzR < bestR) {
-    bestR <- gonzR
-    best <- gonz
+  # Gonzalez floor (KC-001), controlled by `effort`. The binary-search CDSh can
+  # occasionally return a covering radius ABOVE the Gonzalez 2-approximation it is
+  # documented to beat (the feasibility predicate is non-monotone), so by default
+  # the result is floored against a Gonzalez pass -- never worse than the
+  # 2-approximation. `effort = 0` skips the floor (raw CDSh, no guarantee);
+  # `effort = 1` runs one deterministic peripheral pass; `effort > 1` runs a
+  # distinct-seed restart with `nseeds = effort` (a tighter floor, drawing on the
+  # session RNG).
+  if (effort >= 1L) {
+    gonz <- if (effort == 1L) {
+      as.integer(FarFirst(d, k, method = "peripheral"))
+    } else {
+      as.integer(FarFirst(d, k, nseeds = effort))
+    }
+    gonzR <- KCentreRadius(d, gonz)
+    if (gonzR < bestR) {
+      bestR <- gonzR
+      best <- gonz
+    }
   }
-  # The construction can occasionally re-pick an already-chosen vertex as a
-  # centre; a duplicate never changes the covering radius, so collapse to the
-  # distinct centre set (which may then be smaller than k).
+  # Centres are distinct by construction (an already-chosen vertex is never
+  # re-picked); unique() collapses only the degenerate fully-covered case
+  # (radius 0), where fewer than k distinct centres already cover everything.
   structure(sort(unique(best)), radius = bestR, producer = "CDSh",
             class = "KCentreSelection")
 }

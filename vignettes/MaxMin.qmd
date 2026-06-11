@@ -67,7 +67,7 @@ data(eurodist)
 set.seed(1)
 
 # Select 4 maximally dispersed cities
-idx <- FarFirst(eurodist, m = 4L)
+idx <- FarFirst(eurodist, k = 4L)
 MinDist(eurodist, idx)
 
 # View distances between chosen cities
@@ -111,7 +111,7 @@ whichever pass produced the highest T~k~.
 ```{r}
 #| label: gonzalez-random
 set.seed(1)
-picks <- FarFirst(eurodist, m = 6L)   # default: best of three random starts
+picks <- FarFirst(eurodist, k = 6L)   # default: best of three random starts
 ```
 
 More random starts, or pivots of your own devising, can be accomplished by a
@@ -123,7 +123,7 @@ set.seed(1)
 nCities <- attr(eurodist, "Size")
 # Use 5 random starts
 pivots <- sample(nCities, 5)
-picks <- FarFirst(eurodist, m = 6L, pivots = pivots)
+picks <- FarFirst(eurodist, k = 6L, pivots = pivots)
 ```
 
 
@@ -133,7 +133,7 @@ will be returned.
 
 ```{r}
 #| label: gonzalez-seeds
-picks <- FarFirst(eurodist, m = 6L, method = c("diameter", "anti_medoid"))
+picks <- FarFirst(eurodist, k = 6L, method = c("diameter", "anti_medoid"))
 MinDist(eurodist, picks)
 
 attr(picks, "winning_strategy")
@@ -145,7 +145,7 @@ would be too expensive, a function may be passed in place
 of the distance matrix. This function will be passed one index `i`, and should
 returns the distances from object `i` to all N objects — one column of the
 matrix.
-`FarFirst()` calls it $m$ times, so the full N×N matrix is never built.
+`FarFirst()` calls it $k$ times, so the full N×N matrix is never built.
 `N`, the number of objects, must be supplied.
 
 ```{r}
@@ -156,7 +156,7 @@ StateDist <- function(i) {
   diffs <- sweep(arrestTypes, 2, unlist(arrestTypes[i, ]), "-")
   sqrt(rowSums(diffs ^ 2))
 }
-idx <- FarFirst(StateDist, m = 4L, N = nrow(arrestTypes), method = 1L)
+idx <- FarFirst(StateDist, k = 4L, N = nrow(arrestTypes), method = 1L)
 arrestTypes[idx, ]
 ```
 
@@ -169,7 +169,7 @@ typically reaches ≈ 99 % of the optimal T~k~.
 
 ```{r}
 #| label: dropadd
-picksDA <- DropAdd(eurodist, m = 6L, plateau = 500L)
+picksDA <- DropAdd(eurodist, k = 6L, plateau = 500L)
 
 labels(eurodist)[picksDA]
 attr(picksDA, "score")  # T_k achieved
@@ -196,7 +196,7 @@ Because the construction phase is stochastic, call `set.seed()` before
 ```{r}
 #| label: grasp
 set.seed(42)
-res_gr <- Grasp(eurodist, m = 6L, plateau = 50L)
+res_gr <- Grasp(eurodist, k = 6L, plateau = 50L)
 
 labels(eurodist)[res_gr]
 attr(res_gr, "score")
@@ -211,22 +211,22 @@ interactive or batch use.
 ## Comparing methods on a simulated example
 
 To see how the methods relate visually, we generate 50 points in two
-dimensions and select *m* = 8 from each.
+dimensions and select *k* = 8 from each.
 
 ```{r}
 #| label: sim-data
 set.seed(42)
 pts <- matrix(rnorm(100), ncol = 2)   # 50 points, 2 dimensions
 d50 <- dist(pts)
-m   <- 8L
+k   <- 8L
 ```
 
 ```{r}
 #| label: compare-run
-idx_ff <- FarFirst(d50, m)
-res_da50 <- DropAdd(d50, m = m, plateau = 500L)
+idx_ff <- FarFirst(d50, k)
+res_da50 <- DropAdd(d50, k = k, plateau = 500L)
 set.seed(42)
-res_gr50 <- Grasp(d50, m = m, plateau = 50L)
+res_gr50 <- Grasp(d50, k = k, plateau = 50L)
 ```
 
 Even a small difference in T~k~ can correspond to a meaningfully more
@@ -252,7 +252,7 @@ above captures the quality distinction even when the visual overlap is high.
 #| fig-width: 6.5
 #| fig-height: 6
 #| fig-cap: "Selections returned by each method on 50 random 2-D points
-#|   (m = 8). Coloured symbols mark selected points; grey circles are the
+#|   (k = 8). Coloured symbols mark selected points; grey circles are the
 #|   full candidate set. A small jitter separates symbols at shared indices."
 
 methods <- list(
@@ -309,13 +309,13 @@ d30   <- dist(pts30)
 ```{r}
 #| label: exact
 #| eval: !expr requireNamespace("highs", quietly = TRUE)
-res_ex <- ExactMaxMin(d30, m = 6L, maxSeconds = 30L)
+res_ex <- ExactMaxMin(d30, k = 6L, maxSeconds = 30L)
 
 res_ex$proven      # TRUE  ⟹  objective is the global optimum
 res_ex$objective
 
 # Compare to the greedy heuristic on the same instance
-res_ff30 <- FarFirst(d30, m = 6L)
+res_ff30 <- FarFirst(d30, k = 6L)
 c(exact    = res_ex$objective,
   Gonzalez = MinDist(d30, res_ff30))
 ```
@@ -353,7 +353,7 @@ two optima are generally different selections.
 
 ### `KCentre()`: near-optimal covering
 
-`KCentre()` chooses `k` centres with the deterministic CDSh heuristic
+`KCentre()` chooses centres with the deterministic CDSh heuristic
 [@GarciaDiaz2019; @GarciaDiaz2017], which typically lands within 1–3.5 % of the
 optimum — an order of magnitude tighter than the Gonzalez 2-approximation that
 `FarFirst()` gives for this objective.
@@ -371,7 +371,7 @@ baseline:
 
 ```{r}
 #| label: kcentre-radius
-ff <- FarFirst(eurodist, m = 4L, method = "peripheral")
+ff <- FarFirst(eurodist, k = 4L, method = "peripheral")
 c(KCentre  = KCentreRadius(eurodist, centres),
   FarFirst = KCentreRadius(eurodist, ff))
 ```
@@ -397,9 +397,9 @@ res_kc
 res_kc$proven      # TRUE  ⟹  radius is the global covering optimum
 ```
 
-The covering optimum is sometimes attained by fewer than `k` centres (once every
+The covering optimum is sometimes attained by fewer centres (once every
 point is covered, extra centres cannot lower the radius); `indices` then has
-length below `k`, and the reported `radius` is still the proven optimum.
+length below the requested number, and the reported `radius` is still the proven optimum.
 `ExactKCentre()` is NP-hard, so — like `ExactMaxMin()` — it is a ground-truth
 reference for small instances, not a scalable method.
 
@@ -410,7 +410,7 @@ city near a centre.
 ```{r}
 #| label: dispersion-vs-covering
 #| eval: !expr requireNamespace("highs", quietly = TRUE)
-disp <- sort(ExactMaxMin(eurodist, m = 4L)$indices)
+disp <- sort(ExactMaxMin(eurodist, k = 4L)$indices)
 labels(eurodist)[disp]            # dispersion: pushed to the extremes
 labels(eurodist)[sort(res_kc$indices)]  # covering: pulled toward the interior
 ```
@@ -440,7 +440,7 @@ For **covering** (minimise the radius; no point far from a centre):
 | Score a centre set's covering radius (matrix-free at large N) | `KCentreRadius(points = ...)` |
 
 The dispersion heuristics are complementary:
-`FarFirst()` is O(*N* · *m*) and deterministic — an instant first result.
+`FarFirst()` is O(*N* · *k*) and deterministic — an instant first result.
 `DropAdd()` is deterministic and reproducible (no RNG): ties are broken by
 smallest index, so a given instance always yields the same selection,
 typically reaching ≈ 99 % of optimal.

@@ -55,26 +55,26 @@
   d
 }
 
-# A provably-achievable m-subset, as a lower bound on the optimum. Grasp
+# A provably-achievable k-subset, as a lower bound on the optimum. Grasp
 # (several RNG restarts) attains the package's best heuristic T_k on small-to-
 # medium instances; DropAdd adds a deterministic anchor. The best-achieving
-# subset wins. `warmStart`, if a valid m-subset, joins the pool. Returns
+# subset wins. `warmStart`, if a valid k-subset, joins the pool. Returns
 # list(value, witness), or NULL if no heuristic produced a usable subset.
-.ExactWarmStart <- function(d, n, m, warmStart, nStart = 8L) {
+.ExactWarmStart <- function(d, n, k, warmStart, nStart = 8L) {
   scv   <- function(idx) { s <- d[idx, idx]; diag(s) <- Inf; min(s) }
-  # Coerce a raw selection to a valid sorted m-subset, or drop it (NULL).
+  # Coerce a raw selection to a valid sorted k-subset, or drop it (NULL).
   valid <- function(idx) {
     idx <- tryCatch(sort(unique(as.integer(idx))), error = function(e) integer(0))
-    if (length(idx) == m && idx[1L] >= 1L && idx[m] <= n) idx else NULL
+    if (length(idx) == k && idx[1L] >= 1L && idx[k] <= n) idx else NULL
   }
   # Heuristic pool: optional caller warmStart, several Grasp restarts (drawing
   # on the session RNG -- this is where their diversity comes from), one
   # deterministic DropAdd. Like Grasp() itself, this advances the session RNG.
   grasps <- lapply(seq_len(nStart), function(s)
-    tryCatch(Grasp(d, m, plateau = 50L), error = function(e) NULL))
+    tryCatch(Grasp(d, k, plateau = 50L), error = function(e) NULL))
   raw <- c(if (is.null(warmStart)) list() else list(warmStart),
            grasps,
-           list(tryCatch(DropAdd(d = d, m = m, plateau = 512L),
+           list(tryCatch(DropAdd(d = d, k = k, plateau = 512L),
                          error = function(e) NULL)))
   pool <- Filter(Negate(is.null), lapply(raw, valid))
   if (!length(pool)) {
@@ -112,7 +112,7 @@
 
   if (nEdge == 0L) {
     # Empty graph: every vertex is independent, so alpha = n. Feasible
-    # whenever m <= n (guaranteed by the caller's guard). No solve needed.
+    # whenever k <= n (guaranteed by the caller's guard). No solve needed.
     return(list(verdict = "feasible", witness = seq_len(n)))
   }
 
@@ -147,15 +147,15 @@
     !any(sub[upper.tri(sub)] < lambda)
   }
 
-  if (isValidIndependent && length(sel) >= m) {
+  if (isValidIndependent && length(sel) >= k) {
     return(list(verdict = "feasible", witness = sel))
   }
 
   # Infeasibility is provable ONLY when the IP reached optimality and the
-  # certified maximum independent set is still smaller than m. A time-limit
+  # certified maximum independent set is still smaller than k. A time-limit
   # hit with a too-small (or empty) incumbent proves nothing.
   optimal <- identical(res$status_message, "Optimal")
-  if (optimal && isValidIndependent && length(sel) < m) {
+  if (optimal && isValidIndependent && length(sel) < k) {
     return(list(verdict = "infeasible", witness = integer(0)))
   }
   list(verdict = "inconclusive", witness = integer(0))  # nocov
@@ -189,16 +189,16 @@
 #' Call [set.seed()] before `ExactMaxMin()` for a reproducible selection.
 #'
 #' @param d A `dist` object or a square symmetric numeric distance matrix.
-#' @param m Integer target subset size, `2 <= m <= nrow(d)`.
+#' @param k Integer target subset size, `2 <= k <= nrow(d)`.
 #' @param solver Solver to use. Currently only `"highs"` is implemented;
 #'   `NULL` selects it. Other values raise an error.
 #' @param maxSeconds Wall-clock budget in seconds for the whole search
 #'   (shared across all internal IP solves). If the budget expires before the
 #'   optimum is proven, the largest threshold proven feasible so far is
 #'   returned with `proven = FALSE`.
-#' @param warmStart Optional integer vector: a candidate `m`-subset (1-based
+#' @param warmStart Optional integer vector: a candidate `k`-subset (1-based
 #'   indices into `d`) to add to the heuristic warm-start pool, e.g. a selection
-#'   already computed by another solver. Ignored unless it is a valid `m`-subset.
+#'   already computed by another solver. Ignored unless it is a valid `k`-subset.
 #'   The internal heuristics run regardless; a good `warmStart` can only reduce
 #'   the number of IP solves, never change the proven optimum.
 #' @param progress Logical; show a progress indicator during the search.
@@ -219,7 +219,7 @@
 #'       within the budget, `FALSE` if it returned an unproven incumbent.}
 #'     \item{time_s}{Wall-clock seconds elapsed.}
 #'     \item{solver}{Name of the MILP backend used.}
-#'     \item{n, m}{Instance size and target subset size.}
+#'     \item{n, k}{Instance size and target subset size.}
 #'   }
 #'   The list has class `c("MaxMinExact", "MaxMinSelection")` and prints as a
 #'   one-line summary (size, indices, solver, proof status and achieved `T_k`;
@@ -228,7 +228,7 @@
 #'   is `TRUE`, and any generic written against that class works here too.
 #' @references \insertAllCited{}
 #' @export
-ExactMaxMin <- function(d, m, solver = NULL, maxSeconds = 60,
+ExactMaxMin <- function(d, k, solver = NULL, maxSeconds = 60,
                         warmStart = NULL,
                         progress = getOption("MaxMin.progress", interactive())) {
   t0 <- proc.time()[[3L]]
@@ -243,9 +243,9 @@ ExactMaxMin <- function(d, m, solver = NULL, maxSeconds = 60,
 
   d <- .ExactAsMatrix(d)
   n <- nrow(d)
-  m <- as.integer(m)
-  if (is.na(m) || m < 2L || m > n) {
-    stop("`m` must satisfy 2 <= m <= nrow(d)")
+  k <- as.integer(k)
+  if (is.na(k) || k < 2L || k > n) {
+    stop("`k` must satisfy 2 <= k <= nrow(d)")
   }
 
   Elapsed <- function() proc.time()[[3L]] - t0
@@ -270,16 +270,16 @@ ExactMaxMin <- function(d, m, solver = NULL, maxSeconds = 60,
   tick <- function() if (progress) cli::cli_progress_update(id = .pb) # nocov
 
   # Feasibility oracle at a candidate index: does G(cand[idx]) admit an
-  # independent set of size >= m?
+  # independent set of size >= k?
   feas <- function(idx, remaining) {
     lambda <- cand[idx]
     e <- ud < lambda
-    .MaxISVerdict(d, n, ui[e], uj[e], lambda, m, remaining)
+    .MaxISVerdict(d, n, ui[e], uj[e], lambda, k, remaining)
   }
 
   # Helper to package a result for a proven-feasible candidate index.
   Recover <- function(witness, lambda, proven) {
-    idx <- sort(witness[seq_len(m)])
+    idx <- sort(witness[seq_len(k)])
     sub <- d[idx, idx]
     diag(sub) <- Inf
     obj <- min(sub)
@@ -301,7 +301,7 @@ ExactMaxMin <- function(d, m, solver = NULL, maxSeconds = 60,
         time_s    = Elapsed(),
         solver    = solver,
         n         = n,
-        m         = as.integer(m)
+        k         = as.integer(k)
       ),
       class = c("MaxMinExact", "MaxMinSelection")
     )
@@ -310,7 +310,7 @@ ExactMaxMin <- function(d, m, solver = NULL, maxSeconds = 60,
   # Warm start: a provably-achievable lower bound + witness. Every candidate
   # <= ws$value is feasible (the witness attains it), so the optimum index is
   # at least i0. Without a heuristic, fall back to the trivial bound (cand[1]).
-  ws <- .ExactWarmStart(d, n, m, warmStart)
+  ws <- .ExactWarmStart(d, n, k, warmStart)
   if (is.null(ws)) { # nocov start
     i0 <- 1L; bestIdx <- 1L; bestWitness <- seq_len(n)
   } else { # nocov end

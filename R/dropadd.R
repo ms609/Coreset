@@ -17,11 +17,11 @@
 # ----- helpers --------------------------------------------------------------
 
 # Constructive phase (Algorithm 1).
-# Returns list(S = integer(m), iter_add = integer(m)) where iter_add[k] is
-# the iteration at which S[k] was added (= k).
-.DropAddConstruct <- function(dmat, m) {
+# Returns list(S = integer(k), iter_add = integer(k)) where iter_add[i] is
+# the iteration at which S[i] was added (= i).
+.DropAddConstruct <- function(dmat, k) {
   n <- nrow(dmat)
-  S <- integer(m)
+  S <- integer(k)
   # Seed point: argmax over Z of sum_y d(x, y) (Porumbel's eq. before Alg. 1).
   rowSumsD <- rowSums(dmat)
   S[1L] <- which.max(rowSumsD)  # ties: which.max → smallest index (deterministic)
@@ -39,8 +39,8 @@
   minDistCount <- rep(1L, n)
   minDistCount[S[1L]] <- 0L                # no "other selected" yet
 
-  if (m >= 2L) {
-    for (h in 2L:m) {
+  if (k >= 2L) {
+    for (h in 2L:k) {
       # Among AddX = Z \ S, pick x maximising (minDist, sumDist) lex,
       # ties → smallest index.
       cand <- which(!inS)
@@ -159,7 +159,7 @@
 #'   distance matrix, giving \eqn{O(n)} working memory and enabling use at
 #'   \eqn{n} far exceeding the matrix path's ceiling (R's
 #'   \code{as.matrix.dist} overflows at \eqn{n = 46340}).
-#' @param m Integer; subset size, \eqn{2 \le m \le n}.
+#' @param k Integer; subset size, \eqn{2 \le k \le n}.
 #' @param plateau Integer; stop after this many consecutive drop-add
 #'   iterations that do not improve the best objective. The primary,
 #'   deterministic stopping criterion. The search is RNG-free (ties broken by
@@ -181,7 +181,7 @@
 #' @param .trace Optional environment (testing only); if supplied, the dropped
 #'   and added index sequences are written into it as `drops` and `adds`.
 #'
-#' @return An integer vector of length \code{m} containing the 1-based selected
+#' @return An integer vector of length \code{k} containing the 1-based selected
 #'   indices **sorted ascending** (unlike [FarFirst()], which returns
 #'   farthest-first order), with attributes:
 #'   \describe{
@@ -199,7 +199,7 @@
 #' @references \insertAllCited{}
 #'
 #' @export
-DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
+DropAdd <- function(d = NULL, k, plateau = 5000L, maxIter = NULL,
                       maxSeconds = Inf,
                       progress = getOption("MaxMin.progress", interactive()),
                       points = NULL,
@@ -215,9 +215,9 @@ DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
     dmat <- .AsDistMatrix(d)
     n <- nrow(dmat)
   }
-  m <- as.integer(m)
-  if (length(m) != 1L || is.na(m) || m < 2L || m > n) {
-    stop("`m` must be a single integer with 2 <= m <= n")
+  k <- as.integer(k)
+  if (length(k) != 1L || is.na(k) || k < 2L || k > n) {
+    stop("`k` must be a single integer with 2 <= k <= n")
   }
   plateau <- as.integer(plateau)
   if (length(plateau) != 1L || is.na(plateau) ||
@@ -243,11 +243,11 @@ DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
     cppMaxIter <- if (is.null(maxIter)) .Machine$integer.max else maxIter
     if (progress) {
       cli::cli_process_start(
-        "DropAdd tabu search (n = {n}, m = {m}, budget = {maxSeconds}s)",
+        "DropAdd tabu search (n = {n}, k = {k}, budget = {maxSeconds}s)",
         .auto_close = FALSE
       )
     }
-    out <- DropAdd_points_cpp(points, m, as.double(maxSeconds),
+    out <- DropAdd_points_cpp(points, k, as.double(maxSeconds),
                                 cppMaxIter, plateau, FALSE)
     timeS <- proc.time()[[3L]] - t0
     if (progress) {
@@ -272,11 +272,11 @@ DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
     wantTrace <- !is.null(.trace)
     if (progress) {
       cli::cli_process_start(
-        "DropAdd tabu search (n = {n}, m = {m}, budget = {maxSeconds}s)",
+        "DropAdd tabu search (n = {n}, k = {k}, budget = {maxSeconds}s)",
         .auto_close = FALSE
       )
     }
-    out <- DropAdd_cpp(dmat, m, as.double(maxSeconds),
+    out <- DropAdd_cpp(dmat, k, as.double(maxSeconds),
                          cppMaxIter, plateau, wantTrace)
     if (wantTrace) {
       .trace$drops <- out$drops
@@ -300,7 +300,7 @@ DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
   }
 
   # --- Construction (Algorithm 1) -----------------------------------------
-  cons <- .DropAddConstruct(dmat, m)
+  cons <- .DropAddConstruct(dmat, k)
   S            <- cons$S
   inS          <- cons$inS
   minDist      <- cons$minDist
@@ -311,7 +311,7 @@ DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
   # streamlined records (not via .MMDPoObj's upper-triangle sum) so that the
   # R fallback path and the C++ port are bit-identical from the first iter:
   # `.MMDPoObj` sums `dmat[S, S]` upper-tri in row-major order, the
-  # streamlined `sum(sumDist[S]) / 2` accumulates m partial sums — both
+  # streamlined `sum(sumDist[S]) / 2` accumulates k partial sums — both
   # compute the same quantity but differ in the last ULP.
   bestS <- S
   bestMaxmin  <- min(minDist[S])
@@ -319,16 +319,16 @@ DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
   bestScore   <- bestMaxmin + eps * bestSumpair
 
   # --- Drop-Add tabu search (Algorithm 2) ---------------------------------
-  # FIFO via circular buffer: S is a length-m vector treated as a queue.
+  # FIFO via circular buffer: S is a length-k vector treated as a queue.
   # `head` indexes the oldest member. Each iteration drops S[head], writes
-  # the new x* into S[head], and advances head modulo m. The Porumbel
+  # the new x* into S[head], and advances head modulo k. The Porumbel
   # iter_stamp / which.min(iter_stamp[S]) pair is redundant under this
   # invariant — head IS the FIFO head.
   head        <- 1L
   itersDone   <- 0L
   noImprove   <- 0L
   effectiveMax <- if (is.null(maxIter)) .Machine$integer.max else maxIter
-  if (m >= n) effectiveMax <- 0L  # all points selected: no drop-add move exists
+  if (k >= n) effectiveMax <- 0L  # all points selected: no drop-add move exists
   if (!is.null(.trace)) {
     .trace$drops <- integer(0)
     .trace$adds  <- integer(0)
@@ -423,7 +423,7 @@ DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
       minDistCount[xHash] <- 0L   # nocov
     }
 
-    # 2. ADD: argmax over Add X(k) = Z - X(k) of (minDist, sumDist), ties →
+    # 2. ADD: argmax over Add X(i) = Z - X(i) of (minDist, sumDist), ties →
     # smallest idx. xHash is excluded for this iteration (Porumbel et al. 2011,
     # p.281): the just-dropped point cannot be re-added immediately — the tabu
     # rule that prevents looping. It is eligible again once head advances.
@@ -461,7 +461,7 @@ DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
 
     # Write xNew into the head slot and advance.
     S[head] <- xNew
-    head <- if (head == m) 1L else head + 1L
+    head <- if (head == k) 1L else head + 1L
 
     # 3. Test for improvement of best-known MMDPo solution.
     curMaxmin  <- min(minDist[S])

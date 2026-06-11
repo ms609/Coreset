@@ -30,12 +30,12 @@
 #' index.
 #'
 #' @param d Square pairwise distance matrix.
-#' @param m Integer: target subsample size (`>= 1`).
+#' @param k Integer: target subsample size (`>= 1`).
 #' @param first Integer: index of the first selected point.
-#' @return Integer vector of length `m` of selected row/col indices.
+#' @return Integer vector of length `k` of selected row/col indices.
 #' @keywords internal
-.MaximinFrom <- function(d, m, first) {
-  MaximinFrom_cpp(d, as.integer(m), as.integer(first))
+.MaximinFrom <- function(d, k, first) {
+  MaximinFrom_cpp(d, as.integer(k), as.integer(first))
 }
 
 #' Coerce coordinate input for the on-the-fly (matrix-free) samplers
@@ -76,8 +76,8 @@
 #'   (`0L` = none); used by the anti-medoid path to exclude the medoid.
 #' @return Integer vector of selected indices.
 #' @keywords internal
-.MaximinFromPoints <- function(points, m, first, mask = 0L) {
-  MaximinFromPoints_cpp(points, as.integer(m), as.integer(first),
+.MaximinFromPoints <- function(points, k, first, mask = 0L) {
+  MaximinFromPoints_cpp(points, as.integer(k), as.integer(first),
                         as.integer(mask))
 }
 
@@ -171,10 +171,10 @@
 #'   accepted; symmetry is not checked (an `O(N^2)` check is intentionally
 #'   omitted), and the algorithm treats \eqn{d_{ij}} and \eqn{d_{ji}} as
 #'   independent. Ignored when `points` is supplied.
-#' @param m Integer: number of points to select. If `m > N`, all `N` indices
+#' @param k Integer: number of points to select. If `k > N`, all `N` indices
 #'   are returned in Gonzalez (farthest-first) order.
 #' @param points Optional `N x dim` numeric coordinate matrix. When supplied,
-#'   the selection is computed directly from coordinates in `O(N * m * dim)`
+#'   the selection is computed directly from coordinates in `O(N * k * dim)`
 #'   time and `O(N)` memory, never materialising the `N x N` distance matrix
 #'   (`d` is then unused). For Euclidean data the returned indices are
 #'   identical to the matrix path. Only complete (non-`NA`) data is supported.
@@ -229,7 +229,7 @@
 #'   reproducible selection. When supplied, `nseeds` overrides `method` and
 #'   `pivots` (a warning is issued if either was also set explicitly); it is not
 #'   available on the distance-column oracle path. Default `NULL` (use `method`).
-#' @return Integer vector of length `min(m, N)` of selected indices, in
+#' @return Integer vector of length `min(k, N)` of selected indices, in
 #'   farthest-first (greedy) selection order -- **not** sorted (unlike
 #'   [DropAdd()], [Grasp()] and `ExactMaxMin()$indices`, which return ascending
 #'   indices). The achieved \eqn{T_k} (the selection's minimum pairwise
@@ -258,7 +258,7 @@
 #' # An explicit start index (integer method):
 #' FarFirst(d, 5L, method = 1L)
 #' # Matrix-free coordinate path (identical result, O(N) memory):
-#' FarFirst(m = 5L, points = pts, method = 1L)
+#' FarFirst(k = 5L, points = pts, method = 1L)
 #'
 #' # Distance-column oracle: supply one column at a time, never the full matrix.
 #' data("USArrests")
@@ -267,10 +267,10 @@
 #'   diffs <- sweep(arrestTypes, 2, unlist(arrestTypes[i, ]), "-")
 #'   sqrt(rowSums(diffs ^ 2))
 #' }
-#' idx <- FarFirst(StateDist, m = 4L, N = nrow(arrestTypes), method = 1L)
+#' idx <- FarFirst(StateDist, k = 4L, N = nrow(arrestTypes), method = 1L)
 #' arrestTypes[idx, ]
 #' @export
-FarFirst <- function(d = NULL, m,
+FarFirst <- function(d = NULL, k,
                      method = .kDefaultEnsemble, pivots = NULL, nseeds = NULL,
                      points = NULL, N = NULL,
                      progress = getOption("MaxMin.progress", interactive())) {
@@ -331,7 +331,7 @@ FarFirst <- function(d = NULL, m,
       warning("distance-column oracle path: only an integer `method` (a `first` ",
               "index) is honoured; using the deterministic peripheral seed")
     }
-    return(Classify(.GonzalezColumn(colFn = d, N = N, m = m, first = first,
+    return(Classify(.GonzalezColumn(colFn = d, N = N, k = k, first = first,
                                     progress = progress)))
   }
 
@@ -344,12 +344,12 @@ FarFirst <- function(d = NULL, m,
     nPts <- nrow(d)
   }
   # Pre-check before as.integer(): a finite, length-1, non-negative value.
-  # Pre-checking avoids the spurious base-R coercion warning on `m = Inf`.
-  if (length(m) != 1L || !is.finite(m) || m < 0L) {
-    stop("`m` must be a single non-negative integer")
+  # Pre-checking avoids the spurious base-R coercion warning on `k = Inf`.
+  if (length(k) != 1L || !is.finite(k) || k < 0L) {
+    stop("`k` must be a single non-negative integer")
   }
-  m <- min(as.integer(m), nPts)
-  if (m == 0L) return(integer(0))
+  k <- min(as.integer(k), nPts)
+  if (k == 0L) return(integer(0))
 
   # Distinct-seed random restart: draw random pivots, take each one's
   # furthest-point seed, de-duplicate, until `nseeds` distinct seeds are
@@ -372,10 +372,10 @@ FarFirst <- function(d = NULL, m,
     }
     seeds <- .DrawDistinctSeeds(seedFn, nPts, nseeds)
     return(Classify(if (usePoints) {
-      .GonzEnsembleFromPoints(points, m, "random_furthest", pivots = seeds,
+      .GonzEnsembleFromPoints(points, k, "random_furthest", pivots = seeds,
                               rfSeedFn = identity)
     } else {
-      .GonzEnsemble(d, m, "random_furthest", pivots = seeds,
+      .GonzEnsemble(d, k, "random_furthest", pivots = seeds,
                     rfSeedFn = identity)
     }))
   }
@@ -384,9 +384,9 @@ FarFirst <- function(d = NULL, m,
   # computed for free). A bare single pass exposes it as the `score` attribute
   # (matching DropAdd/Grasp); the ensemble path reads it into strategy_results.
   Greedy <- if (usePoints) {
-    function(s) .PromoteScore(.MaximinFromPoints(points, m, first = as.integer(s)))
+    function(s) .PromoteScore(.MaximinFromPoints(points, k, first = as.integer(s)))
   } else {
-    function(s) .PromoteScore(.MaximinFrom(d, m, first = as.integer(s)))
+    function(s) .PromoteScore(.MaximinFrom(d, k, first = as.integer(s)))
   }
 
   # An explicit `first` is a single bare Gonzalez pass, overriding `method`.
@@ -439,9 +439,9 @@ FarFirst <- function(d = NULL, m,
            "`method` (e.g. \"peripheral\") or supply non-empty `pivots`.")
     }
     if (usePoints) {
-      return(Classify(.GonzEnsembleFromPoints(points, m, anchors, pivots)))
+      return(Classify(.GonzEnsembleFromPoints(points, k, anchors, pivots)))
     }
-    return(Classify(.GonzEnsemble(d, m, anchors, pivots)))
+    return(Classify(.GonzEnsemble(d, k, anchors, pivots)))
   }
 
   if (!usePoints && method == "centroid") {
@@ -494,22 +494,22 @@ FarFirst <- function(d = NULL, m,
 #' for the user-facing contract. At each greedy step the distances from the
 #' newly selected element to all `N` elements are obtained from `colFn`, and a
 #' running nearest-distance vector is maintained, so the `N x N` distance matrix
-#' is never materialised: `O(N * m)` oracle calls and `O(N)` memory.
+#' is never materialised: `O(N * k)` oracle calls and `O(N)` memory.
 #'
 #' @param colFn A function that, when passed an index `i`, must return a
 #' vector of distances from element `i` to either (i) every element in turn,
 #' including `i`; or (ii) every other element. See [.DistColumn()].
 #' @param N Integer: the total number of elements.
-#' @param m Integer: number of elements to select. If `m > N`, all `N` indices
+#' @param k Integer: number of elements to select. If `k > N`, all `N` indices
 #'   are returned in Gonzalez (farthest-first) order.
 #' @param first Integer index of the first selected element, or `NULL`
 #'   (default) to use a deterministic peripheral seed computed from two oracle
 #'   sweeps: the element furthest from element 1, then the element furthest
 #'   from that (a diameter-endpoint approximation).
 #' @param progress Logical; show a progress bar during greedy selection.
-#' @return Integer vector of length `min(m, N)` of selected indices.
+#' @return Integer vector of length `min(k, N)` of selected indices.
 #' @keywords internal
-.GonzalezColumn <- function(colFn, N, m, first = NULL,
+.GonzalezColumn <- function(colFn, N, k, first = NULL,
                             progress = getOption("MaxMin.progress", interactive())) {
   if (!is.function(colFn)) {
     stop("`colFn` must be a function of one index returning numeric(N)")
@@ -519,15 +519,15 @@ FarFirst <- function(d = NULL, m,
          "distance-column function")
   }
   N <- as.integer(N)
-  m <- as.integer(m)
+  k <- as.integer(k)
   if (length(N) != 1L || is.na(N) || N < 1L) {
     stop("`N` must be a single positive integer")
   }
-  if (length(m) != 1L || is.na(m) || m < 0L) {
-    stop("`m` must be a single non-negative integer")
+  if (length(k) != 1L || is.na(k) || k < 0L) {
+    stop("`k` must be a single non-negative integer")
   }
-  m <- min(m, N)
-  if (m == 0L) return(integer(0))
+  k <- min(k, N)
+  if (k == 0L) return(integer(0))
   if (is.null(first)) {
     first <- .PeripheralSeedColumn(colFn, N)
   }
@@ -536,9 +536,9 @@ FarFirst <- function(d = NULL, m,
     stop("`first` must be a single index in [1, N]")
   }
   # A single point has no pairwise distance; report score = NA, matching the
-  # matrix/coordinate kernels' m < 2 behaviour.
-  if (m == 1L) return(structure(first, score = NA_real_))
-  .MaximinFromColumn(colFn, N, m, first, progress = progress)
+  # matrix/coordinate kernels' k < 2 behaviour.
+  if (k == 1L) return(structure(first, score = NA_real_))
+  .MaximinFromColumn(colFn, N, k, first, progress = progress)
 }
 
 #' Gonzalez maximin from a distance-column oracle (worker)
@@ -549,24 +549,24 @@ FarFirst <- function(d = NULL, m,
 #' selection is identical to the matrix path on symmetric input.
 #' @param colFn Column oracle; see [FarFirst()].
 #' @param N Integer element count.
-#' @param m Integer subset size (`>= 2`).
+#' @param k Integer subset size (`>= 2`).
 #' @param first Integer seed index.
 #' @return Integer vector of selected indices.
 #' @keywords internal
-.MaximinFromColumn <- function(colFn, N, m, first, progress = FALSE) {
-  selected <- integer(m)
+.MaximinFromColumn <- function(colFn, N, k, first, progress = FALSE) {
+  selected <- integer(k)
   selected[1L] <- first
   minDist <- .DistColumn(colFn, first, N)  # seed column, self already masked
   if (progress) {
-    .pb <- cli::cli_progress_bar("Gonzalez (column oracle)", total = m - 1L)
+    .pb <- cli::cli_progress_bar("Gonzalez (column oracle)", total = k - 1L)
   }
   # T_k = min over greedy steps of the chosen element's insertion distance
   # (minDist[best] before the pmin update), mirroring MaximinFrom_cpp's `tk` so
   # the `score` attribute matches the matrix path bit-for-bit.
   tk <- Inf
-  for (k in seq_len(m - 1L) + 1L) {
+  for (i in seq_len(k - 1L) + 1L) {
     best <- which.max(minDist)           # first global max (ties -> first)
-    selected[k] <- best
+    selected[i] <- best
     if (minDist[best] < tk) tk <- minDist[best]
     # `.DistColumn` masks position `best` to -Inf, so pmin propagates the mask
     # and `best` cannot be re-selected; no explicit `minDist[best]` needed.

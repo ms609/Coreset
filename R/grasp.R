@@ -28,8 +28,8 @@
 #' For each i in sel, return its nearest-other-selected distance.
 #' @keywords internal
 .GraspNearestInSel <- function(d, sel) {
-  m <- length(sel)
-  if (m < 2L) return(rep(Inf, m))  # nocov
+  k <- length(sel)
+  if (k < 2L) return(rep(Inf, k))  # nocov
   sub <- d[sel, sel, drop = FALSE]
   diag(sub) <- Inf
   apply(sub, 1L, min)
@@ -51,21 +51,21 @@
 #' One randomised greedy construction.
 #'
 #' @param d Square distance matrix.
-#' @param m Target subset size.
+#' @param k Target subset size.
 #' @param alpha RCL threshold parameter (alpha=1 -> greedy, alpha=0 -> random).
-#' @return Integer vector of length m.
+#' @return Integer vector of length k.
 #' @keywords internal
-.GraspConstruct <- function(d, m, alpha) {
+.GraspConstruct <- function(d, k, alpha) {
   n <- nrow(d)
-  sel <- integer(m)
+  sel <- integer(k)
   sel[1L] <- sample.int(n, 1L)
   # nearest-selected distance for each candidate; Inf if no candidate available
   g <- d[, sel[1L]]
   g[sel[1L]] <- -Inf  # mark selected
-  # `2L:m` counts *down* when m == 1L (-> c(2L, 1L)); guard so the helper is
-  # safe when called directly with m == 1L, matching the C++ `h < m` loop.
-  if (m >= 2L) {
-    for (h in 2L:m) {
+  # `2L:k` counts *down* when k == 1L (-> c(2L, 1L)); guard so the helper is
+  # safe when called directly with k == 1L, matching the C++ `h < k` loop.
+  if (k >= 2L) {
+    for (h in 2L:k) {
       # candidates are points with g > -Inf (i.e., not yet selected)
       candIdx <- which(g > -Inf)
       gv <- g[candIdx]
@@ -105,13 +105,13 @@
 #' it preserves d* while reducing the count of pairs at d*.
 #'
 #' @param d Square distance matrix.
-#' @param sel Integer vector of size m.
-#' @return Improved integer vector of size m.
+#' @param sel Integer vector of size k.
+#' @return Improved integer vector of size k.
 #' @keywords internal
 .GraspLocalSearch <- function(d, sel) {
   n <- nrow(d)
-  m <- length(sel)
-  if (m < 2L) return(sel)  # nocov
+  k <- length(sel)
+  if (k < 2L) return(sel)  # nocov
   repeat {
     selSorted <- sort(sel)
     di <- .GraspNearestInSel(d, selSorted)
@@ -282,7 +282,7 @@
 #' far larger instances.
 #'
 #' @param d Either a `dist` object or a square symmetric numeric matrix.
-#' @param m Integer subset size, `2 <= m <= nrow(d)`.
+#' @param k Integer subset size, `2 <= k <= nrow(d)`.
 #' @param plateau Integer; stop after this many consecutive GRASP
 #'   iterations without an improvement to the best elite objective. The
 #'   primary, deterministic stopping criterion. Default 100.
@@ -295,7 +295,7 @@
 #' @param maxSeconds Optional wall-clock ceiling in seconds. Default `Inf`
 #'   (no ceiling, fully reproducible). A finite value caps runtime but makes
 #'   the result machine-dependent.
-#' @return An integer vector of length `m` (1-based) **sorted ascending**
+#' @return An integer vector of length `k` (1-based) **sorted ascending**
 #'   (unlike [FarFirst()], which returns farthest-first order)
 #'   with attributes:
 #'   \describe{
@@ -315,15 +315,15 @@
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' # Call set.seed() before Grasp() for a reproducible run:
 #' set.seed(1)
-#' res <- Grasp(dist(pts), m = 5L, plateau = 20L, eliteSize = 4L)
+#' res <- Grasp(dist(pts), k = 5L, plateau = 20L, eliteSize = 4L)
 #' res
 #' @export
-Grasp <- function(d, m, plateau = 100L, maxIter = NULL,
+Grasp <- function(d, k, plateau = 100L, maxIter = NULL,
                     eliteSize = 10L, alpha = 0.8, maxSeconds = Inf) {
   d <- .AsDistMatrix(d)
   n <- nrow(d)
-  m <- as.integer(m)
-  stopifnot(m >= 2L, m <= n)
+  k <- as.integer(k)
+  stopifnot(k >= 2L, k <= n)
   eliteSize <- as.integer(eliteSize)
   stopifnot(eliteSize >= 1L)
   plateau <- as.integer(plateau)
@@ -346,7 +346,7 @@ Grasp <- function(d, m, plateau = 100L, maxIter = NULL,
     stop("`alpha` must be a single number in [0, 1]")
   }
 
-  out <- Grasp_cpp(d, m, plateau, maxIter, eliteSize,
+  out <- Grasp_cpp(d, k, plateau, maxIter, eliteSize,
                      as.double(alpha), as.double(maxSeconds))
   # Return:
   .AsMaxMinSelection(structure(
@@ -370,11 +370,11 @@ Grasp <- function(d, m, plateau = 100L, maxIter = NULL,
 # `maxIter` is an optional hard cap; `maxSeconds` an optional ceiling
 # (Inf = off) that leaves the result reproducible.
 #' @keywords internal
-.Grasp_R <- function(d, m, plateau, maxIter = .Machine$integer.max,
+.Grasp_R <- function(d, k, plateau, maxIter = .Machine$integer.max,
                        eliteSize = 10L, alpha = 0.8, maxSeconds = Inf) {
   d <- .AsDistMatrix(d)
   n <- nrow(d)
-  m <- as.integer(m)
+  k <- as.integer(k)
   eliteSize <- as.integer(eliteSize)
   dth <- 5L
   t0 <- proc.time()[[3L]]
@@ -383,7 +383,7 @@ Grasp <- function(d, m, plateau = 100L, maxIter = NULL,
   ES <- vector("list", eliteSize)
   esZ <- numeric(eliteSize)
   for (b in seq_len(eliteSize)) {
-    x  <- .GraspConstruct(d, m, alpha)
+    x  <- .GraspConstruct(d, k, alpha)
     xp <- .GraspLocalSearch(d, x)
     ES[[b]] <- xp
     esZ[b] <- .GraspObjective(d, xp)
@@ -421,7 +421,7 @@ Grasp <- function(d, m, plateau = 100L, maxIter = NULL,
       if (budgetSpent()) break
       if (noImprove >= plateau) break
       if (iters >= maxIter) break
-      x  <- .GraspConstruct(d, m, alpha)
+      x  <- .GraspConstruct(d, k, alpha)
       xp <- .GraspLocalSearch(d, x)
       zp <- .GraspObjective(d, xp)
       res <- .GraspTryInsert(d, ES, esZ, xp, zp, dth)
