@@ -46,7 +46,7 @@ BugReports: https://github.com/ms609/MaxMin/issues
 Config/Needs/benchmark: bench, highs
 Config/Needs/check: rcmdcheck, testthat
 Config/Needs/coverage: covr
-Config/Needs/memcheck: testthat
+Config/Needs/memcheck: testthat, pkgdown
 Config/Needs/metadata: codemeta
 Config/Needs/revdeps: revdepcheck
 Config/Needs/website: pkgdown
