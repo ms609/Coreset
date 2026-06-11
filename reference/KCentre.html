@@ -82,9 +82,9 @@ optimum).</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">KCentre</span><span class="op">(</span><span class="va">d</span>, <span class="va">k</span>, nstart <span class="op">=</span> <span class="fl">1L</span>, seeds <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">KCentre</span><span class="op">(</span><span class="va">d</span>, <span class="va">k</span>, nstart <span class="op">=</span> <span class="fl">1L</span>, effort <span class="op">=</span> <span class="fl">1L</span>, seeds <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">KCenter</span><span class="op">(</span><span class="va">d</span>, <span class="va">k</span>, nstart <span class="op">=</span> <span class="fl">1L</span>, seeds <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">KCenter</span><span class="op">(</span><span class="va">d</span>, <span class="va">k</span>, nstart <span class="op">=</span> <span class="fl">1L</span>, effort <span class="op">=</span> <span class="fl">1L</span>, seeds <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -104,6 +104,14 @@ optimum).</p>
 the lowest-radius result. Default <code>1</code>. Ignored if <code>seeds</code> is supplied.</p></dd>
 
 
+<dt id="arg-effort">effort<a class="anchor" aria-label="anchor" href="#arg-effort"></a></dt>
+<dd><p>Integer; controls the Gonzalez floor that keeps the result no
+worse than the 2-approximation. <code>0</code> disables it (raw CDSh, fastest, no
+guarantee); <code>1</code> (default) runs one deterministic peripheral Gonzalez pass;
+<code>&gt; 1</code> runs a distinct-seed Gonzalez restart with <code>nseeds = effort</code> (a tighter
+floor that draws on the session RNG – call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> to reproduce).</p></dd>
+
+
 <dt id="arg-seeds">seeds<a class="anchor" aria-label="anchor" href="#arg-seeds"></a></dt>
 <dd><p>Optional integer vector of explicit 1-based seed vertices for the
 construction's first critical vertex (overrides <code>nstart</code>).</p></dd>
@@ -121,10 +129,10 @@ an ordinary integer vector and indexes a matrix or coordinate set directly.</p>
     <p>The achieved covering radius is not monotone in the trial radius, so the binary
 search can occasionally miss the best candidate. Two safeguards keep the result
 robust: for a small candidate grid (<code>n</code> up to ~150) every radius is scanned
-exhaustively, and the result is always floored against a deterministic Gonzalez
-pass, so <code>KCentre()</code> is <strong>never worse than the 2-approximation</strong>. For a tighter
-result at larger <code>n</code> raise <code>nstart</code>; for the proven optimum on a small instance
-use <code><a href="ExactKCentre.html">ExactKCentre()</a></code>.</p>
+exhaustively, and the result is floored against a Gonzalez pass (the <code>effort</code>
+argument, on by default), so <code>KCentre()</code> is <strong>never worse than the
+2-approximation</strong>. For a tighter result at larger <code>n</code> raise <code>nstart</code> or
+<code>effort</code>; for the proven optimum on a small instance use <code><a href="ExactKCentre.html">ExactKCentre()</a></code>.</p>
 <p>The construction is otherwise fully deterministic: where the reference seeds its
 first critical vertex at random, <code>KCentre()</code> uses deterministic peripheral
 anchors (<code>nstart</code> of them, the best kept). Like <code><a href="ExactKCentre.html">ExactKCentre()</a></code> this is a

@@ -209,7 +209,7 @@ FarFirst(d, 5L, method = 1L)
 #> 5 elements (1 5 24 4 14) selected by Gonzalez farthest-first, each at distance >= 1.701
 # Matrix-free coordinate path (identical result, O(N) memory):
 FarFirst(m = 5L, points = pts, method = 1L)
-#> 5 elements (1 5 24 4 14) selected by Gonzalez farthest-first, each at distance >= 1.701
+#> Error in FarFirst(m = 5L, points = pts, method = 1L): unused argument (m = 5)
 
 # Distance-column oracle: supply one column at a time, never the full matrix.
 data("USArrests")
@@ -219,10 +219,7 @@ StateDist <- function(i) {
   sqrt(rowSums(diffs ^ 2))
 }
 idx <- FarFirst(StateDist, m = 4L, N = nrow(arrestTypes), method = 1L)
+#> Error in FarFirst(StateDist, m = 4L, N = nrow(arrestTypes), method = 1L): unused argument (m = 4)
 arrestTypes[idx, ]
-#>                Murder Assault Rape
-#> Alabama          13.2     236 21.2
-#> North Dakota      0.8      45  7.3
-#> North Carolina   13.0     337 16.1
-#> Washington        4.0     145 26.2
+#> Error: object 'idx' not found
 ```

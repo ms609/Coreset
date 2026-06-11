@@ -50,7 +50,7 @@ data(eurodist)
 set.seed(1)
 
 # Select 4 maximally dispersed cities
-idx <- FarFirst(eurodist, m = 4L)
+idx <- FarFirst(eurodist, k = 4L)
 MinDist(eurodist, idx)
 #> [1] 2187
 
@@ -103,7 +103,7 @@ pass produced the highest T_(k).
 ``` r
 
 set.seed(1)
-picks <- FarFirst(eurodist, m = 6L)   # default: best of three random starts
+picks <- FarFirst(eurodist, k = 6L)   # default: best of three random starts
 ```
 
 More random starts, or pivots of your own devising, can be accomplished
@@ -115,7 +115,7 @@ set.seed(1)
 nCities <- attr(eurodist, "Size")
 # Use 5 random starts
 pivots <- sample(nCities, 5)
-picks <- FarFirst(eurodist, m = 6L, pivots = pivots)
+picks <- FarFirst(eurodist, k = 6L, pivots = pivots)
 ```
 
 Peripheral seeds may also be selected by deterministic methods: one or
@@ -124,7 +124,7 @@ solution found will be returned.
 
 ``` r
 
-picks <- FarFirst(eurodist, m = 6L, method = c("diameter", "anti_medoid"))
+picks <- FarFirst(eurodist, k = 6L, method = c("diameter", "anti_medoid"))
 MinDist(eurodist, picks)
 #> [1] 1014
 
@@ -139,7 +139,7 @@ distance matrix. This function will be passed one index `i`, and should
 returns the distances from object `i` to all N objects — one column of
 the matrix.
 [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
-calls it $`m`$ times, so the full N×N matrix is never built. `N`, the
+calls it $`k`$ times, so the full N×N matrix is never built. `N`, the
 number of objects, must be supplied.
 
 ``` r
@@ -150,7 +150,7 @@ StateDist <- function(i) {
   diffs <- sweep(arrestTypes, 2, unlist(arrestTypes[i, ]), "-")
   sqrt(rowSums(diffs ^ 2))
 }
-idx <- FarFirst(StateDist, m = 4L, N = nrow(arrestTypes), method = 1L)
+idx <- FarFirst(StateDist, k = 4L, N = nrow(arrestTypes), method = 1L)
 arrestTypes[idx, ]
 #>                Murder Assault Rape
 #> Alabama          13.2     236 21.2
@@ -167,7 +167,7 @@ from the selection; it typically reaches ≈ 99 % of the optimal T_(k).
 
 ``` r
 
-picksDA <- DropAdd(eurodist, m = 6L, plateau = 500L)
+picksDA <- DropAdd(eurodist, k = 6L, plateau = 500L)
 
 labels(eurodist)[picksDA]
 #> [1] "Athens"    "Barcelona" "Cherbourg" "Lisbon"    "Stockholm" "Vienna"
@@ -176,7 +176,7 @@ attr(picksDA, "score")  # T_k achieved
 attr(picksDA, "iters")      # iterations completed
 #> [1] 516
 attr(picksDA, "time_s")     # wall-clock seconds
-#> [1] 0.001
+#> [1] 0
 ```
 
 The algorithm terminates after `plateau` iterations do not improve
@@ -199,7 +199,7 @@ reproducible run:
 ``` r
 
 set.seed(42)
-res_gr <- Grasp(eurodist, m = 6L, plateau = 50L)
+res_gr <- Grasp(eurodist, k = 6L, plateau = 50L)
 
 labels(eurodist)[res_gr]
 #> [1] "Athens"    "Barcelona" "Calais"    "Lisbon"    "Stockholm" "Vienna"
@@ -216,22 +216,22 @@ for interactive or batch use.
 ## Comparing methods on a simulated example
 
 To see how the methods relate visually, we generate 50 points in two
-dimensions and select *m* = 8 from each.
+dimensions and select *k* = 8 from each.
 
 ``` r
 
 set.seed(42)
 pts <- matrix(rnorm(100), ncol = 2)   # 50 points, 2 dimensions
 d50 <- dist(pts)
-m   <- 8L
+k   <- 8L
 ```
 
 ``` r
 
-idx_ff <- FarFirst(d50, m)
-res_da50 <- DropAdd(d50, m = m, plateau = 500L)
+idx_ff <- FarFirst(d50, k)
+res_da50 <- DropAdd(d50, k = k, plateau = 500L)
 set.seed(42)
-res_gr50 <- Grasp(d50, m = m, plateau = 50L)
+res_gr50 <- Grasp(d50, k = k, plateau = 50L)
 ```
 
 Even a small difference in T_(k) can correspond to a meaningfully more
@@ -287,7 +287,7 @@ legend("topright",
 
 ![](MaxMin_files/figure-html/compare-plot-1.png)
 
-Selections returned by each method on 50 random 2-D points (m = 8).
+Selections returned by each method on 50 random 2-D points (k = 8).
 Coloured symbols mark selected points; grey circles are the full
 candidate set. A small jitter separates symbols at shared indices.
 
@@ -315,7 +315,7 @@ d30   <- dist(pts30)
 
 ``` r
 
-res_ex <- ExactMaxMin(d30, m = 6L, maxSeconds = 30L)
+res_ex <- ExactMaxMin(d30, k = 6L, maxSeconds = 30L)
 
 res_ex$proven      # TRUE  ⟹  objective is the global optimum
 #> [1] TRUE
@@ -323,7 +323,7 @@ res_ex$objective
 #> [1] 1.616311
 
 # Compare to the greedy heuristic on the same instance
-res_ff30 <- FarFirst(d30, m = 6L)
+res_ff30 <- FarFirst(d30, k = 6L)
 c(exact    = res_ex$objective,
   Gonzalez = MinDist(d30, res_ff30))
 #>    exact Gonzalez 
@@ -369,8 +369,8 @@ selections.
 ### `KCentre()`: near-optimal covering
 
 [`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md)
-chooses `k` centres with the deterministic CDSh heuristic ([García-Díaz
-et al., 2017](#ref-GarciaDiaz2017); [García-Díaz et al.,
+chooses centres with the deterministic CDSh heuristic ([García-Díaz et
+al., 2017](#ref-GarciaDiaz2017); [García-Díaz et al.,
 2019](#ref-GarciaDiaz2019)), which typically lands within 1–3.5 % of the
 optimum — an order of magnitude tighter than the Gonzalez
 2-approximation that
@@ -392,7 +392,7 @@ covers at least as tightly as the Gonzalez 2-approximation baseline:
 
 ``` r
 
-ff <- FarFirst(eurodist, m = 4L, method = "peripheral")
+ff <- FarFirst(eurodist, k = 4L, method = "peripheral")
 c(KCentre  = KCentreRadius(eurodist, centres),
   FarFirst = KCentreRadius(eurodist, ff))
 #>  KCentre FarFirst 
@@ -427,10 +427,10 @@ res_kc$proven      # TRUE  ⟹  radius is the global covering optimum
 #> [1] TRUE
 ```
 
-The covering optimum is sometimes attained by fewer than `k` centres
-(once every point is covered, extra centres cannot lower the radius);
-`indices` then has length below `k`, and the reported `radius` is still
-the proven optimum.
+The covering optimum is sometimes attained by fewer centres (once every
+point is covered, extra centres cannot lower the radius); `indices` then
+has length below the requested number, and the reported `radius` is
+still the proven optimum.
 [`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md)
 is NP-hard, so — like
 [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
@@ -443,7 +443,7 @@ inward to keep every city near a centre.
 
 ``` r
 
-disp <- sort(ExactMaxMin(eurodist, m = 4L)$indices)
+disp <- sort(ExactMaxMin(eurodist, k = 4L)$indices)
 labels(eurodist)[disp]            # dispersion: pushed to the extremes
 #> [1] "Athens"    "Lisbon"    "Milan"     "Stockholm"
 labels(eurodist)[sort(res_kc$indices)]  # covering: pulled toward the interior
@@ -475,7 +475,7 @@ For **covering** (minimise the radius; no point far from a centre):
 
 The dispersion heuristics are complementary:
 [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) is
-O(*N* · *m*) and deterministic — an instant first result.
+O(*N* · *k*) and deterministic — an instant first result.
 [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) is
 deterministic and reproducible (no RNG): ties are broken by smallest
 index, so a given instance always yields the same selection, typically

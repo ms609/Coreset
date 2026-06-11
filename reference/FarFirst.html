@@ -248,7 +248,7 @@ complete <code>N x N</code> matrix.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (1 5 24 4 14) selected by Gonzalez farthest-first, each at distance &gt;= 1.701</span>
 <span class="r-in"><span><span class="co"># Matrix-free coordinate path (identical result, O(N) memory):</span></span></span>
 <span class="r-in"><span><span class="fu">FarFirst</span><span class="op">(</span>m <span class="op">=</span> <span class="fl">5L</span>, points <span class="op">=</span> <span class="va">pts</span>, method <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (1 5 24 4 14) selected by Gonzalez farthest-first, each at distance &gt;= 1.701</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in FarFirst(m = 5L, points = pts, method = 1L):</span> unused argument (m = 5)</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Distance-column oracle: supply one column at a time, never the full matrix.</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"USArrests"</span><span class="op">)</span></span></span>
@@ -258,12 +258,9 @@ complete <code>N x N</code> matrix.</p>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowSums</a></span><span class="op">(</span><span class="va">diffs</span> <span class="op">^</span> <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-in"><span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu">FarFirst</span><span class="op">(</span><span class="va">StateDist</span>, m <span class="op">=</span> <span class="fl">4L</span>, N <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">arrestTypes</span><span class="op">)</span>, method <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in FarFirst(StateDist, m = 4L, N = nrow(arrestTypes), method = 1L):</span> unused argument (m = 4)</span>
 <span class="r-in"><span><span class="va">arrestTypes</span><span class="op">[</span><span class="va">idx</span>, <span class="op">]</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                Murder Assault Rape</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Alabama          13.2     236 21.2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> North Dakota      0.8      45  7.3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> North Carolina   13.0     337 16.1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Washington        4.0     145 26.2</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'idx' not found</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

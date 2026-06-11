@@ -16,9 +16,9 @@ gives for this objective (typically tens of per cent above optimum).
 ## Usage
 
 ``` r
-KCentre(d, k, nstart = 1L, seeds = NULL)
+KCentre(d, k, nstart = 1L, effort = 1L, seeds = NULL)
 
-KCenter(d, k, nstart = 1L, seeds = NULL)
+KCenter(d, k, nstart = 1L, effort = 1L, seeds = NULL)
 ```
 
 ## Arguments
@@ -35,6 +35,15 @@ KCenter(d, k, nstart = 1L, seeds = NULL)
 
   Integer; how many deterministic peripheral seeds to try, keeping the
   lowest-radius result. Default `1`. Ignored if `seeds` is supplied.
+
+- effort:
+
+  Integer; controls the Gonzalez floor that keeps the result no worse
+  than the 2-approximation. `0` disables it (raw CDSh, fastest, no
+  guarantee); `1` (default) runs one deterministic peripheral Gonzalez
+  pass; `> 1` runs a distinct-seed Gonzalez restart with
+  `nseeds = effort` (a tighter floor that draws on the session RNG –
+  call [`set.seed()`](https://rdrr.io/r/base/Random.html) to reproduce).
 
 - seeds:
 
@@ -54,10 +63,11 @@ set directly.
 The achieved covering radius is not monotone in the trial radius, so the
 binary search can occasionally miss the best candidate. Two safeguards
 keep the result robust: for a small candidate grid (`n` up to ~150)
-every radius is scanned exhaustively, and the result is always floored
-against a deterministic Gonzalez pass, so `KCentre()` is **never worse
-than the 2-approximation**. For a tighter result at larger `n` raise
-`nstart`; for the proven optimum on a small instance use
+every radius is scanned exhaustively, and the result is floored against
+a Gonzalez pass (the `effort` argument, on by default), so `KCentre()`
+is **never worse than the 2-approximation**. For a tighter result at
+larger `n` raise `nstart` or `effort`; for the proven optimum on a small
+instance use
 [`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md).
 
 The construction is otherwise fully deterministic: where the reference

@@ -133,6 +133,7 @@ pts <- matrix(rnorm(60), ncol = 2)
 # Call set.seed() before Grasp() for a reproducible run:
 set.seed(1)
 res <- Grasp(dist(pts), m = 5L, plateau = 20L, eliteSize = 4L)
+#> Error in Grasp(dist(pts), m = 5L, plateau = 20L, eliteSize = 4L): argument 2 matches multiple formal arguments
 res
-#> 5 elements (3 4 5 24 25) selected by GRASP with path-relinking, each at distance >= 1.778
+#> Error: object 'res' not found
 ```

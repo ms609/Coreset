@@ -53,9 +53,9 @@
 <!-- badges: start -->
 
 <p><code>MaxMin</code> provides solvers to select a dispersed subsample of points in order to maxmize coverage.</p>
-<p>The <strong>Max-Min Diversity Problem</strong> (MMDP, the discrete <em>p</em>-dispersion objective) maximises <em>separation</em>. It selects <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>m</mi><annotation encoding="application/x-tex">m</annotation></semantics></math> elements such that the minimum distance between any pair of selected elements is as large as possible; the chosen elements are maximally distinct. This can reward selections that leave the interior of the set unrepresented.</p>
+<p>The <strong>Max-Min Diversity Problem</strong> (MMDP, the discrete <em>p</em>-dispersion objective) maximises <em>separation</em>. It selects <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> elements such that the minimum distance between any pair of selected elements is as large as possible; the chosen elements are maximally distinct. This can reward selections that leave the interior of the set unrepresented.</p>
 <p>The <strong>discrete <em>k</em>-centre problem</strong> selects <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> elements such that the largest distance from <em>any</em> element to its nearest selected element is as small as possible. This rewards selections that reach the whole set, such that each point has a nearby representative; it can pull centres inward and collapse well-separated modes onto a central compromise.</p>
-<p>Both problems can be approximated within a factor of two by the greedy farthest-first heuristic (<code><a href="reference/FarFirst.html">FarFirst()</a></code>).</p>
+<p>Both problems can be quickly approximated within a factor of two by the greedy farthest-first heuristic (<code><a href="reference/FarFirst.html">FarFirst()</a></code>).</p>
 <div class="section level2">
 <h2 id="solvers">Solvers<a class="anchor" aria-label="anchor" href="#solvers"></a>
 </h2>
@@ -80,17 +80,12 @@
 <tr>
 <td><code><a href="reference/Grasp.html">Grasp()</a></code></td>
 <td>GRASP with path-relinking metaheuristic (Resende et al. 2010)</td>
-<td>Slow but powerful heuristic</td>
-</tr>
-<tr>
-<td><code><a href="reference/FarFirst.html">FarFirst()</a></code></td>
-<td>Greedy farthest-first (Gonzalez 1985); default best of three random peripheral starts</td>
-<td>Fast; matrix, coordinate, or distance-column-oracle input (the last for very large sets with no embedding)</td>
+<td>Slower but powerful heuristic</td>
 </tr>
 <tr>
 <td><code><a href="reference/ExactMaxMin.html">ExactMaxMin()</a></code></td>
 <td>Node-packing integer program (Sayyady &amp; Fathi 2016)</td>
-<td>Proven optimum, small <code>n</code> (needs <code>highs</code>)</td>
+<td>Proven optimum, small <code>k</code> (needs <code>highs</code>)</td>
 </tr>
 </tbody>
 </table>
@@ -110,11 +105,12 @@
 <tr>
 <td><code><a href="reference/KCentre.html">KCentre()</a></code></td>
 <td>CDSh heuristic (García-Díaz et al. 2017, 2019)</td>
-<td>~1–3.5% of optimum at <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>N</mi><mn>2</mn></msup><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mi>N</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">O(N^2 \log N)</annotation></semantics></math>, far tighter than the Gonzalez 2-approximation; never worse than it</td>
+<td>~1–3.5% of optimum at <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>N</mi><mn>2</mn></msup><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mi>N</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">O(N^2 \log N)</annotation></semantics></math>, typically far tighter than <code><a href="reference/FarFirst.html">FarFirst()</a></code>
+</td>
 </tr>
 <tr>
 <td><code><a href="reference/ExactKCentre.html">ExactKCentre()</a></code></td>
-<td>Min-cover integer program (the covering dual of <code><a href="reference/ExactMaxMin.html">ExactMaxMin()</a></code>)</td>
+<td>Min-cover integer program</td>
 <td>Proven optimum, small <code>k</code> (needs <code>highs</code>)</td>
 </tr>
 </tbody>
@@ -132,7 +128,12 @@
 <div class="section level2">
 <h2 id="related-packages">Related packages<a class="anchor" aria-label="anchor" href="#related-packages"></a>
 </h2>
-<p>The CRAN package <a href="https://cran.r-project.org/package=maximin" class="external-link"><code>maximin</code></a> constructs continuous space-filling designs — it generates new points in a coordinate box to maximise the minimum inter-point distance.</p>
+<p><code>MaxMin</code> selects a <em>subset of existing elements</em>. Several established packages solve neighbouring objectives:</p>
+<ul>
+<li><p><strong>k-medoids / k-median</strong> — minimise the <em>total</em> (or mean) distance from each element to its nearest centre: <em>average</em> coverage, or representativeness. This is a different objective from any solved here, and is well served elsewhere: <a href="https://cran.r-project.org/package=cluster" class="external-link"><code>cluster::pam()</code></a> and <code>clara()</code> (PAM / FastPAM / FasterPAM), <a href="https://cran.r-project.org/package=ClusterR" class="external-link"><code>ClusterR::Cluster_Medoids()</code></a>, and <a href="https://cran.r-project.org/package=banditpam" class="external-link"><code>banditpam</code></a>. <code>pam()</code> holds the full <em>O(N²)</em> dissimilarity matrix (and caps at <em>n</em> ≤ 65 536); <code>clara()</code> samples to scale; <code>banditpam</code> is <em>O(N</em> log <em>N)</em> and matrix-free but accepts only coordinate data with built-in metrics (no precomputed matrix or custom distance).</p></li>
+<li><p><strong>k-means</strong> (<a href="https://rdrr.io/r/stats/kmeans.html" class="external-link"><code>stats::kmeans()</code></a>) minimises within-cluster sum of squares around centres that are coordinate <em>means</em>, not data points, so it is neither a discrete k-centre nor a k-medoids solver and applies only to Euclidean coordinates.</p></li>
+<li><p><a href="https://cran.r-project.org/package=maximin" class="external-link"><code>maximin</code></a> constructs continuous space-filling designs by generating new points in a coordinate box to maximise the minimum inter-point distance.</p></li>
+</ul>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">
