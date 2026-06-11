@@ -56,7 +56,7 @@ Non-trivial bugs and performance issues, filed **only after verification** (triv
 | F-604 | low | FIXED 9001 | Bug | `MinDist`/`.SubsetScore` with duplicate `idx` → returns 0 (self-distance survives `diag<-Inf`) | [R/score.R:29](../../R/score.R), [R/farfirst.R:118](../../R/farfirst.R) — no guard; a repeated index makes any selection score worst-possible. Caller-contract issue. | REAL (haiku) |
 | F-605 | low | FIXED 9001 | Bug | NA in `idx`: matrix path returns NA silently; coordinate path errors — inconsistent | [R/farfirst.R:118](../../R/farfirst.R) — add `if (anyNA(idx)) stop(...)` to both. | REAL (haiku) |
 
-## Round 7 — area #7 Test-suite health
+## Round 7 — area #8 Test-suite health
 
 | ID | Severity | Status | Type | Title | Location & detail | Verifier |
 |----|----------|--------|------|-------|-------------------|----------|
@@ -72,6 +72,18 @@ Non-trivial bugs and performance issues, filed **only after verification** (triv
 | T7-14 | low | FIXED 9002 | Gap | FarFirst `n>N` tail order (positions 6..N) untested | [test-farfirst.R](../../tests/testthat/test-farfirst.R) | REAL (haiku) |
 | T7-15 | low | FIXED 9002 | Gap | Grasp `eliteSize=1` (PR skipped, `pr_calls=0`) untested | [test-grasp.R](../../tests/testthat/test-grasp.R) | REAL (haiku) |
 | T7-16 | low | FIXED 9002 | Gap | `.GraspPathRelink` identical-input early return untested | [R/grasp.R:155-157](../../R/grasp.R) | REAL (haiku) |
+
+---
+
+## Round 8 — area #7 k-centre (CDSh + exact)
+
+| ID | Severity | Status | Type | Title | Location & detail | Verifier |
+|----|----------|--------|------|-------|-------------------|----------|
+| KC-001 | **HIGH** | FIXED 9003 | Bug | **CDSh binary search on a non-monotone predicate can return worse than Gonzalez** | [src/kcentre_cdsh.cpp](../../src/kcentre_cdsh.cpp), [R/kcentre.R](../../R/kcentre.R) — the `achieved <= cand[mid]` feasibility test is NOT monotone in r (the kernel's "feasible region is a suffix" comment was false), so the O(log n) sampled radii can skip the best candidate. Opus reproduced (bit-identical R port): worse than a same-seed full scan in 196/960 (20.4%) random instances (up to 48.2% over optimum), and **worse than the Gonzalez 2-approximation in 11/960**, violating the docstring's "at least as tight as Gonzalez" claim. Window-scan doesn't help (non-local misses); `nstart` helps but doesn't fix. **Fix:** (a) **Gonzalez floor** — `KCentre` returns the better of CDSh and a `FarFirst` peripheral pass, guaranteeing ≥ Gonzalez (≤ 2·opt) at O(nk); (b) **exhaustive candidate scan when n ≤ 150** (full CDS over all radii, cheap at small n where losses are worst), binary search above; (c) corrected the false suffix/monotone comments + honest docstring. Verified: 0/120 worse than Gonzalez (was 11/960); CDSh/optimum mean 1.022, max 1.349. | REAL (opus), HIGH |
+| KC-002 | med | FIXED 9003 | Bug | Asymmetric `d` → silently wrong covering radius (upper-tri-only candidates + symmetry-exploiting kernel/IP) | [R/kcentre.R](../../R/kcentre.R), [src/kcentre_cdsh.cpp](../../src/kcentre_cdsh.cpp) — `.AsDistMatrix` accepts asymmetric `d` but the solvers assume `d(i,j)=d(j,i)`. Demonstrated brute=0.3 vs KCentre=1.0. **Fix:** `.KCentreRequireSymmetric` guard in `KCentre`/`ExactKCentre` (in-place `IsSymmetric_cpp`, skipped for `dist` input); `KCentreRadius` left asymmetric-tolerant (correct by construction). | REAL (haiku) |
+| KC-003 | low | FIXED 9003 | Bug | `KCentreRadius(d, 0L)` returns `-Inf`+warning on the matrix path (no upper-bound idx check) | [R/kcentre.R](../../R/kcentre.R) — matrix path lacked the `[1, nrow]` range check the points path gets via the kernel. **Fix:** explicit range check on both paths. | REAL (haiku) |
+| KC-004 | low | FIXED 9003 | Bug | `ExactKCentre` reported `cand[bestIdx]`, not the witness radius (mismatch on fallback / inconclusive break) | [R/kcentre.R](../../R/kcentre.R) — **Fix:** `Pack` now reports `radius = KCentreRadius(d, indices)`, always equal to the centres' true covering radius (= the proven optimum when proven). | REAL (haiku) |
+| KC-005/006/007 | low | FIXED 9003 | Gap | No tests for the timeout/`proven=FALSE` path, asymmetric-input rejection, or duplicate-centre dedup (`length<k`) | [tests/testthat/test-kcentre.R](../../tests/testthat/test-kcentre.R) — **Fix:** regression tests added for all three plus the KC-001 ≥-Gonzalez and ≤-2·opt invariants. | REAL (haiku) |
 
 ---
 
