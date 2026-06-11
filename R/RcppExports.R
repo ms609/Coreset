@@ -17,8 +17,8 @@ KCentreCandidates_cpp <- function(d) {
     .Call(`_MaxMin_KCentreCandidates_cpp`, d)
 }
 
-KCentreCDSh_cpp <- function(d, k, seed, cand) {
-    .Call(`_MaxMin_KCentreCDSh_cpp`, d, k, seed, cand)
+KCentreCDSh_cpp <- function(d, k, seed, cand, exhaustive) {
+    .Call(`_MaxMin_KCentreCDSh_cpp`, d, k, seed, cand, exhaustive)
 }
 
 MaximinFrom_cpp <- function(d, n, first) {

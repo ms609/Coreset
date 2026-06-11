@@ -97,3 +97,52 @@ All remaining OPEN findings from Rounds 1–7 addressed:
 - No findings remain OPEN in Rounds 1–7.
 
 last_focus: 7
+
+---
+
+### Round 8 — area #7 k-centre (CDSh + exact)  (2026-06-11)
+- tier: sonnet (finder) → opus (KC-001 high-sev verify), haiku (KC-002..007 batch verify)
+- finder yield: 7 confirmed (all REAL after verification)
+- New code (added this session): `src/kcentre_cdsh.cpp`, `R/kcentre.R`, `tests/testthat/test-kcentre.R`.
+
+**KC-001 (HIGH, opus-confirmed) — CDSh binary search on a non-monotone predicate.**
+`KCentreCDSh_cpp`'s `achieved <= cand[mid]` feasibility test is NOT monotone in r
+(the kernel's "feasible region is a suffix" comment was false), so the O(log n)
+sampled candidates can skip the radius that yields the best construction. Opus
+reproduced (bit-identical R port of the kernel): binary search loses to a same-seed
+full scan in 196/960 (20.4%) random instances (n∈{10,15,50}), up to 48.2% over
+optimum; and **loses to the Gonzalez 2-approximation in 11/960 cases**, violating
+the package's own documented "at least as tight as Gonzalez" contract. Window-scan
+mitigation does NOT work (misses are non-local); `nstart>1` helps but doesn't fix;
+only a full scan reliably fixes it (O(n⁴), affordable only at small n).
+
+**Other findings (all REAL):** KC-002 (med) asymmetric `d` → silent wrong answer
+(upper-tri-only candidates + symmetry-exploiting kernel/IP, no guard); KC-003 (low)
+`KCentreRadius(d, 0L)` returns `-Inf` silently on the matrix path (no upper-bound
+idx check); KC-004 (low) ExactKCentre null-warm-start fallback reports `cand[hi]`
+not the witness radius; KC-005/006/007 (coverage) no tests for the timeout/
+`proven=FALSE` path, asymmetric input, or the dedup (`length<k`) case.
+
+**Fixes applied this round (all confirmed findings):**
+- KC-001: (a) **Gonzalez floor** — `KCentre` now returns the better of CDSh and a
+  `FarFirst` (peripheral 2-approx) pass, *guaranteeing* the documented ≥ Gonzalez
+  contract everywhere at O(nk) cost; (b) **exhaustive candidate scan when n ≤ 150**
+  (full CDS over all radii, affordable at small n where the losses are worst),
+  binary search above that; (c) corrected the false "suffix"/monotone comments.
+- KC-002: `isSymmetric(d)` guard in `KCentre`/`ExactKCentre` (error on asymmetric;
+  k-centre is a metric problem). `KCentreRadius` left asymmetric-tolerant (correct).
+- KC-003: index-range check added to `KCentreRadius`.
+- KC-004: `ExactKCentre` reports `radius = KCentreRadius(d, indices)` (always exact;
+  fixes the fallback and inconclusive-break inconsistency).
+- KC-005/006/007: tests added.
+
+Verified: `test_local(filter=kcentre)` green incl. the new tests; CDSh ≤ Gonzalez on
+the previously-losing instances; small-n CDSh now near the brute-force optimum;
+perf at n=2004 preserved (floor is O(nk); exhaustive does not trigger).
+
+- seam status: still yielding (7 found) — next visit of this area stays at sonnet
+  (fresh angle) before escalating.
+- escalation decision: KC-001 high-sev was confirmed by opus and fixed; no further
+  immediate escalation needed. Next rotation advances to area #8 (test-suite health).
+
+last_focus: 7

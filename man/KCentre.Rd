@@ -34,18 +34,26 @@ any point to its nearest centre) with the CDSh heuristic of
 distinct distances; at each trial radius it runs a fixed-\code{k} farthest-point
 construction in which every centre is the highest-degree neighbour (within the
 trial radius) of the currently worst-covered vertex, and accepts the radius
-when the construction covers all points within it. It reaches roughly 1-3.5\%
-of the optimum at \eqn{O(N^2 \log N)} -- an order of magnitude tighter than
-the Gonzalez 2-approximation that \code{\link[=FarFirst]{FarFirst()}} provides for this objective,
-whose covering radius is typically tens of per cent above optimum.
+when the construction covers all points within it. On the benchmark instances
+of \insertCite{GarciaDiaz2019;textual}{MaxMin} it reaches roughly 1-3.5\% of the
+optimum at \eqn{O(N^2 \log N)}, far tighter than the Gonzalez 2-approximation
+that \code{\link[=FarFirst]{FarFirst()}} gives for this objective (typically tens of per cent above
+optimum).
 }
 \details{
-The construction is fully deterministic: where the reference algorithm seeds
-its first critical vertex at random, \code{KCentre()} uses deterministic peripheral
-anchors (\code{nstart} of them, the best result kept). Like \code{\link[=ExactKCentre]{ExactKCentre()}} this
-is a distance-matrix method, \eqn{O(N^2)} in memory; for the covering radius
-of an existing selection at larger \code{N}, \code{\link[=KCentreRadius]{KCentreRadius()}} has a matrix-free
-path.
+The achieved covering radius is not monotone in the trial radius, so the binary
+search can occasionally miss the best candidate. Two safeguards keep the result
+robust: for a small candidate grid (\code{n} up to ~150) every radius is scanned
+exhaustively, and the result is always floored against a deterministic Gonzalez
+pass, so \code{KCentre()} is \strong{never worse than the 2-approximation}. For a tighter
+result at larger \code{n} raise \code{nstart}; for the proven optimum on a small instance
+use \code{\link[=ExactKCentre]{ExactKCentre()}}.
+
+The construction is otherwise fully deterministic: where the reference seeds its
+first critical vertex at random, \code{KCentre()} uses deterministic peripheral
+anchors (\code{nstart} of them, the best kept). Like \code{\link[=ExactKCentre]{ExactKCentre()}} this is a
+distance-matrix method, \eqn{O(N^2)} in memory; for the covering radius of an
+existing selection at larger \code{N}, \code{\link[=KCentreRadius]{KCentreRadius()}} has a matrix-free path.
 }
 \examples{
 set.seed(1)

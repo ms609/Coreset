@@ -71,8 +71,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // KCentreCDSh_cpp
-Rcpp::IntegerVector KCentreCDSh_cpp(Rcpp::NumericMatrix d, int k, int seed, Rcpp::NumericVector cand);
-RcppExport SEXP _MaxMin_KCentreCDSh_cpp(SEXP dSEXP, SEXP kSEXP, SEXP seedSEXP, SEXP candSEXP) {
+Rcpp::IntegerVector KCentreCDSh_cpp(Rcpp::NumericMatrix d, int k, int seed, Rcpp::NumericVector cand, bool exhaustive);
+RcppExport SEXP _MaxMin_KCentreCDSh_cpp(SEXP dSEXP, SEXP kSEXP, SEXP seedSEXP, SEXP candSEXP, SEXP exhaustiveSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -80,7 +80,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type k(kSEXP);
     Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type cand(candSEXP);
-    rcpp_result_gen = Rcpp::wrap(KCentreCDSh_cpp(d, k, seed, cand));
+    Rcpp::traits::input_parameter< bool >::type exhaustive(exhaustiveSEXP);
+    rcpp_result_gen = Rcpp::wrap(KCentreCDSh_cpp(d, k, seed, cand, exhaustive));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -162,7 +163,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MaxMin_DropAdd_points_cpp", (DL_FUNC) &_MaxMin_DropAdd_points_cpp, 6},
     {"_MaxMin_Grasp_cpp", (DL_FUNC) &_MaxMin_Grasp_cpp, 7},
     {"_MaxMin_KCentreCandidates_cpp", (DL_FUNC) &_MaxMin_KCentreCandidates_cpp, 1},
-    {"_MaxMin_KCentreCDSh_cpp", (DL_FUNC) &_MaxMin_KCentreCDSh_cpp, 4},
+    {"_MaxMin_KCentreCDSh_cpp", (DL_FUNC) &_MaxMin_KCentreCDSh_cpp, 5},
     {"_MaxMin_MaximinFrom_cpp", (DL_FUNC) &_MaxMin_MaximinFrom_cpp, 3},
     {"_MaxMin_MaximinFromPoints_cpp", (DL_FUNC) &_MaxMin_MaximinFromPoints_cpp, 4},
     {"_MaxMin_RowSumsFromPoints_cpp", (DL_FUNC) &_MaxMin_RowSumsFromPoints_cpp, 1},

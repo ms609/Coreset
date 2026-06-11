@@ -35,6 +35,26 @@
   as.integer(FarFirst(d, min(nstart, nrow(d)), method = "peripheral"))
 }
 
+# The k-centre solvers assume a symmetric metric: `KCentreCandidates_cpp` reads
+# only the upper triangle and the kernel/covering-IP read d(i,j) as d(j,i).
+# `.AsDistMatrix` (unlike the other MaxMin solvers) accepts asymmetric matrices,
+# so guard here -- an asymmetric `d` would otherwise give a silently wrong radius
+# (KC-002). A `dist` object is symmetric by construction; the O(n^2) check is
+# negligible against the O(n^2 log n) solve. (KCentreRadius needs no guard: it
+# reads true d(point, centre) columns and is correct for asymmetric input.)
+.KCentreRequireSymmetric <- function(d) {
+  if (!isSymmetric(unname(d))) {
+    stop("`d` must be symmetric for the k-centre solvers; an asymmetric ",
+         "distance would give a silently wrong covering radius")
+  }
+}
+
+# Above this many candidate radii the exhaustive CDS scan (O(nCand * n^2)) is too
+# costly, so KCentre falls back to binary-search CDSh; below it the full scan is
+# cheap and avoids the binary search's non-monotone misses (KC-001). The bound
+# n(n-1)/2 <= 11325 corresponds to n <= 150.
+.kCentreExhaustiveMaxCand <- 11325L
+
 # ----- covering-radius score ------------------------------------------------
 
 #' Covering radius of a centre set (k-centre objective)
@@ -82,6 +102,9 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
   }
   if (!is.null(points)) {
     points <- .AsPointsMatrix(points)
+    if (any(idx < 1L | idx > nrow(points))) {
+      stop("`idx` must be centre indices in [1, nrow(points)]")
+    }
     nn <- EuclidColFromPoints_cpp(points, idx[1L])
     for (ci in idx[-1L]) {
       nn <- pmin(nn, EuclidColFromPoints_cpp(points, ci))
@@ -89,6 +112,12 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
     return(max(nn))
   }
   d <- .AsDistMatrix(d)
+  # Without this guard `d[, 0L]` (or an out-of-range column) yields an empty
+  # column and `max()` returns -Inf with only a warning -- the coordinate path
+  # already errors. Reject out-of-range indices on both paths (KC-003).
+  if (any(idx < 1L | idx > ncol(d))) {
+    stop("`idx` must be centre indices in [1, nrow(d)]")
+  }
   nn <- d[, idx[1L]]
   for (ci in idx[-1L]) {
     nn <- pmin(nn, d[, ci])
@@ -107,17 +136,25 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' distinct distances; at each trial radius it runs a fixed-`k` farthest-point
 #' construction in which every centre is the highest-degree neighbour (within the
 #' trial radius) of the currently worst-covered vertex, and accepts the radius
-#' when the construction covers all points within it. It reaches roughly 1-3.5%
-#' of the optimum at \eqn{O(N^2 \log N)} -- an order of magnitude tighter than
-#' the Gonzalez 2-approximation that [FarFirst()] provides for this objective,
-#' whose covering radius is typically tens of per cent above optimum.
+#' when the construction covers all points within it. On the benchmark instances
+#' of \insertCite{GarciaDiaz2019;textual}{MaxMin} it reaches roughly 1-3.5% of the
+#' optimum at \eqn{O(N^2 \log N)}, far tighter than the Gonzalez 2-approximation
+#' that [FarFirst()] gives for this objective (typically tens of per cent above
+#' optimum).
 #'
-#' The construction is fully deterministic: where the reference algorithm seeds
-#' its first critical vertex at random, `KCentre()` uses deterministic peripheral
-#' anchors (`nstart` of them, the best result kept). Like [ExactKCentre()] this
-#' is a distance-matrix method, \eqn{O(N^2)} in memory; for the covering radius
-#' of an existing selection at larger `N`, [KCentreRadius()] has a matrix-free
-#' path.
+#' The achieved covering radius is not monotone in the trial radius, so the binary
+#' search can occasionally miss the best candidate. Two safeguards keep the result
+#' robust: for a small candidate grid (`n` up to ~150) every radius is scanned
+#' exhaustively, and the result is always floored against a deterministic Gonzalez
+#' pass, so `KCentre()` is **never worse than the 2-approximation**. For a tighter
+#' result at larger `n` raise `nstart`; for the proven optimum on a small instance
+#' use [ExactKCentre()].
+#'
+#' The construction is otherwise fully deterministic: where the reference seeds its
+#' first critical vertex at random, `KCentre()` uses deterministic peripheral
+#' anchors (`nstart` of them, the best kept). Like [ExactKCentre()] this is a
+#' distance-matrix method, \eqn{O(N^2)} in memory; for the covering radius of an
+#' existing selection at larger `N`, [KCentreRadius()] has a matrix-free path.
 #'
 #' @param d A `dist` object or a square symmetric numeric distance matrix.
 #' @param k Integer number of centres, `1 <= k <= nrow(d)`.
@@ -143,6 +180,7 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' @export
 KCentre <- function(d, k, nstart = 1L, seeds = NULL) {
   d <- .AsDistMatrix(d)
+  .KCentreRequireSymmetric(d)
   n <- nrow(d)
   if (length(k) != 1L || !is.finite(k) || k < 1L) {
     stop("`k` must be a single positive integer")
@@ -165,20 +203,35 @@ KCentre <- function(d, k, nstart = 1L, seeds = NULL) {
       stop("`seeds` must be indices in [1, nrow(d)]")
     }
   }
+  # The per-radius achieved covering radius is non-monotone in r, so the O(log n)
+  # binary search can skip the best candidate. When the candidate grid is small
+  # enough, scan it exhaustively instead (KC-001).
+  exhaustive <- length(cand) <= .kCentreExhaustiveMaxCand
   best <- NULL
   bestR <- Inf
   for (s in seeds) {
-    res <- KCentreCDSh_cpp(d, k, s, cand)
+    res <- KCentreCDSh_cpp(d, k, s, cand, exhaustive)
     r <- attr(res, "radius")
     if (r < bestR) {
       bestR <- r
-      best <- res
+      best <- as.integer(res)
     }
+  }
+  # Gonzalez floor (KC-001): the binary-search CDSh can occasionally return a
+  # covering radius ABOVE the Gonzalez 2-approximation it is documented to beat
+  # (the feasibility predicate is non-monotone). Take the better of CDSh and a
+  # cheap deterministic Gonzalez pass, guaranteeing the result is never worse
+  # than the 2-approximation at O(n*k) extra cost.
+  gonz <- as.integer(FarFirst(d, k, method = "peripheral"))
+  gonzR <- KCentreRadius(d, gonz)
+  if (gonzR < bestR) {
+    bestR <- gonzR
+    best <- gonz
   }
   # The construction can occasionally re-pick an already-chosen vertex as a
   # centre; a duplicate never changes the covering radius, so collapse to the
   # distinct centre set (which may then be smaller than k).
-  structure(sort(unique(as.integer(best))), radius = bestR, producer = "CDSh",
+  structure(sort(unique(best)), radius = bestR, producer = "CDSh",
             class = "KCentreSelection")
 }
 
@@ -306,6 +359,7 @@ ExactKCentre <- function(d, k, solver = NULL, maxSeconds = 60,
   }
 
   d <- .AsDistMatrix(d)
+  .KCentreRequireSymmetric(d)
   n <- nrow(d)
   if (length(k) != 1L || !is.finite(k) || k < 1L) {
     stop("`k` must be a single positive integer")
@@ -316,10 +370,15 @@ ExactKCentre <- function(d, k, solver = NULL, maxSeconds = 60,
   }
   Elapsed <- function() proc.time()[[3L]] - t0
 
-  Pack <- function(indices, radius, proven) {
+  # `radius` is always the true covering radius of the returned centres, computed
+  # from the witness rather than the search threshold (KC-004): for a proven
+  # optimum it equals the smallest feasible candidate, and for an unproven /
+  # fallback witness it is the tight achieved radius, so `res$radius` and
+  # `KCentreRadius(d, res$indices)` never disagree.
+  Pack <- function(indices, proven) {
     indices <- sort(as.integer(indices))
     structure(
-      list(indices = indices, radius = radius, proven = proven,
+      list(indices = indices, radius = KCentreRadius(d, indices), proven = proven,
            time_s = Elapsed(), solver = solver, n = n, k = k,
            n_centres = length(indices)),
       class = "KCentreExact"
@@ -328,7 +387,7 @@ ExactKCentre <- function(d, k, solver = NULL, maxSeconds = 60,
 
   # k == n: every point is its own centre; covering radius 0, trivially proven.
   if (k == n) {
-    return(Pack(seq_len(n), 0, TRUE))
+    return(Pack(seq_len(n), TRUE))
   }
 
   cand <- .KCentreCandidates(d)
@@ -373,7 +432,7 @@ ExactKCentre <- function(d, k, solver = NULL, maxSeconds = 60,
 
   if (progress) cli::cli_progress_done(id = .pb)
 
-  Pack(bestWitness, cand[bestIdx], !inconclusive)
+  Pack(bestWitness, !inconclusive)
 }
 
 # ----- S3 display -----------------------------------------------------------

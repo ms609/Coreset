@@ -139,15 +139,23 @@ Rcpp::NumericVector KCentreCandidates_cpp(Rcpp::NumericMatrix d) {
 // radius is a realised point-to-centre distance and may be strictly below the
 // trial r, so we always keep the best seen rather than the final bracket.
 //
-//   d     N x N distance matrix (assumed symmetric, non-negative, finite)
-//   k     number of centres (1 <= k < N; the wrapper handles k >= N)
-//   seed  1-based seed vertex for the i = 0 critical vertex
-//   cand  ascending vector of distinct candidate radii
+//   d           N x N distance matrix (symmetric, non-negative, finite)
+//   k           number of centres (1 <= k < N; the wrapper handles k >= N)
+//   seed        1-based seed vertex for the i = 0 critical vertex
+//   cand        ascending vector of distinct candidate radii
+//   exhaustive  scan every candidate (true) or binary-search (false)
+//
+// The per-radius achieved covering radius is NOT monotone in r, so the binary
+// search can skip the candidate that yields the best construction (it can even
+// land above the Gonzalez 2-approximation -- the R wrapper floors against it).
+// When `exhaustive` is set -- the wrapper does so for small n, where the
+// O(nCand * n^2) cost is cheap and the binary-search losses are largest -- every
+// candidate is evaluated and the best kept.
 //
 // Returns the k centre indices (1-based, ascending) with a `radius` attribute.
 // [[Rcpp::export]]
 Rcpp::IntegerVector KCentreCDSh_cpp(Rcpp::NumericMatrix d, int k, int seed,
-                                    Rcpp::NumericVector cand) {
+                                    Rcpp::NumericVector cand, bool exhaustive) {
   int n = d.nrow();
   int nCand = cand.size();
   if (k < 1 || k >= n) {
@@ -175,17 +183,23 @@ Rcpp::IntegerVector KCentreCDSh_cpp(Rcpp::NumericMatrix d, int k, int seed,
     return achieved;
   };
 
-  // Feasible region is a suffix of `cand` (larger radius -> easier to cover);
-  // gallop the bracket via binary search. low = below the smallest candidate
-  // (treated infeasible), high = largest candidate (k >= 1 covers all within
-  // the diameter, so always feasible). Probe inclusively so the smallest
-  // feasible candidate is itself evaluated.
-  int low = -1, high = nCand - 1;
-  evalAt(high);
-  while (high - low > 1) {
-    int mid = (high + low) / 2;
-    double achieved = evalAt(mid);
-    if (achieved <= cand[mid]) high = mid; else low = mid;
+  if (exhaustive) {
+    // Evaluate every candidate radius and keep the best construction.
+    for (int idx = 0; idx < nCand; idx++) evalAt(idx);
+  } else {
+    // Binary search treating `achieved <= cand[mid]` as feasibility. This is a
+    // HEURISTIC bracket (the predicate is non-monotone), so it samples only
+    // O(log nCand) radii and may miss the best; the largest candidate is always
+    // feasible (k >= 1 covers all within the diameter). The R wrapper floors the
+    // result against the Gonzalez 2-approximation to keep the documented
+    // guarantee. low starts below the smallest candidate (treated infeasible).
+    int low = -1, high = nCand - 1;
+    evalAt(high);
+    while (high - low > 1) {
+      int mid = (high + low) / 2;
+      double achieved = evalAt(mid);
+      if (achieved <= cand[mid]) high = mid; else low = mid;
+    }
   }
 
   std::sort(bestCentres.begin(), bestCentres.end());
