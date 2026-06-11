@@ -383,10 +383,16 @@ List Grasp_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter,
   long long iters = 0;
   long long no_improve = 0;
   double best_z_B = ESz[0];
+  const int check_every = 256;        // interrupt-poll cadence (RNG-neutral)
+  int countdown = check_every;
   for (;;) {
     if (no_improve >= max_no_improve) break;
     if (iters >= max_iter) break;
     if (gated && elapsed() >= time_budget_s) break;
+    if (--countdown == 0) {
+      Rcpp::checkUserInterrupt();      // honour Ctrl-C / setTimeLimit() even here
+      countdown = check_every;
+    }
     std::vector<int> x  = grasp_construct(d, n, m, alpha);
     std::vector<int> xp = grasp_local_search(d, n, x);
     double zp = objective_of(d, n, xp);

@@ -167,6 +167,7 @@ List DropAdd_cpp(NumericMatrix dmat, int m, double time_budget_s,
     if (no_improve >= max_no_improve) break;
     --countdown;
     if (countdown == 0) {
+      Rcpp::checkUserInterrupt();   // honour Ctrl-C / setTimeLimit() even here
       auto now = std::chrono::steady_clock::now();
       double el = std::chrono::duration<double>(now - t0).count();
       if (el >= time_budget_s) break;

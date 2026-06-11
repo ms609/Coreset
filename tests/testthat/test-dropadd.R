@@ -38,7 +38,7 @@ test_that("DropAdd smoke: 20 pts in 5-D, m=5", {
   set.seed(7)
   pts <- matrix(rnorm(20 * 5), ncol = 5)
   d <- dist(pts)
-  res <- DropAdd(d, m = 5L, timeBudgetS = 1)
+  res <- DropAdd(d, m = 5L, maxSeconds = 1)
   expect_length(res, 5L)
   expect_equal(length(unique(res)), 5L)
   expect_true(all(res %in% seq_len(20L)))
@@ -99,7 +99,7 @@ test_that("DropAdd reaches the Geo 100 1 m=10 optimum (89.37)", {
   # Time-budgeted oracle: run the full 10 s, as before, to confirm the search
   # reaches the proven optimum (this is a correctness oracle, not a frozen
   # result, so a wall-clock budget is appropriate here).
-  res <- DropAdd(dmat, m = 10L, timeBudgetS = 10, plateau = 100000000L)
+  res <- DropAdd(dmat, m = 10L, maxSeconds = 10, plateau = 100000000L)
   bestKnown <- 89.37
   expect_gte(attr(res, "score"), 0.999 * bestKnown)
   # Returned indices truly achieve the reported objective.
@@ -120,7 +120,7 @@ test_that("DropAdd .verify=TRUE passes silently on a real instance", {
 
   # Cap iters to keep verification cheap; the inner check is O(n*m) per iter.
   expect_silent(
-    DropAdd(dmat, m = 10L, timeBudgetS = 30, maxIter = 100L,
+    DropAdd(dmat, m = 10L, maxSeconds = 30, maxIter = 100L,
               .verify = TRUE)
   )
 })
@@ -143,7 +143,7 @@ test_that("DropAdd FIFO drops each initial point once in first m iterations", {
 
   # Drive the PRODUCTION loop via the .trace hook for exactly 2*m iterations.
   traceEnv <- new.env()
-  res <- DropAdd(dmat, m = m, timeBudgetS = 60, maxIter = 2L * m,
+  res <- DropAdd(dmat, m = m, maxSeconds = 60, maxIter = 2L * m,
                    .trace = traceEnv)
   expect_equal(attr(res, "iters"), 2L * m)
   expect_length(traceEnv$drops, 2L * m)
@@ -166,13 +166,13 @@ test_that("DropAdd FIFO drops each initial point once in first m iterations", {
 # ---------------------------------------------------------------------------
 # 6. Time budget honoured on a 200-point Ran-format instance
 # ---------------------------------------------------------------------------
-test_that("DropAdd respects timeBudgetS within reasonable slack", {
+test_that("DropAdd respects maxSeconds within reasonable slack", {
   set.seed(99)
   pts <- matrix(runif(200 * 5), ncol = 5)
   dmat <- as.matrix(dist(pts))
   t0 <- Sys.time()
   # Disable stagnation so the wall-clock ceiling is the binding criterion.
-  res <- DropAdd(dmat, m = 20L, timeBudgetS = 1, plateau = 100000000L)
+  res <- DropAdd(dmat, m = 20L, maxSeconds = 1, plateau = 100000000L)
   elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
   expect_lte(attr(res, "time_s"), 1.5)
   expect_lte(elapsed, 2.0)
@@ -202,9 +202,9 @@ test_that("DropAdd is deterministic and validates inputs", {
   expect_error(DropAdd(dmat, m = 4L, plateau = 0L),  "plateau")
   # maxIter validation
   expect_error(DropAdd(dmat, m = 4L, maxIter = -1L),  "maxIter")
-  # timeBudgetS validation
-  expect_error(DropAdd(dmat, m = 4L, timeBudgetS = 0),   "timeBudgetS")
-  expect_error(DropAdd(dmat, m = 4L, timeBudgetS = NA_real_), "timeBudgetS")
+  # maxSeconds validation
+  expect_error(DropAdd(dmat, m = 4L, maxSeconds = 0),   "maxSeconds")
+  expect_error(DropAdd(dmat, m = 4L, maxSeconds = NA_real_), "maxSeconds")
 })
 
 test_that("DropAdd progress = TRUE fires the cli hooks", {
@@ -275,9 +275,11 @@ test_that("DropAdd R-path time budget halts execution (dropadd.R line 352)", {
   dmat <- as.matrix(dist(matrix(rnorm(30 * 3), ncol = 3)))
   # .Machine$integer.max disables both other stopping criteria; only the
   # budget can end the loop.
-  res <- DropAdd(dmat, m = 5L,
-                 maxIter = .Machine$integer.max, plateau = .Machine$integer.max,
-                 .verify = TRUE, timeBudgetS = 0.001)
+  res <- expect_returns_within(
+    DropAdd(dmat, m = 5L,
+            maxIter = .Machine$integer.max, plateau = .Machine$integer.max,
+            .verify = TRUE, maxSeconds = 0.001),
+    limit = 5)
   expect_gte(attr(res, "iters"), 1L)    # at least one iteration ran
   expect_lte(attr(res, "time_s"), 0.1)
 })

@@ -136,12 +136,12 @@ test_that(".GraspPathRelink strictly improves on at least one pair", {
   expect_true(found, label = "path relinking strictly improves on at least one pair")
 })
 
-# 8. Grasp timeBudgetS validation -------------------------------------
+# 8. Grasp maxSeconds validation -------------------------------------
 
-test_that("Grasp validates timeBudgetS", {
-  expect_error(Grasp(d30, m = 4L, timeBudgetS = 0),  "timeBudgetS")
-  expect_error(Grasp(d30, m = 4L, timeBudgetS = -1), "timeBudgetS")
-  expect_error(Grasp(d30, m = 4L, timeBudgetS = NA_real_), "timeBudgetS")
+test_that("Grasp validates maxSeconds", {
+  expect_error(Grasp(d30, m = 4L, maxSeconds = 0),  "maxSeconds")
+  expect_error(Grasp(d30, m = 4L, maxSeconds = -1), "maxSeconds")
+  expect_error(Grasp(d30, m = 4L, maxSeconds = NA_real_), "maxSeconds")
 })
 
 # 8b. GRASP-01: empty-RCL at alpha = 1 no longer crashes ---------------------
@@ -282,15 +282,17 @@ test_that(".GraspPathRelink returns immediately for identical endpoints", {
   expect_equal(pr$objective, MaxMin:::.GraspObjective(d30m, x))
 })
 
-# 15. .Grasp_R finite timeBudgetS covers setTimeLimit (grasp.R line 397) ------
+# 15. .Grasp_R finite maxSeconds covers setTimeLimit (grasp.R line 397) ------
 
 test_that(".Grasp_R time budget halts execution (grasp.R line 397)", {
   set.seed(1)
   # .Machine$integer.max disables both other stopping criteria; only the
   # budget can end Phase B.
-  res <- MaxMin:::.Grasp_R(d30m, m = 6L,
-                           plateau  = .Machine$integer.max,
-                           maxIter  = .Machine$integer.max,
-                           eliteSize = 4L, timeBudgetS = 0.001)
+  res <- expect_returns_within(
+    MaxMin:::.Grasp_R(d30m, m = 6L,
+                      plateau  = .Machine$integer.max,
+                      maxIter  = .Machine$integer.max,
+                      eliteSize = 4L, maxSeconds = 0.001),
+    limit = 5)
   expect_lte(attr(res, "time_s"), 0.1)
 })
