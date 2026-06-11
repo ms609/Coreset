@@ -97,7 +97,7 @@ The vector has class \code{"MaxMinSelection"} and prints as a one-line summary
 and indexes a matrix or coordinate set directly.
 }
 \description{
-Greedy \emph{k}-centre selection \insertCite{Gonzalez1985;Hochbaum1985}{MaxMin}.
+Greedy \emph{k}-centre selection \insertCite{Gonzalez1985,Hochbaum1985}{MaxMin}.
 Iteratively selects the point furthest from the current selection, a
 2-approximation to the \emph{k}-centre problem.
 The quality of the result depends on the first (seed) point; by default
