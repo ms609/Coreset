@@ -9,6 +9,7 @@ ExactMaxMin(
   m,
   solver = NULL,
   timeBudgetS = 60,
+  warmStart = NULL,
   progress = getOption("MaxMin.progress", interactive())
 )
 }
@@ -25,7 +26,13 @@ ExactMaxMin(
 optimum is proven, the largest threshold proven feasible so far is
 returned with \code{proven = FALSE}.}
 
-\item{progress}{Logical; show a progress bar during the binary search.
+\item{warmStart}{Optional integer vector: a candidate \code{m}-subset (1-based
+indices into \code{d}) to add to the heuristic warm-start pool, e.g. a selection
+already computed by another solver. Ignored unless it is a valid \code{m}-subset.
+The internal heuristics run regardless; a good \code{warmStart} can only reduce
+the number of IP solves, never change the proven optimum.}
+
+\item{progress}{Logical; show a progress indicator during the search.
 Default: \code{TRUE} in interactive sessions, \code{FALSE} otherwise
 (\code{getOption("MaxMin.progress", interactive())}).}
 }
@@ -54,10 +61,24 @@ optimality by iterated node-packing \insertCite{Sayyady2016;textual}{MaxMin}: th
 the largest threshold \code{lambda}, over the achieved distinct pairwise
 distances, for which the threshold graph \code{G(lambda)} (edges join pairs
 closer than \code{lambda}) contains an independent set of size at least \code{m}.
-A binary search over the sorted distances resolves that threshold; each
-probe solves a maximum-independent-set integer program with the \code{highs}
-MILP backend. The problem is NP-hard, so this is intended only as an
-external ground-truth reference on small instances, not a scalable method.
+Each probe solves a maximum-independent-set integer program with the \code{highs}
+MILP backend, the packing constraints held as a sparse matrix.
+}
+\details{
+The search is warm-started from a heuristic lower bound (the best of several
+\code{\link[=Grasp]{Grasp()}} restarts and a \code{\link[=DropAdd]{DropAdd()}} pass), then gallops upward from that
+bound to the first infeasible threshold and bisects the resulting bracket.
+When a heuristic already attains the optimum -- common at the small \code{m} for
+which an exact reference is wanted -- a single infeasibility solve certifies
+it. The warm start only sets the starting lower bound: the returned optimum
+is proven regardless of heuristic quality (a loose seed merely costs extra
+solves). The problem is NP-hard, so this remains an external ground-truth
+reference for small instances, not a scalable method.
+
+The proven \code{objective} is exact and does not depend on the RNG. Only the
+returned \code{indices} can vary when several subsets attain the optimum: the warm
+start draws on the session RNG via \code{\link[=Grasp]{Grasp()}} and, like \code{Grasp()}, advances it.
+Call \code{\link[=set.seed]{set.seed()}} before \code{ExactMaxMin()} for a reproducible selection.
 }
 \references{
 \insertAllCited{}

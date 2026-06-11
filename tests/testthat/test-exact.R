@@ -114,17 +114,26 @@ test_that("ExactMaxMin returns proven=FALSE on budget expiry", {
 })
 
 # ---------------------------------------------------------------------------
-# 4. Determinism: same input -> same objective (and same indices here)
+# 4. The optimum is exact (RNG-independent); the selection is reproducible
+#    under a fixed seed. ExactMaxMin's warm start draws on the session RNG, so
+#    the proven objective never varies, but which optimal subset is returned
+#    can -- and is pinned by set.seed(), matching Grasp().
 # ---------------------------------------------------------------------------
-test_that("ExactMaxMin is deterministic", {
+test_that("ExactMaxMin objective is RNG-independent; selection seed-reproducible", {
   skip_if_no_highs()
   set.seed(31)
   pts <- matrix(stats::rnorm(13 * 4), ncol = 4)
   d <- as.matrix(stats::dist(pts))
-  a <- ExactMaxMin(d, m = 4L)
-  b <- ExactMaxMin(d, m = 4L)
+
+  # The proven optimum is a property of the problem: same value under any seed.
+  set.seed(1); a <- ExactMaxMin(d, m = 4L)
+  set.seed(2); b <- ExactMaxMin(d, m = 4L)
+  expect_true(a$proven && b$proven)
   expect_equal(a$objective, b$objective)
-  expect_equal(a$indices, b$indices)
+
+  # The returned selection is reproducible when the seed is reset.
+  set.seed(1); a2 <- ExactMaxMin(d, m = 4L)
+  expect_equal(a$indices, a2$indices)
 })
 
 # ---------------------------------------------------------------------------

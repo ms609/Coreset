@@ -44,3 +44,20 @@ Median wall time, `bench::mark`, R-devel, `-O2`. Refresh each round.
 |------|--------|---:|
 | points, dim=2, N=6000, n=3000 | median | 40.4 |
 | points, dim=10, N=6000, n=3000 | median | 108.8 |
+
+## Area 4 — ExactMaxMin — AFTER T-008 (sparse-A + Grasp warm-start gallop)
+
+Wall time per solve (single call, highs threads=1, `set.seed(1)`); OLD = dense-A
+full-bisection solver. Whole-grid totals over 14 ground-truth cases × k∈{2,4,6,10}.
+
+| case (k=10) | n | OLD s | NEW s | speedup |
+|------|--:|------:|------:|--------:|
+| tc4_hierarchical | 240 | 1.03 | 0.10 | 10.3× |
+| tc22_penguins | 342 | 7.81 | 0.50 | 15.6× |
+| tc11_ionosphere | 351 | 16.78 | 0.97 | 17.3× |
+
+Grid total (56 solves): OLD 222.6 s → NEW 11.3 s (**19.6×**); per-case median 16.3×.
+k=2 solves need **zero** IP solves (heuristic attains the diameter) → ~100–1300×.
+Correctness: 56/56 proven optima bit-identical to OLD; brute-force oracle + full
+suite (598) green. Worst case tc20_zoo k=4 (n=101): 0.59→0.67 s (0.88×, warm-start
+overhead on a tiny instance; irrelevant at the n≥342 job sizes).

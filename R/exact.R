@@ -10,11 +10,29 @@
 #   G(lambda) = (V, { (i, j) : d(i, j) < lambda })
 # admits an independent set of size >= m. An independent set in G(lambda) is
 # a set of points all pairwise >= lambda apart -- i.e. a feasible m-subset
-# with min-distance >= lambda. We binary-search the sorted distinct
-# distances (descending feasibility) and, at each tested lambda, solve a
-# maximum-independent-set feasibility IP
+# with min-distance >= lambda. At each tested lambda we solve a maximum-
+# independent-set feasibility IP
 #   maximize sum_i x_i  s.t.  x_i + x_j <= 1 for every edge (i, j);  x in {0,1}
 # declaring lambda feasible iff the optimum (the independence number) >= m.
+#
+# Two structural choices make this practical well beyond toy sizes:
+#
+#   * Sparse packing matrix. The constraint matrix carries exactly two
+#     non-zeros per edge; it is built as a sparse `dgCMatrix` rather than a
+#     dense nEdge x n matrix. The dense form is O(nEdge * n) memory -- several
+#     gigabytes per solve once n is a few hundred -- and is the reason a naive
+#     node-packing solver stalls at a couple of hundred points.
+#
+#   * Heuristic warm start + galloping search. Rather than bisecting the whole
+#     sorted distance vector (~log2(n^2/2) solves, half of them splitting hairs
+#     around the optimum), we seed a provably-achievable lower bound from the
+#     package's own heuristics (Grasp restarts + DropAdd), then gallop upward
+#     from there to the first infeasible threshold and bisect the small
+#     bracket. When a heuristic attains the optimum -- common at the small k of
+#     interest -- a single infeasibility solve certifies it. The seed only sets
+#     the starting lower bound: the search still proves the true optimum
+#     regardless of seed quality (a loose seed merely costs extra solves, never
+#     a wrong answer).
 #
 # Used in the manuscript ONLY as an external ground-truth reference on small
 # instances -- it is NP-hard and not a scalable method.
@@ -37,15 +55,47 @@
   d
 }
 
-# Solve one maximum-independent-set IP on the threshold graph G(lambda) and
-# classify the result against the target size m.
+# A provably-achievable m-subset, as a lower bound on the optimum. Grasp
+# (several RNG restarts) attains the package's best heuristic T_k on small-to-
+# medium instances; DropAdd adds a deterministic anchor. The best-achieving
+# subset wins. `warmStart`, if a valid m-subset, joins the pool. Returns
+# list(value, witness), or NULL if no heuristic produced a usable subset.
+.ExactWarmStart <- function(d, n, m, warmStart, nStart = 8L) {
+  scv   <- function(idx) { s <- d[idx, idx]; diag(s) <- Inf; min(s) }
+  # Coerce a raw selection to a valid sorted m-subset, or drop it (NULL).
+  valid <- function(idx) {
+    idx <- tryCatch(sort(unique(as.integer(idx))), error = function(e) integer(0))
+    if (length(idx) == m && idx[1L] >= 1L && idx[m] <= n) idx else NULL
+  }
+  # Heuristic pool: optional caller warmStart, several Grasp restarts (drawing
+  # on the session RNG -- this is where their diversity comes from), one
+  # deterministic DropAdd. Like Grasp() itself, this advances the session RNG.
+  grasps <- lapply(seq_len(nStart), function(s)
+    tryCatch(Grasp(d, m, plateau = 50L), error = function(e) NULL))
+  raw <- c(if (is.null(warmStart)) list() else list(warmStart),
+           grasps,
+           list(tryCatch(DropAdd(d = d, m = m, plateau = 512L),
+                         error = function(e) NULL)))
+  pool <- Filter(Negate(is.null), lapply(raw, valid))
+  if (!length(pool)) {
+    return(NULL)
+  }
+  vals <- vapply(pool, scv, numeric(1))
+  j <- which.max(vals)
+  list(value = vals[[j]], witness = pool[[j]])
+}
+
+# Solve one maximum-independent-set feasibility probe on the threshold graph
+# G(lambda) and classify the result against the target size m.
 #
-# Builds one packing constraint x_i + x_j <= 1 per edge (i, j) with
-# d(i, j) < lambda, then maximises sum x with binary variables. The returned
-# witness is validated independently of the solver status: x is rounded, the
-# selected set is checked to contain no G(lambda) edge, and its size is
-# compared to m. This makes the classification robust to solver
-# status-code or time-limit quirks.
+# `ei`, `ej` are the endpoint index vectors of the edges (pairs with
+# d(i, j) < lambda), supplied by the caller from a one-off upper-triangle
+# precompute. The packing constraint x_i + x_j <= 1 is assembled as a SPARSE
+# matrix (two non-zeros per edge), then sum x is maximised over binary
+# variables. The returned witness is validated independently of the solver
+# status: x is rounded, the selected set is checked to contain no G(lambda)
+# edge, and its size is compared to m. This makes the classification robust to
+# solver status-code or time-limit quirks.
 #
 # Returns list(verdict, witness) where verdict is one of:
 #   "feasible"     -- a validated independent set of size >= m was found
@@ -54,26 +104,24 @@
 #                     independent set has size < m (witness = integer(0)),
 #   "inconclusive" -- the budget expired before either could be established
 #                     (witness = integer(0)).
-.MaxISVerdict <- function(d, n, lambda, m, timeLimit) {
+.MaxISVerdict <- function(d, n, ei, ej, lambda, m, timeLimit) {
   if (!is.finite(timeLimit) || timeLimit <= 0) { # nocov start
     return(list(verdict = "inconclusive", witness = integer(0)))
   } # nocov end
-  # Edges of G(lambda): unordered pairs with d(i, j) < lambda. `<` (strict)
-  # is exact here because lambda is itself an achieved pairwise distance and
-  # both d and lambda come from the same matrix -- no rounding intervenes.
-  edge <- which(d < lambda & upper.tri(d), arr.ind = TRUE)
-  nEdge <- nrow(edge)
+  nEdge <- length(ei)
 
-  if (nEdge == 0L) { # nocov start
+  if (nEdge == 0L) {
     # Empty graph: every vertex is independent, so alpha = n. Feasible
     # whenever m <= n (guaranteed by the caller's guard). No solve needed.
     return(list(verdict = "feasible", witness = seq_len(n)))
-  } # nocov end
+  }
 
-  # One row per edge: x_i + x_j <= 1.
-  A <- matrix(0, nrow = nEdge, ncol = n)
-  A[cbind(seq_len(nEdge), edge[, 1L])] <- 1
-  A[cbind(seq_len(nEdge), edge[, 2L])] <- 1
+  # One row per edge: x_i + x_j <= 1. Sparse: exactly two non-zeros per row.
+  A <- Matrix::sparseMatrix(
+    i = rep.int(seq_len(nEdge), 2L),
+    j = c(ei, ej),
+    x = 1, dims = c(nEdge, n)
+  )
 
   res <- highs::highs_solve(
     L       = rep.int(1, n),
@@ -122,10 +170,23 @@
 #' the largest threshold `lambda`, over the achieved distinct pairwise
 #' distances, for which the threshold graph `G(lambda)` (edges join pairs
 #' closer than `lambda`) contains an independent set of size at least `m`.
-#' A binary search over the sorted distances resolves that threshold; each
-#' probe solves a maximum-independent-set integer program with the `highs`
-#' MILP backend. The problem is NP-hard, so this is intended only as an
-#' external ground-truth reference on small instances, not a scalable method.
+#' Each probe solves a maximum-independent-set integer program with the `highs`
+#' MILP backend, the packing constraints held as a sparse matrix.
+#'
+#' The search is warm-started from a heuristic lower bound (the best of several
+#' [Grasp()] restarts and a [DropAdd()] pass), then gallops upward from that
+#' bound to the first infeasible threshold and bisects the resulting bracket.
+#' When a heuristic already attains the optimum -- common at the small `m` for
+#' which an exact reference is wanted -- a single infeasibility solve certifies
+#' it. The warm start only sets the starting lower bound: the returned optimum
+#' is proven regardless of heuristic quality (a loose seed merely costs extra
+#' solves). The problem is NP-hard, so this remains an external ground-truth
+#' reference for small instances, not a scalable method.
+#'
+#' The proven `objective` is exact and does not depend on the RNG. Only the
+#' returned `indices` can vary when several subsets attain the optimum: the warm
+#' start draws on the session RNG via [Grasp()] and, like `Grasp()`, advances it.
+#' Call [set.seed()] before `ExactMaxMin()` for a reproducible selection.
 #'
 #' @param d A `dist` object or a square symmetric numeric distance matrix.
 #' @param m Integer target subset size, `2 <= m <= nrow(d)`.
@@ -135,7 +196,12 @@
 #'   (shared across all internal IP solves). If the budget expires before the
 #'   optimum is proven, the largest threshold proven feasible so far is
 #'   returned with `proven = FALSE`.
-#' @param progress Logical; show a progress bar during the binary search.
+#' @param warmStart Optional integer vector: a candidate `m`-subset (1-based
+#'   indices into `d`) to add to the heuristic warm-start pool, e.g. a selection
+#'   already computed by another solver. Ignored unless it is a valid `m`-subset.
+#'   The internal heuristics run regardless; a good `warmStart` can only reduce
+#'   the number of IP solves, never change the proven optimum.
+#' @param progress Logical; show a progress indicator during the search.
 #'   Default: `TRUE` in interactive sessions, `FALSE` otherwise
 #'   (`getOption("MaxMin.progress", interactive())`).
 #' @return Unlike [DropAdd()], [Grasp()] and [FarFirst()] (which each return a
@@ -158,6 +224,7 @@
 #' @references \insertAllCited{}
 #' @export
 ExactMaxMin <- function(d, m, solver = NULL, timeBudgetS = 60,
+                        warmStart = NULL,
                         progress = getOption("MaxMin.progress", interactive())) {
   t0 <- proc.time()[[3L]]
   if (is.null(solver)) solver <- "highs"
@@ -178,18 +245,31 @@ ExactMaxMin <- function(d, m, solver = NULL, timeBudgetS = 60,
 
   Elapsed <- function() proc.time()[[3L]] - t0
 
+  # Upper-triangle edge structure, precomputed ONCE: every probe is then a
+  # threshold over `ud` (a vector compare) rather than a fresh n x n logical.
+  ut <- which(upper.tri(d))
+  rc <- arrayInd(ut, dim(d))
+  ui <- rc[, 1L]; uj <- rc[, 2L]; ud <- d[ut]
+
   # Candidate thresholds: the achieved distinct pairwise distances, ascending.
   # The optimum is necessarily one of these (it is a realised distance), so
-  # searching this finite grid is exact. Index k tests lambda = cand[k]; for
-  # k = 1 (the smallest distance) the graph has no edges, so feasibility
-  # holds whenever m <= n -- our guaranteed lower bound, established without
-  # any IP solve.
-  cand <- sort(unique(d[upper.tri(d)]))
+  # searching this finite grid is exact. cand[1] (the smallest distance) gives
+  # an edgeless graph, feasible whenever m <= n -- the guaranteed lower bound,
+  # established without any IP solve.
+  cand <- sort(unique(ud))
   nCand <- length(cand)
 
-  if (progress && nCand > 1L) {
-    .pb <- cli::cli_progress_bar("ExactMaxMin", total = nCand - 1L,
-                                 .auto_close = FALSE)
+  if (progress) {
+    .pb <- cli::cli_progress_bar("ExactMaxMin", total = NA, .auto_close = FALSE)
+  }
+  tick <- function() if (progress) cli::cli_progress_update(id = .pb) # nocov
+
+  # Feasibility oracle at a candidate index: does G(cand[idx]) admit an
+  # independent set of size >= m?
+  feas <- function(idx, remaining) {
+    lambda <- cand[idx]
+    e <- ud < lambda
+    .MaxISVerdict(d, n, ui[e], uj[e], lambda, m, remaining)
   }
 
   # Helper to package a result for a proven-feasible candidate index.
@@ -199,10 +279,11 @@ ExactMaxMin <- function(d, m, solver = NULL, timeBudgetS = 60,
     diag(sub) <- Inf
     obj <- min(sub)
     # Tripwire (proven branch only): at the optimum the achieved minimum
-    # equals lambda exactly for ANY m points drawn from the witness. A
-    # mismatch would signal a solver or construction bug, never normal
-    # degeneracy. On an unproven incumbent `obj` may exceed `lambda`; that
-    # is a legitimately better lower bound, not an error.
+    # equals lambda exactly -- the largest feasible threshold has the next
+    # candidate proven infeasible, so the witness cannot beat it. A mismatch
+    # would signal a solver or construction bug, never normal degeneracy. On
+    # an unproven incumbent `obj` may exceed `lambda`; that is a legitimately
+    # better lower bound, not an error.
     if (proven && abs(obj - lambda) > 1e-9 * max(1, abs(lambda))) { # nocov start
       stop("Internal error: recovered min-distance ", obj,
            " != proven threshold ", lambda)
@@ -218,53 +299,62 @@ ExactMaxMin <- function(d, m, solver = NULL, timeBudgetS = 60,
     )
   }
 
-  # Binary search for the largest feasible candidate index. Feasibility is
-  # monotone non-increasing in lambda (raising the threshold only adds
-  # edges, never removes them, so the independence number cannot grow), so
-  # the feasible indices form a prefix [1 .. best] of the candidate vector.
-  # Invariant: cand[1] is always feasible (empty graph, m <= n), so best
-  # starts at 1 and we never need to prove the bottom of the range.
-  lo <- 2L
-  hi <- nCand
-  bestIdx <- 1L
-  bestWitness <- seq_len(n)            # any m points are >= cand[1] apart
+  # Warm start: a provably-achievable lower bound + witness. Every candidate
+  # <= ws$value is feasible (the witness attains it), so the optimum index is
+  # at least i0. Without a heuristic, fall back to the trivial bound (cand[1]).
+  ws <- .ExactWarmStart(d, n, m, warmStart)
+  if (is.null(ws)) { # nocov start
+    i0 <- 1L; bestIdx <- 1L; bestWitness <- seq_len(n)
+  } else { # nocov end
+    i0 <- findInterval(ws$value, cand)        # cand[i0] == ws$value (realised)
+    bestIdx <- i0; bestWitness <- ws$witness
+  }
   inconclusive <- FALSE
 
-  while (lo <= hi) {
-    remaining <- timeBudgetS - Elapsed()
-    if (remaining <= 0) { # nocov start
-      inconclusive <- TRUE
-      break
-    } # nocov end
-    mid <- (lo + hi) %/% 2L
-    v <- .MaxISVerdict(d, n, cand[mid], m, remaining)
+  # Gallop up from i0 to the first infeasible threshold. Feasibility is
+  # monotone (raising lambda only adds edges, never grows the independence
+  # number), so the feasible indices form a prefix [1 .. best]; doubling the
+  # step finds the boundary in O(log gap) when the warm start is near-optimal.
+  loF <- i0; hiX <- NA_integer_; step <- 1L; probe <- i0 + 1L
+  while (probe <= nCand) {
+    rem <- timeBudgetS - Elapsed()
+    if (rem <= 0) { inconclusive <- TRUE; break } # nocov
+    v <- feas(probe, rem); tick()
     if (identical(v$verdict, "feasible")) {
-      bestIdx <- mid
-      bestWitness <- v$witness
-      lo <- mid + 1L
-      if (progress && nCand > 1L) {
-        cli::cli_progress_update(id = .pb, set = (lo - 2L) + (nCand - hi))
-      }
+      loF <- probe; bestIdx <- probe; bestWitness <- v$witness
+      step <- step * 2L; probe <- probe + step
     } else if (identical(v$verdict, "infeasible")) {
-      hi <- mid - 1L
-      if (progress && nCand > 1L) {
-        cli::cli_progress_update(id = .pb, set = (lo - 2L) + (nCand - hi))
-      }
+      hiX <- probe; break
     } else { # nocov start
-      # Budget expired mid-solve: cannot place this candidate. Stop and
-      # return the best threshold proven feasible so far.
-      inconclusive <- TRUE
-      break
+      inconclusive <- TRUE; break
     } # nocov end
   }
+  if (is.na(hiX)) hiX <- nCand + 1L           # nothing above proven infeasible
 
-  if (progress && nCand > 1L) {
-    cli::cli_progress_done(id = .pb)
+  # Bisect the bracket (loF, hiX): the largest feasible index in between.
+  if (!inconclusive) {
+    lo <- loF + 1L
+    hi <- min(hiX - 1L, nCand)
+    while (lo <= hi) {
+      rem <- timeBudgetS - Elapsed()
+      if (rem <= 0) { inconclusive <- TRUE; break } # nocov
+      mid <- (lo + hi) %/% 2L
+      v <- feas(mid, rem); tick()
+      if (identical(v$verdict, "feasible")) {
+        bestIdx <- mid; bestWitness <- v$witness; lo <- mid + 1L
+      } else if (identical(v$verdict, "infeasible")) {
+        hi <- mid - 1L
+      } else { # nocov start
+        inconclusive <- TRUE; break
+      } # nocov end
+    }
   }
 
-  # Optimality is proven iff the search closed the interval (lo > hi) without
-  # an inconclusive break: every candidate above bestIdx was certified
-  # infeasible and bestIdx itself certified feasible.
+  if (progress) cli::cli_progress_done(id = .pb) # nocov
+
+  # Optimality is proven iff the search closed without an inconclusive break:
+  # bestIdx certified feasible (heuristic witness or IP witness) and the next
+  # candidate certified infeasible (or bestIdx is the largest distance).
   proven <- !inconclusive
   Recover(bestWitness, cand[bestIdx], proven)
 }

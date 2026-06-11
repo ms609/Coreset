@@ -300,3 +300,63 @@ on the PR walk. Comfortably above the 5% floor.
 Status: Area 3 → OPTIMISED (T-007). Rotation current: all areas OPTIMISED/AT-LIMIT.
 
 last_focus: 3
+
+---
+
+## Round 5 — 2026-06-11 — Area 4: ExactMaxMin node-packing (user-requested)
+
+**Question (user):** the manuscript's exact solver maxes out at n=240 (Fig. 1).
+Profile + optimise `ExactMaxMin` until no >10% gain remains, so the six 342–990
+datasets can be solved exactly within a 3-day HPC budget.
+
+**Driver:** `drivers/exact.R` (penguins n=342 k=10, the smallest unsolved target);
+`drivers/exact-prof.R` (Rprof line+memory); `drivers/exact-probe.R` (per-probe cost
+instrumentation); `drivers/exact-characterize.R` (heuristic-vs-exact hit rate over
+14 ground-truth cases × k∈{2,4,6,10}); `drivers/capture_old.R` + `verify_new.R`
+(OLD-vs-NEW regression + RNG contract). ExactMaxMin is pure R over the `highs`
+backend, so this was a profvis/Rprof (R-triage) round, no VTune.
+
+**Profile verdict (penguins n=342 k=10):**
+- `solver_run` (highs MILP, C) = **86%** self time — the IP solves dominate.
+- `which(d < lambda & upper.tri(d), arr.ind=TRUE)` = 7.4% self, **933 MB** —
+  two fresh n×n logical matrices *per probe*.
+- dense `matrix(0, nEdge, n)` for the packing matrix = 4.4% self, 176 MB at
+  n=342 → **~3.9 GB at n=990**: the actual scaling wall (the n≈240 cap).
+- Per-probe instrumentation: ~16 evenly-costed probes (~0.4 s each), ~half of
+  them splitting near-identical thresholds (2.2125 / 2.2140 / 2.2143 …) around
+  the optimum — each a full IP solve.
+
+**Levers tried (measured before filing — see findings T-008):**
+1. **Feasibility reformulation** (constant obj + `sum(x)≥m` cut, stop at first
+   feasible). **REJECTED**: 0.73–0.89× (slower). The cardinality cut weakens the
+   LP relaxation and removes the objective guidance highs prunes with;
+   `objective_bound` cutoff had no effect under `maximum=TRUE`.
+2. **Sparse packing matrix** (`Matrix::sparseMatrix`, 2 nnz/edge). ~1.15× on its
+   own AND removes the GB-per-probe memory wall → the enabler for n≥683.
+3. **Heuristic warm-start gallop.** Seed a provably-achievable lower bound (best
+   of 8 `Grasp` restarts + `DropAdd`), gallop up to the first infeasible
+   threshold, bisect the small bracket. Grasp attains the optimum where DropAdd
+   does not; on the ground-truth grid the heuristic == exact in **55/56**
+   (case,k) → a single infeasibility solve certifies it (k=2: zero solves).
+
+**Correctness is independent of seed quality** — the warm start only sets the
+starting lower bound; the search proves the true optimum regardless (the one
+heuristic miss, tc6 k=10, still returned the exact optimum, in 9 probes vs 1).
+Verified bit-identical: 56/56 proven optima match the dense solver; brute-force
+oracle (test-exact.R) + full suite 598 PASS / 0 FAIL.
+
+**Result (verified, `verify_new.R`):** grid total OLD 222.6 s → NEW 11.3 s
+(**19.6×**), per-case median 16.3×, max ~1300× (k=2). RNG contract: `objective`
+seed-independent, selection reproducible under `set.seed()` (matches `Grasp()`);
+ExactMaxMin advances the session RNG like other randomised routines (test #4
+updated from the old "two calls give identical indices" to this contract, per
+user steer that the exact *objective* — not the witness — is what is determined).
+
+**Implementation:** `R/exact.R` (sparse `.MaxISVerdict`, `.ExactWarmStart`,
+gallop+bisect main, new `warmStart=` arg); `Matrix` → Suggests; NEWS + roxygen.
+
+Status: Area 4 → OPTIMISED (T-008). Headline 19.6× ≫ 10% floor; further levers
+(clique cuts, warm-started simplex across probes) are speculative and unmeasured —
+not pursued. Rotation current: all areas OPTIMISED/AT-LIMIT.
+
+last_focus: 4

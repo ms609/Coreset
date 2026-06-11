@@ -2,6 +2,17 @@
 
 ## Improvements
 
+- `ExactMaxMin()` is substantially faster and scales to larger instances. The
+  node-packing constraint matrix is now built as a sparse matrix (the dense form
+  was several GB per solve at a few hundred points, the effective scaling wall),
+  and the threshold search is warm-started from a heuristic lower bound (best of
+  several `Grasp()` restarts and a `DropAdd()` pass), then gallops up to the first
+  infeasible threshold rather than bisecting the whole distance vector. When a
+  heuristic attains the optimum (common at small `m`) a single infeasibility solve
+  certifies it -- ~16x fewer IP solves on the manuscript instances. The proven
+  optimum is unchanged: the warm start only sets the starting lower bound. New
+  optional `warmStart` argument accepts an externally-computed candidate subset.
+  Adds `Matrix` to Suggests.
 - `DropAdd()` now documents that `timeBudgetS` is checked every 256 iterations and
   may overshoot by up to one iteration's worth of computation on large instances.
 - `FarFirst()` documents that asymmetric distance matrices are accepted.
