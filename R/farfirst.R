@@ -138,7 +138,7 @@
 
 #' Deterministic Gonzalez furthest-point selection
 #'
-#' Greedy k-centre selection \insertCite{Gonzalez1985}{MaxMin}.
+#' Greedy k-centre selection \insertCite{Gonzalez1985;Hochbaum1985}{MaxMin}.
 #' Iteratively selects the point furthest from the current selection, a
 #' 2-approximation to the k-centre problem.
 #' The quality of the result depends on the first (seed) point; by default

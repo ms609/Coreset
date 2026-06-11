@@ -9,6 +9,7 @@ FarFirst(
   m,
   method = .kDefaultEnsemble,
   pivots = NULL,
+  nseeds = NULL,
   points = NULL,
   N = NULL,
   progress = getOption("MaxMin.progress", interactive())
@@ -56,6 +57,19 @@ explicitly. Disabling the random starts errors under the default \code{method}
 (which names only \code{"random_furthest"}, leaving no anchor); pair it with a
 deterministic \code{method} such as \code{"peripheral"}.}
 
+\item{nseeds}{Optional integer: run a distinct-seed random restart. Random
+pivots are drawn with the session RNG and each one's furthest-point seed is
+collected, de-duplicated, until \code{nseeds} \emph{distinct} seeds are found (or the
+reachable pool is exhausted); Gonzalez runs from each and the best \eqn{T_k}
+is returned, with \code{strategy_results} / \code{winning_strategy} labelled
+\code{random_furthest1}, \code{random_furthest2}, ... This is the "give a count, not a
+list" counterpart to \code{pivots}: where \code{pivots} runs one start per supplied
+index, \code{nseeds} searches for that many \emph{distinct} peripheral seeds, never
+wasting a Gonzalez pass on a duplicate. Set a seed (\code{set.seed()}) for a
+reproducible selection. When supplied, \code{nseeds} overrides \code{method} and
+\code{pivots} (a warning is issued if either was also set explicitly); it is not
+available on the distance-column oracle path. Default \code{NULL} (use \code{method}).}
+
 \item{points}{Optional \verb{N x dim} numeric coordinate matrix. When supplied,
 the selection is computed directly from coordinates in \code{O(N * m * dim)}
 time and \code{O(N)} memory, never materialising the \verb{N x N} distance matrix
@@ -78,9 +92,12 @@ farthest-first (greedy) selection order -- \strong{not} sorted (unlike
 indices). The achieved \eqn{T_k} (the selection's minimum pairwise
 distance) is attached as attribute \code{score}. An ensemble \code{method}
 additionally carries \code{strategy_results} and \code{winning_strategy} attributes.
+The vector has class \code{"MaxMinSelection"} and prints as a one-line summary
+(see \link{print.MaxMinSelection}); it is otherwise an ordinary integer vector
+and indexes a matrix or coordinate set directly.
 }
 \description{
-Greedy k-centre selection \insertCite{Gonzalez1985}{MaxMin}.
+Greedy k-centre selection \insertCite{Gonzalez1985;Hochbaum1985}{MaxMin}.
 Iteratively selects the point furthest from the current selection, a
 2-approximation to the k-centre problem.
 The quality of the result depends on the first (seed) point; by default
