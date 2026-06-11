@@ -281,3 +281,16 @@ test_that(".GraspPathRelink returns immediately for identical endpoints", {
   # The returned objective is the best we can do with that selection.
   expect_equal(pr$objective, MaxMin:::.GraspObjective(d30m, x))
 })
+
+# 15. .Grasp_R finite timeBudgetS covers setTimeLimit (grasp.R line 397) ------
+
+test_that(".Grasp_R time budget halts execution (grasp.R line 397)", {
+  set.seed(1)
+  # .Machine$integer.max disables both other stopping criteria; only the
+  # budget can end Phase B.
+  res <- MaxMin:::.Grasp_R(d30m, m = 6L,
+                           plateau  = .Machine$integer.max,
+                           maxIter  = .Machine$integer.max,
+                           eliteSize = 4L, timeBudgetS = 0.001)
+  expect_lte(attr(res, "time_s"), 0.1)
+})

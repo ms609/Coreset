@@ -206,3 +206,27 @@ test_that(".GonzEnsembleFromPoints m=1 propagates NA t_k through all strategies"
   strat <- attr(res, "strategy_results")
   expect_true(all(is.na(vapply(strat, `[[`, numeric(1L), "t_k"))))
 })
+
+# ---- ensemble AnchorSeed branches not covered by single-method FarFirst ----
+# Single-string method calls go through .MaxMinSeedPoints directly; the
+# AnchorSeed() closure inside .GonzEnsemble/.GonzEnsembleFromPoints is only
+# reached when those names appear in a multi-anchor ensemble call.
+
+test_that(".GonzEnsemble medoid branch covered via multi-anchor ensemble", {
+  dat <- MakeData()
+  # medoid in a 2-anchor ensemble -> AnchorSeed("medoid") = GetMedoid() fires
+  res <- FarFirst(dat$d, 5L, method = c("medoid", "peripheral"), pivots = integer(0))
+  expect_length(res, 5L)
+  expect_true(all(attr(res, "winning_strategy") %in% c("medoid", "peripheral")))
+})
+
+test_that(".GonzEnsembleFromPoints medoid/centroid/rownorm branches covered via ensemble", {
+  dat <- MakeData()
+  # Three anchors only reachable through the points-path ensemble AnchorSeed
+  res <- FarFirst(m = 5L, points = dat$pts,
+                  method = c("medoid", "centroid", "rownorm"),
+                  pivots = integer(0))
+  expect_length(res, 5L)
+  expect_true(all(attr(res, "winning_strategy") %in%
+                  c("medoid", "centroid", "rownorm")))
+})

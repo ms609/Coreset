@@ -266,10 +266,20 @@ test_that("DropAdd .trace + .verify together cover init and loop writes", {
   dmat <- as.matrix(dist(matrix(rnorm(12 * 2), ncol = 2)))
   te   <- new.env()
   res  <- DropAdd(dmat, m = 4L, maxIter = 5L, .verify = TRUE, .trace = te)
-  # .trace should have been initialised on R path (lines 295-296) and
-  # written during the loop (lines 438-439).
   expect_equal(length(te$drops), attr(res, "iters"))
   expect_equal(length(te$adds),  attr(res, "iters"))
+})
+
+test_that("DropAdd R-path time budget halts execution (dropadd.R line 352)", {
+  set.seed(1)
+  dmat <- as.matrix(dist(matrix(rnorm(30 * 3), ncol = 3)))
+  # .Machine$integer.max disables both other stopping criteria; only the
+  # budget can end the loop.
+  res <- DropAdd(dmat, m = 5L,
+                 maxIter = .Machine$integer.max, plateau = .Machine$integer.max,
+                 .verify = TRUE, timeBudgetS = 0.001)
+  expect_gte(attr(res, "iters"), 1L)    # at least one iteration ran
+  expect_lte(attr(res, "time_s"), 0.1)
 })
 
 # ---------------------------------------------------------------------------
