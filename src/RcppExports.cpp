@@ -59,6 +59,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// IsSymmetric_cpp
+bool IsSymmetric_cpp(Rcpp::NumericMatrix d, double tol);
+RcppExport SEXP _MaxMin_IsSymmetric_cpp(SEXP dSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type d(dSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(IsSymmetric_cpp(d, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
 // KCentreCandidates_cpp
 Rcpp::NumericVector KCentreCandidates_cpp(Rcpp::NumericMatrix d);
 RcppExport SEXP _MaxMin_KCentreCandidates_cpp(SEXP dSEXP) {
@@ -162,6 +174,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MaxMin_DropAdd_cpp", (DL_FUNC) &_MaxMin_DropAdd_cpp, 6},
     {"_MaxMin_DropAdd_points_cpp", (DL_FUNC) &_MaxMin_DropAdd_points_cpp, 6},
     {"_MaxMin_Grasp_cpp", (DL_FUNC) &_MaxMin_Grasp_cpp, 7},
+    {"_MaxMin_IsSymmetric_cpp", (DL_FUNC) &_MaxMin_IsSymmetric_cpp, 2},
     {"_MaxMin_KCentreCandidates_cpp", (DL_FUNC) &_MaxMin_KCentreCandidates_cpp, 1},
     {"_MaxMin_KCentreCDSh_cpp", (DL_FUNC) &_MaxMin_KCentreCDSh_cpp, 5},
     {"_MaxMin_MaximinFrom_cpp", (DL_FUNC) &_MaxMin_MaximinFrom_cpp, 3},

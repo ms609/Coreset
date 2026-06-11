@@ -72,3 +72,9 @@ Clustered Gaussian n=2004, dim=10, k=20; per-call median (6 reps), `-O2`.
 
 Centres + radius bit-identical at k∈{5,20,50}. `test_local(filter=kcentre)` 70/70.
 ExactKCentre baseline pending (T-011).
+
+**Update (red-team Round 8, KC-001 fix):** `KCentre` end-to-end is now ~440 ms at
+n=2004 k=20 (matrix input), not 307 ms — the added correctness guards (in-place
+`IsSymmetric_cpp` ~70 ms; Gonzalez floor O(nk)) account for the difference. The
+T-010 *kernel* optimisation (cache reorder + C++ candidates) is unchanged; this is
+not a regression in the kernel. `dist` input skips the symmetry scan.

@@ -43,7 +43,9 @@
 # negligible against the O(n^2 log n) solve. (KCentreRadius needs no guard: it
 # reads true d(point, centre) columns and is correct for asymmetric input.)
 .KCentreRequireSymmetric <- function(d) {
-  if (!isSymmetric(unname(d))) {
+  # In-place C++ check (no transpose copy): negligible beside the O(n^2 log n)
+  # solve, where R's isSymmetric() would copy a large dense matrix.
+  if (!IsSymmetric_cpp(d, 100 * .Machine$double.eps)) {
     stop("`d` must be symmetric for the k-centre solvers; an asymmetric ",
          "distance would give a silently wrong covering radius")
   }
@@ -179,8 +181,9 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' KCentreRadius(d, FarFirst(d, 5L, method = "peripheral"))
 #' @export
 KCentre <- function(d, k, nstart = 1L, seeds = NULL) {
+  needSymCheck <- !inherits(d, "dist")          # a dist object is symmetric
   d <- .AsDistMatrix(d)
-  .KCentreRequireSymmetric(d)
+  if (needSymCheck) .KCentreRequireSymmetric(d)
   n <- nrow(d)
   if (length(k) != 1L || !is.finite(k) || k < 1L) {
     stop("`k` must be a single positive integer")
@@ -358,8 +361,9 @@ ExactKCentre <- function(d, k, solver = NULL, maxSeconds = 60,
          "Install it with install.packages(\"Matrix\").")
   }
 
+  needSymCheck <- !inherits(d, "dist")          # a dist object is symmetric
   d <- .AsDistMatrix(d)
-  .KCentreRequireSymmetric(d)
+  if (needSymCheck) .KCentreRequireSymmetric(d)
   n <- nrow(d)
   if (length(k) != 1L || !is.finite(k) || k < 1L) {
     stop("`k` must be a single positive integer")

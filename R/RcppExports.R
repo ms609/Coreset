@@ -13,6 +13,10 @@ Grasp_cpp <- function(dmat, m, max_no_improve, max_iter, elite_size, alpha, time
     .Call(`_MaxMin_Grasp_cpp`, dmat, m, max_no_improve, max_iter, elite_size, alpha, time_budget_s)
 }
 
+IsSymmetric_cpp <- function(d, tol) {
+    .Call(`_MaxMin_IsSymmetric_cpp`, d, tol)
+}
+
 KCentreCandidates_cpp <- function(d) {
     .Call(`_MaxMin_KCentreCandidates_cpp`, d)
 }

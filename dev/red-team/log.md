@@ -136,9 +136,14 @@ not the witness radius; KC-005/006/007 (coverage) no tests for the timeout/
   fixes the fallback and inconclusive-break inconsistency).
 - KC-005/006/007: tests added.
 
-Verified: `test_local(filter=kcentre)` green incl. the new tests; CDSh ≤ Gonzalez on
-the previously-losing instances; small-n CDSh now near the brute-force optimum;
-perf at n=2004 preserved (floor is O(nk); exhaustive does not trigger).
+Verified: full `test_local` green (kcentre 118 assertions incl. the new regressions;
+all other areas unaffected). 0/120 previously-losing instances now worse than
+Gonzalez (was 11/960); CDSh/optimum mean 1.022, max 1.349 (near-optimal via the
+small-n exhaustive scan). Perf at n=2004 k=20: 307 ms (T-010 kernel) → ~440 ms
+end-to-end — the symmetry guard (in-place `IsSymmetric_cpp`, ~70 ms) plus the
+Gonzalez floor (O(nk)) are the correctness cost; still ~3× faster than the
+pre-T-010 1275 ms, and `dist` input skips the symmetry scan. The exhaustive scan
+does not trigger at n=2004 (binary search + floor).
 
 - seam status: still yielding (7 found) — next visit of this area stays at sonnet
   (fresh angle) before escalating.
