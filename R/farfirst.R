@@ -138,13 +138,13 @@
 
 #' Deterministic Gonzalez furthest-point selection
 #'
-#' Greedy k-centre selection \insertCite{Gonzalez1985;Hochbaum1985}{MaxMin}.
+#' Greedy _k_-centre selection \insertCite{Gonzalez1985;Hochbaum1985}{MaxMin}.
 #' Iteratively selects the point furthest from the current selection, a
-#' 2-approximation to the k-centre problem.
+#' 2-approximation to the _k_-centre problem.
 #' The quality of the result depends on the first (seed) point; by default
 #' `FarFirst()` runs three starts from randomly selected peripheral seeds.
-#' The deterministic `O(N)` anchors (`"centroid"`, `"peripheral"`) and the
-#' costlier `O(N^2)` anchors (`"diameter"`, `"anti_medoid"`, `"medoid"`,
+#' The deterministic \eqn{O(N)} anchors (`"centroid"`, `"peripheral"`) and the
+#' costlier \eqn{O(N^2)} anchors (`"diameter"`, `"anti_medoid"`,
 #' `"rowsum"`, `"rownorm"`) are alternative `seed` strategies.
 #'
 #' Distances may be provided as:
@@ -191,7 +191,7 @@
 #'   (a single bare Gonzalez pass). A **length-1 character** names a single
 #'   deterministic seeding strategy run as one bare pass: `"centroid"`
 #'   (coordinates only), `"peripheral"` (two-sweep diameter-endpoint
-#'   approximation), `"diameter"`, `"anti_medoid"`, `"medoid"`, `"rowsum"`,
+#'   approximation), `"diameter"`, `"anti_medoid"`, `"rowsum"`,
 #'   `"rownorm"`, or `"first"` (index 1). A **length > 1 character vector** --
 #'   or the lone `"random_furthest"` token -- requests an ensemble: each named
 #'   anchor runs a full Gonzalez pass and the best result by [MinDist()] is
@@ -201,8 +201,8 @@
 #'   `random_furthest2`, ...; named on its own it still runs the ensemble (one
 #'   pass per pivot), so a single random start is best obtained via
 #'   [MaxMinSeed()]. Valid ensemble anchors: any subset of `c("centroid",
-#'   "peripheral", "random_furthest", "diameter", "anti_medoid", "medoid",
-#'   "rowsum", "rownorm")` (`"centroid"` requires `points`). Default:
+#'   "peripheral", "random_furthest", "diameter", "anti_medoid", "rowsum",
+#'    "rownorm")` (`"centroid"` requires `points`). Default:
 #'   `"random_furthest"` (three random starts; see `pivots`). See [MaxMinSeed()]
 #'   for anchor definitions. On the distance-column oracle path only an integer
 #'   `method` is honoured; a named or ensemble `method` there warns and falls

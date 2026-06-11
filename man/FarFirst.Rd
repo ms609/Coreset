@@ -31,7 +31,7 @@ greedy pass (matching the \code{method} argument of \code{\link[=MaxMinSeed]{Max
 (a single bare Gonzalez pass). A \strong{length-1 character} names a single
 deterministic seeding strategy run as one bare pass: \code{"centroid"}
 (coordinates only), \code{"peripheral"} (two-sweep diameter-endpoint
-approximation), \code{"diameter"}, \code{"anti_medoid"}, \code{"medoid"}, \code{"rowsum"},
+approximation), \code{"diameter"}, \code{"anti_medoid"}, \code{"rowsum"},
 \code{"rownorm"}, or \code{"first"} (index 1). A \strong{length > 1 character vector} --
 or the lone \code{"random_furthest"} token -- requests an ensemble: each named
 anchor runs a full Gonzalez pass and the best result by \code{\link[=MinDist]{MinDist()}} is
@@ -40,7 +40,7 @@ of all tied-best strategies) attributes. The \code{"random_furthest"} token
 expands to one start per element of \code{pivots}, labelled \code{random_furthest1},
 \code{random_furthest2}, ...; named on its own it still runs the ensemble (one
 pass per pivot), so a single random start is best obtained via
-\code{\link[=MaxMinSeed]{MaxMinSeed()}}. Valid ensemble anchors: any subset of \code{c("centroid", "peripheral", "random_furthest", "diameter", "anti_medoid", "medoid", "rowsum", "rownorm")} (\code{"centroid"} requires \code{points}). Default:
+\code{\link[=MaxMinSeed]{MaxMinSeed()}}. Valid ensemble anchors: any subset of \code{c("centroid", "peripheral", "random_furthest", "diameter", "anti_medoid", "rowsum", "rownorm")} (\code{"centroid"} requires \code{points}). Default:
 \code{"random_furthest"} (three random starts; see \code{pivots}). See \code{\link[=MaxMinSeed]{MaxMinSeed()}}
 for anchor definitions. On the distance-column oracle path only an integer
 \code{method} is honoured; a named or ensemble \code{method} there warns and falls
@@ -97,13 +97,13 @@ The vector has class \code{"MaxMinSelection"} and prints as a one-line summary
 and indexes a matrix or coordinate set directly.
 }
 \description{
-Greedy k-centre selection \insertCite{Gonzalez1985;Hochbaum1985}{MaxMin}.
+Greedy \emph{k}-centre selection \insertCite{Gonzalez1985;Hochbaum1985}{MaxMin}.
 Iteratively selects the point furthest from the current selection, a
-2-approximation to the k-centre problem.
+2-approximation to the \emph{k}-centre problem.
 The quality of the result depends on the first (seed) point; by default
 \code{FarFirst()} runs three starts from randomly selected peripheral seeds.
-The deterministic \code{O(N)} anchors (\code{"centroid"}, \code{"peripheral"}) and the
-costlier \code{O(N^2)} anchors (\code{"diameter"}, \code{"anti_medoid"}, \code{"medoid"},
+The deterministic \eqn{O(N)} anchors (\code{"centroid"}, \code{"peripheral"}) and the
+costlier \eqn{O(N^2)} anchors (\code{"diameter"}, \code{"anti_medoid"},
 \code{"rowsum"}, \code{"rownorm"}) are alternative \code{seed} strategies.
 }
 \details{
