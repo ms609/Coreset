@@ -54,6 +54,9 @@ within the budget, \code{FALSE} if it returned an unproven incumbent.}
 \item{solver}{Name of the MILP backend used.}
 \item{n, m}{Instance size and target subset size.}
 }
+The list has class \code{"MaxMinExact"} and prints as a one-line summary (size,
+indices, solver, proof status and achieved \code{T_k}; see
+\link{print.MaxMinSelection}); it is otherwise an ordinary list.
 }
 \description{
 Solves the Max-Min Diversity Problem (discrete p-dispersion) to proven

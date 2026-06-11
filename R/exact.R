@@ -221,6 +221,9 @@
 #'     \item{solver}{Name of the MILP backend used.}
 #'     \item{n, m}{Instance size and target subset size.}
 #'   }
+#'   The list has class `"MaxMinExact"` and prints as a one-line summary (size,
+#'   indices, solver, proof status and achieved `T_k`; see
+#'   [print.MaxMinSelection]); it is otherwise an ordinary list.
 #' @references \insertAllCited{}
 #' @export
 ExactMaxMin <- function(d, m, solver = NULL, timeBudgetS = 60,
@@ -288,14 +291,17 @@ ExactMaxMin <- function(d, m, solver = NULL, timeBudgetS = 60,
       stop("Internal error: recovered min-distance ", obj,
            " != proven threshold ", lambda)
     } # nocov end
-    list(
-      indices   = idx,
-      objective = obj,
-      proven    = proven,
-      time_s    = Elapsed(),
-      solver    = solver,
-      n         = n,
-      m         = as.integer(m)
+    structure(
+      list(
+        indices   = idx,
+        objective = obj,
+        proven    = proven,
+        time_s    = Elapsed(),
+        solver    = solver,
+        n         = n,
+        m         = as.integer(m)
+      ),
+      class = "MaxMinExact"
     )
   }
 

@@ -217,12 +217,27 @@
 #'   explicitly. Disabling the random starts errors under the default `method`
 #'   (which names only `"random_furthest"`, leaving no anchor); pair it with a
 #'   deterministic `method` such as `"peripheral"`.
+#' @param nseeds Optional integer: run a distinct-seed random restart. Random
+#'   pivots are drawn with the session RNG and each one's furthest-point seed is
+#'   collected, de-duplicated, until `nseeds` *distinct* seeds are found (or the
+#'   reachable pool is exhausted); Gonzalez runs from each and the best \eqn{T_k}
+#'   is returned, with `strategy_results` / `winning_strategy` labelled
+#'   `random_furthest1`, `random_furthest2`, ... This is the "give a count, not a
+#'   list" counterpart to `pivots`: where `pivots` runs one start per supplied
+#'   index, `nseeds` searches for that many *distinct* peripheral seeds, never
+#'   wasting a Gonzalez pass on a duplicate. Set a seed (`set.seed()`) for a
+#'   reproducible selection. When supplied, `nseeds` overrides `method` and
+#'   `pivots` (a warning is issued if either was also set explicitly); it is not
+#'   available on the distance-column oracle path. Default `NULL` (use `method`).
 #' @return Integer vector of length `min(m, N)` of selected indices, in
 #'   farthest-first (greedy) selection order -- **not** sorted (unlike
 #'   [DropAdd()], [Grasp()] and `ExactMaxMin()$indices`, which return ascending
 #'   indices). The achieved \eqn{T_k} (the selection's minimum pairwise
 #'   distance) is attached as attribute `score`. An ensemble `method`
 #'   additionally carries `strategy_results` and `winning_strategy` attributes.
+#'   The vector has class `"MaxMinSelection"` and prints as a one-line summary
+#'   (see [print.MaxMinSelection]); it is otherwise an ordinary integer vector
+#'   and indexes a matrix or coordinate set directly.
 #' @references \insertAllCited{}
 #' @seealso [MaxMinSeed()] for the seed indices alone; [DropAdd()] and
 #'   [ExactMaxMin()] for higher-effort solvers.
@@ -256,11 +271,16 @@
 #' arrestTypes[idx, ]
 #' @export
 FarFirst <- function(d = NULL, m,
-                     method = .kDefaultEnsemble, pivots = NULL,
+                     method = .kDefaultEnsemble, pivots = NULL, nseeds = NULL,
                      points = NULL, N = NULL,
                      progress = getOption("MaxMin.progress", interactive())) {
   methodMissing <- missing(method)
   pivotsMissing <- missing(pivots)
+
+  # Every non-empty FarFirst result is a `MaxMinSelection` (a self-describing
+  # integer index vector); see print.MaxMinSelection(). Stamping it at each
+  # exit keeps the matrix, coordinate and oracle paths byte-identical.
+  Classify <- function(x) .AsMaxMinSelection(x, "FarFirst")
 
   # All single-strategy names (the ensemble anchors plus the single-pass-only
   # `"first"`); .kPointEnsembleSeeds is the ensemble-eligible subset.
@@ -299,6 +319,11 @@ FarFirst <- function(d = NULL, m,
   # `method` (a `first` index) or the deterministic peripheral seed is reachable
   # here, since the richer anchors need O(N^2) work (see Details).
   if (is.function(d)) {
+    if (!is.null(nseeds)) {
+      stop("`nseeds` (distinct-seed random restart) is not supported on the ",
+           "distance-column oracle path; supply an integer `method` (a `first` ",
+           "index) instead")
+    }
     # A named/character `method` is unreachable from an oracle (it would need
     # the whole matrix); warn rather than silently substituting the peripheral
     # seed. `first` is non-NULL only for an integer `method`, which *is* honoured.
@@ -306,8 +331,8 @@ FarFirst <- function(d = NULL, m,
       warning("distance-column oracle path: only an integer `method` (a `first` ",
               "index) is honoured; using the deterministic peripheral seed")
     }
-    return(.GonzalezColumn(colFn = d, N = N, m = m, first = first,
-                           progress = progress))
+    return(Classify(.GonzalezColumn(colFn = d, N = N, m = m, first = first,
+                                    progress = progress)))
   }
 
   usePoints <- !is.null(points)
@@ -326,6 +351,35 @@ FarFirst <- function(d = NULL, m,
   m <- min(as.integer(m), nPts)
   if (m == 0L) return(integer(0))
 
+  # Distinct-seed random restart: draw random pivots, take each one's
+  # furthest-point seed, de-duplicate, until `nseeds` distinct seeds are
+  # collected (or the reachable pool is exhausted); run Gonzalez from each and
+  # keep the best. The "give a count" counterpart to an explicit `pivots` list;
+  # it overrides `method`/`pivots`. RNG is the session stream (set.seed()).
+  if (!is.null(nseeds)) {
+    nseeds <- as.integer(nseeds)
+    if (length(nseeds) != 1L || is.na(nseeds) || nseeds < 1L) {
+      stop("`nseeds` must be a single positive integer")
+    }
+    if (!methodMissing || !pivotsMissing) {
+      warning("`nseeds` runs the distinct-seed random restart and overrides ",
+              "`method`/`pivots`")
+    }
+    seedFn <- if (usePoints) {
+      function(r) which.max(EuclidColFromPoints_cpp(points, r))
+    } else {
+      function(r) which.max(d[, r])
+    }
+    seeds <- .DrawDistinctSeeds(seedFn, nPts, nseeds)
+    return(Classify(if (usePoints) {
+      .GonzEnsembleFromPoints(points, m, "random_furthest", pivots = seeds,
+                              rfSeedFn = identity)
+    } else {
+      .GonzEnsemble(d, m, "random_furthest", pivots = seeds,
+                    rfSeedFn = identity)
+    }))
+  }
+
   # The kernels attach a `t_k` attribute (the selection's min pairwise distance,
   # computed for free). A bare single pass exposes it as the `score` attribute
   # (matching DropAdd/Grasp); the ensemble path reads it into strategy_results.
@@ -337,7 +391,7 @@ FarFirst <- function(d = NULL, m,
 
   # An explicit `first` is a single bare Gonzalez pass, overriding `method`.
   if (!is.null(first)) {
-    return(Greedy(first))
+    return(Classify(Greedy(first)))
   }
 
   # The ensemble path runs each named anchor as a full Gonzalez pass and keeps
@@ -385,9 +439,9 @@ FarFirst <- function(d = NULL, m,
            "`method` (e.g. \"peripheral\") or supply non-empty `pivots`.")
     }
     if (usePoints) {
-      return(.GonzEnsembleFromPoints(points, m, anchors, pivots))
+      return(Classify(.GonzEnsembleFromPoints(points, m, anchors, pivots)))
     }
-    return(.GonzEnsemble(d, m, anchors, pivots))
+    return(Classify(.GonzEnsemble(d, m, anchors, pivots)))
   }
 
   if (!usePoints && method == "centroid") {
@@ -395,7 +449,7 @@ FarFirst <- function(d = NULL, m,
          "`peripheral` on the distance-matrix path")
   }
   s <- if (usePoints) .MaxMinSeedPoints(points, method) else .MaxMinSeed(d, method)
-  Greedy(s)
+  Classify(Greedy(s))
 }
 
 #' Normalise a distance-column oracle result to a masked length-`N` vector

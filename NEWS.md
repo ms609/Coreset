@@ -2,6 +2,26 @@
 
 ## Improvements
 
+- The solver results now print legibly. `FarFirst()`, `DropAdd()` and `Grasp()`
+  return a `"MaxMinSelection"` object and `ExactMaxMin()` a `"MaxMinExact"`
+  object, each with a `print()`/`format()` method giving a one-line summary
+  (size, selected indices, algorithm and -- for a `FarFirst()` ensemble -- the
+  winning strategy, plus the achieved `T_k`). A `summary()` method adds a
+  multi-line report: the per-strategy `T_k` table for a `FarFirst()` ensemble,
+  the secondary objective and search effort for `DropAdd()`/`Grasp()`, and the
+  instance, objective and proof status for `ExactMaxMin()`. The objects are
+  otherwise unchanged: a `MaxMinSelection` is still the integer index vector (it
+  indexes a matrix or coordinate set directly), and a `MaxMinExact` is still the
+  list with `$indices`, `$objective`, ....
+
+- `FarFirst()` gains an `nseeds` argument: a distinct-seed random restart that
+  draws random pivots, collects each one's furthest-point seed de-duplicated
+  until `nseeds` *distinct* seeds are found (or the reachable pool is exhausted),
+  runs Gonzalez from each and returns the best `T_k`. It is the "give a count,
+  not a list" counterpart to `pivots` -- never wasting a Gonzalez pass on a
+  duplicate seed -- and overrides `method`/`pivots` when supplied. Reproducible
+  under `set.seed()`; unsupported on the distance-column oracle path.
+
 - `ExactMaxMin()` is substantially faster and scales to larger instances. The
   node-packing constraint matrix is now built as a sparse matrix (the dense form
   was several GB per solve at a few hundred points, the effective scaling wall),

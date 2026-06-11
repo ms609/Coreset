@@ -46,6 +46,8 @@ with attributes:
 \item{iters}{Number of GRASP refinement iterations executed.}
 \item{pr_calls}{Number of path-relinking pair-applications run.}
 }
+The vector has class \code{"MaxMinSelection"} and prints as a one-line summary
+(see \link{print.MaxMinSelection}); it is otherwise an ordinary integer vector.
 }
 \description{
 Solves the Max-Min Diversity Problem (discrete p-dispersion) with the

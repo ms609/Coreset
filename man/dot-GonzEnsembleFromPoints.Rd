@@ -8,7 +8,8 @@
   points,
   m,
   anchors = .kDefaultEnsemble,
-  pivots = integer(0)
+  pivots = integer(0),
+  rfSeedFn = NULL
 )
 }
 \arguments{
@@ -20,6 +21,11 @@
 
 \item{pivots}{Integer vector of pivot indices the \code{"random_furthest"} token
 expands over (empty contributes none).}
+
+\item{rfSeedFn}{Optional function mapping a \code{"random_furthest"} pivot to its
+seed index. \code{NULL} (default) uses the furthest-from-pivot rule; pass
+\code{\link[=identity]{identity()}} to treat \code{pivots} as already-resolved seed indices (the
+\code{nseeds} distinct-restart path of \code{\link[=FarFirst]{FarFirst()}}).}
 }
 \value{
 Integer vector of selected indices with attributes.

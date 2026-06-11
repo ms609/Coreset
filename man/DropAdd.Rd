@@ -69,6 +69,8 @@ farthest-first order), with attributes:
 \item{iters}{integer(1), main-loop iterations executed (excluding the
 construction phase).}
 }
+The vector has class \code{"MaxMinSelection"} and prints as a one-line summary
+(see \link{print.MaxMinSelection}); it is otherwise an ordinary integer vector.
 }
 \description{
 Implements the DropAdd-TS algorithm of \insertCite{Porumbel2011;textual}{MaxMin} for

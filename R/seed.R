@@ -21,6 +21,44 @@
 # Number of random-furthest pivots drawn when `pivots` is left unspecified.
 .kDefaultRandomStarts <- 3L
 
+#' Draw distinct furthest-point seeds from random pivots
+#'
+#' The `nseeds` counterpart to an explicit `pivots` list (see [FarFirst()]):
+#' repeatedly draws a random pivot with the session RNG, resolves its
+#' furthest-point seed via `seedFn`, and collects distinct seed indices until
+#' `nseeds` are found. Two bounds stop the loop when the reachable seed pool is
+#' smaller than `nseeds`: a consecutive-miss limit (the pool is likely exhausted
+#' once many draws in a row yield only already-seen seeds) and an absolute draw
+#' budget. Returns between 1 and `nseeds` distinct indices; set a seed
+#' (`set.seed()`) for a reproducible set.
+#' @param seedFn Function mapping a pivot index to its furthest-point seed index.
+#' @param nPts Integer number of points.
+#' @param nseeds Integer target number of distinct seeds (`>= 1`).
+#' @param maxDraws Integer absolute draw budget. Default `max(40 * nseeds, 100)`.
+#' @param missLimit Integer consecutive-miss limit. Default `max(8 * nseeds, 30)`.
+#' @return Integer vector of distinct seed indices (length in `[1, nseeds]`).
+#' @keywords internal
+.DrawDistinctSeeds <- function(seedFn, nPts, nseeds, maxDraws = NULL,
+                               missLimit = NULL) {
+  nseeds <- as.integer(nseeds)
+  if (is.null(maxDraws))  maxDraws  <- max(40L * nseeds, 100L)
+  if (is.null(missLimit)) missLimit <- max(8L * nseeds, 30L)
+  seen  <- integer(0)
+  draws <- 0L
+  miss  <- 0L
+  while (length(seen) < nseeds && draws < maxDraws && miss < missLimit) {
+    s <- as.integer(seedFn(sample.int(nPts, 1L)))
+    draws <- draws + 1L
+    if (s %in% seen) {
+      miss <- miss + 1L
+    } else {
+      seen <- c(seen, s)
+      miss <- 0L
+    }
+  }
+  seen
+}
+
 #' Squared distance of every point to the coordinate centroid
 #'
 #' The `O(N * dim)` basis of the `"centroid"` seed: its argmax is the point
@@ -267,9 +305,14 @@ MaxMinSeed <- function(d = NULL, points = NULL,
 #' @param anchors Character vector of anchor names.
 #' @param pivots Integer vector of pivot indices the `"random_furthest"` token
 #'   expands over (empty contributes none).
+#' @param rfSeedFn Optional function mapping a `"random_furthest"` pivot to its
+#'   seed index. `NULL` (default) uses the furthest-from-pivot rule; pass
+#'   [identity()] to treat `pivots` as already-resolved seed indices (the
+#'   `nseeds` distinct-restart path of [FarFirst()]).
 #' @return Integer vector of selected indices with attributes.
 #' @keywords internal
-.GonzEnsemble <- function(d, m, anchors = "peripheral", pivots = integer(0)) {
+.GonzEnsemble <- function(d, m, anchors = "peripheral", pivots = integer(0),
+                          rfSeedFn = NULL) {
   d <- .AsDistMatrix(d)
   m <- as.integer(m)
   if (length(m) != 1L || is.na(m) || m < 0L) {
@@ -348,7 +391,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
   }
 
   expanded <- .ExpandAnchors(anchors, pivots, AnchorSeed,
-                             function(r) which.max(d[, r]))
+                             rfSeedFn %||% function(r) which.max(d[, r]))
   labels   <- vapply(expanded, `[[`, character(1L), "label")
   .ResolveEnsemble(expanded, labels, RunGonz)
 }
@@ -366,7 +409,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
 #' @return Integer vector of selected indices with attributes.
 #' @keywords internal
 .GonzEnsembleFromPoints <- function(points, m, anchors = .kDefaultEnsemble,
-                                    pivots = integer(0)) {
+                                    pivots = integer(0), rfSeedFn = NULL) {
   points <- .AsPointsMatrix(points)
   m <- as.integer(m)
   if (length(m) != 1L || is.na(m) || m < 0L) {
@@ -451,7 +494,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
 
   expanded <- .ExpandAnchors(
     anchors, pivots, AnchorSeed,
-    function(r) which.max(EuclidColFromPoints_cpp(points, r))
+    rfSeedFn %||% function(r) which.max(EuclidColFromPoints_cpp(points, r))
   )
   labels   <- vapply(expanded, `[[`, character(1L), "label")
   .ResolveEnsemble(expanded, labels, RunGonz)

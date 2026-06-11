@@ -193,6 +193,8 @@
 #'     \item{iters}{integer(1), main-loop iterations executed (excluding the
 #'       construction phase).}
 #'   }
+#'   The vector has class `"MaxMinSelection"` and prints as a one-line summary
+#'   (see [print.MaxMinSelection]); it is otherwise an ordinary integer vector.
 #'
 #' @references \insertAllCited{}
 #'
@@ -255,13 +257,13 @@ DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
         msg = "DropAdd: {itersMsg} iters, T_k = {signif(tkMsg, 4)}, {round(timeS, 1)}s"
       )
     }
-    return(structure(
+    return(.AsMaxMinSelection(structure(
       sort(as.integer(out$indices)),
       score     = as.numeric(out$objective),
       secondary = as.numeric(out$secondary),
       time_s    = timeS,
       iters     = as.integer(out$iters)
-    ))
+    ), "DropAdd"))
   }
 
   # --- C++ fast path. .verify routes to R for the brute-force assertion. --
@@ -288,13 +290,13 @@ DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
         msg = "DropAdd: {itersMsg} iters, T_k = {signif(tkMsg, 4)}, {round(timeS, 1)}s"
       )
     }
-    return(structure(
+    return(.AsMaxMinSelection(structure(
       sort(as.integer(out$indices)),
       score     = as.numeric(out$objective),
       secondary = as.numeric(out$secondary),
       time_s    = timeS,
       iters     = as.integer(out$iters)
-    ))
+    ), "DropAdd"))
   }
 
   # --- Construction (Algorithm 1) -----------------------------------------
@@ -478,11 +480,12 @@ DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
   }) # nocov end
 
   timeS <- proc.time()[[3L]] - t0
-  structure(
+  # Return:
+  .AsMaxMinSelection(structure(
     sort(as.integer(bestS)),
     score     = as.numeric(bestMaxmin),
     secondary = as.numeric(bestSumpair),
     time_s    = timeS,
     iters     = as.integer(itersDone)
-  )
+  ), "DropAdd")
 }

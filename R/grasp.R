@@ -304,6 +304,8 @@
 #'     \item{iters}{Number of GRASP refinement iterations executed.}
 #'     \item{pr_calls}{Number of path-relinking pair-applications run.}
 #'   }
+#'   The vector has class `"MaxMinSelection"` and prints as a one-line summary
+#'   (see [print.MaxMinSelection]); it is otherwise an ordinary integer vector.
 #' @references \insertAllCited{}
 #'
 #' @seealso [DropAdd()] for scalable refinement;
@@ -346,13 +348,14 @@ Grasp <- function(d, m, plateau = 100L, maxIter = NULL,
 
   out <- Grasp_cpp(d, m, plateau, maxIter, eliteSize,
                      as.double(alpha), as.double(timeBudgetS))
-  structure(
+  # Return:
+  .AsMaxMinSelection(structure(
     sort(as.integer(out$indices)),
     score    = as.numeric(out$objective),
     time_s   = as.numeric(out$time_s),
     iters    = as.integer(out$iters),
     pr_calls = as.integer(out$pr_calls)
-  )
+  ), "Grasp")
 }
 
 # Pure-R reference implementation of Grasp, used as the parity oracle for
@@ -446,11 +449,12 @@ Grasp <- function(d, m, plateau = 100L, maxIter = NULL,
     if (!grepl("time limit", conditionMessage(e), ignore.case = TRUE)) stop(e)
   }) # nocov end
 
-  structure(
+  # Return:
+  .AsMaxMinSelection(structure(
     sort(as.integer(bestSel)),
     score    = bestZ,
     time_s   = proc.time()[[3L]] - t0,
     iters    = iters,
     pr_calls = prCalls
-  )
+  ), "Grasp")
 }

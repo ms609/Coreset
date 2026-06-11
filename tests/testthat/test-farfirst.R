@@ -353,3 +353,66 @@ test_that("FarFirst(m = N)[1:5] equals FarFirst(m = 5) on all paths", {
   over_mat <- FarFirst(dat$d, N + 10L, method = 1L)
   expect_identical(bare(over_mat[1:5]), bare(five_mat))
 })
+
+# ---- nseeds: distinct-seed random restart -----------------------------------
+
+test_that("nseeds runs a best-of over distinct peripheral seeds", {
+  dat <- MakeData()
+  set.seed(1)
+  r <- FarFirst(dat$d, 6L, nseeds = 4L)
+  expect_length(as.integer(r), 6L)
+  sr <- attr(r, "strategy_results")
+  expect_false(is.null(sr))
+  # At most `nseeds` strategies, and the seeds they ran from are distinct.
+  expect_lte(length(sr), 4L)
+  s1s <- vapply(sr, `[[`, integer(1L), "s1")
+  expect_identical(anyDuplicated(s1s), 0L)
+  # Labelled random_furthest1.. and the returned score is the best T_k.
+  expect_true(all(grepl("^random_furthest", names(sr))))
+  tks <- vapply(sr, `[[`, numeric(1L), "t_k")
+  expect_equal(attr(r, "score"), max(tks))
+})
+
+test_that("nseeds: matrix and coordinate paths agree (same RNG)", {
+  dat <- MakeData()
+  for (n in c(2L, 6L, 12L)) {
+    set.seed(7); mat <- FarFirst(dat$d, n, nseeds = 5L)
+    set.seed(7); pt  <- FarFirst(m = n, points = dat$pts, nseeds = 5L)
+    expect_identical(mat, pt, info = paste("nseeds m", n))
+  }
+})
+
+test_that("nseeds is reproducible under a fixed seed", {
+  dat <- MakeData()
+  set.seed(3); a <- FarFirst(dat$d, 6L, nseeds = 4L)
+  set.seed(3); b <- FarFirst(dat$d, 6L, nseeds = 4L)
+  expect_identical(a, b)
+})
+
+test_that("nseeds overrides method/pivots with a warning, and validates", {
+  dat <- MakeData()
+  expect_warning(FarFirst(dat$d, 6L, method = "diameter", nseeds = 3L),
+                 "overrides")
+  expect_warning(FarFirst(dat$d, 6L, pivots = c(1L, 2L), nseeds = 3L),
+                 "overrides")
+  # No warning when only nseeds is supplied.
+  expect_silent(FarFirst(dat$d, 6L, nseeds = 3L))
+  expect_error(FarFirst(dat$d, 6L, nseeds = 0L), "positive integer")
+  expect_error(FarFirst(dat$d, 6L, nseeds = c(1L, 2L)), "single")
+})
+
+test_that("nseeds caps at the reachable pool without error", {
+  # 8 points: at most 8 distinct seeds exist, so nseeds = 50 returns <= 8.
+  dat <- MakeData(N = 8)
+  set.seed(1)
+  r <- FarFirst(dat$d, 3L, nseeds = 50L)
+  sr <- attr(r, "strategy_results")
+  expect_lte(length(sr), 8L)
+  expect_gte(length(sr), 1L)
+})
+
+test_that("nseeds is rejected on the distance-column oracle path", {
+  dat <- MakeData()
+  colFn <- function(i) dat$d[, i]
+  expect_error(FarFirst(colFn, 6L, N = nrow(dat$d), nseeds = 3L), "oracle")
+})
