@@ -24,3 +24,7 @@ reference:
   - title: Scoring
     contents:
       - MinDist
+  - title: Reporting
+    contents:
+      - print.MaxMin
+      - summary.MaxMin
