@@ -45,6 +45,9 @@ jobs:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
+      - name: Install quarto
+        run: apt-get update && apt-get install -y quarto
+
       - uses: ms609/actions/asan@main
         with:
           test: ${{ matrix.config.test }}
