@@ -1,0 +1,200 @@
+{
+  "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+  "@type": "SoftwareSourceCode",
+  "identifier": "MaxMin",
+  "description": "Selects a maximally dispersed subset of a fixed set of candidate items under the Max-Min Diversity Problem (MMDP, the discrete p-dispersion objective): maximise the minimum pairwise distance within the chosen subset. Provides a tiered toolbox that operates on a distance matrix, on Euclidean coordinates without materialising the distance matrix, or on an on-demand distance-column oracle for spaces with no coordinate embedding: deterministic Gonzalez farthest-first selection (Gonzalez 1985) <doi:10.1016/0304-3975(85)90224-5> with a choice of peripheral seeding strategies and a robust ensemble default, the DropAdd tabu-search heuristic (Porumbel, Hao & Glover 2011) <doi:10.1007/s10479-011-0898-z>, an exact node-packing integer program (Sayyady & Fathi 2016) <doi:10.1016/j.ejor.2016.02.026>, a GRASP with path-relinking heuristic (Resende, Marti, Gallego & Duarte 2010) <doi:10.1016/j.cor.2008.05.011>, and a local-search polish.",
+  "name": "MaxMin: Maximum-Minimum Diversity and Dispersion Subset Selection",
+  "codeRepository": "https://ms609.github.com/MaxMin/",
+  "issueTracker": "https://github.com/ms609/MaxMin/issues",
+  "license": "https://spdx.org/licenses/GPL-3.0",
+  "version": "0.0.0.9003",
+  "programmingLanguage": {
+    "@type": "ComputerLanguage",
+    "name": "R",
+    "url": "https://r-project.org"
+  },
+  "runtimePlatform": "R Under development (unstable) (2026-06-02 r90096 ucrt)",
+  "author": [
+    {
+      "@type": "Person",
+      "givenName": "Martin R.",
+      "familyName": "Smith",
+      "email": "martin.smith@durham.ac.uk",
+      "@id": "https://orcid.org/0000-0001-5660-1727"
+    }
+  ],
+  "copyrightHolder": [
+    {
+      "@type": "Person",
+      "givenName": "Martin R.",
+      "familyName": "Smith",
+      "email": "martin.smith@durham.ac.uk",
+      "@id": "https://orcid.org/0000-0001-5660-1727"
+    }
+  ],
+  "maintainer": [
+    {
+      "@type": "Person",
+      "givenName": "Martin R.",
+      "familyName": "Smith",
+      "email": "martin.smith@durham.ac.uk",
+      "@id": "https://orcid.org/0000-0001-5660-1727"
+    }
+  ],
+  "softwareSuggestions": [
+    {
+      "@type": "SoftwareApplication",
+      "identifier": "highs",
+      "name": "highs",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=highs"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "identifier": "knitr",
+      "name": "knitr",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=knitr"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "identifier": "Matrix",
+      "name": "Matrix",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=Matrix"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "identifier": "quarto",
+      "name": "quarto",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=quarto"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "identifier": "rprojroot",
+      "name": "rprojroot",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=rprojroot"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "identifier": "spelling",
+      "name": "spelling",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=spelling"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "identifier": "testthat",
+      "name": "testthat",
+      "version": ">= 3.0.0",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=testthat"
+    }
+  ],
+  "softwareRequirements": {
+    "1": {
+      "@type": "SoftwareApplication",
+      "identifier": "R",
+      "name": "R",
+      "version": ">= 4.1"
+    },
+    "2": {
+      "@type": "SoftwareApplication",
+      "identifier": "cli",
+      "name": "cli",
+      "version": ">= 3.0.0",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=cli"
+    },
+    "3": {
+      "@type": "SoftwareApplication",
+      "identifier": "Rcpp",
+      "name": "Rcpp",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=Rcpp"
+    },
+    "4": {
+      "@type": "SoftwareApplication",
+      "identifier": "Rdpack",
+      "name": "Rdpack",
+      "version": ">= 0.7",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=Rdpack"
+    },
+    "5": {
+      "@type": "SoftwareApplication",
+      "identifier": "stats",
+      "name": "stats"
+    },
+    "SystemRequirements": null
+  },
+  "fileSize": "4730.213KB",
+  "citation": [
+    {
+      "@type": "SoftwareSourceCode",
+      "datePublished": "2026",
+      "author": [
+        {
+          "@type": "Person",
+          "givenName": "Martin R.",
+          "familyName": "Smith"
+        }
+      ],
+      "name": "{MaxMin}: Maximum-Minimum Diversity and Dispersion Subset Selection",
+      "url": "https://github.com/ms609/MaxMin",
+      "description": "R package version 0.0.0.9003"
+    }
+  ]
+}
