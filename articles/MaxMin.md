@@ -156,7 +156,7 @@ attr(picksDA, "score")  # T_k achieved
 attr(picksDA, "iters")      # iterations completed
 #> [1] 516
 attr(picksDA, "time_s")     # wall-clock seconds
-#> [1] 0.001
+#> [1] 0
 ```
 
 The algorithm terminates after `plateau` iterations do not improve

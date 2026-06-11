@@ -1,12 +1,13 @@
 # Deterministic Gonzalez furthest-point selection
 
-Greedy *k*-centre selection . Iteratively selects the point furthest
-from the current selection, a 2-approximation to the *k*-centre problem.
-The quality of the result depends on the first (seed) point; by default
-`FarFirst()` runs three starts from randomly selected peripheral seeds.
-The deterministic \\O(N)\\ anchors (`"centroid"`, `"peripheral"`) and
-the costlier \\O(N^2)\\ anchors (`"diameter"`, `"anti_medoid"`,
-`"rowsum"`, `"rownorm"`) are alternative `seed` strategies.
+Greedy *k*-centre selection (González 1985; Hochbaum and Shmoys 1985) .
+Iteratively selects the point furthest from the current selection, a
+2-approximation to the *k*-centre problem. The quality of the result
+depends on the first (seed) point; by default `FarFirst()` runs three
+starts from randomly selected peripheral seeds. The deterministic
+\\O(N)\\ anchors (`"centroid"`, `"peripheral"`) and the costlier
+\\O(N^2)\\ anchors (`"diameter"`, `"anti_medoid"`, `"rowsum"`,
+`"rownorm"`) are alternative `seed` strategies.
 
 ## Usage
 
@@ -164,10 +165,15 @@ will be called once per selected element, to avoid building a complete
 
 ## References
 
-Adummy A (2026). “Some keys from package MaxMin are not avalable.”
-Failed to insert reference with keys: Gonzalez1985;Hochbaum1985 from
-package = 'MaxMin'. Possible cause - missing REFERENCES.bib in package
-'MaxMin' or 'MaxMin' not installed.
+González TF (1985). “Clustering to minimize the maximum intercluster
+distance.” *Theoretical Computer Science*, **38**, 293–306.
+[doi:10.1016/0304-3975(85)90224-5](https://doi.org/10.1016/0304-3975%2885%2990224-5)
+.  
+  
+Hochbaum DS, Shmoys DB (1985). “A best possible heuristic for the
+\\k\\-center problem.” *Mathematics of Operations Research*, **10**(2),
+180–184.
+[doi:10.1287/moor.10.2.180](https://doi.org/10.1287/moor.10.2.180) .
 
 ## See also
 
