@@ -16,14 +16,19 @@ reference:
     contents:
       - FarFirst
       - MaxMinSeed
-  - title: Heuristic and exact solvers
+  - title: MaxMin solvers
     contents:
       - DropAdd
       - Grasp
       - ExactMaxMin
+  - title: k-centre solvers
+    contents:
+      - KCentre
+      - ExactKCentre
   - title: Scoring
     contents:
       - MinDist
+      - KCentreRadius
   - title: Reporting
     contents:
       - has_concept("reporting functions")
