@@ -4,9 +4,9 @@
 order to maxmize coverage.
 
 The **Max-Min Diversity Problem** (MMDP, the discrete *p*-dispersion
-objective) maximises *separation*. It selects $`k`$ elements such that
-the minimum distance between any pair of selected elements is as large
-as possible; the chosen elements are maximally distinct. This can reward
+objective) maximises separation. It selects $`k`$ elements such that the
+minimum distance between any pair of selected elements is as large as
+possible; the chosen elements are maximally distinct. This can reward
 selections that leave the interior of the set unrepresented.
 
 The **discrete *k*-centre problem** selects $`k`$ elements such that the
@@ -17,7 +17,7 @@ inward and collapse well-separated modes onto a central compromise.
 
 Both problems can be quickly approximated within a factor of two by the
 greedy farthest-first heuristic
-([`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)).
+[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md).
 
 ## Solvers
 
@@ -54,29 +54,30 @@ returns its covering radius (the *k*-centre objective).
 remotes::install_github("ms609/MaxMin")
 ```
 
-## Related packages
+## Related problems
 
-`MaxMin` selects a *subset of existing elements*. Several established
+`MaxMin` selects a subset of existing elements. Several established
 packages solve neighbouring objectives:
 
-- **k-medoids / k-median** — minimise the *total* (or mean) distance
-  from each element to its nearest centre: *average* coverage, or
-  representativeness. This is a different objective from any solved
-  here, and is well served elsewhere:
-  [`cluster::pam()`](https://cran.r-project.org/package=cluster) and
+- **k-medoids / k-median** minimises the mean distance from each element
+  to its nearest centre. Implementations include
+  [`cluster::pam()`](https://cran.r-project.org/package=cluster),
   `clara()` (PAM / FastPAM / FasterPAM),
   [`ClusterR::Cluster_Medoids()`](https://cran.r-project.org/package=ClusterR),
   and [`banditpam`](https://cran.r-project.org/package=banditpam).
   `pam()` holds the full *O(N²)* dissimilarity matrix (and caps at *n* ≤
   65 536); `clara()` samples to scale; `banditpam` is *O(N* log *N)* and
-  matrix-free but accepts only coordinate data with built-in metrics (no
-  precomputed matrix or custom distance).
+  matrix-free but accepts only coordinate data.
 
 - **k-means** ([`stats::kmeans()`](https://rdrr.io/r/stats/kmeans.html))
   minimises within-cluster sum of squares around centres that are
-  coordinate *means*, not data points, so it is neither a discrete
-  k-centre nor a k-medoids solver and applies only to Euclidean
+  coordinate means, not data points, so it applies only to Euclidean
   coordinates.
+  [`TreeDist::KMeansPP()`](https://ms609.github.io/TreeDist/reference/KMeansPP.html)
+  shares that objective, differing in its initialisation via D²-weighted
+  seeding, a randomized relative of
+  [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)’s
+  farthest-first traversal.
 
 - [`maximin`](https://cran.r-project.org/package=maximin) constructs
   continuous space-filling designs by generating new points in a
