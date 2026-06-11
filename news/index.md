@@ -1,5 +1,11 @@
 # Changelog
 
+## MaxMin 0.0.0.9003 (development)
+
+- [`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md) /
+  [`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md)
+  solve the k-centre problem.
+
 ## MaxMin 0.0.0.9002 (development)
 
 ### Improvements
@@ -40,21 +46,7 @@
   distance-column oracle path.
 
 - [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
-  is substantially faster and scales to larger instances. The
-  node-packing constraint matrix is now built as a sparse matrix (the
-  dense form was several GB per solve at a few hundred points, the
-  effective scaling wall), and the threshold search is warm-started from
-  a heuristic lower bound (best of several
-  [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md)
-  restarts and a
-  [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md)
-  pass), then gallops up to the first infeasible threshold rather than
-  bisecting the whole distance vector. When a heuristic attains the
-  optimum (common at small `m`) a single infeasibility solve certifies
-  it – ~16x fewer IP solves on the manuscript instances. The proven
-  optimum is unchanged: the warm start only sets the starting lower
-  bound. New optional `warmStart` argument accepts an
-  externally-computed candidate subset. Adds `Matrix` to Suggests.
+  is substantially faster and scales to larger instances.
 
 - [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) now
   documents that `maxSeconds` is checked every 256 iterations and may
