@@ -18,7 +18,7 @@ Grasp(
   maxIter = NULL,
   eliteSize = 10L,
   alpha = 0.8,
-  timeBudgetS = Inf
+  maxSeconds = Inf
 )
 ```
 
@@ -53,7 +53,7 @@ Grasp(
   RCL threshold; `alpha = 1` is pure greedy, `alpha = 0` uniform random.
   Default 0.8.
 
-- timeBudgetS:
+- maxSeconds:
 
   Optional wall-clock ceiling in seconds. Default `Inf` (no ceiling,
   fully reproducible). A finite value caps runtime but makes the result
@@ -95,7 +95,7 @@ objective (rather than after a wall-clock budget). Call
 a reproducible run: the entire run — construction RNG, iteration count,
 and result — is then reproducible and machine-independent, because the
 compiled kernel draws from R's own session RNG stream. An optional
-`timeBudgetS` ceiling is available as a safety cap, but using a finite
+`maxSeconds` ceiling is available as a safety cap, but using a finite
 value reintroduces machine-dependence and is off by default.
 
 This is a **dense-matrix-only** method: it materialises and repeatedly

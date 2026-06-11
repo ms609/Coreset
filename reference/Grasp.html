@@ -68,7 +68,7 @@ this package, at correspondingly higher cost.</p>
 <span>  maxIter <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  eliteSize <span class="op">=</span> <span class="fl">10L</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.8</span>,</span>
-<span>  timeBudgetS <span class="op">=</span> <span class="cn">Inf</span></span>
+<span>  maxSeconds <span class="op">=</span> <span class="cn">Inf</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -105,7 +105,7 @@ primary, deterministic stopping criterion. Default 100.</p></dd>
 uniform random. Default 0.8.</p></dd>
 
 
-<dt id="arg-timebudgets">timeBudgetS<a class="anchor" aria-label="anchor" href="#arg-timebudgets"></a></dt>
+<dt id="arg-maxseconds">maxSeconds<a class="anchor" aria-label="anchor" href="#arg-maxseconds"></a></dt>
 <dd><p>Optional wall-clock ceiling in seconds. Default <code>Inf</code>
 (no ceiling, fully reproducible). A finite value caps runtime but makes
 the result machine-dependent.</p></dd>
@@ -139,7 +139,7 @@ elite objective (rather than after a wall-clock budget). Call <code><a href="htt
 before <code>Grasp()</code> for a reproducible run: the entire run — construction RNG,
 iteration count, and result — is then reproducible and machine-independent,
 because the compiled kernel draws from R's own session RNG stream. An
-optional <code>timeBudgetS</code> ceiling is available as a safety cap, but using a
+optional <code>maxSeconds</code> ceiling is available as a safety cap, but using a
 finite value reintroduces machine-dependence and is off by default.</p>
 <p>This is a <strong>dense-matrix-only</strong> method: it materialises and repeatedly
 subsets the full \(n \times n\) distance matrix, so it is suited to

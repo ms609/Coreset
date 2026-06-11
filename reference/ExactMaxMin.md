@@ -16,7 +16,7 @@ ExactMaxMin(
   d,
   m,
   solver = NULL,
-  timeBudgetS = 60,
+  maxSeconds = 60,
   warmStart = NULL,
   progress = getOption("MaxMin.progress", interactive())
 )
@@ -37,7 +37,7 @@ ExactMaxMin(
   Solver to use. Currently only `"highs"` is implemented; `NULL` selects
   it. Other values raise an error.
 
-- timeBudgetS:
+- maxSeconds:
 
   Wall-clock budget in seconds for the whole search (shared across all
   internal IP solves). If the budget expires before the optimum is

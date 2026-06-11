@@ -190,7 +190,7 @@ attr(res_gr, "pr_calls")   # path-relinking calls performed
 ```
 
 `plateau` controls how many consecutive non-improving GRASP iterations
-trigger termination; `timeBudgetS` is available as an absolute time cap
+trigger termination; `maxSeconds` is available as an absolute time cap
 for interactive or batch use.
 
 ## Comparing methods on a simulated example
@@ -295,7 +295,7 @@ d30   <- dist(pts30)
 
 ``` r
 
-res_ex <- ExactMaxMin(d30, m = 6L, timeBudgetS = 30L)
+res_ex <- ExactMaxMin(d30, m = 6L, maxSeconds = 30L)
 
 res_ex$proven      # TRUE  ⟹  objective is the global optimum
 #> [1] TRUE

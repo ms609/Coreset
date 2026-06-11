@@ -57,7 +57,7 @@
   externally-computed candidate subset. Adds `Matrix` to Suggests.
 
 - [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) now
-  documents that `timeBudgetS` is checked every 256 iterations and may
+  documents that `maxSeconds` is checked every 256 iterations and may
   overshoot by up to one iteration’s worth of computation on large
   instances.
 
