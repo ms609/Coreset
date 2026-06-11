@@ -14,7 +14,8 @@ the `"random_furthest"` starts also match the matrix path.
   points,
   m,
   anchors = .kDefaultEnsemble,
-  pivots = integer(0)
+  pivots = integer(0),
+  rfSeedFn = NULL
 )
 ```
 
@@ -36,6 +37,15 @@ the `"random_furthest"` starts also match the matrix path.
 
   Integer vector of pivot indices the `"random_furthest"` token expands
   over (empty contributes none).
+
+- rfSeedFn:
+
+  Optional function mapping a `"random_furthest"` pivot to its seed
+  index. `NULL` (default) uses the furthest-from-pivot rule; pass
+  [`identity()`](https://rdrr.io/r/base/identity.html) to treat `pivots`
+  as already-resolved seed indices (the `nseeds` distinct-restart path
+  of
+  [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)).
 
 ## Value
 

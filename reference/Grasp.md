@@ -81,6 +81,11 @@ which returns farthest-first order) with attributes:
 
   Number of path-relinking pair-applications run.
 
+The vector has class `"MaxMinSelection"` and prints as a one-line
+summary (see
+[print.MaxMinSelection](https://ms609.github.io/MaxMin/reference/print.MaxMin.md));
+it is otherwise an ordinary integer vector.
+
 ## Details
 
 **Deterministic termination.** The refinement loop stops after `plateau`
@@ -129,13 +134,5 @@ pts <- matrix(rnorm(60), ncol = 2)
 set.seed(1)
 res <- Grasp(dist(pts), m = 5L, plateau = 20L, eliteSize = 4L)
 res
-#> [1]  3  4  5 24 25
-#> attr(,"score")
-#> [1] 1.77825
-#> attr(,"time_s")
-#> [1] 0.000130074
-#> attr(,"iters")
-#> [1] 20
-#> attr(,"pr_calls")
-#> [1] 12
+#> 5 elements (3 4 5 24 25) selected by GRASP with path-relinking, each at distance >= 1.778
 ```

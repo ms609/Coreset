@@ -4,17 +4,73 @@
 
 ### Improvements
 
+- The solver results now print legibly.
+  [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md),
+  [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) and
+  [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) return
+  a `"MaxMinSelection"` object and
+  [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
+  a `"MaxMinExact"` object, each with a
+  [`print()`](https://rdrr.io/r/base/print.html)/[`format()`](https://rdrr.io/r/base/format.html)
+  method giving a one-line summary (size, selected indices, algorithm
+  and – for a
+  [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
+  ensemble – the winning strategy, plus the achieved `T_k`). A
+  [`summary()`](https://rdrr.io/r/base/summary.html) method adds a
+  multi-line report: the per-strategy `T_k` table for a
+  [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
+  ensemble, the secondary objective and search effort for
+  [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md)/[`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md),
+  and the instance, objective and proof status for
+  [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md).
+  The objects are otherwise unchanged: a `MaxMinSelection` is still the
+  integer index vector (it indexes a matrix or coordinate set directly),
+  and a `MaxMinExact` is still the list with `$indices`, `$objective`,
+  ….
+
+- [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
+  gains an `nseeds` argument: a distinct-seed random restart that draws
+  random pivots, collects each one’s furthest-point seed de-duplicated
+  until `nseeds` *distinct* seeds are found (or the reachable pool is
+  exhausted), runs Gonzalez from each and returns the best `T_k`. It is
+  the “give a count, not a list” counterpart to `pivots` – never wasting
+  a Gonzalez pass on a duplicate seed – and overrides `method`/`pivots`
+  when supplied. Reproducible under
+  [`set.seed()`](https://rdrr.io/r/base/Random.html); unsupported on the
+  distance-column oracle path.
+
+- [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
+  is substantially faster and scales to larger instances. The
+  node-packing constraint matrix is now built as a sparse matrix (the
+  dense form was several GB per solve at a few hundred points, the
+  effective scaling wall), and the threshold search is warm-started from
+  a heuristic lower bound (best of several
+  [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md)
+  restarts and a
+  [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md)
+  pass), then gallops up to the first infeasible threshold rather than
+  bisecting the whole distance vector. When a heuristic attains the
+  optimum (common at small `m`) a single infeasibility solve certifies
+  it – ~16x fewer IP solves on the manuscript instances. The proven
+  optimum is unchanged: the warm start only sets the starting lower
+  bound. New optional `warmStart` argument accepts an
+  externally-computed candidate subset. Adds `Matrix` to Suggests.
+
 - [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) now
   documents that `timeBudgetS` is checked every 256 iterations and may
   overshoot by up to one iteration’s worth of computation on large
   instances.
+
 - [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
   documents that asymmetric distance matrices are accepted.
+
 - Ensemble functions now attach a `score = NA_real_` attribute on the
   trivial all-points early return (when `m >= N`).
+
 - Integer iteration counters in the C++ kernels changed from `int` to
   `long long` to avoid signed-integer overflow upper bound at extreme
   `maxIter` values.
+
 - Test suite: improved coverage of path relinking (strict improvement),
   DropAdd `secondary` attribute formula, `ExactMaxMin` budget-expiry
   branch, and various weak / vacuous assertions tightened.

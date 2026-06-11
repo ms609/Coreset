@@ -56,7 +56,8 @@ match the matrix path.</p>
 <span>  <span class="va">points</span>,</span>
 <span>  <span class="va">m</span>,</span>
 <span>  anchors <span class="op">=</span> <span class="va">.kDefaultEnsemble</span>,</span>
-<span>  pivots <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">integer</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span></span>
+<span>  pivots <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">integer</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>,</span>
+<span>  rfSeedFn <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -79,6 +80,13 @@ match the matrix path.</p>
 <dt id="arg-pivots">pivots<a class="anchor" aria-label="anchor" href="#arg-pivots"></a></dt>
 <dd><p>Integer vector of pivot indices the <code>"random_furthest"</code> token
 expands over (empty contributes none).</p></dd>
+
+
+<dt id="arg-rfseedfn">rfSeedFn<a class="anchor" aria-label="anchor" href="#arg-rfseedfn"></a></dt>
+<dd><p>Optional function mapping a <code>"random_furthest"</code> pivot to its
+seed index. <code>NULL</code> (default) uses the furthest-from-pivot rule; pass
+<code><a href="https://rdrr.io/r/base/identity.html" class="external-link">identity()</a></code> to treat <code>pivots</code> as already-resolved seed indices (the
+<code>nseeds</code> distinct-restart path of <code><a href="FarFirst.html">FarFirst()</a></code>).</p></dd>
 
 </dl></div>
     <div class="section level2">

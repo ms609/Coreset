@@ -59,6 +59,17 @@ Farthest-first (Gonzalez) selection and its seeding strategies.
   Minimum pairwise distance within a selection (T_k = k-centre
   objective)
 
+## Reporting
+
+- [`format(`*`<MaxMinSelection>`*`)`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md)
+  [`print(`*`<MaxMinSelection>`*`)`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md)
+  [`format(`*`<MaxMinExact>`*`)`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md)
+  [`print(`*`<MaxMinExact>`*`)`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md)
+  : Format and print MaxMin solver results
+- [`summary(`*`<MaxMinSelection>`*`)`](https://ms609.github.io/MaxMin/reference/summary.MaxMin.md)
+  [`summary(`*`<MaxMinExact>`*`)`](https://ms609.github.io/MaxMin/reference/summary.MaxMin.md)
+  : Multi-line summaries of MaxMin solver results
+
 # Articles
 
 ### All vignettes

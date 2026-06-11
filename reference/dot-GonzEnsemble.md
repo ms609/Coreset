@@ -12,7 +12,13 @@ labelled `random_furthest1`, `random_furthest2`, ...) attributes.
 ## Usage
 
 ``` r
-.GonzEnsemble(d, m, anchors = "peripheral", pivots = integer(0))
+.GonzEnsemble(
+  d,
+  m,
+  anchors = "peripheral",
+  pivots = integer(0),
+  rfSeedFn = NULL
+)
 ```
 
 ## Arguments
@@ -33,6 +39,15 @@ labelled `random_furthest1`, `random_furthest2`, ...) attributes.
 
   Integer vector of pivot indices the `"random_furthest"` token expands
   over (empty contributes none).
+
+- rfSeedFn:
+
+  Optional function mapping a `"random_furthest"` pivot to its seed
+  index. `NULL` (default) uses the furthest-from-pivot rule; pass
+  [`identity()`](https://rdrr.io/r/base/identity.html) to treat `pivots`
+  as already-resolved seed indices (the `nseeds` distinct-restart path
+  of
+  [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)).
 
 ## Value
 

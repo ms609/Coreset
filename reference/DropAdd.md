@@ -106,6 +106,11 @@ which returns farthest-first order), with attributes:
   integer(1), main-loop iterations executed (excluding the construction
   phase).
 
+The vector has class `"MaxMinSelection"` and prints as a one-line
+summary (see
+[print.MaxMinSelection](https://ms609.github.io/MaxMin/reference/print.MaxMin.md));
+it is otherwise an ordinary integer vector.
+
 ## Details
 
 The MMDPo objective optimised is \$\$\min\_{x,y \in X} d(x,y) + \epsilon

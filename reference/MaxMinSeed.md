@@ -100,7 +100,5 @@ d <- dist(pts)
 MaxMinSeed(d, method = "diameter")
 #> [1] 14
 FarFirst(d, 5L, method = MaxMinSeed(d, method = "diameter"))
-#> [1] 14  4 26  5 28
-#> attr(,"score")
-#> [1] 1.765223
+#> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first, each at distance >= 1.765
 ```

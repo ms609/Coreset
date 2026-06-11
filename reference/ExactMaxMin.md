@@ -5,11 +5,9 @@ optimality by iterated node-packing Sayyady and Fathi (2016) : the
 optimum is the largest threshold `lambda`, over the achieved distinct
 pairwise distances, for which the threshold graph `G(lambda)` (edges
 join pairs closer than `lambda`) contains an independent set of size at
-least `m`. A binary search over the sorted distances resolves that
-threshold; each probe solves a maximum-independent-set integer program
-with the `highs` MILP backend. The problem is NP-hard, so this is
-intended only as an external ground-truth reference on small instances,
-not a scalable method.
+least `m`. Each probe solves a maximum-independent-set integer program
+with the `highs` MILP backend, the packing constraints held as a sparse
+matrix.
 
 ## Usage
 
@@ -19,6 +17,7 @@ ExactMaxMin(
   m,
   solver = NULL,
   timeBudgetS = 60,
+  warmStart = NULL,
   progress = getOption("MaxMin.progress", interactive())
 )
 ```
@@ -45,9 +44,17 @@ ExactMaxMin(
   proven, the largest threshold proven feasible so far is returned with
   `proven = FALSE`.
 
+- warmStart:
+
+  Optional integer vector: a candidate `m`-subset (1-based indices into
+  `d`) to add to the heuristic warm-start pool, e.g. a selection already
+  computed by another solver. Ignored unless it is a valid `m`-subset.
+  The internal heuristics run regardless; a good `warmStart` can only
+  reduce the number of IP solves, never change the proven optimum.
+
 - progress:
 
-  Logical; show a progress bar during the binary search. Default: `TRUE`
+  Logical; show a progress indicator during the search. Default: `TRUE`
   in interactive sessions, `FALSE` otherwise
   (`getOption("MaxMin.progress", interactive())`).
 
@@ -87,6 +94,34 @@ optimum and a proof status. The fields are
 - n, m:
 
   Instance size and target subset size.
+
+The list has class `"MaxMinExact"` and prints as a one-line summary
+(size, indices, solver, proof status and achieved `T_k`; see
+[print.MaxMinSelection](https://ms609.github.io/MaxMin/reference/print.MaxMin.md));
+it is otherwise an ordinary list.
+
+## Details
+
+The search is warm-started from a heuristic lower bound (the best of
+several [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md)
+restarts and a
+[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md)
+pass), then gallops upward from that bound to the first infeasible
+threshold and bisects the resulting bracket. When a heuristic already
+attains the optimum – common at the small `m` for which an exact
+reference is wanted – a single infeasibility solve certifies it. The
+warm start only sets the starting lower bound: the returned optimum is
+proven regardless of heuristic quality (a loose seed merely costs extra
+solves). The problem is NP-hard, so this remains an external
+ground-truth reference for small instances, not a scalable method.
+
+The proven `objective` is exact and does not depend on the RNG. Only the
+returned `indices` can vary when several subsets attain the optimum: the
+warm start draws on the session RNG via
+[`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) and, like
+[`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md), advances
+it. Call [`set.seed()`](https://rdrr.io/r/base/Random.html) before
+`ExactMaxMin()` for a reproducible selection.
 
 ## References
 

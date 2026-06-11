@@ -1,13 +1,12 @@
 # Deterministic Gonzalez furthest-point selection
 
-Greedy k-centre selection (González 1985) . Iteratively selects the
-point furthest from the current selection, a 2-approximation to the
-k-centre problem. The quality of the result depends on the first (seed)
-point; by default `FarFirst()` runs three starts from randomly selected
-peripheral seeds. The deterministic `O(N)` anchors (`"centroid"`,
-`"peripheral"`) and the costlier `O(N^2)` anchors (`"diameter"`,
-`"anti_medoid"`, `"medoid"`, `"rowsum"`, `"rownorm"`) are alternative
-`seed` strategies.
+Greedy *k*-centre selection . Iteratively selects the point furthest
+from the current selection, a 2-approximation to the *k*-centre problem.
+The quality of the result depends on the first (seed) point; by default
+`FarFirst()` runs three starts from randomly selected peripheral seeds.
+The deterministic \\O(N)\\ anchors (`"centroid"`, `"peripheral"`) and
+the costlier \\O(N^2)\\ anchors (`"diameter"`, `"anti_medoid"`,
+`"rowsum"`, `"rownorm"`) are alternative `seed` strategies.
 
 ## Usage
 
@@ -17,6 +16,7 @@ FarFirst(
   m,
   method = .kDefaultEnsemble,
   pivots = NULL,
+  nseeds = NULL,
   points = NULL,
   N = NULL,
   progress = getOption("MaxMin.progress", interactive())
@@ -48,10 +48,10 @@ FarFirst(
   single deterministic seeding strategy run as one bare pass:
   `"centroid"` (coordinates only), `"peripheral"` (two-sweep
   diameter-endpoint approximation), `"diameter"`, `"anti_medoid"`,
-  `"medoid"`, `"rowsum"`, `"rownorm"`, or `"first"` (index 1). A
-  **length \> 1 character vector** – or the lone `"random_furthest"`
-  token – requests an ensemble: each named anchor runs a full Gonzalez
-  pass and the best result by
+  `"rowsum"`, `"rownorm"`, or `"first"` (index 1). A **length \> 1
+  character vector** – or the lone `"random_furthest"` token – requests
+  an ensemble: each named anchor runs a full Gonzalez pass and the best
+  result by
   [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md) is
   returned with `strategy_results` and `winning_strategy` (character
   vector of all tied-best strategies) attributes. The
@@ -61,7 +61,7 @@ FarFirst(
   single random start is best obtained via
   [`MaxMinSeed()`](https://ms609.github.io/MaxMin/reference/MaxMinSeed.md).
   Valid ensemble anchors: any subset of
-  `c("centroid", "peripheral", "random_furthest", "diameter", "anti_medoid", "medoid", "rowsum", "rownorm")`
+  `c("centroid", "peripheral", "random_furthest", "diameter", "anti_medoid", "rowsum", "rownorm")`
   (`"centroid"` requires `points`). Default: `"random_furthest"` (three
   random starts; see `pivots`). See
   [`MaxMinSeed()`](https://ms609.github.io/MaxMin/reference/MaxMinSeed.md)
@@ -81,6 +81,23 @@ FarFirst(
   explicitly. Disabling the random starts errors under the default
   `method` (which names only `"random_furthest"`, leaving no anchor);
   pair it with a deterministic `method` such as `"peripheral"`.
+
+- nseeds:
+
+  Optional integer: run a distinct-seed random restart. Random pivots
+  are drawn with the session RNG and each one's furthest-point seed is
+  collected, de-duplicated, until `nseeds` *distinct* seeds are found
+  (or the reachable pool is exhausted); Gonzalez runs from each and the
+  best \\T_k\\ is returned, with `strategy_results` / `winning_strategy`
+  labelled `random_furthest1`, `random_furthest2`, ... This is the "give
+  a count, not a list" counterpart to `pivots`: where `pivots` runs one
+  start per supplied index, `nseeds` searches for that many *distinct*
+  peripheral seeds, never wasting a Gonzalez pass on a duplicate. Set a
+  seed ([`set.seed()`](https://rdrr.io/r/base/Random.html)) for a
+  reproducible selection. When supplied, `nseeds` overrides `method` and
+  `pivots` (a warning is issued if either was also set explicitly); it
+  is not available on the distance-column oracle path. Default `NULL`
+  (use `method`).
 
 - points:
 
@@ -113,7 +130,11 @@ farthest-first (greedy) selection order – **not** sorted (unlike
 `ExactMaxMin()$indices`, which return ascending indices). The achieved
 \\T_k\\ (the selection's minimum pairwise distance) is attached as
 attribute `score`. An ensemble `method` additionally carries
-`strategy_results` and `winning_strategy` attributes.
+`strategy_results` and `winning_strategy` attributes. The vector has
+class `"MaxMinSelection"` and prints as a one-line summary (see
+[print.MaxMinSelection](https://ms609.github.io/MaxMin/reference/print.MaxMin.md));
+it is otherwise an ordinary integer vector and indexes a matrix or
+coordinate set directly.
 
 ## Details
 
@@ -143,10 +164,10 @@ will be called once per selected element, to avoid building a complete
 
 ## References
 
-González TF (1985). “Clustering to minimize the maximum intercluster
-distance.” *Theoretical Computer Science*, **38**, 293–306.
-[doi:10.1016/0304-3975(85)90224-5](https://doi.org/10.1016/0304-3975%2885%2990224-5)
-.
+Adummy A (2026). “Some keys from package MaxMin are not avalable.”
+Failed to insert reference with keys: Gonzalez1985;Hochbaum1985 from
+package = 'MaxMin'. Possible cause - missing REFERENCES.bib in package
+'MaxMin' or 'MaxMin' not installed.
 
 ## See also
 
@@ -164,228 +185,25 @@ pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
 # Default: best of three random-furthest starts (set.seed for reproducibility):
 FarFirst(d, 5L)
-#> [1] 14  4 26  5 28
-#> attr(,"score")
-#> [1] 1.765223
-#> attr(,"strategy_results")
-#> attr(,"strategy_results")$random_furthest1
-#> attr(,"strategy_results")$random_furthest1$s1
-#> [1] 24
-#> 
-#> attr(,"strategy_results")$random_furthest1$idx
-#> [1] 24  4  1  5 14
-#> 
-#> attr(,"strategy_results")$random_furthest1$t_k
-#> [1] 1.701019
-#> 
-#> 
-#> attr(,"strategy_results")$random_furthest2
-#> attr(,"strategy_results")$random_furthest2$s1
-#> [1] 14
-#> 
-#> attr(,"strategy_results")$random_furthest2$idx
-#> [1] 14  4 26  5 28
-#> 
-#> attr(,"strategy_results")$random_furthest2$t_k
-#> [1] 1.765223
-#> 
-#> 
-#> attr(,"strategy_results")$random_furthest3
-#> attr(,"strategy_results")$random_furthest3$s1
-#> [1] 26
-#> 
-#> attr(,"strategy_results")$random_furthest3$idx
-#> [1] 26 24 15  3 18
-#> 
-#> attr(,"strategy_results")$random_furthest3$t_k
-#> [1] 1.468498
-#> 
-#> 
-#> attr(,"winning_strategy")
-#> [1] "random_furthest2"
+#> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first (best of 3 strategies, winner random_furthest2), each at distance >= 1.765
 # More random-furthest starts (length of `pivots` sets the count):
 FarFirst(d, 5L, pivots = sample.int(nrow(as.matrix(d)), 8L))
-#> [1] 14  4 26  5 28
-#> attr(,"score")
-#> [1] 1.765223
-#> attr(,"strategy_results")
-#> attr(,"strategy_results")$random_furthest1
-#> attr(,"strategy_results")$random_furthest1$s1
-#> [1] 14
-#> 
-#> attr(,"strategy_results")$random_furthest1$idx
-#> [1] 14  4 26  5 28
-#> 
-#> attr(,"strategy_results")$random_furthest1$t_k
-#> [1] 1.765223
-#> 
-#> 
-#> attr(,"strategy_results")$random_furthest2
-#> attr(,"strategy_results")$random_furthest2$s1
-#> [1] 24
-#> 
-#> attr(,"strategy_results")$random_furthest2$idx
-#> [1] 24  4  1  5 14
-#> 
-#> attr(,"strategy_results")$random_furthest2$t_k
-#> [1] 1.701019
-#> 
-#> 
-#> attr(,"strategy_results")$random_furthest3
-#> attr(,"strategy_results")$random_furthest3$s1
-#> [1] 14
-#> 
-#> attr(,"strategy_results")$random_furthest3$idx
-#> [1] 14  4 26  5 28
-#> 
-#> attr(,"strategy_results")$random_furthest3$t_k
-#> [1] 1.765223
-#> 
-#> 
-#> attr(,"strategy_results")$random_furthest4
-#> attr(,"strategy_results")$random_furthest4$s1
-#> [1] 24
-#> 
-#> attr(,"strategy_results")$random_furthest4$idx
-#> [1] 24  4  1  5 14
-#> 
-#> attr(,"strategy_results")$random_furthest4$t_k
-#> [1] 1.701019
-#> 
-#> 
-#> attr(,"strategy_results")$random_furthest5
-#> attr(,"strategy_results")$random_furthest5$s1
-#> [1] 5
-#> 
-#> attr(,"strategy_results")$random_furthest5$idx
-#> [1]  5 26 14 21 28
-#> 
-#> attr(,"strategy_results")$random_furthest5$t_k
-#> [1] 1.765223
-#> 
-#> 
-#> attr(,"strategy_results")$random_furthest6
-#> attr(,"strategy_results")$random_furthest6$s1
-#> [1] 14
-#> 
-#> attr(,"strategy_results")$random_furthest6$idx
-#> [1] 14  4 26  5 28
-#> 
-#> attr(,"strategy_results")$random_furthest6$t_k
-#> [1] 1.765223
-#> 
-#> 
-#> attr(,"strategy_results")$random_furthest7
-#> attr(,"strategy_results")$random_furthest7$s1
-#> [1] 14
-#> 
-#> attr(,"strategy_results")$random_furthest7$idx
-#> [1] 14  4 26  5 28
-#> 
-#> attr(,"strategy_results")$random_furthest7$t_k
-#> [1] 1.765223
-#> 
-#> 
-#> attr(,"strategy_results")$random_furthest8
-#> attr(,"strategy_results")$random_furthest8$s1
-#> [1] 26
-#> 
-#> attr(,"strategy_results")$random_furthest8$idx
-#> [1] 26 24 15  3 18
-#> 
-#> attr(,"strategy_results")$random_furthest8$t_k
-#> [1] 1.468498
-#> 
-#> 
-#> attr(,"winning_strategy")
-#> [1] "random_furthest1" "random_furthest3" "random_furthest5" "random_furthest6"
-#> [5] "random_furthest7"
+#> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first (best of 8 strategies, 5 tied: random_furthest1, random_furthest3, random_furthest5, random_furthest6, random_furthest7), each at distance >= 1.765
 # Or choose the pivots explicitly:
 FarFirst(d, 5L, pivots = c(1L, 10L, 20L))
-#> [1]  5 26 14 21 28
-#> attr(,"score")
-#> [1] 1.765223
-#> attr(,"strategy_results")
-#> attr(,"strategy_results")$random_furthest1
-#> attr(,"strategy_results")$random_furthest1$s1
-#> [1] 5
-#> 
-#> attr(,"strategy_results")$random_furthest1$idx
-#> [1]  5 26 14 21 28
-#> 
-#> attr(,"strategy_results")$random_furthest1$t_k
-#> [1] 1.765223
-#> 
-#> 
-#> attr(,"strategy_results")$random_furthest2
-#> attr(,"strategy_results")$random_furthest2$s1
-#> [1] 24
-#> 
-#> attr(,"strategy_results")$random_furthest2$idx
-#> [1] 24  4  1  5 14
-#> 
-#> attr(,"strategy_results")$random_furthest2$t_k
-#> [1] 1.701019
-#> 
-#> 
-#> attr(,"strategy_results")$random_furthest3
-#> attr(,"strategy_results")$random_furthest3$s1
-#> [1] 24
-#> 
-#> attr(,"strategy_results")$random_furthest3$idx
-#> [1] 24  4  1  5 14
-#> 
-#> attr(,"strategy_results")$random_furthest3$t_k
-#> [1] 1.701019
-#> 
-#> 
-#> attr(,"winning_strategy")
-#> [1] "random_furthest1"
+#> 5 elements (5 26 14 21 28) selected by Gonzalez farthest-first (best of 3 strategies, winner random_furthest1), each at distance >= 1.765
 # Custom two-anchor ensemble:
 FarFirst(d, 5L, method = c("diameter", "anti_medoid"))
-#> [1] 14  4 26  5 28
-#> attr(,"score")
-#> [1] 1.765223
-#> attr(,"strategy_results")
-#> attr(,"strategy_results")$diameter
-#> attr(,"strategy_results")$diameter$s1
-#> [1] 14
-#> 
-#> attr(,"strategy_results")$diameter$idx
-#> [1] 14  4 26  5 28
-#> 
-#> attr(,"strategy_results")$diameter$t_k
-#> [1] 1.765223
-#> 
-#> 
-#> attr(,"strategy_results")$anti_medoid
-#> attr(,"strategy_results")$anti_medoid$s1
-#> [1] 14
-#> 
-#> attr(,"strategy_results")$anti_medoid$idx
-#> [1] 14  4 26  5 28
-#> 
-#> attr(,"strategy_results")$anti_medoid$t_k
-#> [1] 1.765223
-#> 
-#> 
-#> attr(,"winning_strategy")
-#> [1] "diameter"    "anti_medoid"
+#> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first (best of 2 strategies, 2 tied: diameter, anti_medoid), each at distance >= 1.765
 # A single strategy:
 FarFirst(d, 5L, method = "diameter")
-#> [1] 14  4 26  5 28
-#> attr(,"score")
-#> [1] 1.765223
+#> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first, each at distance >= 1.765
 # An explicit start index (integer method):
 FarFirst(d, 5L, method = 1L)
-#> [1]  1  5 24  4 14
-#> attr(,"score")
-#> [1] 1.701019
+#> 5 elements (1 5 24 4 14) selected by Gonzalez farthest-first, each at distance >= 1.701
 # Matrix-free coordinate path (identical result, O(N) memory):
 FarFirst(m = 5L, points = pts, method = 1L)
-#> [1]  1  5 24  4 14
-#> attr(,"score")
-#> [1] 1.701019
+#> 5 elements (1 5 24 4 14) selected by Gonzalez farthest-first, each at distance >= 1.701
 
 # Distance-column oracle: supply one column at a time, never the full matrix.
 data("USArrests")

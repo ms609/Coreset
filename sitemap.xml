@@ -15,10 +15,14 @@
 <url><loc>https://ms609.github.io/MaxMin/reference/MaxMinSeed.html</loc></url>
 <url><loc>https://ms609.github.io/MaxMin/reference/MinDist.html</loc></url>
 <url><loc>https://ms609.github.io/MaxMin/reference/dot-AsDistMatrix.html</loc></url>
+<url><loc>https://ms609.github.io/MaxMin/reference/dot-AsMaxMinSelection.html</loc></url>
 <url><loc>https://ms609.github.io/MaxMin/reference/dot-AsPointsMatrix.html</loc></url>
 <url><loc>https://ms609.github.io/MaxMin/reference/dot-CentroidSqDist.html</loc></url>
 <url><loc>https://ms609.github.io/MaxMin/reference/dot-DistColumn.html</loc></url>
+<url><loc>https://ms609.github.io/MaxMin/reference/dot-DrawDistinctSeeds.html</loc></url>
 <url><loc>https://ms609.github.io/MaxMin/reference/dot-ExpandAnchors.html</loc></url>
+<url><loc>https://ms609.github.io/MaxMin/reference/dot-FarFirstSelectedBy.html</loc></url>
+<url><loc>https://ms609.github.io/MaxMin/reference/dot-FormatIndexList.html</loc></url>
 <url><loc>https://ms609.github.io/MaxMin/reference/dot-GonzEnsemble.html</loc></url>
 <url><loc>https://ms609.github.io/MaxMin/reference/dot-GonzEnsembleFromPoints.html</loc></url>
 <url><loc>https://ms609.github.io/MaxMin/reference/dot-GonzalezColumn.html</loc></url>
@@ -32,6 +36,7 @@
 <url><loc>https://ms609.github.io/MaxMin/reference/dot-GraspTryInsert.html</loc></url>
 <url><loc>https://ms609.github.io/MaxMin/reference/dot-MaxMinSeed.html</loc></url>
 <url><loc>https://ms609.github.io/MaxMin/reference/dot-MaxMinSeedPoints.html</loc></url>
+<url><loc>https://ms609.github.io/MaxMin/reference/dot-MaxMinSummaryLine.html</loc></url>
 <url><loc>https://ms609.github.io/MaxMin/reference/dot-MaximinFrom.html</loc></url>
 <url><loc>https://ms609.github.io/MaxMin/reference/dot-MaximinFromColumn.html</loc></url>
 <url><loc>https://ms609.github.io/MaxMin/reference/dot-MaximinFromPoints.html</loc></url>
@@ -40,6 +45,11 @@
 <url><loc>https://ms609.github.io/MaxMin/reference/dot-PromoteScore.html</loc></url>
 <url><loc>https://ms609.github.io/MaxMin/reference/dot-ResolveEnsemble.html</loc></url>
 <url><loc>https://ms609.github.io/MaxMin/reference/dot-SubsetScore.html</loc></url>
+<url><loc>https://ms609.github.io/MaxMin/reference/dot-SummariseStrategies.html</loc></url>
+<url><loc>https://ms609.github.io/MaxMin/reference/dot-SummaryField.html</loc></url>
+<url><loc>https://ms609.github.io/MaxMin/reference/dot-SummaryNum.html</loc></url>
 <url><loc>https://ms609.github.io/MaxMin/reference/index.html</loc></url>
+<url><loc>https://ms609.github.io/MaxMin/reference/print.MaxMin.html</loc></url>
+<url><loc>https://ms609.github.io/MaxMin/reference/summary.MaxMin.html</loc></url>
 </urlset>
 
