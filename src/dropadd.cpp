@@ -239,10 +239,10 @@ List DropAdd_cpp(NumericMatrix dmat, int m, double time_budget_s,
       if (R_finite(mn)) {
         min_dist[x_hash] = mn;
         min_dist_count[x_hash] = cnt;
-      } else {                                    // LCOV_EXCL_START
+      } else {                                    // # nocov start
         min_dist[x_hash] = R_PosInf;             // unreachable: finite d, m>=2
         min_dist_count[x_hash] = 0;
-      }                                           // LCOV_EXCL_STOP
+      }                                           // # nocov end
     }
 
     // 2. ADD: argmax (min_dist, sum_dist) over Add X(k) = Z - X(k), ties →

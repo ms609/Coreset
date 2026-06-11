@@ -99,9 +99,9 @@ Rcpp::IntegerVector MaximinFromPoints_cpp(Rcpp::NumericMatrix points,
   if (first < 1 || first > nPts) {
     Rcpp::stop("'first' must be in [1, %d]; got %d", nPts, first);
   }
-  if (mask < 0 || mask > nPts) {                    // LCOV_EXCL_START
+  if (mask < 0 || mask > nPts) {                    // # nocov start
     Rcpp::stop("'mask' must be in [0, %d]; got %d", nPts, mask);
-  }                                                  // LCOV_EXCL_STOP
+  }                                                  // # nocov end
   const double* P = points.begin();
 
   Rcpp::IntegerVector selected(n);
@@ -116,9 +116,9 @@ Rcpp::IntegerVector MaximinFromPoints_cpp(Rcpp::NumericMatrix points,
   EuclidColSqInto(P, nPts, dim, first0, md);
   std::vector<double> dcol(nPts);   // reused per step for the new point's column
   min_dist[first0] = R_NegInf;      // mask seed before entering loop
-  if (mask >= 1) {                                   // LCOV_EXCL_START
+  if (mask >= 1) {                                   // # nocov start
     min_dist[mask - 1] = R_NegInf;  // pin forbidden point (anti-medoid medoid)
-  }                                                  // LCOV_EXCL_STOP
+  }                                                  // # nocov end
 
   // T_k = min over greedy steps of the chosen point's insertion distance, which
   // is exactly best_val at each step. Tracked in squared space, sqrt'd once.
@@ -225,9 +225,9 @@ Rcpp::NumericVector EuclidColFromPoints_cpp(Rcpp::NumericMatrix points,
                                             int col) {
   int nPts = points.nrow();
   int dim  = points.ncol();
-  if (col < 1 || col > nPts) {                       // LCOV_EXCL_START
+  if (col < 1 || col > nPts) {                       // # nocov start
     Rcpp::stop("'col' must be in [1, %d]; got %d", nPts, col);
-  }                                                  // LCOV_EXCL_STOP
+  }                                                  // # nocov end
   const double* P = points.begin();
   int col0 = col - 1;
   Rcpp::NumericVector out(nPts);

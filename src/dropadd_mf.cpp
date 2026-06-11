@@ -195,12 +195,12 @@ List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
   need_recompute.reserve(32);
 
   std::vector<int> trace_drops, trace_adds;
-  if (want_trace) {                                  // LCOV_EXCL_START
+  if (want_trace) {                                  // # nocov start
     if (max_iter > 0 && max_iter < (1 << 28)) {
       trace_drops.reserve(max_iter);
       trace_adds.reserve(max_iter);
     }
-  }                                                  // LCOV_EXCL_STOP
+  }                                                  // # nocov end
 
   auto t0 = std::chrono::steady_clock::now();
   // chrono::now() is cheap but not free; at large n each iteration is heavy
@@ -287,10 +287,10 @@ List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
       if (R_finite(mn)) {
         min_dist[x_hash] = mn;
         min_dist_count[x_hash] = cnt;
-      } else {                                       // LCOV_EXCL_START
+      } else {                                       // # nocov start
         min_dist[x_hash] = R_PosInf;                // unreachable: finite d, m>=2
         min_dist_count[x_hash] = 0;
-      }                                              // LCOV_EXCL_STOP
+      }                                              // # nocov end
     }
 
     // 2. ADD: argmax (min_dist, sum_dist) over Add X(k) = Z - X(k), ties →
@@ -376,10 +376,10 @@ List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
     }
 
     ++iters_done;
-    if (want_trace) {                                // LCOV_EXCL_START
+    if (want_trace) {                                // # nocov start
       trace_drops.push_back(x_hash + 1);   // 1-based for R
       trace_adds.push_back(x_new + 1);
-    }                                                // LCOV_EXCL_STOP
+    }                                                // # nocov end
   }
 
   // Pack output: 1-based indices for R.
@@ -393,13 +393,13 @@ List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
     _["iters"]     = iters_done
   );
 
-  if (want_trace) {                                  // LCOV_EXCL_START
+  if (want_trace) {                                  // # nocov start
     IntegerVector dR(trace_drops.size()), aR(trace_adds.size());
     std::copy(trace_drops.begin(), trace_drops.end(), dR.begin());
     std::copy(trace_adds.begin(),  trace_adds.end(),  aR.begin());
     out["drops"] = dR;
     out["adds"]  = aR;
-  }                                                  // LCOV_EXCL_STOP
+  }                                                  // # nocov end
 
   return out;
 }

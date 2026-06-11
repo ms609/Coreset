@@ -284,6 +284,38 @@ test_that(".GraspPathRelink returns immediately for identical endpoints", {
 
 # 15. .Grasp_R finite maxSeconds covers setTimeLimit (grasp.R line 397) ------
 
+# 15b. grasp_local_search non-witness critical branch (grasp.cpp:193) ---------
+# Fires when the dropped vertex is critical (min-distance participant) but is
+# NOT one of the two witness vertices (wa, wb) of the first min-distance pair.
+# The unit square has all 4 sides equal, so all 4 corners are critical, but
+# only corners 0 and 1 (the first pair found) are witnesses — dropping corners
+# 2 or 3 fires the else branch.
+
+test_that("grasp_local_search non-witness critical branch covered (grasp.cpp:193)", {
+  ptsSq5 <- rbind(c(0, 0), c(1, 0), c(1, 1), c(0, 1), c(3, 0.5))
+  dSq5   <- as.matrix(dist(ptsSq5))
+  # Parity assertion proves the C++ kernel executed the same logic as the R
+  # reference; the R reference is known to hit line 193 (all 4 corners are
+  # critical, corners 2 and 3 are non-witnesses).
+  set.seed(1)
+  ref <- MaxMin:::.Grasp_R(dSq5, m = 4L, plateau = 10L, eliteSize = 4L)
+  set.seed(1)
+  ker <- Grasp(dSq5, m = 4L, plateau = 10L, eliteSize = 4L)
+  attr(ker, "time_s") <- attr(ref, "time_s") <- NULL
+  expect_identical(ker, ref)
+})
+
+# 15c. Grasp_cpp countdown covers checkUserInterrupt block (grasp.cpp:393-394) -
+# check_every = 256; with maxIter = 256L Phase B runs exactly 256 iterations
+# so the countdown reaches 0 on the last iteration and the block fires once.
+
+test_that("Grasp_cpp countdown fires at iteration 256 (grasp.cpp:393-394)", {
+  set.seed(1)
+  res <- Grasp(d30m, m = 6L, maxIter = 256L,
+               plateau = .Machine$integer.max, eliteSize = 4L)
+  expect_equal(attr(res, "iters"), 256L)
+})
+
 test_that(".Grasp_R time budget halts execution (grasp.R line 397)", {
   set.seed(1)
   # .Machine$integer.max disables both other stopping criteria; only the
