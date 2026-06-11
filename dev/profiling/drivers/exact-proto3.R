@@ -29,7 +29,7 @@ make_oracle <- function(d, n, ui, uj, ud, m, cutoff = TRUE) {
   }
 }
 
-Exact_v3 <- function(d, m, timeBudgetS = 600, cutoff = TRUE, seedMethod = "dropadd") {
+Exact_v3 <- function(d, m, maxSeconds = 600, cutoff = TRUE, seedMethod = "dropadd") {
   t0 <- proc.time()[[3L]]; Elapsed <- function() proc.time()[[3L]] - t0
   d <- as.matrix(d); n <- nrow(d); m <- as.integer(m)
   ut <- which(upper.tri(d)); rc <- arrayInd(ut, dim(d))
@@ -52,7 +52,7 @@ Exact_v3 <- function(d, m, timeBudgetS = 600, cutoff = TRUE, seedMethod = "dropa
   # ---- gallop up from i0 to first infeasible index ----
   step <- 1L; loF <- i0; hiX <- NA_integer_; probe <- i0 + 1L
   while (probe <= nCand) {
-    rem <- timeBudgetS - Elapsed(); if (rem <= 0) { inconcl <- TRUE; break }
+    rem <- maxSeconds - Elapsed(); if (rem <= 0) { inconcl <- TRUE; break }
     v <- feas(cand[probe], rem); nProbe <- nProbe + 1L
     if (v$v == "feasible") { loF <- probe; best <- probe; bestW <- v$w
       step <- step * 2L; probe <- probe + step
@@ -63,7 +63,7 @@ Exact_v3 <- function(d, m, timeBudgetS = 600, cutoff = TRUE, seedMethod = "dropa
   if (!inconcl) {
     lo <- loF + 1L; hi <- min(hiX - 1L, nCand)
     while (lo <= hi) {
-      rem <- timeBudgetS - Elapsed(); if (rem <= 0) { inconcl <- TRUE; break }
+      rem <- maxSeconds - Elapsed(); if (rem <= 0) { inconcl <- TRUE; break }
       mid <- (lo + hi) %/% 2L
       v <- feas(cand[mid], rem); nProbe <- nProbe + 1L
       if (v$v == "feasible") { best <- mid; bestW <- v$w; lo <- mid + 1L }
@@ -78,7 +78,7 @@ Exact_v3 <- function(d, m, timeBudgetS = 600, cutoff = TRUE, seedMethod = "dropa
 bench <- function(case, k = 10L) {
   pts <- as.matrix(cases[[case]][["points"]]); storage.mode(pts) <- "double"
   d <- as.matrix(stats::dist(pts)); n <- nrow(d)
-  t <- proc.time()[[3L]]; r0 <- MaxMin::ExactMaxMin(d, k, timeBudgetS = 600, progress = FALSE); t0 <- proc.time()[[3L]] - t
+  t <- proc.time()[[3L]]; r0 <- MaxMin::ExactMaxMin(d, k, maxSeconds = 600, progress = FALSE); t0 <- proc.time()[[3L]] - t
   t <- proc.time()[[3L]]; rg <- Exact_v3(d, k, cutoff = FALSE, seedMethod = "grasp"); tg <- proc.time()[[3L]] - t
   t <- proc.time()[[3L]]; rb <- Exact_v3(d, k, cutoff = FALSE, seedMethod = "best");  tb <- proc.time()[[3L]] - t
   ok <- isTRUE(all.equal(r0$objective, rg$objective)) && isTRUE(all.equal(r0$objective, rb$objective)) &&

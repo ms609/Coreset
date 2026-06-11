@@ -10,7 +10,7 @@ for (cn in big) {
   d <- as.matrix(stats::dist(pts)); N <- nrow(d)
   set.seed(1)
   t <- proc.time()[[3L]]
-  r <- MaxMin::ExactMaxMin(d, m = 10L, timeBudgetS = 7200, progress = FALSE)
+  r <- MaxMin::ExactMaxMin(d, m = 10L, maxSeconds = 7200, progress = FALSE)
   cat(sprintf("%-18s n=%4d k=10  obj=%.6f  proven=%s  %.2fs\n",
               cn, N, r$objective, r$proven, proc.time()[[3L]] - t))
   flush.console()

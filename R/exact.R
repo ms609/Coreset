@@ -221,9 +221,11 @@
 #'     \item{solver}{Name of the MILP backend used.}
 #'     \item{n, m}{Instance size and target subset size.}
 #'   }
-#'   The list has class `"MaxMinExact"` and prints as a one-line summary (size,
-#'   indices, solver, proof status and achieved `T_k`; see
-#'   [print.MaxMinSelection]); it is otherwise an ordinary list.
+#'   The list has class `c("MaxMinExact", "MaxMinSelection")` and prints as a
+#'   one-line summary (size, indices, solver, proof status and achieved `T_k`;
+#'   see [print.MaxMinSelection]); it is otherwise an ordinary list.
+#'   The `"MaxMinSelection"` superclass means `inherits(result, "MaxMinSelection")`
+#'   is `TRUE`, and any generic written against that class works here too.
 #' @references \insertAllCited{}
 #' @export
 ExactMaxMin <- function(d, m, solver = NULL, maxSeconds = 60,
@@ -301,7 +303,7 @@ ExactMaxMin <- function(d, m, solver = NULL, maxSeconds = 60,
         n         = n,
         m         = as.integer(m)
       ),
-      class = "MaxMinExact"
+      class = c("MaxMinExact", "MaxMinSelection")
     )
   }
 

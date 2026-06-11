@@ -61,8 +61,8 @@ chk("DropAdd matrix",
     MaxMin::DropAdd(dm, 8L, time_budget_s = 1, max_iter = 50L)$indices,
     FurthestPoint::DropAdd(dm, 8L, time_budget_s = 1, max_iter = 50L)$indices)
 chk("DropAdd points",
-    MaxMin::DropAdd(points = pts, m = 8L, timeBudgetS = 1, maxIter = 50L),
-    FurthestPoint::DropAdd(points = pts, m = 8L, timeBudgetS = 1, maxIter = 50L))
+    MaxMin::DropAdd(points = pts, m = 8L, maxSeconds = 1, maxIter = 50L),
+    FurthestPoint::DropAdd(points = pts, m = 8L, maxSeconds = 1, maxIter = 50L))
 
 # MinDist
 chk("MinDist matrix", MaxMin::MinDist(dm, s0), FurthestPoint::MinDist(dm, s0))

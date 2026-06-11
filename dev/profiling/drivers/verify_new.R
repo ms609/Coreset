@@ -12,7 +12,7 @@ for (i in seq_len(nrow(old))) {
   d <- as.matrix(stats::dist(pts))
   set.seed(1)
   t <- proc.time()[[3L]]
-  r <- MaxMin::ExactMaxMin(d, k, timeBudgetS = 600, progress = FALSE)
+  r <- MaxMin::ExactMaxMin(d, k, maxSeconds = 600, progress = FALSE)
   el <- proc.time()[[3L]] - t
   rows[[i]] <- data.frame(case = cs, n = nrow(d), k = k,
     old = old$objective[i], new = r$objective,

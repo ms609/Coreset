@@ -30,7 +30,10 @@ solvers. A \code{MaxMinSelection} (from \code{\link[=FarFirst]{FarFirst()}}, \co
 reports its size, the selected indices, the algorithm (and, for a
 \code{\link[=FarFirst]{FarFirst()}} ensemble, the winning strategy), and the achieved \eqn{T_k}; a
 \code{MaxMinExact} (from \code{\link[=ExactMaxMin]{ExactMaxMin()}}) additionally states whether optimality
-was proven. Both objects are otherwise unchanged -- a \code{MaxMinSelection}
+was proven. \code{MaxMinExact} extends \code{MaxMinSelection}
+(\code{class = c("MaxMinExact", "MaxMinSelection")}), so
+\code{inherits(x, "MaxMinSelection")} is \code{TRUE} for any solver result.
+Both objects are otherwise unchanged -- a \code{MaxMinSelection}
 still indexes like the bare integer vector it wraps -- so these methods only
 affect display.
 }

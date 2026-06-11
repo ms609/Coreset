@@ -118,7 +118,10 @@
 #' reports its size, the selected indices, the algorithm (and, for a
 #' [FarFirst()] ensemble, the winning strategy), and the achieved \eqn{T_k}; a
 #' `MaxMinExact` (from [ExactMaxMin()]) additionally states whether optimality
-#' was proven. Both objects are otherwise unchanged -- a `MaxMinSelection`
+#' was proven. `MaxMinExact` extends `MaxMinSelection`
+#' (`class = c("MaxMinExact", "MaxMinSelection")`), so
+#' `inherits(x, "MaxMinSelection")` is `TRUE` for any solver result.
+#' Both objects are otherwise unchanged -- a `MaxMinSelection`
 #' still indexes like the bare integer vector it wraps -- so these methods only
 #' affect display.
 #' @param x A `MaxMinSelection` or `MaxMinExact` object.

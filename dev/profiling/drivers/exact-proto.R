@@ -18,7 +18,7 @@ suppressMessages({ library(MaxMin); library(Matrix); library(highs) })
 load("C:/Users/pjjg18/GitHub/furthest-point/data/cases.rda")
 
 # ---- candidate reimplementation -------------------------------------------
-Exact_v2 <- function(d, m, timeBudgetS = 600, feasibility = TRUE, sparse = TRUE) {
+Exact_v2 <- function(d, m, maxSeconds = 600, feasibility = TRUE, sparse = TRUE) {
   t0 <- proc.time()[[3L]]
   d <- as.matrix(d); n <- nrow(d); m <- as.integer(m)
   Elapsed <- function() proc.time()[[3L]] - t0
@@ -72,7 +72,7 @@ Exact_v2 <- function(d, m, timeBudgetS = 600, feasibility = TRUE, sparse = TRUE)
 
   lo <- 2L; hi <- nCand; bestIdx <- 1L; bestW <- seq_len(n); inconcl <- FALSE
   while (lo <= hi) {
-    rem <- timeBudgetS - Elapsed(); if (rem <= 0) { inconcl <- TRUE; break }
+    rem <- maxSeconds - Elapsed(); if (rem <= 0) { inconcl <- TRUE; break }
     mid <- (lo + hi) %/% 2L
     vv <- verdict(cand[mid], rem)
     if (vv$v == "feasible") { bestIdx <- mid; bestW <- vv$w; lo <- mid + 1L }
@@ -88,7 +88,7 @@ Exact_v2 <- function(d, m, timeBudgetS = 600, feasibility = TRUE, sparse = TRUE)
 bench <- function(case, k = 10L) {
   pts <- as.matrix(cases[[case]][["points"]]); storage.mode(pts) <- "double"
   d <- as.matrix(stats::dist(pts)); n <- nrow(d)
-  t <- proc.time()[[3L]]; r0 <- MaxMin::ExactMaxMin(d, k, timeBudgetS = 600, progress = FALSE); t0 <- proc.time()[[3L]] - t
+  t <- proc.time()[[3L]]; r0 <- MaxMin::ExactMaxMin(d, k, maxSeconds = 600, progress = FALSE); t0 <- proc.time()[[3L]] - t
   t <- proc.time()[[3L]]; rA <- Exact_v2(d, k, feasibility = FALSE, sparse = TRUE); tA <- proc.time()[[3L]] - t
   t <- proc.time()[[3L]]; rB <- Exact_v2(d, k, feasibility = TRUE,  sparse = TRUE); tB <- proc.time()[[3L]] - t
   cat(sprintf("%-16s n=%4d k=%d | installed %.2fs (obj %.5f) | v2-maxIS %.2fs (obj %.5f, %.2fx) | v2-feas %.2fs (obj %.5f, %.2fx) | match=%s\n",

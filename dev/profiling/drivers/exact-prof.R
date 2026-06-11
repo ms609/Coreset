@@ -9,7 +9,7 @@ d   <- as.matrix(stats::dist(pts))
 src <- file.path(find.package("MaxMin"), "R")   # for line numbers if available
 out <- tempfile(fileext = ".out")
 Rprof(out, line.profiling = TRUE, memory.profiling = TRUE, interval = 0.005)
-r <- MaxMin::ExactMaxMin(d, m = 10L, timeBudgetS = 600, progress = FALSE)
+r <- MaxMin::ExactMaxMin(d, m = 10L, maxSeconds = 600, progress = FALSE)
 Rprof(NULL)
 cat(sprintf("obj=%.6f proven=%s\n\n", r$objective, r$proven))
 

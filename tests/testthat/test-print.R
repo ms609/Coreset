@@ -100,8 +100,12 @@ test_that("MaxMinExact prints proof status, indices and objective", {
   proven <- structure(
     list(indices = c(1L, 2L, 3L), objective = 0.5, proven = TRUE,
          time_s = 0.1, solver = "highs", n = 10L, m = 3L),
-    class = "MaxMinExact"
+    class = c("MaxMinExact", "MaxMinSelection")
   )
+  # MaxMinExact IS-A MaxMinSelection: generic code written for any solver works.
+  expect_s3_class(proven, "MaxMinExact")
+  expect_s3_class(proven, "MaxMinSelection")
+  expect_true(inherits(proven, "MaxMinSelection"))
   expect_s3_class(proven, "MaxMinExact")
   expect_match(format(proven),
                "^3 elements \\(1 2 3\\) selected by exact MILP \\(highs\\), proven optimal, each at distance >= 0.5$")
@@ -169,7 +173,7 @@ test_that("summary of MaxMinExact reports instance, objective and proof status",
   proven <- structure(
     list(indices = c(1L, 2L, 3L), objective = 0.5, proven = TRUE,
          time_s = 0.1, solver = "highs", n = 10L, m = 3L),
-    class = "MaxMinExact"
+    class = c("MaxMinExact", "MaxMinSelection")
   )
   out <- capture.output(ret <- withVisible(summary(proven)))
   expect_false(ret$visible)

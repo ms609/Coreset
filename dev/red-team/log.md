@@ -84,13 +84,13 @@ All P0/P1/P2 findings from Rounds 1–7 that were in scope addressed in a single
 - **FIXED (P1 — API hardening):** FF-002, FF-003, FF-004 (method/m validation); F-601 (misspelled anchor silently dropped); F-602 (winning_strategy all-NA); F-604, F-605 (MinDist NA/dup idx)
 - **FIXED (P2 — defensive guards):** E5-01 (MaximinFrom_cpp/MaximinFromPoints_cpp n range); GRASP-04 (m=1 loop); GRASP-05 (alpha=1 parity test gap); T7-08 (NA matrix test gap)
 - **FIXED (cosmetic/trivial):** GRASP-03 (dead candMask), F-606 (n==0L alignment)
-- **Remaining OPEN (out of scope this pass):** MF-03 (timeBudgetS overshoot), MF-04 (int overflow UB), FF-005/FF-006 (design/info), T7-01/T7-03/T7-04/T7-06/T7-07/T7-09/T7-10/T7-12/T7-14/T7-15/T7-16 (weak test gaps)
+- **Remaining OPEN (out of scope this pass):** MF-03 (maxSeconds overshoot), MF-04 (int overflow UB), FF-005/FF-006 (design/info), T7-01/T7-03/T7-04/T7-06/T7-07/T7-09/T7-10/T7-12/T7-14/T7-15/T7-16 (weak test gaps)
 - R CMD check: **Status OK** (0 errors, 0 warnings, 0 notes)
 
 ### Fix pass — 0.0.0.9002  (2026-06-10)
 All remaining OPEN findings from Rounds 1–7 addressed:
 - FIXED (code): MF-04 (int→long long overflow UB in dropadd.cpp/dropadd_mf.cpp/grasp.cpp)
-- FIXED (doc): MF-03 (timeBudgetS 256-iter overshoot documented); FF-006 (asymmetric matrix accepted, now documented)
+- FIXED (doc): MF-03 (maxSeconds 256-iter overshoot documented); FF-006 (asymmetric matrix accepted, now documented)
 - FIXED (behaviour): FF-005 (score=NA_real_ on all-points early return)
 - FIXED (test gaps/weakness): T7-01, T7-03, T7-04, T7-06, T7-07, T7-09, T7-10, T7-12, T7-14, T7-15, T7-16
 - R CMD check: Status OK (0 errors, 0 warnings, 0 notes)
