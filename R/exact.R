@@ -192,7 +192,7 @@
 #' @param m Integer target subset size, `2 <= m <= nrow(d)`.
 #' @param solver Solver to use. Currently only `"highs"` is implemented;
 #'   `NULL` selects it. Other values raise an error.
-#' @param timeBudgetS Wall-clock budget in seconds for the whole search
+#' @param maxSeconds Wall-clock budget in seconds for the whole search
 #'   (shared across all internal IP solves). If the budget expires before the
 #'   optimum is proven, the largest threshold proven feasible so far is
 #'   returned with `proven = FALSE`.
@@ -226,7 +226,7 @@
 #'   [print.MaxMinSelection]); it is otherwise an ordinary list.
 #' @references \insertAllCited{}
 #' @export
-ExactMaxMin <- function(d, m, solver = NULL, timeBudgetS = 60,
+ExactMaxMin <- function(d, m, solver = NULL, maxSeconds = 60,
                         warmStart = NULL,
                         progress = getOption("MaxMin.progress", interactive())) {
   t0 <- proc.time()[[3L]]
@@ -323,7 +323,7 @@ ExactMaxMin <- function(d, m, solver = NULL, timeBudgetS = 60,
   # step finds the boundary in O(log gap) when the warm start is near-optimal.
   loF <- i0; hiX <- NA_integer_; step <- 1L; probe <- i0 + 1L
   while (probe <= nCand) {
-    rem <- timeBudgetS - Elapsed()
+    rem <- maxSeconds - Elapsed()
     if (rem <= 0) { inconclusive <- TRUE; break } # nocov
     v <- feas(probe, rem); tick()
     if (identical(v$verdict, "feasible")) {
@@ -342,7 +342,7 @@ ExactMaxMin <- function(d, m, solver = NULL, timeBudgetS = 60,
     lo <- loF + 1L
     hi <- min(hiX - 1L, nCand)
     while (lo <= hi) {
-      rem <- timeBudgetS - Elapsed()
+      rem <- maxSeconds - Elapsed()
       if (rem <= 0) { inconclusive <- TRUE; break } # nocov
       mid <- (lo + hi) %/% 2L
       v <- feas(mid, rem); tick()

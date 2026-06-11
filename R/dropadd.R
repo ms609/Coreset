@@ -144,7 +144,7 @@
 #' invariant guarantees that across any window of \eqn{m} iterations every
 #' initially-selected point is dropped exactly once before any re-eviction.
 #'
-#' Time budget behaviour. The time budget (\code{timeBudgetS}) is checked at
+#' Time budget behaviour. The time budget (\code{maxSeconds}) is checked at
 #' most once every 256 iterations (matrix-free path) or 1024 iterations
 #' (matrix path). On large instances where each iteration is slow, the actual
 #' elapsed time may exceed the specified budget by up to one iteration's worth
@@ -168,7 +168,7 @@
 #' @param maxIter Optional integer hard cap on iterations (excluding
 #'   construction). \code{NULL} (default) leaves \code{plateau} in sole
 #'   control.
-#' @param timeBudgetS Optional wall-clock ceiling in seconds, checked at
+#' @param maxSeconds Optional wall-clock ceiling in seconds, checked at
 #'   iteration boundaries. Default \code{Inf} (no ceiling, fully reproducible).
 #'   A finite value caps runtime but makes the result machine-dependent.
 #' @param progress Logical; show a start/done status line. Default: `TRUE` in
@@ -200,7 +200,7 @@
 #'
 #' @export
 DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
-                      timeBudgetS = Inf,
+                      maxSeconds = Inf,
                       progress = getOption("MaxMin.progress", interactive()),
                       points = NULL,
                       .verify = FALSE, .trace = NULL) {
@@ -230,9 +230,9 @@ DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
       stop("`maxIter` must be NULL or a single non-negative integer")
     }
   }
-  if (!is.numeric(timeBudgetS) || length(timeBudgetS) != 1L ||
-      is.na(timeBudgetS) || timeBudgetS <= 0) {
-    stop("`timeBudgetS` must be a single positive numeric (or Inf)")
+  if (!is.numeric(maxSeconds) || length(maxSeconds) != 1L ||
+      is.na(maxSeconds) || maxSeconds <= 0) {
+    stop("`maxSeconds` must be a single positive numeric (or Inf)")
   }
 
   t0 <- proc.time()[[3L]]
@@ -243,11 +243,11 @@ DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
     cppMaxIter <- if (is.null(maxIter)) .Machine$integer.max else maxIter
     if (progress) {
       cli::cli_process_start(
-        "DropAdd tabu search (n = {n}, m = {m}, budget = {timeBudgetS}s)",
+        "DropAdd tabu search (n = {n}, m = {m}, budget = {maxSeconds}s)",
         .auto_close = FALSE
       )
     }
-    out <- DropAdd_points_cpp(points, m, as.double(timeBudgetS),
+    out <- DropAdd_points_cpp(points, m, as.double(maxSeconds),
                                 cppMaxIter, plateau, FALSE)
     timeS <- proc.time()[[3L]] - t0
     if (progress) {
@@ -272,11 +272,11 @@ DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
     wantTrace <- !is.null(.trace)
     if (progress) {
       cli::cli_process_start(
-        "DropAdd tabu search (n = {n}, m = {m}, budget = {timeBudgetS}s)",
+        "DropAdd tabu search (n = {n}, m = {m}, budget = {maxSeconds}s)",
         .auto_close = FALSE
       )
     }
-    out <- DropAdd_cpp(dmat, m, as.double(timeBudgetS),
+    out <- DropAdd_cpp(dmat, m, as.double(maxSeconds),
                          cppMaxIter, plateau, wantTrace)
     if (wantTrace) {
       .trace$drops <- out$drops
@@ -358,10 +358,10 @@ DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
   # while time remains, and re-check the budget at the foot of the loop so it
   # always halts -- after at least one iteration -- regardless.
   budgetSpent <- function() {
-    is.finite(timeBudgetS) && (proc.time()[[3L]] - t0) >= timeBudgetS
+    is.finite(maxSeconds) && (proc.time()[[3L]] - t0) >= maxSeconds
   }
-  if (is.finite(timeBudgetS) && !budgetSpent()) {
-    setTimeLimit(elapsed = timeBudgetS - (proc.time()[[3L]] - t0),
+  if (is.finite(maxSeconds) && !budgetSpent()) {
+    setTimeLimit(elapsed = maxSeconds - (proc.time()[[3L]] - t0),
                  transient = TRUE)
   }
   tryCatch(repeat {

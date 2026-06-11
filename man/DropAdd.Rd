@@ -9,7 +9,7 @@ DropAdd(
   m,
   plateau = 5000L,
   maxIter = NULL,
-  timeBudgetS = Inf,
+  maxSeconds = Inf,
   progress = getOption("MaxMin.progress", interactive()),
   points = NULL,
   .verify = FALSE,
@@ -32,7 +32,7 @@ machine-independent. Default 5000.}
 construction). \code{NULL} (default) leaves \code{plateau} in sole
 control.}
 
-\item{timeBudgetS}{Optional wall-clock ceiling in seconds, checked at
+\item{maxSeconds}{Optional wall-clock ceiling in seconds, checked at
 iteration boundaries. Default \code{Inf} (no ceiling, fully reproducible).
 A finite value caps runtime but makes the result machine-dependent.}
 
@@ -93,7 +93,7 @@ the point in \eqn{Z \setminus X} maximising lexicographically
 invariant guarantees that across any window of \eqn{m} iterations every
 initially-selected point is dropped exactly once before any re-eviction.
 
-Time budget behaviour. The time budget (\code{timeBudgetS}) is checked at
+Time budget behaviour. The time budget (\code{maxSeconds}) is checked at
 most once every 256 iterations (matrix-free path) or 1024 iterations
 (matrix path). On large instances where each iteration is slow, the actual
 elapsed time may exceed the specified budget by up to one iteration's worth

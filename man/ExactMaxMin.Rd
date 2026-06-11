@@ -8,7 +8,7 @@ ExactMaxMin(
   d,
   m,
   solver = NULL,
-  timeBudgetS = 60,
+  maxSeconds = 60,
   warmStart = NULL,
   progress = getOption("MaxMin.progress", interactive())
 )
@@ -21,7 +21,7 @@ ExactMaxMin(
 \item{solver}{Solver to use. Currently only \code{"highs"} is implemented;
 \code{NULL} selects it. Other values raise an error.}
 
-\item{timeBudgetS}{Wall-clock budget in seconds for the whole search
+\item{maxSeconds}{Wall-clock budget in seconds for the whole search
 (shared across all internal IP solves). If the budget expires before the
 optimum is proven, the largest threshold proven feasible so far is
 returned with \code{proven = FALSE}.}

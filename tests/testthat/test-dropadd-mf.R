@@ -94,12 +94,12 @@ test_that("DropAdd points path is within tolerance when seeds diverge", {
 # ---------------------------------------------------------------------------
 # 3. Time budget honoured.
 # ---------------------------------------------------------------------------
-test_that("DropAdd points path respects timeBudgetS within reasonable slack", {
+test_that("DropAdd points path respects maxSeconds within reasonable slack", {
   set.seed(99)
   pts <- matrix(runif(2000 * 8), ncol = 8)
   t0 <- Sys.time()
   # Disable stagnation so the wall-clock ceiling is the binding criterion.
-  res <- DropAdd(points = pts, m = 20L, timeBudgetS = 1, plateau = 100000000L)
+  res <- DropAdd(points = pts, m = 20L, maxSeconds = 1, plateau = 100000000L)
   elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
   expect_lte(attr(res, "time_s"), 1.5)
   expect_lte(elapsed, 2.0)
@@ -131,7 +131,7 @@ test_that("DropAdd points path returns a meaningful result at n = 5000", {
   pts <- matrix(rnorm(5000 * 12), ncol = 12)
   # Scale smoke: wall-clock-bounded run (stagnation disabled) confirming the
   # matrix-free path stays responsive at n = 5000 within a short budget.
-  res <- DropAdd(points = pts, m = 10L, timeBudgetS = 2, plateau = 100000000L)
+  res <- DropAdd(points = pts, m = 10L, maxSeconds = 2, plateau = 100000000L)
   expect_length(res, 10L)
   expect_equal(length(unique(res)), 10L)
   expect_gt(attr(res, "score"), 0)
@@ -161,13 +161,13 @@ test_that("DropAdd points path: deterministic and input validation", {
   # maxIter validation
   expect_error(DropAdd(points = pts, m = 4L, maxIter = -1L), "maxIter")
 
-  # timeBudgetS validation
-  expect_error(DropAdd(points = pts, m = 4L, timeBudgetS = 0),
-               "timeBudgetS")
-  expect_error(DropAdd(points = pts, m = 4L, timeBudgetS = -1),
-               "timeBudgetS")
-  expect_error(DropAdd(points = pts, m = 4L, timeBudgetS = NA_real_),
-               "timeBudgetS")
+  # maxSeconds validation
+  expect_error(DropAdd(points = pts, m = 4L, maxSeconds = 0),
+               "maxSeconds")
+  expect_error(DropAdd(points = pts, m = 4L, maxSeconds = -1),
+               "maxSeconds")
+  expect_error(DropAdd(points = pts, m = 4L, maxSeconds = NA_real_),
+               "maxSeconds")
 
   # both d and points supplied
   expect_error(DropAdd(d = as.matrix(dist(pts)), points = pts, m = 4L),

@@ -11,7 +11,7 @@ Grasp(
   maxIter = NULL,
   eliteSize = 10L,
   alpha = 0.8,
-  timeBudgetS = Inf
+  maxSeconds = Inf
 )
 }
 \arguments{
@@ -32,7 +32,7 @@ primary, deterministic stopping criterion. Default 100.}
 \item{alpha}{RCL threshold; \code{alpha = 1} is pure greedy, \code{alpha = 0}
 uniform random. Default 0.8.}
 
-\item{timeBudgetS}{Optional wall-clock ceiling in seconds. Default \code{Inf}
+\item{maxSeconds}{Optional wall-clock ceiling in seconds. Default \code{Inf}
 (no ceiling, fully reproducible). A finite value caps runtime but makes
 the result machine-dependent.}
 }
@@ -65,7 +65,7 @@ elite objective (rather than after a wall-clock budget). Call \code{set.seed()}
 before \code{Grasp()} for a reproducible run: the entire run — construction RNG,
 iteration count, and result — is then reproducible and machine-independent,
 because the compiled kernel draws from R's own session RNG stream. An
-optional \code{timeBudgetS} ceiling is available as a safety cap, but using a
+optional \code{maxSeconds} ceiling is available as a safety cap, but using a
 finite value reintroduces machine-dependence and is off by default.
 
 This is a \strong{dense-matrix-only} method: it materialises and repeatedly

@@ -43,7 +43,7 @@ test_that("ExactMaxMin matches the brute-force optimum (random instances)", {
     set.seed(cs$seed)
     pts <- matrix(stats::rnorm(cs$n * 4L), ncol = 4L)
     d <- as.matrix(stats::dist(pts))
-    res <- ExactMaxMin(d, m = cs$m, timeBudgetS = 60)
+    res <- ExactMaxMin(d, m = cs$m, maxSeconds = 60)
     oracle <- .BruteMaxmin(d, cs$m)
 
     # The optimum value matches the exhaustive optimum.
@@ -101,7 +101,7 @@ test_that("ExactMaxMin returns proven=FALSE on budget expiry", {
   # Use a large enough instance that 1 microsecond is not enough to certify optimality.
   pts <- matrix(stats::rnorm(30 * 4), ncol = 4)
   d <- as.matrix(stats::dist(pts))
-  res <- ExactMaxMin(d, m = 5L, timeBudgetS = 1e-9)
+  res <- ExactMaxMin(d, m = 5L, maxSeconds = 1e-9)
   # With a near-zero budget the solver may not certify, but must not error.
   # Note: proven could be TRUE if the solver is extremely fast; we just assert
   # the field exists and the return is valid.

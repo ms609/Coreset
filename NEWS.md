@@ -33,7 +33,7 @@
   optimum is unchanged: the warm start only sets the starting lower bound. New
   optional `warmStart` argument accepts an externally-computed candidate subset.
   Adds `Matrix` to Suggests.
-- `DropAdd()` now documents that `timeBudgetS` is checked every 256 iterations and
+- `DropAdd()` now documents that `maxSeconds` is checked every 256 iterations and
   may overshoot by up to one iteration's worth of computation on large instances.
 - `FarFirst()` documents that asymmetric distance matrices are accepted.
 - Ensemble functions now attach a `score = NA_real_` attribute on the trivial

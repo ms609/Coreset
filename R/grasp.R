@@ -269,7 +269,7 @@
 #' before `Grasp()` for a reproducible run: the entire run — construction RNG,
 #' iteration count, and result — is then reproducible and machine-independent,
 #' because the compiled kernel draws from R's own session RNG stream. An
-#' optional `timeBudgetS` ceiling is available as a safety cap, but using a
+#' optional `maxSeconds` ceiling is available as a safety cap, but using a
 #' finite value reintroduces machine-dependence and is off by default.
 #'
 #' This is a **dense-matrix-only** method: it materialises and repeatedly
@@ -292,7 +292,7 @@
 #' @param eliteSize Size of the elite set |ES|. Default 10.
 #' @param alpha RCL threshold; `alpha = 1` is pure greedy, `alpha = 0`
 #'   uniform random. Default 0.8.
-#' @param timeBudgetS Optional wall-clock ceiling in seconds. Default `Inf`
+#' @param maxSeconds Optional wall-clock ceiling in seconds. Default `Inf`
 #'   (no ceiling, fully reproducible). A finite value caps runtime but makes
 #'   the result machine-dependent.
 #' @return An integer vector of length `m` (1-based) **sorted ascending**
@@ -319,7 +319,7 @@
 #' res
 #' @export
 Grasp <- function(d, m, plateau = 100L, maxIter = NULL,
-                    eliteSize = 10L, alpha = 0.8, timeBudgetS = Inf) {
+                    eliteSize = 10L, alpha = 0.8, maxSeconds = Inf) {
   d <- .AsDistMatrix(d)
   n <- nrow(d)
   m <- as.integer(m)
@@ -334,9 +334,9 @@ Grasp <- function(d, m, plateau = 100L, maxIter = NULL,
     maxIter <- as.integer(maxIter)
     stopifnot(maxIter >= 0L)
   }
-  if (!is.numeric(timeBudgetS) || length(timeBudgetS) != 1L ||
-      is.na(timeBudgetS) || timeBudgetS <= 0) {
-    stop("`timeBudgetS` must be a single positive numeric (or Inf)")
+  if (!is.numeric(maxSeconds) || length(maxSeconds) != 1L ||
+      is.na(maxSeconds) || maxSeconds <= 0) {
+    stop("`maxSeconds` must be a single positive numeric (or Inf)")
   }
   # `alpha` outside [0, 1] is meaningless for the RCL threshold and, for
   # alpha > 1, deterministically empties the RCL (see .GraspConstruct); reject
@@ -347,7 +347,7 @@ Grasp <- function(d, m, plateau = 100L, maxIter = NULL,
   }
 
   out <- Grasp_cpp(d, m, plateau, maxIter, eliteSize,
-                     as.double(alpha), as.double(timeBudgetS))
+                     as.double(alpha), as.double(maxSeconds))
   # Return:
   .AsMaxMinSelection(structure(
     sort(as.integer(out$indices)),
@@ -367,11 +367,11 @@ Grasp <- function(d, m, plateau = 100L, maxIter = NULL,
 # Termination is the deterministic stagnation rule: stop after
 # `plateau` consecutive iterations that do not raise the best elite
 # objective esZ[1] (which is monotone non-decreasing under .GraspTryInsert()).
-# `maxIter` is an optional hard cap; `timeBudgetS` an optional ceiling
+# `maxIter` is an optional hard cap; `maxSeconds` an optional ceiling
 # (Inf = off) that leaves the result reproducible.
 #' @keywords internal
 .Grasp_R <- function(d, m, plateau, maxIter = .Machine$integer.max,
-                       eliteSize = 10L, alpha = 0.8, timeBudgetS = Inf) {
+                       eliteSize = 10L, alpha = 0.8, maxSeconds = Inf) {
   d <- .AsDistMatrix(d)
   n <- nrow(d)
   m <- as.integer(m)
@@ -400,15 +400,15 @@ Grasp <- function(d, m, plateau = 100L, maxIter = NULL,
   # both `plateau` and `maxIter` are disabled, so it must actually fire.
   # setTimeLimit() alone cannot be trusted for this: a non-positive `elapsed`
   # *removes* the limit, so once Phase A has already overrun a tiny budget,
-  # `timeBudgetS - elapsed <= 0` would silently disable it and Phase B would
+  # `maxSeconds - elapsed <= 0` would silently disable it and Phase B would
   # spin forever. Guard with an explicit predicate checked each iteration, and
   # only arm setTimeLimit() -- which interrupts a single overlong iteration --
   # while time genuinely remains.
   budgetSpent <- function() {
-    is.finite(timeBudgetS) && (proc.time()[[3L]] - t0) >= timeBudgetS
+    is.finite(maxSeconds) && (proc.time()[[3L]] - t0) >= maxSeconds
   }
-  if (is.finite(timeBudgetS) && !budgetSpent()) {
-    setTimeLimit(elapsed = timeBudgetS - (proc.time()[[3L]] - t0),
+  if (is.finite(maxSeconds) && !budgetSpent()) {
+    setTimeLimit(elapsed = maxSeconds - (proc.time()[[3L]] - t0),
                  transient = TRUE)
   }
 
