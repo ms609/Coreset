@@ -5,9 +5,9 @@
 \alias{KCenter}
 \title{Near-optimal discrete k-centre by CDSh}
 \usage{
-KCentre(d, k, nstart = 1L, seeds = NULL)
+KCentre(d, k, nstart = 1L, effort = 1L, seeds = NULL)
 
-KCenter(d, k, nstart = 1L, seeds = NULL)
+KCenter(d, k, nstart = 1L, effort = 1L, seeds = NULL)
 }
 \arguments{
 \item{d}{A \code{dist} object or a square symmetric numeric distance matrix.}
@@ -16,6 +16,12 @@ KCenter(d, k, nstart = 1L, seeds = NULL)
 
 \item{nstart}{Integer; how many deterministic peripheral seeds to try, keeping
 the lowest-radius result. Default \code{1}. Ignored if \code{seeds} is supplied.}
+
+\item{effort}{Integer; controls the Gonzalez floor that keeps the result no
+worse than the 2-approximation. \code{0} disables it (raw CDSh, fastest, no
+guarantee); \code{1} (default) runs one deterministic peripheral Gonzalez pass;
+\verb{> 1} runs a distinct-seed Gonzalez restart with \code{nseeds = effort} (a tighter
+floor that draws on the session RNG -- call \code{\link[=set.seed]{set.seed()}} to reproduce).}
 
 \item{seeds}{Optional integer vector of explicit 1-based seed vertices for the
 construction's first critical vertex (overrides \code{nstart}).}
@@ -44,10 +50,10 @@ optimum).
 The achieved covering radius is not monotone in the trial radius, so the binary
 search can occasionally miss the best candidate. Two safeguards keep the result
 robust: for a small candidate grid (\code{n} up to ~150) every radius is scanned
-exhaustively, and the result is always floored against a deterministic Gonzalez
-pass, so \code{KCentre()} is \strong{never worse than the 2-approximation}. For a tighter
-result at larger \code{n} raise \code{nstart}; for the proven optimum on a small instance
-use \code{\link[=ExactKCentre]{ExactKCentre()}}.
+exhaustively, and the result is floored against a Gonzalez pass (the \code{effort}
+argument, on by default), so \code{KCentre()} is \strong{never worse than the
+2-approximation}. For a tighter result at larger \code{n} raise \code{nstart} or
+\code{effort}; for the proven optimum on a small instance use \code{\link[=ExactKCentre]{ExactKCentre()}}.
 
 The construction is otherwise fully deterministic: where the reference seeds its
 first critical vertex at random, \code{KCentre()} uses deterministic peripheral

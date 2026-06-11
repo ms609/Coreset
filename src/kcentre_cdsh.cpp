@@ -42,6 +42,7 @@ static double CdsConstruct(const double* P, int n, int k,
   std::vector<double> dist(n, R_PosInf);   // distance to nearest chosen centre
   std::vector<char>   dominated(n, 0);      // covered within r by some centre?
   std::vector<int>    score(n, 0);          // undominated degree in G_r
+  std::vector<char>   isCentre(n, 0);       // already selected as a centre?
 
   // score[i] = #{ j != i : d(i, j) <= r } -- the threshold-graph degree. Read
   // column i (= d(., i) = d(i, .) by symmetry), so j scans contiguously.
@@ -74,17 +75,25 @@ static double CdsConstruct(const double* P, int n, int k,
     }
 
     // The centre is the highest-degree neighbour of the farthest vertex within
-    // radius r (its closed neighbourhood includes itself, d = 0 <= r). First
-    // index wins ties.
+    // radius r (its closed neighbourhood includes itself, d = 0 <= r), excluding
+    // already-chosen centres so every centre is distinct. Re-picking a centre
+    // would waste a budget slot and never improve coverage; skipping the chosen
+    // ones is a strictly-beneficial divergence from the reference (which can emit
+    // duplicates). First index wins ties. While the radius is positive the
+    // farthest vertex is itself unchosen (a chosen centre has distance 0 to
+    // itself, so it can't be the worst-covered), so an unchosen candidate always
+    // exists; only the degenerate fully-covered (radius 0) case can fall through
+    // to a duplicate, which the R wrapper collapses harmlessly.
     const double* col_f = P + (R_xlen_t)farthest * n;
     int maxScore = -1, centre = farthest;
     for (int j = 0; j < n; j++) {
-      if (col_f[j] <= r && score[j] > maxScore) {
+      if (col_f[j] <= r && !isCentre[j] && score[j] > maxScore) {
         maxScore = score[j];
         centre = j;
       }
     }
     centres[i] = centre;
+    isCentre[centre] = 1;
 
     // Newly dominated vertices (within r of the new centre) stop contributing
     // to anyone's score, so score[j] keeps counting only undominated neighbours.

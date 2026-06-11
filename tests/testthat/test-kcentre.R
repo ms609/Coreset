@@ -229,3 +229,32 @@ test_that("KCentre collapses duplicate centres with a consistent radius (KC-007)
   expect_false(anyDuplicated(as.integer(res)) > 0L)
   expect_equal(attr(res, "radius"), KCentreRadius(d, as.integer(res)))
 })
+
+test_that("KCentre selects k distinct centres on non-degenerate instances", {
+  # The construction never re-picks an already-chosen centre, so no budget slot
+  # is wasted -- exactly k distinct centres when the radius is positive.
+  set.seed(31)
+  d <- as.matrix(stats::dist(matrix(rnorm(120L), ncol = 2L)))   # n = 60
+  for (k in c(3L, 6L, 12L)) {
+    res <- KCentre(d, k)
+    expect_equal(length(res), k)
+    expect_false(anyDuplicated(as.integer(res)) > 0L)
+  }
+})
+
+test_that("effort controls the Gonzalez floor", {
+  set.seed(33)
+  d <- as.matrix(stats::dist(matrix(rnorm(200L), ncol = 2L)))   # n = 100
+  raw   <- KCentre(d, 8L, effort = 0L)            # floor disabled (no guarantee)
+  one   <- KCentre(d, 8L, effort = 1L)            # default single peripheral pass
+  multi <- KCentre(d, 8L, effort = 5L)            # distinct-seed restart, nseeds=5
+  for (res in list(raw, one, multi)) {
+    expect_s3_class(res, "KCentreSelection")
+    expect_equal(attr(res, "radius"), KCentreRadius(d, as.integer(res)))
+  }
+  # effort >= 1 guarantees never-worse-than-Gonzalez; effort = 0 does not.
+  gonz <- KCentreRadius(d, as.integer(FarFirst(d, 8L, method = "peripheral")))
+  expect_lte(attr(one, "radius"), gonz + 1e-9)
+  expect_lte(attr(multi, "radius"), gonz + 1e-9)
+  expect_error(KCentre(d, 8L, effort = -1L), "non-negative")
+})
