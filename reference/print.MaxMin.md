@@ -10,9 +10,11 @@ its size, the selected indices, the algorithm (and, for a
 ensemble, the winning strategy), and the achieved \\T_k\\; a
 `MaxMinExact` (from
 [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md))
-additionally states whether optimality was proven. Both objects are
-otherwise unchanged – a `MaxMinSelection` still indexes like the bare
-integer vector it wraps – so these methods only affect display.
+additionally states whether optimality was proven. `MaxMinExact` extends
+`MaxMinSelection` (`class = c("MaxMinExact", "MaxMinSelection")`), so
+`inherits(x, "MaxMinSelection")` is `TRUE` for any solver result. Both
+objects are otherwise unchanged – a `MaxMinSelection` still indexes like
+the bare integer vector it wraps – so these methods only affect display.
 
 ## Usage
 

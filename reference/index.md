@@ -21,8 +21,7 @@ Farthest-first (Gonzalez) selection and its seeding strategies.
 ## Scoring
 
 - [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md) :
-  Minimum pairwise distance within a selection (T_k = k-centre
-  objective)
+  Minimum pairwise distance within a selection
 
 ## Reporting
 

@@ -138,9 +138,11 @@ within the budget, <code>FALSE</code> if it returned an unproven incumbent.</p><
 <dd><p>Instance size and target subset size.</p></dd>
 
 
-</dl><p>The list has class <code>"MaxMinExact"</code> and prints as a one-line summary (size,
-indices, solver, proof status and achieved <code>T_k</code>; see
-<a href="print.MaxMin.html">print.MaxMinSelection</a>); it is otherwise an ordinary list.</p>
+</dl><p>The list has class <code>c("MaxMinExact", "MaxMinSelection")</code> and prints as a
+one-line summary (size, indices, solver, proof status and achieved <code>T_k</code>;
+see <a href="print.MaxMin.html">print.MaxMinSelection</a>); it is otherwise an ordinary list.
+The <code>"MaxMinSelection"</code> superclass means <code>inherits(result, "MaxMinSelection")</code>
+is <code>TRUE</code>, and any generic written against that class works here too.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
