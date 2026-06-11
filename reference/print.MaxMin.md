@@ -46,6 +46,12 @@ print(x, ...)
 
 `x`, invisibly (`print`); a length-1 character string (`format`).
 
+## See also
+
+Other reporting functions:
+[`print.KCentre`](https://ms609.github.io/MaxMin/reference/print.KCentre.md),
+[`summary.MaxMin`](https://ms609.github.io/MaxMin/reference/summary.MaxMin.md)
+
 ## Examples
 
 ``` r

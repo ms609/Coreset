@@ -31,6 +31,12 @@ summary(object, ...)
 
 `object`, invisibly.
 
+## See also
+
+Other reporting functions:
+[`print.KCentre`](https://ms609.github.io/MaxMin/reference/print.KCentre.md),
+[`print.MaxMin`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md)
+
 ## Examples
 
 ``` r

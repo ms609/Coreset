@@ -56,7 +56,7 @@
         </dt>
         <dd>Peripheral seed index for Gonzalez farthest-first selection</dd>
       </dl></div><div class="section level2">
-      <h2 id="heuristic-and-exact-solvers">Heuristic and exact solvers<a class="anchor" aria-label="anchor" href="#heuristic-and-exact-solvers"></a></h2>
+      <h2 id="maxmin-solvers">MaxMin solvers<a class="anchor" aria-label="anchor" href="#maxmin-solvers"></a></h2>
 
 
 
@@ -86,6 +86,29 @@
         </dt>
         <dd>Exact Max-Min Diversity (MMDP) optimum on small instances</dd>
       </dl></div><div class="section level2">
+      <h2 id="k-centre-solvers">k-centre solvers<a class="anchor" aria-label="anchor" href="#k-centre-solvers"></a></h2>
+
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="KCentre.html">KCentre()</a></code> <code><a href="KCentre.html">KCenter()</a></code>
+
+        </dt>
+        <dd>Near-optimal discrete k-centre by CDSh</dd>
+
+        <dt>
+
+          <code><a href="ExactKCentre.html">ExactKCentre()</a></code> <code><a href="ExactKCentre.html">ExactKCenter()</a></code>
+
+        </dt>
+        <dd>Exact discrete k-centre optimum on small instances</dd>
+      </dl></div><div class="section level2">
       <h2 id="scoring">Scoring<a class="anchor" aria-label="anchor" href="#scoring"></a></h2>
 
 
@@ -101,6 +124,13 @@
 
         </dt>
         <dd>Minimum pairwise distance within a selection</dd>
+
+        <dt>
+
+          <code><a href="KCentreRadius.html">KCentreRadius()</a></code> <code><a href="KCentreRadius.html">KCenterRadius()</a></code>
+
+        </dt>
+        <dd>Covering radius of a centre set (k-centre objective)</dd>
       </dl></div><div class="section level2">
       <h2 id="reporting">Reporting<a class="anchor" aria-label="anchor" href="#reporting"></a></h2>
 
@@ -112,6 +142,13 @@
 
 
       <dl><dt>
+
+          <code><a href="print.KCentre.html">format(<i>&lt;KCentreSelection&gt;</i>)</a></code> <code><a href="print.KCentre.html">print(<i>&lt;KCentreSelection&gt;</i>)</a></code> <code><a href="print.KCentre.html">format(<i>&lt;KCentreExact&gt;</i>)</a></code> <code><a href="print.KCentre.html">print(<i>&lt;KCentreExact&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Format and print k-centre solver results</dd>
+
+        <dt>
 
           <code><a href="print.MaxMin.html">format(<i>&lt;MaxMinSelection&gt;</i>)</a></code> <code><a href="print.MaxMin.html">print(<i>&lt;MaxMinSelection&gt;</i>)</a></code> <code><a href="print.MaxMin.html">format(<i>&lt;MaxMinExact&gt;</i>)</a></code> <code><a href="print.MaxMin.html">print(<i>&lt;MaxMinExact&gt;</i>)</a></code>
 
