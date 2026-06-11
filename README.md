@@ -10,7 +10,7 @@
 maxmize coverage.
 
 The **Max-Min Diversity Problem** (MMDP, the discrete *p*-dispersion objective)
-maximises *separation*. It selects $m$ elements such that the minimum distance
+maximises *separation*. It selects $k$ elements such that the minimum distance
 between any pair of selected elements is as large as possible; the chosen
 elements are maximally distinct.
 This can reward selections that leave the interior of the set unrepresented.
@@ -21,7 +21,7 @@ possible. This rewards selections that reach the whole set, such that each point
 has a nearby representative; it can pull centres inward and collapse
 well-separated modes onto a central compromise.
 
-Both problems can be approximated within a factor of two by the greedy
+Both problems can be quickly approximated within a factor of two by the greedy
 farthest-first heuristic (`FarFirst()`).
 
 
@@ -32,16 +32,15 @@ MMDP (max-min dispersion):
 | Function | Method | Use |
 |---|---|---|
 | `DropAdd()` | DropAdd tabu search (Porumbel et al. 2011) | ~99%-optimal heuristic |
-| `Grasp()` |  GRASP with path-relinking metaheuristic (Resende et al. 2010) | Slow but powerful heuristic |
-| `FarFirst()` | Greedy farthest-first (Gonzalez 1985); default best of three random peripheral starts | Fast; matrix, coordinate, or distance-column-oracle input (the last for very large sets with no embedding) |
-| `ExactMaxMin()` | Node-packing integer program (Sayyady & Fathi 2016) | Proven optimum, small `n` (needs `highs`) |
+| `Grasp()` |  GRASP with path-relinking metaheuristic (Resende et al. 2010) | Slower but powerful heuristic |
+| `ExactMaxMin()` | Node-packing integer program (Sayyady & Fathi 2016) | Proven optimum, small `k` (needs `highs`) |
 
 *k*-centre (min-max covering):
 
 | Function | Method | Use |
 |---|---|---|
-| `KCentre()` | CDSh heuristic (García-Díaz et al. 2017, 2019) | ~1–3.5% of optimum at $O(N^2 \log N)$, far tighter than the Gonzalez 2-approximation; never worse than it |
-| `ExactKCentre()` | Min-cover integer program (the covering dual of `ExactMaxMin()`) | Proven optimum, small `k` (needs `highs`) |
+| `KCentre()` | CDSh heuristic (García-Díaz et al. 2017, 2019) | ~1–3.5% of optimum at $O(N^2 \log N)$, typically far tighter than `FarFirst()` |
+| `ExactKCentre()` | Min-cover integer program | Proven optimum, small `k` (needs `highs`) |
 
 Solvers support precomputed distance matrices (`dist` objects),
 matrices of Euclidian coordinates, or lists of elements from which distances
@@ -61,7 +60,27 @@ remotes::install_github("ms609/MaxMin")
 
 ## Related packages
 
-The CRAN package [`maximin`](https://cran.r-project.org/package=maximin)
-constructs continuous space-filling designs — it generates new points in a
-coordinate box to maximise the minimum inter-point distance.
+`MaxMin` selects a *subset of existing elements*.
+Several established packages solve neighbouring objectives:
+
+- **k-medoids / k-median** — minimise the *total* (or mean) distance from each
+  element to its nearest centre: *average* coverage, or representativeness. This
+  is a different objective from any solved here, and is well served elsewhere:
+  [`cluster::pam()`](https://cran.r-project.org/package=cluster) and `clara()`
+  (PAM / FastPAM / FasterPAM),
+  [`ClusterR::Cluster_Medoids()`](https://cran.r-project.org/package=ClusterR),
+  and [`banditpam`](https://cran.r-project.org/package=banditpam). `pam()` holds
+  the full *O(N²)* dissimilarity matrix (and caps at *n* ≤ 65 536); `clara()`
+  samples to scale; `banditpam` is *O(N* log *N)* and matrix-free but accepts
+  only coordinate data with built-in metrics (no precomputed matrix or custom
+  distance).
+
+- **k-means** ([`stats::kmeans()`](https://rdrr.io/r/stats/kmeans.html)) minimises
+  within-cluster sum of squares around centres that are coordinate *means*, not
+  data points, so it is neither a discrete k-centre nor a k-medoids solver and
+  applies only to Euclidean coordinates.
+
+- [`maximin`](https://cran.r-project.org/package=maximin) constructs continuous
+  space-filling designs by generating new points in a coordinate box to
+  maximise the minimum inter-point distance.
 
