@@ -396,8 +396,19 @@ Grasp <- function(d, m, plateau = 100L, maxIter = NULL,
   iters   <- 0L
   prCalls <- 0L
   on.exit(setTimeLimit(), add = TRUE)
-  if (is.finite(timeBudgetS)) {
-    setTimeLimit(elapsed = max(0, timeBudgetS - (proc.time()[[3L]] - t0)),
+  # The wall-clock ceiling is the only stopping criterion that survives when
+  # both `plateau` and `maxIter` are disabled, so it must actually fire.
+  # setTimeLimit() alone cannot be trusted for this: a non-positive `elapsed`
+  # *removes* the limit, so once Phase A has already overrun a tiny budget,
+  # `timeBudgetS - elapsed <= 0` would silently disable it and Phase B would
+  # spin forever. Guard with an explicit predicate checked each iteration, and
+  # only arm setTimeLimit() -- which interrupts a single overlong iteration --
+  # while time genuinely remains.
+  budgetSpent <- function() {
+    is.finite(timeBudgetS) && (proc.time()[[3L]] - t0) >= timeBudgetS
+  }
+  if (is.finite(timeBudgetS) && !budgetSpent()) {
+    setTimeLimit(elapsed = timeBudgetS - (proc.time()[[3L]] - t0),
                  transient = TRUE)
   }
 
@@ -407,6 +418,7 @@ Grasp <- function(d, m, plateau = 100L, maxIter = NULL,
   tryCatch({
     noImprove <- 0L
     repeat {
+      if (budgetSpent()) break
       if (noImprove >= plateau) break
       if (iters >= maxIter) break
       x  <- .GraspConstruct(d, m, alpha)

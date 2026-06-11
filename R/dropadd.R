@@ -350,8 +350,18 @@ DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
   if (.verify) .VerifyRecords(S, minDist, minDistCount, sumDist)
 
   on.exit(setTimeLimit(), add = TRUE)
-  if (is.finite(timeBudgetS)) {
-    setTimeLimit(elapsed = max(0, timeBudgetS - (proc.time()[[3L]] - t0)),
+  # The budget is the only stopping rule that survives when both `effectiveMax`
+  # and `plateau` are disabled, so it must actually fire. setTimeLimit() alone
+  # is unsafe: a non-positive `elapsed` *removes* the limit, so a budget already
+  # spent during construction would silently disable it and the loop would spin
+  # forever. Arm setTimeLimit() (to interrupt a single overlong iteration) only
+  # while time remains, and re-check the budget at the foot of the loop so it
+  # always halts -- after at least one iteration -- regardless.
+  budgetSpent <- function() {
+    is.finite(timeBudgetS) && (proc.time()[[3L]] - t0) >= timeBudgetS
+  }
+  if (is.finite(timeBudgetS) && !budgetSpent()) {
+    setTimeLimit(elapsed = timeBudgetS - (proc.time()[[3L]] - t0),
                  transient = TRUE)
   }
   tryCatch(repeat {
@@ -474,6 +484,7 @@ DropAdd <- function(d = NULL, m, plateau = 5000L, maxIter = NULL,
       .trace$adds  <- c(.trace$adds, xNew)
     }
     if (.verify) .VerifyRecords(S, minDist, minDistCount, sumDist)
+    if (budgetSpent()) break
   }, error = function(e) { # nocov start
     setTimeLimit()
     if (!grepl("time limit", conditionMessage(e), ignore.case = TRUE)) stop(e)
