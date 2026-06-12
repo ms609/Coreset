@@ -86,7 +86,7 @@
   winners <- attr(x, "winning_strategy")
   if (is.null(winners)) {
     # Return:
-    "Gonzalez farthest-first"
+    "farthest-first"
   } else {
     nStrat <- length(attr(x, "strategy_results"))
     plural <- if (nStrat == 1L) "y" else "ies"
