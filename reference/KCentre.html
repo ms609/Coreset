@@ -52,21 +52,21 @@ using the CDSh heuristic
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">KCentre</span><span class="op">(</span><span class="va">d</span>, <span class="va">k</span>, nstart <span class="op">=</span> <span class="fl">1L</span>, effort <span class="op">=</span> <span class="fl">1L</span>, seeds <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">KCentre</span><span class="op">(</span><span class="va">k</span>, <span class="va">d</span>, nstart <span class="op">=</span> <span class="fl">1L</span>, effort <span class="op">=</span> <span class="fl">1L</span>, seeds <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">KCenter</span><span class="op">(</span><span class="va">d</span>, <span class="va">k</span>, nstart <span class="op">=</span> <span class="fl">1L</span>, effort <span class="op">=</span> <span class="fl">1L</span>, seeds <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">KCenter</span><span class="op">(</span><span class="va">k</span>, <span class="va">d</span>, nstart <span class="op">=</span> <span class="fl">1L</span>, effort <span class="op">=</span> <span class="fl">1L</span>, seeds <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
-<dl><dt id="arg-d">d<a class="anchor" aria-label="anchor" href="#arg-d"></a></dt>
-<dd><p>A <code>dist</code> object or a square symmetric numeric distance matrix.</p></dd>
-
-
-<dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
+<dl><dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
 <dd><p>Integer number of centres, <code>1 &lt;= k &lt;= nrow(d)</code>.</p></dd>
+
+
+<dt id="arg-d">d<a class="anchor" aria-label="anchor" href="#arg-d"></a></dt>
+<dd><p>A <code>dist</code> object or a square symmetric numeric distance matrix.</p></dd>
 
 
 <dt id="arg-nstart">nstart<a class="anchor" aria-label="anchor" href="#arg-nstart"></a></dt>
@@ -142,7 +142,7 @@ selection; <code><a href="FarFirst.html">FarFirst()</a></code> for the Gonzalez 
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">pts</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">120</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/dist.html" class="external-link">dist</a></span><span class="op">(</span><span class="va">pts</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">centres</span> <span class="op">&lt;-</span> <span class="fu">KCentre</span><span class="op">(</span><span class="va">d</span>, <span class="fl">5L</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">centres</span> <span class="op">&lt;-</span> <span class="fu">KCentre</span><span class="op">(</span><span class="fl">5L</span>, <span class="va">d</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="KCentreRadius.html">KCentreRadius</a></span><span class="op">(</span><span class="va">d</span>, <span class="va">centres</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1.22535</span>
 <span class="r-in"><span><span class="co"># CDSh covers at least as tightly as the Gonzalez 2-approximation:</span></span></span>

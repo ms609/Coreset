@@ -49,6 +49,6 @@ Other reporting functions:
 
 ``` r
 set.seed(1)
-KCentre(dist(matrix(rnorm(60), ncol = 2)), 4L)
+KCentre(4L, dist(matrix(rnorm(60), ncol = 2)))
 #> 4 centres (10 12 14 28) by CDSh, covering radius <= 1.242
 ```

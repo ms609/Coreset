@@ -86,7 +86,8 @@ then the point furthest from that (a diameter-endpoint approximation).
 pairwise distance).</p></dd>
 
 <dt><code>"medoid"</code></dt>
-<dd><p>The point furthest from the 1-median (medoid).</p></dd>
+<dd><p>The 1-median (medoid): the point minimising the sum of
+distances to all others.</p></dd>
 
 <dt><code>"anti_medoid"</code></dt>
 <dd><p>The point furthest from the 1-median (medoid).</p></dd>
@@ -121,7 +122,7 @@ proposed seed in <code>d</code> or <code>points</code>.</p>
 <span class="r-in"><span><span class="fu">PickPoint</span><span class="op">(</span><span class="va">d</span>, strategy <span class="op">=</span> <span class="st">"diameter"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 14</span>
 <span class="r-in"><span><span class="fu"><a href="FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="fl">5L</span>, <span class="va">d</span>, strategy <span class="op">=</span> <span class="fu">PickPoint</span><span class="op">(</span><span class="va">d</span>, strategy <span class="op">=</span> <span class="st">"diameter"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first, each at distance &gt;= 1.765</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (14 4 26 5 28) selected by farthest-first, each at distance &gt;= 1.765</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

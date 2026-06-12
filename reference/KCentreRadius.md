@@ -69,7 +69,7 @@ the complementary MMDP objective.
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
-centres <- KCentre(d, 4L)
+centres <- KCentre(4L, d)
 KCentreRadius(d, centres)
 #> [1] 1.242483
 ```

@@ -62,8 +62,8 @@ MILP backend, the packing constraints held as a sparse matrix.</p>
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ExactMaxMin</span><span class="op">(</span></span>
-<span>  <span class="va">d</span>,</span>
 <span>  <span class="va">k</span>,</span>
+<span>  <span class="va">d</span>,</span>
 <span>  solver <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  maxSeconds <span class="op">=</span> <span class="fl">60</span>,</span>
 <span>  warmStart <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -75,12 +75,12 @@ MILP backend, the packing constraints held as a sparse matrix.</p>
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
-<dl><dt id="arg-d">d<a class="anchor" aria-label="anchor" href="#arg-d"></a></dt>
-<dd><p>A <code>dist</code> object or a square symmetric numeric distance matrix.</p></dd>
-
-
-<dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
+<dl><dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
 <dd><p>Integer target subset size, <code>2 &lt;= k &lt;= nrow(d)</code>.</p></dd>
+
+
+<dt id="arg-d">d<a class="anchor" aria-label="anchor" href="#arg-d"></a></dt>
+<dd><p>A <code>dist</code> object or a square symmetric numeric distance matrix.</p></dd>
 
 
 <dt id="arg-solver">solver<a class="anchor" aria-label="anchor" href="#arg-solver"></a></dt>

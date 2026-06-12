@@ -53,7 +53,8 @@ PickPoint(
 
   `"medoid"`
 
-  :   The point furthest from the 1-median (medoid).
+  :   The 1-median (medoid): the point minimising the sum of distances
+      to all others.
 
   `"anti_medoid"`
 
@@ -88,5 +89,5 @@ d <- dist(pts)
 PickPoint(d, strategy = "diameter")
 #> [1] 14
 FarFirst(5L, d, strategy = PickPoint(d, strategy = "diameter"))
-#> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first, each at distance >= 1.765
+#> 5 elements (14 4 26 5 28) selected by farthest-first, each at distance >= 1.765
 ```

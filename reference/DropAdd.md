@@ -1,37 +1,34 @@
 # DropAdd Tabu Search for the Max-Min Diversity Problem
 
-Implements the DropAdd-TS algorithm of Porumbel et al. (2011) for
-selecting a maximally-dispersed subset of `m` points from a distance
-matrix. The procedure consists of a deterministic greedy construction
-(Algorithm 1) followed by a FIFO drop-add tabu search (Algorithm 2) with
-the streamlined neighbour-evaluation tricks of Algorithms 3 and 4.
+`DropAdd()` selects a maximally-dispersed subset of `k` points using the
+DropAdd tabu search algorithm, which comprises a greedy construction
+followed by a first-in, first-out drop-add tabu search, with streamlined
+neighbour-evaluation tricks (algorithms 1–4 in Porumbel et al. 2011) .
 
 ## Usage
 
 ``` r
 DropAdd(
-  d = NULL,
   k,
+  d = NULL,
   plateau = 5000L,
   maxIter = NULL,
   maxSeconds = Inf,
   progress = getOption("MaxMin.progress", interactive()),
-  points = NULL,
-  .verify = FALSE,
-  .trace = NULL
+  points = NULL
 )
 ```
 
 ## Arguments
 
+- k:
+
+  Integer; subset size, \\2 \le k \le n\\.
+
 - d:
 
   A `dist` object or square symmetric numeric matrix. Mutually exclusive
   with `points`; supply exactly one.
-
-- k:
-
-  Integer; subset size, \\2 \le k \le n\\.
 
 - plateau:
 
@@ -56,8 +53,7 @@ DropAdd(
 
   Logical; show a start/done status line. Default: `TRUE` in interactive
   sessions, `FALSE` otherwise
-  (`getOption("MaxMin.progress", interactive())`). No effect when
-  `.verify = TRUE` (testing path).
+  (`getOption("MaxMin.progress", interactive())`).
 
 - points:
 
@@ -68,17 +64,6 @@ DropAdd(
   giving \\O(n)\\ working memory and enabling use at \\n\\ far exceeding
   the matrix path's ceiling (R's `as.matrix.dist` overflows at \\n =
   46340\\).
-
-- .verify:
-
-  Logical (testing only); if `TRUE`, routes to the R reference loop and
-  brute-force asserts the streamlined records at every iteration.
-  Default `FALSE` (the C++ fast path). Only applies to the `d` path.
-
-- .trace:
-
-  Optional environment (testing only); if supplied, the dropped and
-  added index sequences are written into it as `drops` and `adds`.
 
 ## Value
 
@@ -110,27 +95,6 @@ The vector has class `"MaxMinSelection"` and prints as a one-line
 summary (see
 [print.MaxMinSelection](https://ms609.github.io/MaxMin/reference/print.MaxMin.md));
 it is otherwise an ordinary integer vector.
-
-## Details
-
-The MMDPo objective optimised is \$\$\min\_{x,y \in X} d(x,y) + \epsilon
-\sum\_{x,y \in X} d(x,y),\$\$ with \\\epsilon = 10^{-9}\\, so the
-pairwise sum acts as a tie-break.
-
-Tabu mechanics. The algorithm maintains an integer `iter` stamp for
-every point, set to the iteration at which the point last entered or
-left the selected set \\X\\. At each main-loop iteration the point with
-the smallest `iter` value (the oldest member, FIFO) is dropped, and the
-point in \\Z \setminus X\\ maximising lexicographically
-\\(\mathrm{minDist}, \mathrm{sumDist})\\ is added. The FIFO invariant
-guarantees that across any window of \\m\\ iterations every
-initially-selected point is dropped exactly once before any re-eviction.
-
-Time budget behaviour. The time budget (`maxSeconds`) is checked at most
-once every 256 iterations (matrix-free path) or 1024 iterations (matrix
-path). On large instances where each iteration is slow, the actual
-elapsed time may exceed the specified budget by up to one iteration's
-worth of computation.
 
 ## References
 

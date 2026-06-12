@@ -115,15 +115,15 @@ FarFirst(5L, d, strategy = c("diameter", "anti_medoid"))
 
 # A single strategy:
 FarFirst(5L, d, strategy = "diameter")
-#> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first, each at distance >= 1.765
+#> 5 elements (14 4 26 5 28) selected by farthest-first, each at distance >= 1.765
 
 # An explicit start index (integer strategy):
 FarFirst(5L, d, strategy = 1L)
-#> 5 elements (1 5 24 4 14) selected by Gonzalez farthest-first, each at distance >= 1.701
+#> 5 elements (1 5 24 4 14) selected by farthest-first, each at distance >= 1.701
 
 # Matrix-free coordinate path (identical result, O(N) memory):
 FarFirst(5L, points = pts, strategy = 1L)
-#> 5 elements (1 5 24 4 14) selected by Gonzalez farthest-first, each at distance >= 1.701
+#> 5 elements (1 5 24 4 14) selected by farthest-first, each at distance >= 1.701
 
 # Distance-column oracle: supply one column at a time, never the full matrix.
 data("USArrests")

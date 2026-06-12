@@ -13,8 +13,8 @@ matrix.
 
 ``` r
 ExactMaxMin(
-  d,
   k,
+  d,
   solver = NULL,
   maxSeconds = 60,
   warmStart = NULL,
@@ -24,13 +24,13 @@ ExactMaxMin(
 
 ## Arguments
 
-- d:
-
-  A `dist` object or a square symmetric numeric distance matrix.
-
 - k:
 
   Integer target subset size, `2 <= k <= nrow(d)`.
+
+- d:
+
+  A `dist` object or a square symmetric numeric distance matrix.
 
 - solver:
 

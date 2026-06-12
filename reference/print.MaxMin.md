@@ -1,20 +1,6 @@
 # Format and print MaxMin solver results
 
-One-line, human-readable summaries of the objects returned by the MaxMin
-solvers. A `MaxMinSelection` (from
-[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md),
-[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) and
-[`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md)) reports
-its size, the selected indices, the algorithm (and, for a
-[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
-ensemble, the winning strategy), and the achieved \\T_k\\; a
-`MaxMinExact` (from
-[`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md))
-additionally states whether optimality was proven. `MaxMinExact` extends
-`MaxMinSelection` (`class = c("MaxMinExact", "MaxMinSelection")`), so
-`inherits(x, "MaxMinSelection")` is `TRUE` for any solver result. Both
-objects are otherwise unchanged – a `MaxMinSelection` still indexes like
-the bare integer vector it wraps – so these methods only affect display.
+Terse summaries of the objects returned by the MaxMin solvers.
 
 ## Usage
 
@@ -44,8 +30,16 @@ print(x, ...)
 
 ## Value
 
-`print.MaxMin()` returns `x`, invisibly (`print`); a length-1 character
-string (`format`).
+`print.MaxMin()` returns `x`, invisibly. It is called for its
+side-effect of printing `format(x)` to the console. `format.MaxMin()`
+returns a character string describing a `MaxMinSelection` (from
+[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md),
+[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) and
+[`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md)); it
+reports its size, the selected indices, the algorithm (and if applicable
+strategy), and the achieved \\T_k\\. A `MaxMinExact` (from
+[`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md))
+object additionally states whether optimality was proven.
 
 ## See also
 
@@ -58,6 +52,6 @@ Other reporting functions:
 ``` r
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
-FarFirst(dist(pts), 5L)
-#> Error in .AsDistMatrix(d): `d` must be a `dist` object or a square numeric matrix
+print(FarFirst(5L, dist(pts)))
+#> 5 elements (14 4 26 5 28) selected by farthest-first (best of 5 strategies, 3 tied: random_furthest2, random_furthest4, random_furthest5), each at distance >= 1.765
 ```

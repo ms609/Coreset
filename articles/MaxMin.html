@@ -206,7 +206,7 @@
 <p>The <strong>DropAdd</strong> heuristic <span class="citation" data-cites="Porumbel2011">(<a href="#ref-Porumbel2011" role="doc-biblioref">Porumbel et al., 2011</a>)</span> refines an initial selection by alternately dropping and adding points from the selection; it typically reaches ≈ 99 % of the optimal T<sub>k</sub>.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">daPick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/DropAdd.html">DropAdd</a></span><span class="op">(</span><span class="va">eurodist</span>, k <span class="op">=</span> <span class="fl">6L</span>, plateau <span class="op">=</span> <span class="fl">500L</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">daPick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/DropAdd.html">DropAdd</a></span><span class="op">(</span><span class="fl">6L</span>, <span class="va">eurodist</span>, plateau <span class="op">=</span> <span class="fl">500L</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">daPick</span></span>
 <span><span class="co">#&gt; 6 elements (1 2 5 12 20 21) selected by DropAdd tabu search, each at distance &gt;= 1294</span></span>
@@ -220,7 +220,7 @@
 <div class="cell">
 <div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
-<span><span class="va">grPick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Grasp.html">Grasp</a></span><span class="op">(</span><span class="va">eurodist</span>, k <span class="op">=</span> <span class="fl">6L</span>, plateau <span class="op">=</span> <span class="fl">50L</span><span class="op">)</span></span>
+<span><span class="va">grPick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Grasp.html">Grasp</a></span><span class="op">(</span><span class="fl">6L</span>, <span class="va">eurodist</span>, plateau <span class="op">=</span> <span class="fl">50L</span><span class="op">)</span></span>
 <span><span class="va">grPick</span></span>
 <span><span class="co">#&gt; 6 elements (1 2 4 12 20 21) selected by GRASP with path-relinking, each at distance &gt;= 1305</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/labels.html" class="external-link">labels</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span><span class="op">[</span><span class="va">grPick</span><span class="op">]</span></span>
@@ -242,9 +242,9 @@
 <div class="cell">
 <div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ffPick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">k</span>, <span class="va">d50</span><span class="op">)</span></span>
-<span><span class="va">da50Pick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/DropAdd.html">DropAdd</a></span><span class="op">(</span><span class="va">d50</span>, k <span class="op">=</span> <span class="va">k</span>, plateau <span class="op">=</span> <span class="fl">500L</span><span class="op">)</span></span>
+<span><span class="va">da50Pick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/DropAdd.html">DropAdd</a></span><span class="op">(</span><span class="va">k</span>, <span class="va">d50</span>, plateau <span class="op">=</span> <span class="fl">500L</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
-<span><span class="va">gr50Pick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Grasp.html">Grasp</a></span><span class="op">(</span><span class="va">d50</span>, k <span class="op">=</span> <span class="va">k</span>, plateau <span class="op">=</span> <span class="fl">50L</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">gr50Pick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Grasp.html">Grasp</a></span><span class="op">(</span><span class="va">k</span>, <span class="va">d50</span>, plateau <span class="op">=</span> <span class="fl">50L</span><span class="op">)</span></span></code></pre></div>
 </div>
 <p>Even a small difference in T<sub>k</sub> can correspond to a meaningfully more dispersed selection.</p>
 <div class="cell">
@@ -311,7 +311,7 @@
 </div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">exPick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ExactMaxMin.html">ExactMaxMin</a></span><span class="op">(</span><span class="va">d30</span>, k <span class="op">=</span> <span class="fl">6L</span>, maxSeconds <span class="op">=</span> <span class="fl">30L</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">exPick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ExactMaxMin.html">ExactMaxMin</a></span><span class="op">(</span><span class="fl">6L</span>, <span class="va">d30</span>, maxSeconds <span class="op">=</span> <span class="fl">30L</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">exPick</span><span class="op">$</span><span class="va">proven</span>      <span class="co"># TRUE  ⟹  objective is the global optimum</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span>
@@ -350,7 +350,7 @@
 <p><code><a href="../reference/KCentre.html">KCentre()</a></code> chooses centres with the deterministic CDSh heuristic <span class="citation" data-cites="GarciaDiaz2019 GarciaDiaz2017">(<a href="#ref-GarciaDiaz2017" role="doc-biblioref">García-Díaz et al., 2017</a>; <a href="#ref-GarciaDiaz2019" role="doc-biblioref">García-Díaz et al., 2019</a>)</span>, which typically lands within 1–3.5 % of the optimum — an order of magnitude tighter than the Gonzalez 2-approximation that <code><a href="../reference/FarFirst.html">FarFirst()</a></code> gives for this objective.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">centres</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/KCentre.html">KCentre</a></span><span class="op">(</span><span class="va">eurodist</span>, k <span class="op">=</span> <span class="fl">4L</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">centres</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/KCentre.html">KCentre</a></span><span class="op">(</span><span class="fl">4L</span>, <span class="va">eurodist</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/labels.html" class="external-link">labels</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span><span class="op">[</span><span class="va">centres</span><span class="op">]</span></span>
 <span><span class="co">#&gt; [1] "Cologne"    "Copenhagen" "Madrid"     "Rome"</span></span>
 <span><span class="va">centres</span></span>
@@ -372,7 +372,7 @@
 <p>For small instances, <code><a href="../reference/ExactKCentre.html">ExactKCentre()</a></code> solves the covering problem to proven optimality with a sequence of minimum-set-cover integer programs — the covering dual of <code><a href="../reference/ExactMaxMin.html">ExactMaxMin()</a></code>’s node-packing programme — warm-started from the <code><a href="../reference/KCentre.html">KCentre()</a></code> radius and bisected down to the smallest feasible radius. Like <code><a href="../reference/ExactMaxMin.html">ExactMaxMin()</a></code>, it uses the <strong>highs</strong> solver.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">kc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ExactKCentre.html">ExactKCentre</a></span><span class="op">(</span><span class="va">eurodist</span>, k <span class="op">=</span> <span class="fl">4L</span>, progress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">kc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ExactKCentre.html">ExactKCentre</a></span><span class="op">(</span><span class="fl">4L</span>, <span class="va">eurodist</span>, progress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="va">kc</span></span>
 <span><span class="co">#&gt; 4 centres (6 7 14 19) by exact MILP (highs), proven optimal, covering radius = 1011</span></span>
 <span><span class="va">kc</span><span class="op">$</span><span class="va">proven</span>      <span class="co"># TRUE  ⟹  radius is the global covering optimum</span></span>
@@ -382,7 +382,7 @@
 <p>The dispersion and covering optima differ even on this small example: dispersion selects cities at the rim of the map, while covering pulls inward to keep every city near a centre.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">disp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="fu"><a href="../reference/ExactMaxMin.html">ExactMaxMin</a></span><span class="op">(</span><span class="va">eurodist</span>, k <span class="op">=</span> <span class="fl">4L</span><span class="op">)</span><span class="op">$</span><span class="va">indices</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">disp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="fu"><a href="../reference/ExactMaxMin.html">ExactMaxMin</a></span><span class="op">(</span><span class="fl">4L</span>, <span class="va">eurodist</span><span class="op">)</span><span class="op">$</span><span class="va">indices</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/labels.html" class="external-link">labels</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span><span class="op">[</span><span class="va">disp</span><span class="op">]</span>              <span class="co"># dispersion: pushed to the extremes</span></span>
 <span><span class="co">#&gt; [1] "Athens"    "Lisbon"    "Milan"     "Stockholm"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/labels.html" class="external-link">labels</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="va">kc</span><span class="op">$</span><span class="va">indices</span><span class="op">)</span><span class="op">]</span>  <span class="co"># covering: pulled toward the interior</span></span>

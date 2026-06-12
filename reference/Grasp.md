@@ -12,8 +12,8 @@ this package, at correspondingly higher cost.
 
 ``` r
 Grasp(
-  d,
   k,
+  d,
   plateau = 100L,
   maxIter = NULL,
   eliteSize = 10L,
@@ -24,13 +24,13 @@ Grasp(
 
 ## Arguments
 
-- d:
-
-  Either a `dist` object or a square symmetric numeric matrix.
-
 - k:
 
   Integer subset size, `2 <= k <= nrow(d)`.
+
+- d:
+
+  Either a `dist` object or a square symmetric numeric matrix.
 
 - plateau:
 
@@ -133,7 +133,7 @@ set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 # Call set.seed() before Grasp() for a reproducible run:
 set.seed(1)
-res <- Grasp(dist(pts), k = 5L, plateau = 20L, eliteSize = 4L)
+res <- Grasp(5L, dist(pts), plateau = 20L, eliteSize = 4L)
 res
 #> 5 elements (3 4 5 24 25) selected by GRASP with path-relinking, each at distance >= 1.778
 ```

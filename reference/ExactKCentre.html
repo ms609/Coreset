@@ -65,8 +65,8 @@ radius.</p>
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ExactKCentre</span><span class="op">(</span></span>
-<span>  <span class="va">d</span>,</span>
 <span>  <span class="va">k</span>,</span>
+<span>  <span class="va">d</span>,</span>
 <span>  solver <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  maxSeconds <span class="op">=</span> <span class="fl">60</span>,</span>
 <span>  warmStart <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -74,8 +74,8 @@ radius.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">ExactKCenter</span><span class="op">(</span></span>
-<span>  <span class="va">d</span>,</span>
 <span>  <span class="va">k</span>,</span>
+<span>  <span class="va">d</span>,</span>
 <span>  solver <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  maxSeconds <span class="op">=</span> <span class="fl">60</span>,</span>
 <span>  warmStart <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -87,12 +87,12 @@ radius.</p>
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
-<dl><dt id="arg-d">d<a class="anchor" aria-label="anchor" href="#arg-d"></a></dt>
-<dd><p>A <code>dist</code> object or a square symmetric numeric distance matrix.</p></dd>
-
-
-<dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
+<dl><dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
 <dd><p>Integer centre budget, <code>1 &lt;= k &lt;= nrow(d)</code>.</p></dd>
+
+
+<dt id="arg-d">d<a class="anchor" aria-label="anchor" href="#arg-d"></a></dt>
+<dd><p>A <code>dist</code> object or a square symmetric numeric distance matrix.</p></dd>
 
 
 <dt id="arg-solver">solver<a class="anchor" aria-label="anchor" href="#arg-solver"></a></dt>
@@ -169,7 +169,7 @@ the dual MMDP optimum.</p></div>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="va">pts</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">40</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="va">d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/dist.html" class="external-link">dist</a></span><span class="op">(</span><span class="va">pts</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="fu">ExactKCentre</span><span class="op">(</span><span class="va">d</span>, <span class="fl">3L</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu">ExactKCentre</span><span class="op">(</span><span class="fl">3L</span>, <span class="va">d</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3 centres (3 11 15) by exact MILP (highs), proven optimal, covering radius = 1.385</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>

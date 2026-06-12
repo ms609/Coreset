@@ -8,20 +8,20 @@ using the CDSh heuristic (García-Díaz et al. 2017; García-Díaz et al.
 ## Usage
 
 ``` r
-KCentre(d, k, nstart = 1L, effort = 1L, seeds = NULL)
+KCentre(k, d, nstart = 1L, effort = 1L, seeds = NULL)
 
-KCenter(d, k, nstart = 1L, effort = 1L, seeds = NULL)
+KCenter(k, d, nstart = 1L, effort = 1L, seeds = NULL)
 ```
 
 ## Arguments
 
-- d:
-
-  A `dist` object or a square symmetric numeric distance matrix.
-
 - k:
 
   Integer number of centres, `1 <= k <= nrow(d)`.
+
+- d:
+
+  A `dist` object or a square symmetric numeric distance matrix.
 
 - nstart:
 
@@ -112,7 +112,7 @@ the Gonzalez 2-approximation baseline.
 set.seed(1)
 pts <- matrix(rnorm(120), ncol = 2)
 d <- dist(pts)
-centres <- KCentre(d, 5L)
+centres <- KCentre(5L, d)
 KCentreRadius(d, centres)
 #> [1] 1.22535
 # CDSh covers at least as tightly as the Gonzalez 2-approximation:

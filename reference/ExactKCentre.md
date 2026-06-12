@@ -16,8 +16,8 @@ search, then bisects downward to the smallest feasible radius.
 
 ``` r
 ExactKCentre(
-  d,
   k,
+  d,
   solver = NULL,
   maxSeconds = 60,
   warmStart = NULL,
@@ -25,8 +25,8 @@ ExactKCentre(
 )
 
 ExactKCenter(
-  d,
   k,
+  d,
   solver = NULL,
   maxSeconds = 60,
   warmStart = NULL,
@@ -36,13 +36,13 @@ ExactKCenter(
 
 ## Arguments
 
-- d:
-
-  A `dist` object or a square symmetric numeric distance matrix.
-
 - k:
 
   Integer centre budget, `1 <= k <= nrow(d)`.
+
+- d:
+
+  A `dist` object or a square symmetric numeric distance matrix.
 
 - solver:
 
@@ -130,7 +130,7 @@ if (requireNamespace("highs", quietly = TRUE) &&
   set.seed(1)
   pts <- matrix(rnorm(40), ncol = 2)
   d <- dist(pts)
-  ExactKCentre(d, 3L)
+  ExactKCentre(3L, d)
 }
 #> 3 centres (3 11 15) by exact MILP (highs), proven optimal, covering radius = 1.385
 # }

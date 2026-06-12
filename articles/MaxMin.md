@@ -171,7 +171,7 @@ from the selection; it typically reaches ≈ 99 % of the optimal T_(k).
 
 ``` r
 
-daPick <- DropAdd(eurodist, k = 6L, plateau = 500L)
+daPick <- DropAdd(6L, eurodist, plateau = 500L)
 
 daPick
 #> 6 elements (1 2 5 12 20 21) selected by DropAdd tabu search, each at distance >= 1294
@@ -199,7 +199,7 @@ reproducible run:
 ``` r
 
 set.seed(42)
-grPick <- Grasp(eurodist, k = 6L, plateau = 50L)
+grPick <- Grasp(6L, eurodist, plateau = 50L)
 grPick
 #> 6 elements (1 2 4 12 20 21) selected by GRASP with path-relinking, each at distance >= 1305
 labels(eurodist)[grPick]
@@ -228,9 +228,9 @@ k   <- 8L
 ``` r
 
 ffPick <- FarFirst(k, d50)
-da50Pick <- DropAdd(d50, k = k, plateau = 500L)
+da50Pick <- DropAdd(k, d50, plateau = 500L)
 set.seed(42)
-gr50Pick <- Grasp(d50, k = k, plateau = 50L)
+gr50Pick <- Grasp(k, d50, plateau = 50L)
 ```
 
 Even a small difference in T_(k) can correspond to a meaningfully more
@@ -314,7 +314,7 @@ d30   <- dist(pts30)
 
 ``` r
 
-exPick <- ExactMaxMin(d30, k = 6L, maxSeconds = 30L)
+exPick <- ExactMaxMin(6L, d30, maxSeconds = 30L)
 
 exPick$proven      # TRUE  ⟹  objective is the global optimum
 #> [1] TRUE
@@ -378,7 +378,7 @@ gives for this objective.
 
 ``` r
 
-centres <- KCentre(eurodist, k = 4L)
+centres <- KCentre(4L, eurodist)
 labels(eurodist)[centres]
 #> [1] "Cologne"    "Copenhagen" "Madrid"     "Rome"
 centres
@@ -419,7 +419,7 @@ it uses the **highs** solver.
 
 ``` r
 
-kc <- ExactKCentre(eurodist, k = 4L, progress = FALSE)
+kc <- ExactKCentre(4L, eurodist, progress = FALSE)
 kc
 #> 4 centres (6 7 14 19) by exact MILP (highs), proven optimal, covering radius = 1011
 kc$proven      # TRUE  ⟹  radius is the global covering optimum
@@ -442,7 +442,7 @@ inward to keep every city near a centre.
 
 ``` r
 
-disp <- sort(ExactMaxMin(eurodist, k = 4L)$indices)
+disp <- sort(ExactMaxMin(4L, eurodist)$indices)
 labels(eurodist)[disp]              # dispersion: pushed to the extremes
 #> [1] "Athens"    "Lisbon"    "Milan"     "Stockholm"
 labels(eurodist)[sort(kc$indices)]  # covering: pulled toward the interior
