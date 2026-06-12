@@ -59,7 +59,7 @@
 
 # ----- covering-radius score ------------------------------------------------
 
-#' Covering radius of a centre set (k-centre objective)
+#' Covering radius of a set of selected centres
 #'
 #' Returns the covering radius of a set of centres: the largest distance from
 #' any of the `N` points to its nearest centre,

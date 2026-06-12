@@ -217,7 +217,7 @@ print.MaxMinExact <- function(x, ...) {
   invisible(NULL)
 }
 
-#' Multi-line summaries of MaxMin solver results
+#' Detailed summaries of MaxMin solver results
 #'
 #' A fuller counterpart to [print.MaxMinSelection()]: the one-line headline,
 #' followed by the achieved objective(s), search effort, and -- for a

@@ -3,7 +3,7 @@
 \name{KCentreRadius}
 \alias{KCentreRadius}
 \alias{KCenterRadius}
-\title{Covering radius of a centre set (k-centre objective)}
+\title{Covering radius of a set of selected centres}
 \usage{
 KCentreRadius(d = NULL, idx, points = NULL)
 

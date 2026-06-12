@@ -4,7 +4,7 @@
 \alias{summary.MaxMin}
 \alias{summary.MaxMinSelection}
 \alias{summary.MaxMinExact}
-\title{Multi-line summaries of MaxMin solver results}
+\title{Detailed summaries of MaxMin solver results}
 \usage{
 \method{summary}{MaxMinSelection}(object, ...)
 
