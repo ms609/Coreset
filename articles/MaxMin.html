@@ -372,9 +372,8 @@
 <p>For small instances, <code><a href="../reference/ExactKCentre.html">ExactKCentre()</a></code> solves the covering problem to proven optimality with a sequence of minimum-set-cover integer programs — the covering dual of <code><a href="../reference/ExactMaxMin.html">ExactMaxMin()</a></code>’s node-packing programme — warm-started from the <code><a href="../reference/KCentre.html">KCentre()</a></code> radius and bisected down to the smallest feasible radius. Like <code><a href="../reference/ExactMaxMin.html">ExactMaxMin()</a></code>, it uses the <strong>highs</strong> solver.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">kc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ExactKCentre.html">ExactKCentre</a></span><span class="op">(</span><span class="fl">4L</span>, <span class="va">eurodist</span>, progress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">kc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ExactKCentre.html">ExactKCentre</a></span><span class="op">(</span><span class="fl">4L</span>, <span class="va">eurodist</span><span class="op">)</span></span>
 <span><span class="va">kc</span></span>
-<span><span class="co">#&gt; 4 centres (6 7 14 19) by exact MILP (highs), proven optimal, covering radius = 1011</span></span>
 <span><span class="va">kc</span><span class="op">$</span><span class="va">proven</span>      <span class="co"># TRUE  ⟹  radius is the global covering optimum</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 </div>

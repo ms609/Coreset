@@ -14,7 +14,6 @@ DropAdd(
   plateau = 5000L,
   maxIter = NULL,
   maxSeconds = Inf,
-  progress = getOption("MaxMin.progress", interactive()),
   points = NULL
 )
 ```
@@ -48,12 +47,6 @@ DropAdd(
   Optional wall-clock ceiling in seconds, checked at iteration
   boundaries. Default `Inf` (no ceiling, fully reproducible). A finite
   value caps runtime but makes the result machine-dependent.
-
-- progress:
-
-  Logical; show a start/done status line. Default: `TRUE` in interactive
-  sessions, `FALSE` otherwise
-  (`getOption("MaxMin.progress", interactive())`).
 
 - points:
 
@@ -95,6 +88,12 @@ The vector has class `"MaxMinSelection"` and prints as a one-line
 summary (see
 [print.MaxMinSelection](https://ms609.github.io/MaxMin/reference/print.MaxMin.md));
 it is otherwise an ordinary integer vector.
+
+## Progress bar
+
+Shows status messages controlled by
+`getOption("MaxMin.progress", interactive())` — `TRUE` by default in
+interactive sessions, `FALSE` otherwise.
 
 ## References
 

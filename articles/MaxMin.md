@@ -419,9 +419,8 @@ it uses the **highs** solver.
 
 ``` r
 
-kc <- ExactKCentre(4L, eurodist, progress = FALSE)
+kc <- ExactKCentre(4L, eurodist)
 kc
-#> 4 centres (6 7 14 19) by exact MILP (highs), proven optimal, covering radius = 1011
 kc$proven      # TRUE  ⟹  radius is the global covering optimum
 #> [1] TRUE
 ```

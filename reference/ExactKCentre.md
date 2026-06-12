@@ -1,53 +1,25 @@
 # Exact discrete k-centre optimum on small instances
 
-Solves the discrete (vertex) *k*-centre problem to proven optimality:
-the optimum covering radius is the smallest threshold `r`, over the
-achieved distinct distances, for which `k` centres can cover every point
-within `r`. Each probe solves a minimum-cardinality *set-cover* integer
-program with the `highs` MILP backend, the covering constraints held as
-a sparse matrix – the covering dual of
-[`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)'s
-node-packing program. The search is warm-started from the
-[`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md)
-(CDSh) radius, a proven feasible upper bound that caps the binary
-search, then bisects downward to the smallest feasible radius.
+`ExactKCentre()` finds an optimal solution to the discrete *k*-centre
+problem.
 
 ## Usage
 
 ``` r
-ExactKCentre(
-  k,
-  d,
-  solver = NULL,
-  maxSeconds = 60,
-  warmStart = NULL,
-  progress = getOption("MaxMin.progress", interactive())
-)
+ExactKCentre(k, d, maxSeconds = 60)
 
-ExactKCenter(
-  k,
-  d,
-  solver = NULL,
-  maxSeconds = 60,
-  warmStart = NULL,
-  progress = getOption("MaxMin.progress", interactive())
-)
+ExactKCenter(k, d, maxSeconds = 60)
 ```
 
 ## Arguments
 
 - k:
 
-  Integer centre budget, `1 <= k <= nrow(d)`.
+  Integer specifying maximum number of centres, `1 <= k <= nrow(d)`.
 
 - d:
 
   A `dist` object or a square symmetric numeric distance matrix.
-
-- solver:
-
-  Solver to use. Currently only `"highs"` is implemented; `NULL` selects
-  it.
 
 - maxSeconds:
 
@@ -55,16 +27,6 @@ ExactKCenter(
   internal IP solves). If it expires before the optimum is proven, the
   smallest radius proven feasible so far is returned with
   `proven = FALSE`.
-
-- warmStart:
-
-  Currently unused; reserved for a caller-supplied feasible centre set.
-  The internal CDSh warm start runs regardless.
-
-- progress:
-
-  Logical; show a progress indicator. Default: `TRUE` in interactive
-  sessions (`getOption("MaxMin.progress", interactive())`).
 
 ## Value
 
@@ -87,10 +49,6 @@ ExactKCenter(
 
   Wall-clock seconds elapsed.
 
-- solver:
-
-  Name of the MILP backend used.
-
 - n, k:
 
   Instance size and centre budget.
@@ -101,13 +59,32 @@ ExactKCenter(
 
 It prints as a one-line summary and is otherwise an ordinary list.
 
-## Details
-
 The covering optimum may be attained by fewer than `k` centres (extra
 centres never help once coverage is achieved); `indices` then has length
 `< k` and the reported `radius` is still the proven *k*-centre optimum.
 The problem is NP-hard, so this is an external ground-truth reference
 for small instances, not a scalable method.
+
+## Details
+
+The optimum covering radius is the smallest threshold `r`, over the
+achieved distinct distances, for which `k` centres can cover every point
+within `r`.
+
+Each probe solves a minimum-cardinality *set-cover* integer program with
+the `highs` MILP backend, the covering constraints held as a sparse
+matrix – the covering dual of
+[`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)'s
+node-packing program. The search is warm-started from the
+[`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md)
+(CDSh) radius, a proven feasible upper bound that caps the binary
+search, then bisects downward to the smallest feasible radius.
+
+## Progress bar
+
+Shows a progress indicator controlled by
+`getOption("MaxMin.progress", interactive())` — `TRUE` by default in
+interactive sessions, `FALSE` otherwise.
 
 ## References
 
@@ -132,6 +109,6 @@ if (requireNamespace("highs", quietly = TRUE) &&
   d <- dist(pts)
   ExactKCentre(3L, d)
 }
-#> 3 centres (3 11 15) by exact MILP (highs), proven optimal, covering radius = 1.385
+#> 
 # }
 ```

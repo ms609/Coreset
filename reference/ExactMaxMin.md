@@ -12,14 +12,7 @@ matrix.
 ## Usage
 
 ``` r
-ExactMaxMin(
-  k,
-  d,
-  solver = NULL,
-  maxSeconds = 60,
-  warmStart = NULL,
-  progress = getOption("MaxMin.progress", interactive())
-)
+ExactMaxMin(k, d, solver = NULL, maxSeconds = 60, warmStart = NULL)
 ```
 
 ## Arguments
@@ -51,12 +44,6 @@ ExactMaxMin(
   computed by another solver. Ignored unless it is a valid `k`-subset.
   The internal heuristics run regardless; a good `warmStart` can only
   reduce the number of IP solves, never change the proven optimum.
-
-- progress:
-
-  Logical; show a progress indicator during the search. Default: `TRUE`
-  in interactive sessions, `FALSE` otherwise
-  (`getOption("MaxMin.progress", interactive())`).
 
 ## Value
 
@@ -124,6 +111,12 @@ warm start draws on the session RNG via
 [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md), advances
 it. Call [`set.seed()`](https://rdrr.io/r/base/Random.html) before
 `ExactMaxMin()` for a reproducible selection.
+
+## Progress bar
+
+Shows a progress indicator controlled by
+`getOption("MaxMin.progress", interactive())` — `TRUE` by default in
+interactive sessions, `FALSE` otherwise.
 
 ## References
 
