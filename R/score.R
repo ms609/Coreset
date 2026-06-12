@@ -10,16 +10,14 @@
 #' @param idx Integer vector of selected row/col indices.
 #' @param points Optional `N x dim` numeric coordinate matrix. When supplied,
 #'   the score is computed from `stats::dist()` on the selected
-#'   sub-coordinates only (`k x k`), never the full `N x N` matrix (`d` is then
-#'   unused). For Euclidean data the result is identical to the matrix path.
-#' @return `MinDist()` returns a numeric scalar; `NA_real_` if `length(idx) < 2`.
+#'   sub-coordinates only (`k x k`).
+#' @return `MinDist()` returns a numeric specifying the minimum distance between
+#' two selected points (or `NA_real_`, if `length(idx) < 2`).
 #' @details The solvers in this package ([FarFirst()], [DropAdd()], [Grasp()])
-#'   already attach the achieved \eqn{T_k} as a `score` attribute, so
-#'   `MinDist()` is mainly for scoring a selection produced elsewhere -- a
-#'   matrix-free or externally generated index set -- or for re-scoring an
-#'   existing selection against a different distance matrix.
-#' @seealso [FarFirst()], [DropAdd()], [Grasp()] and [ExactMaxMin()], whose
-#'   results already carry the objective.
+#'  already attach the achieved \eqn{T_k} as a `score` attribute.
+#'  `MinDist()` allows arbitrary selections to be scored, or an existing
+#'  selection to be scored against a different distance matrix.
+#' @seealso [FarFirst()], [DropAdd()], [Grasp()] and [ExactMaxMin()].
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)

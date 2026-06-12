@@ -14,11 +14,11 @@ is supplied.}
 
 \item{points}{Optional \verb{N x dim} numeric coordinate matrix. When supplied,
 the score is computed from \code{stats::dist()} on the selected
-sub-coordinates only (\verb{k x k}), never the full \verb{N x N} matrix (\code{d} is then
-unused). For Euclidean data the result is identical to the matrix path.}
+sub-coordinates only (\verb{k x k}).}
 }
 \value{
-\code{MinDist()} returns a numeric scalar; \code{NA_real_} if \code{length(idx) < 2}.
+\code{MinDist()} returns a numeric specifying the minimum distance between
+two selected points (or \code{NA_real_}, if \code{length(idx) < 2}).
 }
 \description{
 Returns the minimum pairwise distance among selected points \eqn{T_k}.
@@ -26,10 +26,9 @@ A set of points that is more dispersed will exhibit a higher value.
 }
 \details{
 The solvers in this package (\code{\link[=FarFirst]{FarFirst()}}, \code{\link[=DropAdd]{DropAdd()}}, \code{\link[=Grasp]{Grasp()}})
-already attach the achieved \eqn{T_k} as a \code{score} attribute, so
-\code{MinDist()} is mainly for scoring a selection produced elsewhere -- a
-matrix-free or externally generated index set -- or for re-scoring an
-existing selection against a different distance matrix.
+already attach the achieved \eqn{T_k} as a \code{score} attribute.
+\code{MinDist()} allows arbitrary selections to be scored, or an existing
+selection to be scored against a different distance matrix.
 }
 \examples{
 set.seed(1)
@@ -38,6 +37,5 @@ d <- dist(pts)
 MinDist(d, FarFirst(5L, d))
 }
 \seealso{
-\code{\link[=FarFirst]{FarFirst()}}, \code{\link[=DropAdd]{DropAdd()}}, \code{\link[=Grasp]{Grasp()}} and \code{\link[=ExactMaxMin]{ExactMaxMin()}}, whose
-results already carry the objective.
+\code{\link[=FarFirst]{FarFirst()}}, \code{\link[=DropAdd]{DropAdd()}}, \code{\link[=Grasp]{Grasp()}} and \code{\link[=ExactMaxMin]{ExactMaxMin()}}.
 }
