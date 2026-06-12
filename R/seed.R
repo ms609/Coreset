@@ -255,7 +255,8 @@
 #'   \eqn{O(N)}.}
 #'   \item{`"diameter"`}{A row endpoint of the diameter pair (the maximum
 #'     pairwise distance).}
-#'   \item{`"medoid"`}{The point furthest from the 1-median (medoid).}
+#'   \item{`"medoid"`}{The 1-median (medoid): the point minimising the sum of
+#'     distances to all others.}
 #'   \item{`"anti_medoid"`}{The point furthest from the 1-median (medoid).}
 #'   \item{`"rowsum"`}{The point maximising the sum of distances to all others
 #'     (the 1-anti-median).}

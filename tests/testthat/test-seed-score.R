@@ -64,26 +64,26 @@ test_that("PickPoint validates method", {
 test_that("MinDist matrix and coordinate paths agree", {
   dat <- MakeData()
   idx <- c(1L, 5L, 9L, 20L, 33L)
-  expect_equal(MinDist(dat$d, idx),
+  expect_equal(MinDist(d = dat$d, idx),
                MinDist(idx = idx, points = dat$pts))
   # equals the brute-force minimum pairwise distance.
   sub <- dat$d[idx, idx]; diag(sub) <- Inf
-  expect_equal(MinDist(dat$d, idx), min(sub))
+  expect_equal(MinDist(d = dat$d, idx), min(sub))
 })
 
 test_that("MinDist returns NA for fewer than two points", {
   dat <- MakeData(N = 6)
-  expect_true(is.na(MinDist(dat$d, 3L)))
+  expect_true(is.na(MinDist(d = dat$d, 3L)))
   expect_true(is.na(MinDist(idx = integer(0), points = dat$pts)))
 })
 
 test_that("MinDist rejects NA and duplicate idx (F-604/F-605)", {
   dat <- MakeData(N = 8)
   # NA was silently NA on the matrix path but an error on the points path.
-  expect_error(MinDist(dat$d, c(1L, NA, 3L)), "NA")
+  expect_error(MinDist(d = dat$d, c(1L, NA, 3L)), "NA")
   expect_error(MinDist(idx = c(1L, NA), points = dat$pts), "NA")
   # Duplicate indices made any selection score 0 (self-distance survives).
-  expect_error(MinDist(dat$d, c(1L, 2L, 2L)), "duplicate")
+  expect_error(MinDist(d = dat$d, c(1L, 2L, 2L)), "duplicate")
   expect_error(MinDist(idx = c(1L, 1L), points = dat$pts), "duplicate")
 })
 
@@ -126,16 +126,16 @@ test_that(".GonzEnsemble non-first anchor wins when it is the better one", {
     pts <- matrix(rnorm(80L * 3L), ncol = 3L)
     d   <- as.matrix(dist(pts))
     n   <- 6L
-    tkD  <- MinDist(d, FarFirst(n, d, strategy = "diameter"))
-    tkAm <- MinDist(d, FarFirst(n, d, strategy = "anti_medoid"))
+    tkD  <- MinDist(d = d, FarFirst(n, d, strategy = "diameter"))
+    tkAm <- MinDist(d = d, FarFirst(n, d, strategy = "anti_medoid"))
     if (isTRUE(all.equal(tkD, tkAm))) next
     loser  <- if (tkAm > tkD) "diameter"    else "anti_medoid"
     winner <- if (tkAm > tkD) "anti_medoid" else "diameter"
     bestTk <- max(tkD, tkAm)
     ensM  <- FarFirst(n, d, strategy = c(loser, winner))
     ensPt <- FarFirst(k = n, points = pts, strategy = c(loser, winner))
-    expect_gte(MinDist(d, ensM),  bestTk - 1e-9)
-    expect_gte(MinDist(d, ensPt), bestTk - 1e-9)
+    expect_gte(MinDist(d = d, ensM),  bestTk - 1e-9)
+    expect_gte(MinDist(d = d, ensPt), bestTk - 1e-9)
     found <- TRUE
     break
   }

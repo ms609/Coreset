@@ -10,7 +10,7 @@ d30m  <- as.matrix(d30)
 
 test_that("Grasp smoke: returns valid selection on 30 random 3-D points", {
   set.seed(1)
-  res <- Grasp(d30, k = 5L, plateau = 20L, eliteSize = 4L)
+  res <- Grasp(d = d30, k = 5L, plateau = 20L, eliteSize = 4L)
   expect_type(res, "integer")
   expect_length(res, 5L)
   expect_true(all(res %in% seq_len(30L)))
@@ -41,7 +41,7 @@ test_that("Grasp_cpp == .Grasp_R across seeds and parameters", {
     ref <- MaxMin:::.Grasp_R(d30m, k = 6L, plateau = mni,
                                eliteSize = es, alpha = al)
     set.seed(s)
-    ker <- Grasp(d30m, k = 6L, plateau = mni, eliteSize = es,
+    ker <- Grasp(d = d30m, k = 6L, plateau = mni, eliteSize = es,
                    alpha = al)
 
     info <- sprintf("seed=%d mni=%d es=%d alpha=%g", s, mni, es, al)
@@ -58,8 +58,8 @@ test_that("Grasp_cpp == .Grasp_R across seeds and parameters", {
 # 3. Determinism -----------------------------------------------------------
 
 test_that("Grasp is reproducible from a seed (machine-independent)", {
-  set.seed(17); a <- Grasp(d30, k = 6L, plateau = 30L, eliteSize = 5L)
-  set.seed(17); b <- Grasp(d30, k = 6L, plateau = 30L, eliteSize = 5L)
+  set.seed(17); a <- Grasp(d = d30, k = 6L, plateau = 30L, eliteSize = 5L)
+  set.seed(17); b <- Grasp(d = d30, k = 6L, plateau = 30L, eliteSize = 5L)
   # set.seed() before each call => identical selection and objective; only
   # wall-clock differs.
   attr(a, "time_s") <- attr(b, "time_s") <- NULL
@@ -70,7 +70,7 @@ test_that("Grasp is reproducible from a seed (machine-independent)", {
 
 test_that("Grasp with maxIter = 0 runs Phase A + relinking only", {
   set.seed(7)
-  res <- Grasp(d30, k = 4L, maxIter = 0L, eliteSize = 4L)
+  res <- Grasp(d = d30, k = 4L, maxIter = 0L, eliteSize = 4L)
   expect_length(res, 4L)
   expect_true(attr(res, "score") > 0)
   expect_equal(attr(res, "iters"), 0L)
@@ -82,7 +82,7 @@ test_that("Grasp stops within plateau of its last improvement", {
   # With maxIter as a hard cap we can assert iters never exceeds it; with the
   # stagnation rule alone the loop must still terminate.
   set.seed(3)
-  res <- Grasp(d30, k = 6L, plateau = 5L, maxIter = 200L,
+  res <- Grasp(d = d30, k = 6L, plateau = 5L, maxIter = 200L,
                  eliteSize = 4L)
   expect_lte(attr(res, "iters"), 200L)
   expect_length(res, 6L)
@@ -139,9 +139,9 @@ test_that(".GraspPathRelink strictly improves on at least one pair", {
 # 8. Grasp maxSeconds validation -------------------------------------
 
 test_that("Grasp validates maxSeconds", {
-  expect_error(Grasp(d30, k = 4L, maxSeconds = 0),  "maxSeconds")
-  expect_error(Grasp(d30, k = 4L, maxSeconds = -1), "maxSeconds")
-  expect_error(Grasp(d30, k = 4L, maxSeconds = NA_real_), "maxSeconds")
+  expect_error(Grasp(d = d30, k = 4L, maxSeconds = 0),  "maxSeconds")
+  expect_error(Grasp(d = d30, k = 4L, maxSeconds = -1), "maxSeconds")
+  expect_error(Grasp(d = d30, k = 4L, maxSeconds = NA_real_), "maxSeconds")
 })
 
 # 8b. GRASP-01: empty-RCL at alpha = 1 no longer crashes ---------------------
@@ -157,7 +157,7 @@ test_that("Grasp survives alpha = 1 (empty-RCL fallback) and matches the R refer
     ref <- MaxMin:::.Grasp_R(d30m, k = 5L, plateau = 15L, eliteSize = 4L,
                              alpha = 1)
     set.seed(s)
-    ker <- Grasp(d30m, k = 5L, plateau = 15L, eliteSize = 4L, alpha = 1)
+    ker <- Grasp(d = d30m, k = 5L, plateau = 15L, eliteSize = 4L, alpha = 1)
     attr(ker, "time_s") <- attr(ref, "time_s") <- NULL
     expect_identical(ker, ref, info = paste("seed", s))
   }
@@ -165,10 +165,10 @@ test_that("Grasp survives alpha = 1 (empty-RCL fallback) and matches the R refer
 
 # 8c. GRASP-02: alpha validation ---------------------------------------------
 test_that("Grasp validates alpha", {
-  expect_error(Grasp(d30, k = 4L, alpha = 2),         "alpha")
-  expect_error(Grasp(d30, k = 4L, alpha = -1),        "alpha")
-  expect_error(Grasp(d30, k = 4L, alpha = NA_real_),  "alpha")
-  expect_error(Grasp(d30, k = 4L, alpha = c(0.5, 0.8)), "alpha")
+  expect_error(Grasp(d = d30, k = 4L, alpha = 2),         "alpha")
+  expect_error(Grasp(d = d30, k = 4L, alpha = -1),        "alpha")
+  expect_error(Grasp(d = d30, k = 4L, alpha = NA_real_),  "alpha")
+  expect_error(Grasp(d = d30, k = 4L, alpha = c(0.5, 0.8)), "alpha")
 })
 
 # 9. .Grasp_R maxIter cap -----------------------------------
@@ -266,7 +266,7 @@ test_that(".Grasp_R phase-C path relinking fires lines 422-423", {
 
 test_that("Grasp eliteSize=1 skips path relinking", {
   set.seed(1)
-  res <- Grasp(d30, k = 4L, eliteSize = 1L, plateau = 20L)
+  res <- Grasp(d = d30, k = 4L, eliteSize = 1L, plateau = 20L)
   expect_length(res, 4L)
   expect_equal(attr(res, "pr_calls"), 0L)
   expect_true(attr(res, "score") > 0)
@@ -300,7 +300,7 @@ test_that("grasp_local_search non-witness critical branch covered (grasp.cpp:193
   set.seed(1)
   ref <- MaxMin:::.Grasp_R(dSq5, k = 4L, plateau = 10L, eliteSize = 4L)
   set.seed(1)
-  ker <- Grasp(dSq5, k = 4L, plateau = 10L, eliteSize = 4L)
+  ker <- Grasp(d = dSq5, k = 4L, plateau = 10L, eliteSize = 4L)
   attr(ker, "time_s") <- attr(ref, "time_s") <- NULL
   expect_identical(ker, ref)
 })
@@ -311,7 +311,7 @@ test_that("grasp_local_search non-witness critical branch covered (grasp.cpp:193
 
 test_that("Grasp_cpp countdown fires at iteration 256 (grasp.cpp:393-394)", {
   set.seed(1)
-  res <- Grasp(d30m, k = 6L, maxIter = 256L,
+  res <- Grasp(d = d30m, k = 6L, maxIter = 256L,
                plateau = .Machine$integer.max, eliteSize = 4L)
   expect_equal(attr(res, "iters"), 256L)
 })

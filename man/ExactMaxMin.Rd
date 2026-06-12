@@ -5,8 +5,8 @@
 \title{Exact Max-Min Diversity Problem optimum on small instances}
 \usage{
 ExactMaxMin(
-  d,
   k,
+  d,
   solver = NULL,
   maxSeconds = 60,
   warmStart = NULL,
@@ -14,9 +14,9 @@ ExactMaxMin(
 )
 }
 \arguments{
-\item{d}{A \code{dist} object or a square symmetric numeric distance matrix.}
-
 \item{k}{Integer target subset size, \verb{2 <= k <= nrow(d)}.}
+
+\item{d}{A \code{dist} object or a square symmetric numeric distance matrix.}
 
 \item{solver}{Solver to use. Currently only \code{"highs"} is implemented;
 \code{NULL} selects it. Other values raise an error.}

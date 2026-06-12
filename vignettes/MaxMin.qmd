@@ -75,7 +75,7 @@ ffPick <- FarFirst(4L, eurodist)
 as.matrix(eurodist)[ffPick, ffPick]
 
 # Quickly extract the minimum distance for a given selection
-MinDist(eurodist, ffPick)
+MinDist(ffPick, eurodist)
 ```
 
 `FarFirst()` returned the indices of the four cities whose nearest-neighbour
@@ -134,7 +134,7 @@ will be returned.
 ```{r}
 #| label: gonzalez-seeds
 ffPick <- FarFirst(6L, eurodist, strategy = c("diameter", "anti_medoid"))
-MinDist(eurodist, ffPick)
+MinDist(ffPick, eurodist)
 
 attr(ffPick, "winning_strategy")
 ```
@@ -194,7 +194,7 @@ Because the construction phase is stochastic, call `set.seed()` before
 ```{r}
 #| label: grasp
 set.seed(42)
-grPick <- Grasp(eurodist, k = 6L, plateau = 50L)
+grPick <- Grasp(6L, eurodist, plateau = 50L)
 grPick
 labels(eurodist)[grPick]
 attr(grPick, "pr_calls")   # path-relinking calls performed
@@ -223,7 +223,7 @@ k   <- 8L
 ffPick <- FarFirst(k, d50)
 da50Pick <- DropAdd(d50, k = k, plateau = 500L)
 set.seed(42)
-gr50Pick <- Grasp(d50, k = k, plateau = 50L)
+gr50Pick <- Grasp(k, d50, plateau = 50L)
 ```
 
 Even a small difference in T~k~ can correspond to a meaningfully more
@@ -232,7 +232,7 @@ dispersed selection.
 ```{r}
 #| label: compare-scores
 scores <- c(
-  FarFirst  = MinDist(d50, ffPick),
+  FarFirst  = MinDist(ffPick, d50),
   DropAdd = attr(da50Pick, "score"),
   Grasp   = attr(gr50Pick, "score")
 )
@@ -306,7 +306,7 @@ d30   <- dist(pts30)
 ```{r}
 #| label: exact
 #| eval: !expr requireNamespace("highs", quietly = TRUE)
-exPick <- ExactMaxMin(d30, k = 6L, maxSeconds = 30L)
+exPick <- ExactMaxMin(6L, d30, maxSeconds = 30L)
 
 exPick$proven      # TRUE  ⟹  objective is the global optimum
 exPick$objective
@@ -332,8 +332,8 @@ via the `points` argument:
 
 ```{r}
 #| label: MinDist
-MinDist(d50, ffPick)                               # from dist
-MinDist(as.matrix(d50), ffPick)                    # from square matrix
+MinDist(ffPick, d50)                               # from dist
+MinDist(ffPick, as.matrix(d50))                    # from square matrix
 MinDist(points = pts, idx = ffPick)                # from coordinates
 ```
 
@@ -357,7 +357,7 @@ optimum — an order of magnitude tighter than the Gonzalez 2-approximation that
 
 ```{r}
 #| label: kcentre
-centres <- KCentre(eurodist, k = 4L)
+centres <- KCentre(4L, eurodist)
 labels(eurodist)[centres]
 centres
 ```
@@ -369,8 +369,8 @@ baseline:
 ```{r}
 #| label: kcentre-radius
 ff <- FarFirst(4L, eurodist, strategy = "peripheral")
-c(KCentre  = KCentreRadius(eurodist, centres),
-  FarFirst = KCentreRadius(eurodist, ff))
+c(KCentre  = KCentreRadius(centres, eurodist),
+  FarFirst = KCentreRadius(ff, eurodist))
 ```
 
 Like `MinDist()`, `KCentreRadius()` also accepts a `points` coordinate matrix,
@@ -389,7 +389,7 @@ dual of `ExactMaxMin()`'s node-packing programme — warm-started from the
 ```{r}
 #| label: exact-kcentre
 #| eval: !expr requireNamespace("highs", quietly = TRUE)
-kc <- ExactKCentre(eurodist, k = 4L, progress = FALSE)
+kc <- ExactKCentre(4L, eurodist, progress = FALSE)
 kc
 kc$proven      # TRUE  ⟹  radius is the global covering optimum
 ```
@@ -407,7 +407,7 @@ city near a centre.
 ```{r}
 #| label: dispersion-vs-covering
 #| eval: !expr requireNamespace("highs", quietly = TRUE)
-disp <- sort(ExactMaxMin(eurodist, k = 4L)$indices)
+disp <- sort(ExactMaxMin(4L, eurodist)$indices)
 labels(eurodist)[disp]              # dispersion: pushed to the extremes
 labels(eurodist)[sort(kc$indices)]  # covering: pulled toward the interior
 ```

@@ -47,7 +47,7 @@ test_that("integer strategy gives a bare pass from that index", {
   expect_identical(a, b)
   expect_identical(a[[1]], 3L)
   # A bare pass now carries the achieved T_k as a `score` attribute.
-  expect_equal(attr(a, "score"), MinDist(dat$d, a))
+  expect_equal(attr(a, "score"), MinDist(d = dat$d, a))
 })
 
 test_that("ensemble keeps the best anchor by T_k", {
@@ -55,9 +55,9 @@ test_that("ensemble keeps the best anchor by T_k", {
   n   <- 8L
   anchors <- c("diameter", "anti_medoid", "rowsum", "rownorm")
   ens <- FarFirst(n, dat$d, strategy = anchors)
-  ensTk <- MinDist(dat$d, ens)
+  ensTk <- MinDist(d = dat$d, ens)
   for (s in anchors) {
-    expect_gte(ensTk + 1e-9, MinDist(dat$d, FarFirst(n, dat$d, strategy = s)))
+    expect_gte(ensTk + 1e-9, MinDist(d = dat$d, FarFirst(n, dat$d, strategy = s)))
   }
   expect_true(all(attr(ens, "winning_strategy") %in% anchors))
   expect_length(attr(ens, "strategy_results"), 4L)

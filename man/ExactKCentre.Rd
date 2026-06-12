@@ -6,8 +6,8 @@
 \title{Exact discrete k-centre optimum on small instances}
 \usage{
 ExactKCentre(
-  d,
   k,
+  d,
   solver = NULL,
   maxSeconds = 60,
   warmStart = NULL,
@@ -15,8 +15,8 @@ ExactKCentre(
 )
 
 ExactKCenter(
-  d,
   k,
+  d,
   solver = NULL,
   maxSeconds = 60,
   warmStart = NULL,
@@ -24,9 +24,9 @@ ExactKCenter(
 )
 }
 \arguments{
-\item{d}{A \code{dist} object or a square symmetric numeric distance matrix.}
-
 \item{k}{Integer centre budget, \verb{1 <= k <= nrow(d)}.}
+
+\item{d}{A \code{dist} object or a square symmetric numeric distance matrix.}
 
 \item{solver}{Solver to use. Currently only \code{"highs"} is implemented; \code{NULL}
 selects it.}
@@ -80,7 +80,7 @@ if (requireNamespace("highs", quietly = TRUE) &&
   set.seed(1)
   pts <- matrix(rnorm(40), ncol = 2)
   d <- dist(pts)
-  ExactKCentre(d, 3L)
+  ExactKCentre(3L, d)
 }
 }
 }

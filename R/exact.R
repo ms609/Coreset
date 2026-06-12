@@ -71,7 +71,7 @@
   # on the session RNG -- this is where their diversity comes from), one
   # deterministic DropAdd. Like Grasp() itself, this advances the session RNG.
   grasps <- lapply(seq_len(nStart), function(s)
-    tryCatch(Grasp(d, k, plateau = 50L), error = function(e) NULL))
+    tryCatch(Grasp(k, d, plateau = 50L), error = function(e) NULL))
   raw <- c(if (is.null(warmStart)) list() else list(warmStart),
            grasps,
            list(tryCatch(DropAdd(d = d, k = k, plateau = 512L),
@@ -188,8 +188,8 @@
 #' start draws on the session RNG via [Grasp()] and, like `Grasp()`, advances it.
 #' Call [set.seed()] before `ExactMaxMin()` for a reproducible selection.
 #'
-#' @param d A `dist` object or a square symmetric numeric distance matrix.
 #' @param k Integer target subset size, `2 <= k <= nrow(d)`.
+#' @param d A `dist` object or a square symmetric numeric distance matrix.
 #' @param solver Solver to use. Currently only `"highs"` is implemented;
 #'   `NULL` selects it. Other values raise an error.
 #' @param maxSeconds Wall-clock budget in seconds for the whole search
@@ -228,7 +228,7 @@
 #'   is `TRUE`, and any generic written against that class works here too.
 #' @references \insertAllCited{}
 #' @export
-ExactMaxMin <- function(d, k, solver = NULL, maxSeconds = 60,
+ExactMaxMin <- function(k, d, solver = NULL, maxSeconds = 60,
                         warmStart = NULL,
                         progress = getOption("MaxMin.progress", interactive())) {
   t0 <- proc.time()[[3L]]

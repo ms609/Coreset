@@ -71,9 +71,9 @@
 #' selection (the MMDP objective) -- the covering radius is taken over
 #' \emph{all} `N` points and measures how well the centres cover the data.
 #'
+#' @param idx Integer vector of centre indices (`>= 1`).
 #' @param d Pairwise distance matrix or `dist` object. Ignored when `points` is
 #'   supplied.
-#' @param idx Integer vector of centre indices (`>= 1`).
 #' @param points Optional `N x dim` numeric coordinate matrix. When supplied the
 #'   per-point nearest-centre distances are recomputed from coordinates one
 #'   centre column at a time, never materialising the `N x N` matrix (`d` is then
@@ -88,10 +88,10 @@
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' d <- dist(pts)
-#' centres <- KCentre(d, 4L)
-#' KCentreRadius(d, centres)
+#' centres <- KCentre(4L, d)
+#' KCentreRadius(centres, d)
 #' @export
-KCentreRadius <- function(d = NULL, idx, points = NULL) {
+KCentreRadius <- function(idx, d = NULL, points = NULL) {
   idx <- as.integer(idx)
   if (anyNA(idx)) {
     stop("`idx` must not contain NA")
@@ -160,8 +160,8 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' distance-matrix method, \eqn{O(N^2)} in memory; for the covering radius of an
 #' existing selection at larger `N`, [KCentreRadius()] has a matrix-free path.
 #'
-#' @param d A `dist` object or a square symmetric numeric distance matrix.
 #' @param k Integer number of centres, `1 <= k <= nrow(d)`.
+#' @param d A `dist` object or a square symmetric numeric distance matrix.
 #' @param nstart Integer; how many deterministic peripheral seeds to try, keeping
 #'   the lowest-radius result. Default `1`. Ignored if `seeds` is supplied.
 #' @param effort Integer; controls the Gonzalez floor that keeps the result no
@@ -182,12 +182,12 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' set.seed(1)
 #' pts <- matrix(rnorm(120), ncol = 2)
 #' d <- dist(pts)
-#' centres <- KCentre(d, 5L)
-#' KCentreRadius(d, centres)
+#' centres <- KCentre(5L, d)
+#' KCentreRadius(centres, d)
 #' # CDSh covers at least as tightly as the Gonzalez 2-approximation:
-#' KCentreRadius(d, FarFirst(5L, d, strategy = "peripheral"))
+#' KCentreRadius(FarFirst(5L, d, strategy = "peripheral"), d)
 #' @export
-KCentre <- function(d, k, nstart = 1L, effort = 1L, seeds = NULL) {
+KCentre <- function(k, d, nstart = 1L, effort = 1L, seeds = NULL) {
   needSymCheck <- !inherits(d, "dist")          # a dist object is symmetric
   d <- .AsDistMatrix(d)
   if (needSymCheck) .KCentreRequireSymmetric(d)
@@ -245,7 +245,7 @@ KCentre <- function(d, k, nstart = 1L, effort = 1L, seeds = NULL) {
     } else {
       as.integer(FarFirst(k, d, nseeds = effort))
     }
-    gonzR <- KCentreRadius(d, gonz)
+    gonzR <- KCentreRadius(gonz, d)
     if (gonzR < bestR) {
       bestR <- gonzR
       best <- gonz
@@ -327,8 +327,8 @@ KCentre <- function(d, k, nstart = 1L, effort = 1L, seeds = NULL) {
 #' NP-hard, so this is an external ground-truth reference for small instances,
 #' not a scalable method.
 #'
-#' @param d A `dist` object or a square symmetric numeric distance matrix.
 #' @param k Integer centre budget, `1 <= k <= nrow(d)`.
+#' @param d A `dist` object or a square symmetric numeric distance matrix.
 #' @param solver Solver to use. Currently only `"highs"` is implemented; `NULL`
 #'   selects it.
 #' @param maxSeconds Wall-clock budget in seconds for the whole search (shared
@@ -360,11 +360,11 @@ KCentre <- function(d, k, nstart = 1L, effort = 1L, seeds = NULL) {
 #'   set.seed(1)
 #'   pts <- matrix(rnorm(40), ncol = 2)
 #'   d <- dist(pts)
-#'   ExactKCentre(d, 3L)
+#'   ExactKCentre(3L, d)
 #' }
 #' }
 #' @export
-ExactKCentre <- function(d, k, solver = NULL, maxSeconds = 60,
+ExactKCentre <- function(k, d, solver = NULL, maxSeconds = 60,
                          warmStart = NULL,
                          progress = getOption("MaxMin.progress", interactive())) {
   t0 <- proc.time()[[3L]]
@@ -402,7 +402,7 @@ ExactKCentre <- function(d, k, solver = NULL, maxSeconds = 60,
   Pack <- function(indices, proven) {
     indices <- sort(as.integer(indices))
     structure(
-      list(indices = indices, radius = KCentreRadius(d, indices), proven = proven,
+      list(indices = indices, radius = KCentreRadius(indices, d), proven = proven,
            time_s = Elapsed(), solver = solver, n = n, k = k,
            n_centres = length(indices)),
       class = "KCentreExact"
@@ -424,7 +424,7 @@ ExactKCentre <- function(d, k, solver = NULL, maxSeconds = 60,
 
   # Warm start: CDSh gives k centres with a feasible covering radius, so the
   # optimum index is at or below that radius. The CDSh witness is the incumbent.
-  ws <- tryCatch(KCentre(d, k), error = function(e) NULL)
+  ws <- tryCatch(KCentre(k, d), error = function(e) NULL)
   if (is.null(ws)) { # nocov start
     # Fallback: any single point covers all within the diameter (the largest
     # candidate), a loose but valid feasible upper bound.
@@ -474,7 +474,7 @@ ExactKCentre <- function(d, k, solver = NULL, maxSeconds = 60,
 #' @family reporting functions
 #' @examples
 #' set.seed(1)
-#' KCentre(dist(matrix(rnorm(60), ncol = 2)), 4L)
+#' KCentre(4L, dist(matrix(rnorm(60), ncol = 2)))
 #' @export
 format.KCentreSelection <- function(x, ...) {
   idx <- as.integer(x)

@@ -49,7 +49,7 @@ test_that("DropAdd and Grasp report their own algorithm names", {
   expect_s3_class(da, "MaxMinSelection")
   expect_match(format(da), "selected by DropAdd tabu search, each at distance >= ")
   set.seed(1)
-  gr <- Grasp(dat$d, 6L, plateau = 20L, eliteSize = 4L)
+  gr <- Grasp(d = dat$d, 6L, plateau = 20L, eliteSize = 4L)
   expect_s3_class(gr, "MaxMinSelection")
   expect_match(format(gr), "selected by GRASP with path-relinking")
 })
@@ -99,7 +99,7 @@ test_that("MaxMinExact prints proof status, indices and objective", {
   # Built directly so the test does not require the `highs` solver.
   proven <- structure(
     list(indices = c(1L, 2L, 3L), objective = 0.5, proven = TRUE,
-         time_s = 0.1, solver = "highs", n = 10L, m = 3L),
+         time_s = 0.1, solver = "highs", n = 10L, k = 3L),
     class = c("MaxMinExact", "MaxMinSelection")
   )
   # MaxMinExact IS-A MaxMinSelection: generic code written for any solver works.
@@ -155,7 +155,7 @@ test_that("summary of DropAdd reports the secondary objective and effort", {
 test_that("summary of Grasp reports iterations and path-relinking calls", {
   dat <- MakeData(N = 30)
   set.seed(1)
-  out <- capture.output(summary(Grasp(dat$d, 6L, plateau = 20L, eliteSize = 4L)))
+  out <- capture.output(summary(Grasp(d = dat$d, 6L, plateau = 20L, eliteSize = 4L)))
   expect_match(out[1], "GRASP")
   expect_true(any(grepl("refinement iterations:", out)))
   expect_true(any(grepl("path-relinking calls:", out)))
@@ -171,13 +171,13 @@ test_that("summary table tolerates NA T_k (all-NA ensemble)", {
 test_that("summary of MaxMinExact reports instance, objective and proof status", {
   proven <- structure(
     list(indices = c(1L, 2L, 3L), objective = 0.5, proven = TRUE,
-         time_s = 0.1, solver = "highs", n = 10L, m = 3L),
+         time_s = 0.1, solver = "highs", n = 10L, k = 3L),
     class = c("MaxMinExact", "MaxMinSelection")
   )
   out <- capture.output(ret <- withVisible(summary(proven)))
   expect_false(ret$visible)
   expect_match(out[1], "proven optimal")
-  expect_true(any(grepl("instance:\\s+n = 10, m = 3", out)))
+  expect_true(any(grepl("instance:\\s+n = 10, k = 3", out)))
   expect_true(any(grepl("objective:\\s+0.5 \\(proven optimal\\)", out)))
   expect_true(any(grepl("solver:\\s+highs", out)))
 

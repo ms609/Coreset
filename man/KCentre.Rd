@@ -5,14 +5,14 @@
 \alias{KCenter}
 \title{Near-optimal discrete k-centre solver}
 \usage{
-KCentre(d, k, nstart = 1L, effort = 1L, seeds = NULL)
+KCentre(k, d, nstart = 1L, effort = 1L, seeds = NULL)
 
-KCenter(d, k, nstart = 1L, effort = 1L, seeds = NULL)
+KCenter(k, d, nstart = 1L, effort = 1L, seeds = NULL)
 }
 \arguments{
-\item{d}{A \code{dist} object or a square symmetric numeric distance matrix.}
-
 \item{k}{Integer number of centres, \verb{1 <= k <= nrow(d)}.}
+
+\item{d}{A \code{dist} object or a square symmetric numeric distance matrix.}
 
 \item{nstart}{Integer; how many deterministic peripheral seeds to try, keeping
 the lowest-radius result. Default \code{1}. Ignored if \code{seeds} is supplied.}
@@ -67,10 +67,10 @@ existing selection at larger \code{N}, \code{\link[=KCentreRadius]{KCentreRadius
 set.seed(1)
 pts <- matrix(rnorm(120), ncol = 2)
 d <- dist(pts)
-centres <- KCentre(d, 5L)
-KCentreRadius(d, centres)
+centres <- KCentre(5L, d)
+KCentreRadius(centres, d)
 # CDSh covers at least as tightly as the Gonzalez 2-approximation:
-KCentreRadius(d, FarFirst(5L, d, strategy = "peripheral"))
+KCentreRadius(FarFirst(5L, d, strategy = "peripheral"), d)
 }
 \references{
 \insertAllCited{}

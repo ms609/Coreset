@@ -5,11 +5,10 @@
 
 // DropAdd Tabu Search (Porumbel, Hao & Glover 2011) — C++ inner loop.
 //
-// Mirrors the R reference at R/competitors_dropadd.R::DropAdd(). The R
-// wrapper handles:
-//   * argument validation and .AsDistMatrix() coercion,
-//   * routing .verify=TRUE or .trace != NULL to the R path (test scaffolding),
-// so this file implements only the production fast path.
+// Driven by R/dropadd.R::DropAdd(), which handles argument validation and
+// .AsDistMatrix() coercion. This is the sole compute path; `want_trace`
+// returns the drop/add index sequences for the internal .DropAddTrace() test
+// helper.
 //
 // Streamlined records (per Porumbel, Algs 3-4):
 //   min_dist[x]       = min over y in current S, y != x, of d(x, y)

@@ -32,7 +32,7 @@ proof status for the exact solver). Both objects are otherwise unchanged.
 }
 \examples{
 set.seed(1)
-KCentre(dist(matrix(rnorm(60), ncol = 2)), 4L)
+KCentre(4L, dist(matrix(rnorm(60), ncol = 2)))
 }
 \seealso{
 Other reporting functions:

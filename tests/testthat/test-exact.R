@@ -43,7 +43,7 @@ test_that("ExactMaxMin matches the brute-force optimum (random instances)", {
     set.seed(cs$seed)
     pts <- matrix(stats::rnorm(cs$n * 4L), ncol = 4L)
     d <- as.matrix(stats::dist(pts))
-    res <- ExactMaxMin(d, k = cs$k, maxSeconds = 60)
+    res <- ExactMaxMin(cs$k, d, maxSeconds = 60)
     oracle <- .BruteMaxmin(d, cs$k)
 
     # The optimum value matches the exhaustive optimum.
@@ -67,8 +67,8 @@ test_that("ExactMaxMin accepts a dist object", {
   pts <- matrix(stats::rnorm(12 * 3), ncol = 3)
   dobj <- stats::dist(pts)
   dmat <- as.matrix(dobj)
-  r_dist <- ExactMaxMin(dobj, k = 4L)
-  r_mat  <- ExactMaxMin(dmat, k = 4L)
+  r_dist <- ExactMaxMin(4L, dobj)
+  r_mat  <- ExactMaxMin(4L, dmat)
   expect_equal(r_dist$objective, r_mat$objective)
   expect_true(r_dist$proven)
 })
@@ -82,11 +82,11 @@ test_that("ExactMaxMin handles k=2 (diameter) and k=n (all points)", {
   pts <- matrix(stats::rnorm(8 * 3), ncol = 3)
   d <- as.matrix(stats::dist(pts))
 
-  r2 <- ExactMaxMin(d, k = 2L)
+  r2 <- ExactMaxMin(2L, d)
   expect_equal(r2$objective, max(d[upper.tri(d)]))   # diameter
   expect_true(r2$proven)
 
-  rn <- ExactMaxMin(d, k = 8L)
+  rn <- ExactMaxMin(8L, d)
   expect_equal(rn$objective, min(d[upper.tri(d)]))   # forced global min
   expect_equal(.MaxminObj(rn$indices, d), rn$objective)
   expect_true(rn$proven)
@@ -101,7 +101,7 @@ test_that("ExactMaxMin returns proven=FALSE on budget expiry", {
   # Use a large enough instance that 1 microsecond is not enough to certify optimality.
   pts <- matrix(stats::rnorm(30 * 4), ncol = 4)
   d <- as.matrix(stats::dist(pts))
-  res <- ExactMaxMin(d, k = 5L, maxSeconds = 1e-9)
+  res <- ExactMaxMin(5L, d, maxSeconds = 1e-9)
   # With a near-zero budget the solver may not certify, but must not error.
   # Note: proven could be TRUE if the solver is extremely fast; we just assert
   # the field exists and the return is valid.
@@ -126,13 +126,13 @@ test_that("ExactMaxMin objective is RNG-independent; selection seed-reproducible
   d <- as.matrix(stats::dist(pts))
 
   # The proven optimum is a property of the problem: same value under any seed.
-  set.seed(1); a <- ExactMaxMin(d, k = 4L)
-  set.seed(2); b <- ExactMaxMin(d, k = 4L)
+  set.seed(1); a <- ExactMaxMin(4L, d)
+  set.seed(2); b <- ExactMaxMin(4L, d)
   expect_true(a$proven && b$proven)
   expect_equal(a$objective, b$objective)
 
   # The returned selection is reproducible when the seed is reset.
-  set.seed(1); a2 <- ExactMaxMin(d, k = 4L)
+  set.seed(1); a2 <- ExactMaxMin(4L, d)
   expect_equal(a$indices, a2$indices)
 })
 
@@ -142,12 +142,12 @@ test_that("ExactMaxMin objective is RNG-independent; selection seed-reproducible
 test_that("ExactMaxMin validates k and solver", {
   skip_if_no_highs()
   d <- as.matrix(stats::dist(matrix(stats::rnorm(20), ncol = 2)))   # n = 10
-  expect_error(ExactMaxMin(d, k = 1L), "2 <= k <= nrow")
-  expect_error(ExactMaxMin(d, k = 11L), "2 <= k <= nrow")
-  expect_error(ExactMaxMin(d, k = 3L, solver = "gurobi"), "Unsupported")
+  expect_error(ExactMaxMin(1L, d), "2 <= k <= nrow")
+  expect_error(ExactMaxMin(11L, d), "2 <= k <= nrow")
+  expect_error(ExactMaxMin(3L, d, solver = "gurobi"), "Unsupported")
   # .ExactAsMatrix validation: non-matrix and non-square inputs
-  expect_error(ExactMaxMin(1:9, m = 3L), "dist|matrix")
-  expect_error(ExactMaxMin(matrix(1:6, 2, 3), m = 2L), "dist|matrix")
+  expect_error(ExactMaxMin(3L, 1:9), "dist|matrix")
+  expect_error(ExactMaxMin(2L, matrix(1:6, 2, 3)), "dist|matrix")
 })
 
 # ---------------------------------------------------------------------------
@@ -157,7 +157,7 @@ test_that("ExactMaxMin progress = TRUE fires the cli hooks", {
   skip_if_no_highs()
   set.seed(1)
   d <- as.matrix(stats::dist(matrix(stats::rnorm(12 * 2), ncol = 2)))
-  expect_no_error(ExactMaxMin(d, k = 3L, progress = TRUE))
+  expect_no_error(ExactMaxMin(3L, d, progress = TRUE))
 })
 
 # ---------------------------------------------------------------------------
@@ -167,7 +167,7 @@ test_that("ExactMaxMin returns the documented fields", {
   skip_if_no_highs()
   set.seed(41)
   d <- as.matrix(stats::dist(matrix(stats::rnorm(40), ncol = 4)))   # n = 10
-  res <- ExactMaxMin(d, k = 3L)
+  res <- ExactMaxMin(3L, d)
   expect_named(res, c("indices", "objective", "proven", "time_s",
                       "solver", "n", "k"),
                ignore.order = TRUE)

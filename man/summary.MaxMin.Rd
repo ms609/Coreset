@@ -26,7 +26,7 @@ followed by the achieved objective(s), search effort, and -- for a
 \examples{
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
-summary(FarFirst(dist(pts), 5L))
+summary(FarFirst(5L, dist(pts)))
 }
 \seealso{
 Other reporting functions:

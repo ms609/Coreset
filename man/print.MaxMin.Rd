@@ -40,7 +40,7 @@ affect display.
 \examples{
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
-FarFirst(dist(pts), 5L)
+FarFirst(5L, dist(pts))
 }
 \seealso{
 Other reporting functions:

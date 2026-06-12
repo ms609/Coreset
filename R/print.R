@@ -130,7 +130,7 @@
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
-#' FarFirst(dist(pts), 5L)
+#' FarFirst(5L, dist(pts))
 #' @name print.MaxMin
 #' @family reporting functions
 #' @export
@@ -228,7 +228,7 @@ print.MaxMinExact <- function(x, ...) {
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
-#' summary(FarFirst(dist(pts), 5L))
+#' summary(FarFirst(5L, dist(pts)))
 #' @name summary.MaxMin
 #' @family reporting functions
 #' @export
@@ -256,7 +256,7 @@ summary.MaxMinSelection <- function(object, ...) {
 summary.MaxMinExact <- function(object, ...) {
   cat(format(object), "\n", sep = "")
   status <- if (isTRUE(object$proven)) "proven optimal" else "lower bound (unproven)"
-  .SummaryField("instance", sprintf("n = %d, m = %d", object$n, object$m), 12L)
+  .SummaryField("instance", sprintf("n = %d, k = %d", object$n, object$k), 12L)
   .SummaryField("objective", sprintf("%s (%s)", .SummaryNum(object$objective), status), 12L)
   .SummaryField("solver", object$solver, 12L)
   .SummaryField("time", paste(.SummaryNum(object$time_s), "s"), 12L)

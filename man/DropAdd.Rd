@@ -11,9 +11,7 @@ DropAdd(
   maxIter = NULL,
   maxSeconds = Inf,
   progress = getOption("MaxMin.progress", interactive()),
-  points = NULL,
-  .verify = FALSE,
-  .trace = NULL
+  points = NULL
 )
 }
 \arguments{
@@ -38,8 +36,7 @@ A finite value caps runtime but makes the result machine-dependent.}
 
 \item{progress}{Logical; show a start/done status line. Default: \code{TRUE} in
 interactive sessions, \code{FALSE} otherwise
-(\code{getOption("MaxMin.progress", interactive())}). No effect when
-\code{.verify = TRUE} (testing path).}
+(\code{getOption("MaxMin.progress", interactive())}).}
 
 \item{points}{A numeric \eqn{n \times \mathrm{dim}} coordinate matrix (or an
 object coercible to one via \code{as.matrix}). Must be complete (no
@@ -48,13 +45,6 @@ supplied, the algorithm never materialises the dense \eqn{n \times n}
 distance matrix, giving \eqn{O(n)} working memory and enabling use at
 \eqn{n} far exceeding the matrix path's ceiling (R's
 \code{as.matrix.dist} overflows at \eqn{n = 46340}).}
-
-\item{.verify}{Logical (testing only); if \code{TRUE}, routes to the R reference
-loop and brute-force asserts the streamlined records at every iteration.
-Default \code{FALSE} (the C++ fast path). Only applies to the \code{d} path.}
-
-\item{.trace}{Optional environment (testing only); if supplied, the dropped
-and added index sequences are written into it as \code{drops} and \code{adds}.}
 }
 \value{
 \code{DropAdd()} returns an integer vector of length \code{k} containing the 1-based selected
@@ -73,31 +63,11 @@ The vector has class \code{"MaxMinSelection"} and prints as a one-line summary
 (see \link{print.MaxMinSelection}); it is otherwise an ordinary integer vector.
 }
 \description{
-Implements the DropAdd-TS algorithm of \insertCite{Porumbel2011;textual}{MaxMin} for
-selecting a maximally-dispersed subset of \code{m} points from a distance
-matrix. The procedure consists of a deterministic greedy construction
-(Algorithm 1) followed by a FIFO drop-add tabu search (Algorithm 2) with
-the streamlined neighbour-evaluation tricks of Algorithms 3 and 4.
-}
-\details{
-The MMDPo objective optimised is
-\deqn{\min_{x,y \in X} d(x,y) + \epsilon \sum_{x,y \in X} d(x,y),}
-with \eqn{\epsilon = 10^{-9}}, so the pairwise sum acts as a tie-break.
-
-Tabu mechanics. The algorithm maintains an integer \code{iter} stamp for
-every point, set to the iteration at which the point last entered or
-left the selected set \eqn{X}. At each main-loop iteration the point with
-the smallest \code{iter} value (the oldest member, FIFO) is dropped, and
-the point in \eqn{Z \setminus X} maximising lexicographically
-\eqn{(\mathrm{minDist}, \mathrm{sumDist})} is added. The FIFO
-invariant guarantees that across any window of \eqn{m} iterations every
-initially-selected point is dropped exactly once before any re-eviction.
-
-Time budget behaviour. The time budget (\code{maxSeconds}) is checked at
-most once every 256 iterations (matrix-free path) or 1024 iterations
-(matrix path). On large instances where each iteration is slow, the actual
-elapsed time may exceed the specified budget by up to one iteration's worth
-of computation.
+\code{DropAdd()} selects a maximally-dispersed subset of \code{k} points using the
+DropAdd tabu search algorithm, which comprises a greedy construction
+followed by a first-in, first-out drop-add tabu search, with streamlined
+neighbour-evaluation tricks
+\insertCite{@algorithms 1--4 in @Porumbel2011}{MaxMin}.
 }
 \references{
 \insertAllCited{}

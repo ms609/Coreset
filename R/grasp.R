@@ -281,8 +281,8 @@
 #' \eqn{T_k} lands within roughly a percent on the benchmark while scaling to
 #' far larger instances.
 #'
-#' @param d Either a `dist` object or a square symmetric numeric matrix.
 #' @param k Integer subset size, `2 <= k <= nrow(d)`.
+#' @param d Either a `dist` object or a square symmetric numeric matrix.
 #' @param plateau Integer; stop after this many consecutive GRASP
 #'   iterations without an improvement to the best elite objective. The
 #'   primary, deterministic stopping criterion. Default 100.
@@ -315,10 +315,10 @@
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' # Call set.seed() before Grasp() for a reproducible run:
 #' set.seed(1)
-#' res <- Grasp(dist(pts), k = 5L, plateau = 20L, eliteSize = 4L)
+#' res <- Grasp(5L, dist(pts), plateau = 20L, eliteSize = 4L)
 #' res
 #' @export
-Grasp <- function(d, k, plateau = 100L, maxIter = NULL,
+Grasp <- function(k, d, plateau = 100L, maxIter = NULL,
                     eliteSize = 10L, alpha = 0.8, maxSeconds = Inf) {
   d <- .AsDistMatrix(d)
   n <- nrow(d)

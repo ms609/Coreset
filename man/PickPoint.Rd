@@ -31,7 +31,8 @@ then the point furthest from that (a diameter-endpoint approximation).
 \eqn{O(N)}.}
 \item{\code{"diameter"}}{A row endpoint of the diameter pair (the maximum
 pairwise distance).}
-\item{\code{"medoid"}}{The point furthest from the 1-median (medoid).}
+\item{\code{"medoid"}}{The 1-median (medoid): the point minimising the sum of
+distances to all others.}
 \item{\code{"anti_medoid"}}{The point furthest from the 1-median (medoid).}
 \item{\code{"rowsum"}}{The point maximising the sum of distances to all others
 (the 1-anti-median).}

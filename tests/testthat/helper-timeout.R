@@ -9,8 +9,8 @@
 #
 # setTimeLimit() fires at R evaluation checkpoints; the compiled kernels also
 # poll Rcpp::checkUserInterrupt(), which gives the limit a checkpoint inside the
-# C++ loops too. The R reference paths (.Grasp_R, DropAdd(.verify = TRUE)) raise
-# the limit as an ordinary error, which is what we catch here.
+# C++ loops too. Any R-level reference path (e.g. .Grasp_R) raises the limit as
+# an ordinary error, which is what we catch here.
 #
 # NB: only safe because the budget routines no longer call setTimeLimit() with a
 # non-positive `elapsed` -- that would *remove* this outer limit (R semantics)

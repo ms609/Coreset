@@ -4,13 +4,13 @@
 \alias{MinDist}
 \title{Minimum pairwise distance within a selection}
 \usage{
-MinDist(d = NULL, idx, points = NULL)
+MinDist(idx, d = NULL, points = NULL)
 }
 \arguments{
+\item{idx}{Integer vector of selected row/col indices.}
+
 \item{d}{Pairwise distance matrix or \code{dist} object. Ignored when \code{points}
 is supplied.}
-
-\item{idx}{Integer vector of selected row/col indices.}
 
 \item{points}{Optional \verb{N x dim} numeric coordinate matrix. When supplied,
 the score is computed from \code{stats::dist()} on the selected
@@ -35,7 +35,7 @@ existing selection against a different distance matrix.
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
-MinDist(d, FarFirst(5L, d))
+MinDist(FarFirst(5L, d), d)
 }
 \seealso{
 \code{\link[=FarFirst]{FarFirst()}}, \code{\link[=DropAdd]{DropAdd()}}, \code{\link[=Grasp]{Grasp()}} and \code{\link[=ExactMaxMin]{ExactMaxMin()}}, whose

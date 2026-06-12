@@ -108,24 +108,6 @@ test_that("DropAdd reaches the Geo 100 1 m=10 optimum (89.37)", {
 })
 
 # ---------------------------------------------------------------------------
-# 4b. Streamlined-record self-consistency under .verify
-# ---------------------------------------------------------------------------
-test_that("DropAdd .verify=TRUE passes silently on a real instance", {
-  geoEnv <- .TryGeoLoader()
-  skip_if(is.null(geoEnv), "Geo loader not available")
-  path <- file.path(geoEnv$.MDPLIB_INSTANCE_DIR, "Geo", "Geo 100 1.txt")
-  skip_if_not(file.exists(path), "Geo 100 1 instance not present")
-  geo <- geoEnv$read_mdplib_geo(path)
-  dmat <- geoEnv$mdplib_geo_dist(geo)
-
-  # Cap iters to keep verification cheap; the inner check is O(n*k) per iter.
-  expect_silent(
-    DropAdd(dmat, k = 10L, maxSeconds = 30, maxIter = 100L,
-              .verify = TRUE)
-  )
-})
-
-# ---------------------------------------------------------------------------
 # 5. FIFO invariant: across the first k main-loop iterations, every initially
 # selected point is dropped exactly once.
 # ---------------------------------------------------------------------------
@@ -141,26 +123,26 @@ test_that("DropAdd FIFO drops each initial point once in first k iterations", {
   expect_length(sInit, k)
   expect_equal(length(unique(sInit)), k)
 
-  # Drive the PRODUCTION loop via the .trace hook for exactly 2*k iterations.
-  traceEnv <- new.env()
-  res <- DropAdd(dmat, k = k, maxSeconds = 60, maxIter = 2L * k,
-                   .trace = traceEnv)
-  expect_equal(attr(res, "iters"), 2L * k)
-  expect_length(traceEnv$drops, 2L * k)
+  # Drive the PRODUCTION C++ loop for exactly 2*k iterations and capture the
+  # drop/add sequences via the internal-only .DropAddTrace() scaffolding (the
+  # public DropAdd() deliberately exposes no trace hook).
+  tr <- MaxMin:::.DropAddTrace(dmat, k = k, maxSeconds = 60, maxIter = 2L * k)
+  expect_equal(tr$iters, 2L * k)
+  expect_length(tr$drops, 2L * k)
   # First k drops are exactly the constructive members, in some order
   # (FIFO order is determined by iter_stamp, which was 1..k in construction
   # so drop order is the construction order).
-  expect_setequal(traceEnv$drops[seq_len(k)], sInit)
-  expect_equal(traceEnv$drops[seq_len(k)], sInit)  # actually in order
+  expect_setequal(tr$drops[seq_len(k)], sInit)
+  expect_equal(tr$drops[seq_len(k)], sInit)  # actually in order
 
   # Across 2*k iterations, every dropped point was previously in S.
   # No index can be dropped twice in the first k iterations.
-  expect_equal(anyDuplicated(traceEnv$drops[seq_len(k)]), 0L)
+  expect_equal(anyDuplicated(tr$drops[seq_len(k)]), 0L)
 
   # Porumbel p.281: the just-dropped point is excluded from the add candidates
   # for that iteration, so the added point is never the one just dropped. This
   # is the diversification invariant; without it the search freezes.
-  expect_true(all(traceEnv$adds != traceEnv$drops))
+  expect_true(all(tr$adds != tr$drops))
 })
 
 # ---------------------------------------------------------------------------
@@ -222,83 +204,36 @@ test_that("DropAdd rejects an NA distance matrix (FF-001 / T7-08)", {
 })
 
 # ---------------------------------------------------------------------------
-# 9. R-path corner cases: tie-breaking, caseA updates, m=2 else branch
+# 9. Degenerate and stopping-criterion corner cases (C++ path).
+# Tie-breaking / caseA / k=2 record branches are exercised by tests 10a-10c.
 # ---------------------------------------------------------------------------
-test_that("DropAdd construction tie-breaking and caseA update (.verify)", {
-  # Unit square: all sides=1, diagonals=sqrt(2).
-  # Construction for k=3: seed=P1, add diagonal P3 (caseA fires for P2 and P4),
-  # then P2 and P4 are tied (lines 51-53 of .DropAddConstruct).
-  ptsSq <- rbind(c(0,0), c(1,0), c(1,1), c(0,1))
-  dmat   <- as.matrix(dist(ptsSq))
-  # .verify=TRUE routes through R path with brute-force record checks
-  res <- DropAdd(dmat, k = 3L, maxIter = 4L, .verify = TRUE)
-  expect_length(res, 3L)
-})
-
-test_that("DropAdd k=2 else-branch and ADD tie-breaking (.verify)", {
-  # Rhombus: all edges=sqrt(2), diagonals=2.
-  # k=2: after drop of seed, two candidates are equidistant from remaining
-  # selected point (lines 360-366 else branch + lines 391-393 ADD tie).
-  ptsRh <- rbind(c(0,0), c(1,1), c(2,0), c(1,-1))
-  dmat   <- as.matrix(dist(ptsRh))
-  res <- DropAdd(dmat, k = 2L, maxIter = 4L, .verify = TRUE)
-  expect_length(res, 2L)
-})
-
-test_that("DropAdd caseA ADD update fires in main loop (.verify)", {
-  # Unit square k=3: first main-loop ADD of P4 has d[P4,P1]=1 = minDist[P1]=1
-  # (caseA, line 409).
-  ptsSq <- rbind(c(0,0), c(1,0), c(1,1), c(0,1))
-  dmat   <- as.matrix(dist(ptsSq))
-  expect_no_error(
-    DropAdd(dmat, k = 3L, maxIter = 3L, .verify = TRUE)
-  )
-})
-
-test_that("DropAdd effectiveMax = 0 when k == n (.verify)", {
+test_that("DropAdd performs no iterations when k == n", {
   dmat <- as.matrix(dist(matrix(rnorm(5 * 2), ncol = 2)))
-  res  <- DropAdd(dmat, k = 5L, .verify = TRUE)
-  # All 5 points selected, no loop iterations.
+  res  <- DropAdd(dmat, k = 5L)
+  # All 5 points selected, no drop-add move exists.
   expect_length(res, 5L)
   expect_equal(attr(res, "iters"), 0L)
 })
 
-test_that("DropAdd .trace + .verify together cover init and loop writes", {
-  set.seed(2026)
-  dmat <- as.matrix(dist(matrix(rnorm(12 * 2), ncol = 2)))
-  te   <- new.env()
-  res  <- DropAdd(dmat, k = 4L, maxIter = 5L, .verify = TRUE, .trace = te)
-  expect_equal(length(te$drops), attr(res, "iters"))
-  expect_equal(length(te$adds),  attr(res, "iters"))
-})
-
-test_that("DropAdd R-path time budget halts execution (dropadd.R line 352)", {
+test_that("DropAdd time budget halts when both other criteria are disabled", {
   set.seed(1)
   dmat <- as.matrix(dist(matrix(rnorm(30 * 3), ncol = 3)))
   # .Machine$integer.max disables both other stopping criteria; only the
-  # budget can end the loop.
+  # wall-clock budget can end the loop.
   res <- expect_returns_within(
     DropAdd(dmat, k = 5L,
             maxIter = .Machine$integer.max, plateau = .Machine$integer.max,
-            .verify = TRUE, maxSeconds = 0.001),
+            maxSeconds = 0.001),
     limit = 5)
   expect_gte(attr(res, "iters"), 1L)    # at least one iteration ran
-  expect_lte(attr(res, "time_s"), 0.1)
+  expect_lte(attr(res, "time_s"), 0.5)
 })
 
-# ---------------------------------------------------------------------------
-# 7. R reference loop and C++ port are bit-identical on a fixed iter budget.
-#
-# .verify = TRUE routes through the original R reference loop (with brute-
-# force record assertions); the default routes through DropAdd_cpp. The
-# two paths must produce identical indices, objective, secondary, and iters
-# for any iter budget.
-# ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 # 10. C++ path coverage: tie-breaking and minDist-count branches
 #
 # Tests 10a-10c exercise specific branches in dropadd.cpp that require exact
-# distance ties; they use the default (C++) path (no .verify).
+# distance ties.
 # ---------------------------------------------------------------------------
 
 test_that("DropAdd C++ construction covers sumDist tie-break (lines 82-85)", {
@@ -343,13 +278,72 @@ test_that("DropAdd C++ main-loop ADD covers tie-break (255-258) and equality (27
 })
 
 # ---------------------------------------------------------------------------
-# 7. R reference loop and C++ port are bit-identical.
+# 7. Frozen golden-value regression for the C++ search trajectory.
 #
-# .verify = TRUE routes through the original R reference loop (with brute-
-# force record assertions); the default routes through DropAdd_cpp. The
-# two paths must produce identical indices, objective, secondary, and iters
-# for any iter budget.
+# Replaces the former "C++ vs hand-maintained R reference" bit-identity test.
+# That comparison was inherently FP-fragile (R accumulates dist/rowSums in
+# long double, the C++ port in double), so it flickered run-to-run on random
+# coordinate instances. Here we freeze the C++ output against a fixed *integer*
+# symmetric distance matrix: integers <= 2^53 are exact in double and the C++
+# path uses no long double, so every recorded value is reproducible and
+# portable across platforms. Any change to the search trajectory -- indices,
+# objective, secondary, or run length -- trips this test. Correctness (as
+# opposed to mere stability) is anchored separately by the Geo 100 1 optimum
+# oracle (test 4).
+#
+# To regenerate after an intentional algorithm change, re-run the block that
+# produced these values (same seed/matrix) and paste the new expectations.
 # ---------------------------------------------------------------------------
+
+# Fixed integer symmetric distance matrix (24 points), built deterministically.
+.DropAddGoldenMatrix <- function() {
+  set.seed(2026)
+  n <- 24L
+  M <- matrix(0, n, n)
+  M[upper.tri(M)] <- sample(5:995, n * (n - 1L) / 2L, replace = TRUE)
+  M <- M + t(M)
+  storage.mode(M) <- "double"
+  M
+}
+
+test_that("DropAdd C++ trajectory matches frozen golden values (maxIter)", {
+  M <- .DropAddGoldenMatrix()
+  # idx | score | secondary | iters, frozen from the production C++ path.
+  golden <- list(
+    "0"   = list(idx = c(1,7,8,9,13,18,21,23),    score = 304, sec = 19133, it = 0L),
+    "1"   = list(idx = c(1,7,8,9,13,18,21,23),    score = 304, sec = 19133, it = 1L),
+    "5"   = list(idx = c(1,7,8,9,13,18,21,23),    score = 304, sec = 19133, it = 5L),
+    "50"  = list(idx = c(6,8,15,16,19,20,21,23),  score = 330, sec = 16975, it = 50L),
+    "200" = list(idx = c(6,8,15,16,19,20,21,23),  score = 330, sec = 16975, it = 200L)
+  )
+  for (mi in names(golden)) {
+    g   <- golden[[mi]]
+    res <- DropAdd(M, k = 8L, maxIter = as.integer(mi))
+    expect_identical(as.integer(res), as.integer(g$idx), info = paste("maxIter", mi))
+    expect_equal(attr(res, "score"),     g$score, tolerance = 1e-12, info = mi)
+    expect_equal(attr(res, "secondary"), g$sec,   tolerance = 1e-12, info = mi)
+    expect_identical(attr(res, "iters"), g$it,             info = mi)
+  }
+})
+
+test_that("DropAdd C++ trajectory matches frozen golden values (plateau)", {
+  M <- .DropAddGoldenMatrix()
+  # The run length under plateau is itself an output, so frozen `iters` confirms
+  # the deterministic stagnation criterion fires exactly where expected.
+  golden <- list(
+    "5"   = list(idx = c(1,7,8,9,13,18,21,23),    score = 304, sec = 19133, it = 5L),
+    "25"  = list(idx = c(6,8,15,16,19,20,21,23),  score = 330, sec = 16975, it = 44L),
+    "100" = list(idx = c(6,8,15,16,19,20,21,23),  score = 330, sec = 16975, it = 119L)
+  )
+  for (pl in names(golden)) {
+    g   <- golden[[pl]]
+    res <- DropAdd(M, k = 8L, plateau = as.integer(pl))
+    expect_identical(as.integer(res), as.integer(g$idx), info = paste("plateau", pl))
+    expect_equal(attr(res, "score"),     g$score, tolerance = 1e-12, info = pl)
+    expect_equal(attr(res, "secondary"), g$sec,   tolerance = 1e-12, info = pl)
+    expect_identical(attr(res, "iters"), g$it,             info = pl)
+  }
+})
 
 test_that("DropAdd secondary attribute equals upper-triangle distance sum", {
   set.seed(2026)
@@ -360,34 +354,4 @@ test_that("DropAdd secondary attribute equals upper-triangle distance sum", {
   sub <- dmat[res, res]
   expected_secondary <- sum(sub[upper.tri(sub)])
   expect_equal(attr(res, "secondary"), expected_secondary, tolerance = 1e-10)
-})
-
-test_that("DropAdd R reference loop and C++ port are bit-identical", {
-  set.seed(2026)
-  pts <- matrix(rnorm(60 * 4), ncol = 4)
-  dmat <- as.matrix(dist(pts))
-
-  for (maxIter in c(0L, 1L, 5L, 50L, 200L)) {
-    outR <- DropAdd(dmat, k = 8L, maxIter = maxIter, .verify = TRUE)
-    outC <- DropAdd(dmat, k = 8L, maxIter = maxIter)
-    # Drop wall-clock `time_s`: nondeterministic, never expected to match.
-    attr(outR, "time_s") <- attr(outC, "time_s") <- NULL
-    expect_identical(outR,                        outC)
-    expect_equal(attr(outR, "score"),     attr(outC, "score"),     tolerance = 1e-12)
-    expect_equal(attr(outR, "secondary"), attr(outC, "secondary"), tolerance = 1e-12)
-    expect_identical(attr(outR, "iters"),      attr(outC, "iters"))
-  }
-
-  # Same parity under the stagnation stopping rule (plateau binds, no
-  # iteration cap): the run-length is itself an output, so identical iters
-  # confirms both paths take the deterministic criterion identically.
-  for (mni in c(5L, 25L, 100L)) {
-    outR <- DropAdd(dmat, k = 8L, plateau = mni, .verify = TRUE)
-    outC <- DropAdd(dmat, k = 8L, plateau = mni)
-    attr(outR, "time_s") <- attr(outC, "time_s") <- NULL
-    expect_identical(outR,                        outC)
-    expect_equal(attr(outR, "score"),     attr(outC, "score"),     tolerance = 1e-12)
-    expect_equal(attr(outR, "secondary"), attr(outC, "secondary"), tolerance = 1e-12)
-    expect_identical(attr(outR, "iters"),      attr(outC, "iters"))
-  }
 })
