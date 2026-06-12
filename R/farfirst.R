@@ -163,7 +163,7 @@
 #' @param strategy Integer or character defining how to seed the greedy pass.
 #' Pass the name of one or more seeding strategies described in [`PickPoint()`]
 #' to run each strategy and return the best solution.
-#' @param nseeds Integer: number of distinct seeds to draw under the
+#' @param nseeds Integer: number of distinct seeds to draw under the (default)
 #' `"random_furthest"` strategy.
 #' @return `FarFirst()` returns an integer vector with class `MaxMinSelection`,
 #' listing the selected indices in the order they were selected.
@@ -287,11 +287,6 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
   k <- min(as.integer(k), nPts)
   if (k == 0L) return(integer(0))
 
-  nseeds <- as.integer(nseeds)
-  if (length(nseeds) != 1L || is.na(nseeds) || nseeds < 1L) {
-    stop("`nseeds` must be a single positive integer")
-  }
-
   # The kernels attach a `t_k` attribute (the selection's min pairwise distance,
   # computed for free). A bare single pass exposes it as the `score` attribute
   # (matching DropAdd/Grasp); the ensemble path reads it into strategy_results.
@@ -321,6 +316,12 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
       warning("`anti_centroid` seed requires coordinates; it is dropped on the ",
               "distance-matrix path, where `peripheral` covers the same role")
     }
+
+    nseeds <- as.integer(nseeds)
+    if (length(nseeds) != 1L || is.na(nseeds) || nseeds < 1L) {
+      stop("`nseeds` must be a single positive integer")
+    }
+
     if (usePoints) {
       return(Classify(.GonzEnsembleFromPoints(points, k, anchors, nseeds = nseeds)))
     }
