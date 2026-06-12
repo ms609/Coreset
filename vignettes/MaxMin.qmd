@@ -97,10 +97,10 @@ MaxMin provides solvers for each objective:
 
 
 To compute the score for an arbitrary selection of points under each objective,
-use `MinDist()` (MMDP) and `KCentreRadius()` (k-centre objective).
+use `MinDist()` (MMDP) and `KCentreRadius()` (k-centre).
 
 
-## Gonzalez: fast greedy selection
+## Fast greedy selection
 
 The @Gonzalez1985 algorithm builds the selection greedily:
 start from a seed point, then repeatedly add whichever unselected point is

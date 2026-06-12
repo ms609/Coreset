@@ -5,11 +5,11 @@
 # anchors are exposed through MaxMinSeed(); FarFirst(method = ) selects among them
 # (or the ensemble) and runs the greedy pass.
 
-# The default seed ensemble: the `"random_furthest"` token alone, which expands
-# to one start per `pivots` element (three pivots drawn with the session RNG by
-# default) -- a best-of-three cheap O(N) selection. Set a seed (`set.seed()`)
-# for a reproducible draw. The deterministic anchors (`"centroid"`,
-# `"peripheral"`, ...) remain available as opt-in `seed=` strategies.
+# The default seed ensemble: the `"random_furthest"` token alone, which draws
+# `nseeds` (default 8) distinct furthest-point seeds via the session RNG and
+# returns the best Gonzalez pass. Set a seed (`set.seed()`) for a reproducible
+# draw. The deterministic anchors (`"centroid"`, `"peripheral"`, ...) remain
+# available as opt-in `method=` strategies.
 .kDefaultEnsemble <- "random_furthest"
 
 # Seeds available to the ensemble drivers. The matrix path lacks coordinates, so
@@ -18,8 +18,8 @@
                            "anti_medoid", "medoid", "rowsum", "rownorm")
 .kPointEnsembleSeeds  <- c("centroid", .kMatrixEnsembleSeeds)
 
-# Number of random-furthest pivots drawn when `pivots` is left unspecified.
-.kDefaultRandomStarts <- 3L
+# Default number of distinct random-furthest seeds.
+.kDefaultNSeeds <- 8L
 
 #' Draw distinct furthest-point seeds from random pivots
 #'
@@ -76,25 +76,23 @@
 #' Expand ensemble anchor names into labelled seed specs
 #'
 #' Maps each anchor name to a `list(label, s1)` spec. The `"random_furthest"`
-#' token expands to one spec per element of `pivots`, each seeded at the point
-#' furthest from that pivot (labelled `random_furthest1`, ...); an empty
-#' `pivots` contributes none.
+#' token expands to one spec per element of `rfSeeds` (already-resolved seed
+#' indices, labelled `random_furthest1`, ...); an empty vector contributes none.
 #' @param anchors Character vector of (de-duplicated) anchor names.
-#' @param pivots Integer vector of pivot indices the `"random_furthest"` token
-#'   expands over (one start per pivot).
+#' @param rfSeeds Integer vector of already-resolved furthest-point seed indices
+#'   for the `"random_furthest"` token.
 #' @param anchorSeed Function mapping a deterministic anchor name to an integer
 #'   seed index.
-#' @param rfSeed Function mapping a pivot index to the furthest-point seed.
 #' @return List of `list(label, s1)` specs.
 #' @keywords internal
-.ExpandAnchors <- function(anchors, pivots, anchorSeed, rfSeed) {
+.ExpandAnchors <- function(anchors, rfSeeds, anchorSeed) {
   specs <- list()
   for (name in anchors) {
     if (name == "random_furthest") {
-      for (j in seq_along(pivots)) {
+      for (j in seq_along(rfSeeds)) {
         specs[[length(specs) + 1L]] <- list(
           label = paste0("random_furthest", j),
-          s1    = as.integer(rfSeed(pivots[[j]]))
+          s1    = rfSeeds[[j]]
         )
       }
     } else {
@@ -103,8 +101,7 @@
     }
   }
   if (length(specs) == 0L) {
-    stop("no seed strategies to run; `pivots` is empty and the ensemble names ",
-         "only `random_furthest`")
+    stop("no seed strategies to run")
   }
   specs
 }
@@ -295,24 +292,21 @@ MaxMinSeed <- function(d = NULL, points = NULL,
 #'
 #' Runs Gonzalez from each requested peripheral anchor and returns the subset
 #' maximising \eqn{T_k}. Internal driver for the ensemble path of [FarFirst()]
-#' (triggered when `seed` is a character vector of length > 1). The
-#' `"random_furthest"` token expands to one start per element of `pivots`. The
-#' returned vector carries `strategy_results` and `winning_strategy` (character
-#' vector of all tied-best strategies, with random starts labelled
-#' `random_furthest1`, `random_furthest2`, ...) attributes.
+#' (triggered when `method` is a character vector of length > 1 or
+#' `"random_furthest"`). The `"random_furthest"` token draws `nseeds` distinct
+#' furthest-point seeds via [.DrawDistinctSeeds()]. The returned vector carries
+#' `strategy_results` and `winning_strategy` (character vector of all tied-best
+#' strategies, with random starts labelled `random_furthest1`,
+#' `random_furthest2`, ...) attributes.
 #' @param d Square numeric distance matrix (already coerced).
 #' @param m Integer subset size (`1 <= m < nrow(d)`).
 #' @param anchors Character vector of anchor names.
-#' @param pivots Integer vector of pivot indices the `"random_furthest"` token
-#'   expands over (empty contributes none).
-#' @param rfSeedFn Optional function mapping a `"random_furthest"` pivot to its
-#'   seed index. `NULL` (default) uses the furthest-from-pivot rule; pass
-#'   [identity()] to treat `pivots` as already-resolved seed indices (the
-#'   `nseeds` distinct-restart path of [FarFirst()]).
+#' @param nseeds Integer number of distinct random-furthest seeds to draw when
+#'   `"random_furthest"` is in `anchors`.
 #' @return Integer vector of selected indices with attributes.
 #' @keywords internal
-.GonzEnsemble <- function(d, m, anchors = "peripheral", pivots = integer(0),
-                          rfSeedFn = NULL) {
+.GonzEnsemble <- function(d, m, anchors = "peripheral",
+                          nseeds = .kDefaultNSeeds) {
   d <- .AsDistMatrix(d)
   m <- as.integer(m)
   if (length(m) != 1L || is.na(m) || m < 0L) {

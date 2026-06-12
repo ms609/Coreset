@@ -18,12 +18,10 @@ FarFirst(
 \arguments{
 \item{d}{A \code{dist} object, a square numeric matrix of pairwise distances, or
 a distance function (see \emph{§Distance function}). Asymmetric matrices are
-accepted; symmetry is not checked (an \code{O(N^2)} check is intentionally
-omitted), and the algorithm treats \eqn{d_{ij}} and \eqn{d_{ji}} as
+accepted; the algorithm treats \eqn{d_{ij}} and \eqn{d_{ji}} as
 independent. Ignored when \code{points} is supplied.}
 
-\item{k}{Integer: number of points to select. If \code{k > N}, all \code{N} indices
-are returned in Gonzalez (farthest-first) order.}
+\item{k}{Integer: number of points to select.}
 
 \item{method}{Integer or character (scalar or vector); how to seed the
 greedy pass (matching the \code{method} argument of \code{\link[=MaxMinSeed]{MaxMinSeed()}}). An
@@ -87,9 +85,8 @@ Default: \code{TRUE} in interactive sessions, \code{FALSE} otherwise
 }
 \value{
 Integer vector of length \code{min(k, N)} of selected indices, in
-farthest-first (greedy) selection order -- \strong{not} sorted (unlike
-\code{\link[=DropAdd]{DropAdd()}}, \code{\link[=Grasp]{Grasp()}} and \code{ExactMaxMin()$indices}, which return ascending
-indices). The achieved \eqn{T_k} (the selection's minimum pairwise
+the order they were selected.
+The achieved \eqn{T_k} (the selection's minimum pairwise
 distance) is attached as attribute \code{score}. An ensemble \code{method}
 additionally carries \code{strategy_results} and \code{winning_strategy} attributes.
 The vector has class \code{"MaxMinSelection"} and prints as a one-line summary

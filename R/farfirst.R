@@ -168,11 +168,9 @@
 #'
 #' @param d A `dist` object, a square numeric matrix of pairwise distances, or
 #'   a distance function (see *§Distance function*). Asymmetric matrices are
-#'   accepted; symmetry is not checked (an `O(N^2)` check is intentionally
-#'   omitted), and the algorithm treats \eqn{d_{ij}} and \eqn{d_{ji}} as
+#'   accepted; the algorithm treats \eqn{d_{ij}} and \eqn{d_{ji}} as
 #'   independent. Ignored when `points` is supplied.
-#' @param k Integer: number of points to select. If `k > N`, all `N` indices
-#'   are returned in Gonzalez (farthest-first) order.
+#' @param k Integer: number of points to select.
 #' @param points Optional `N x dim` numeric coordinate matrix. When supplied,
 #'   the selection is computed directly from coordinates in `O(N * k * dim)`
 #'   time and `O(N)` memory, never materialising the `N x N` distance matrix
@@ -230,9 +228,8 @@
 #'   `pivots` (a warning is issued if either was also set explicitly); it is not
 #'   available on the distance-column oracle path. Default `NULL` (use `method`).
 #' @return Integer vector of length `min(k, N)` of selected indices, in
-#'   farthest-first (greedy) selection order -- **not** sorted (unlike
-#'   [DropAdd()], [Grasp()] and `ExactMaxMin()$indices`, which return ascending
-#'   indices). The achieved \eqn{T_k} (the selection's minimum pairwise
+#'   the order they were selected.
+#'   The achieved \eqn{T_k} (the selection's minimum pairwise
 #'   distance) is attached as attribute `score`. An ensemble `method`
 #'   additionally carries `strategy_results` and `winning_strategy` attributes.
 #'   The vector has class `"MaxMinSelection"` and prints as a one-line summary
