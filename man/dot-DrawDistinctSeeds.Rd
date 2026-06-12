@@ -21,7 +21,8 @@
 Integer vector of distinct seed indices (length in \verb{[1, nseeds]}).
 }
 \description{
-The \code{nseeds} counterpart to an explicit \code{pivots} list (see \code{\link[=FarFirst]{FarFirst()}}):
+Used by \code{\link[=.GonzEnsemble]{.GonzEnsemble()}} and \code{\link[=.GonzEnsembleFromPoints]{.GonzEnsembleFromPoints()}} to expand the
+\code{"random_furthest"} token (see \code{\link[=FarFirst]{FarFirst()}}):
 repeatedly draws a random pivot with the session RNG, resolves its
 furthest-point seed via \code{seedFn}, and collects distinct seed indices until
 \code{nseeds} are found. Two bounds stop the loop when the reachable seed pool is

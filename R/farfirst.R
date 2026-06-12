@@ -183,28 +183,9 @@
 #'   distance-column oracle path (the only path slow enough to warrant one).
 #'   Default: `TRUE` in interactive sessions, `FALSE` otherwise
 #'   (`getOption("MaxMin.progress", interactive())`).
-#' @param method Integer or character (scalar or vector); how to seed the
-#'   greedy pass (matching the `method` argument of [MaxMinSeed()]). An
-#'   **integer** gives the explicit 1-based index of the first selected point
-#'   (a single bare Gonzalez pass). A **length-1 character** names a single
-#'   deterministic seeding strategy run as one bare pass: `"centroid"`
-#'   (coordinates only), `"peripheral"` (two-sweep diameter-endpoint
-#'   approximation), `"diameter"`, `"anti_medoid"`, `"rowsum"`,
-#'   `"rownorm"`, or `"first"` (index 1). A **length > 1 character vector** --
-#'   or the lone `"random_furthest"` token -- requests an ensemble: each named
-#'   anchor runs a full Gonzalez pass and the best result by [MinDist()] is
-#'   returned with `strategy_results` and `winning_strategy` (character vector
-#'   of all tied-best strategies) attributes. The `"random_furthest"` token
-#'   draws `nseeds` distinct furthest-point seeds, labelled `random_furthest1`,
-#'   `random_furthest2`, ...; named on its own it still runs the ensemble, so a
-#'   single random start is best obtained via [MaxMinSeed()]. Valid ensemble
-#'   anchors: any subset of `c("centroid", "peripheral", "random_furthest",
-#'   "diameter", "anti_medoid", "rowsum", "rownorm")` (`"centroid"` requires
-#'   `points`). Default: `"random_furthest"` (eight distinct random starts;
-#'   see `nseeds`). See [MaxMinSeed()] for anchor definitions. On the
-#'   distance-column oracle path only an integer `method` is honoured; a named
-#'   or ensemble `method` there warns and falls back to the peripheral seed (see
-#'   *Distance-column oracle*).
+#' @param method Integer or character defining how to seed the greedy pass.
+#' Pass the name of one or more seeding methods described in [`MaxMinSeed()`]
+#' to run each method and return the best solution.
 #' @param nseeds Integer: number of distinct random-furthest seeds to draw when
 #'   `"random_furthest"` is among the ensemble anchors. Random pivots are drawn
 #'   with the session RNG and each one's furthest-point seed is collected,
