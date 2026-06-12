@@ -1,4 +1,4 @@
-﻿# Tests for the MaxMinSelection / MaxMinExact print + format S3 layer.
+# Tests for the MaxMinSelection / MaxMinExact print + format S3 layer.
 
 MakeData <- function(seed = 42, N = 60, dim = 4) {
   set.seed(seed)
@@ -9,7 +9,7 @@ MakeData <- function(seed = 42, N = 60, dim = 4) {
 test_that("FarFirst returns a self-describing MaxMinSelection that still indexes", {
   dat <- MakeData(N = 30)
   set.seed(1)
-  sel <- FarFirst(dat$d, 6L)
+  sel <- FarFirst(6L, dat$d)
   expect_s3_class(sel, "MaxMinSelection")
   expect_type(sel, "integer")          # still an integer vector underneath
   expect_identical(attr(sel, "producer"), "FarFirst")
@@ -20,7 +20,7 @@ test_that("FarFirst returns a self-describing MaxMinSelection that still indexes
 test_that("the ensemble summary names the winning strategy and count", {
   dat <- MakeData(N = 30)
   set.seed(1)
-  sel <- FarFirst(dat$d, 6L)               # default: 8 random-furthest starts
+  sel <- FarFirst(6L, dat$d)               # default: 8 random-furthest starts
   line <- format(sel)
   expect_match(line, "^6 elements \\([0-9 ]+\\) selected by ")
   expect_match(line, "Gonzalez farthest-first \\(best of [0-9]+ strategies")
@@ -29,7 +29,7 @@ test_that("the ensemble summary names the winning strategy and count", {
 
 test_that("a single pass omits the ensemble clause", {
   dat <- MakeData(N = 30)
-  sel <- FarFirst(dat$d, 6L, strategy = "diameter")
+  sel <- FarFirst(6L, dat$d, strategy = "diameter")
   line <- format(sel)
   expect_match(line, "selected by Gonzalez farthest-first, each at distance >= ")
   expect_false(grepl("best of", line))
@@ -37,7 +37,7 @@ test_that("a single pass omits the ensemble clause", {
 
 test_that("a single element drops the distance clause (NA score)", {
   dat <- MakeData(N = 30)
-  sel <- FarFirst(dat$d, 1L, strategy = "medoid")
+  sel <- FarFirst(1L, dat$d, strategy = "medoid")
   line <- format(sel)
   expect_match(line, "^1 element \\([0-9]+\\) selected by Gonzalez farthest-first$")
   expect_false(grepl("distance", line))
@@ -56,16 +56,16 @@ test_that("DropAdd and Grasp report their own algorithm names", {
 
 test_that("the index list is truncated past the show limit", {
   dat <- MakeData(N = 60)
-  sel <- FarFirst(dat$d, 25L, strategy = 1L)   # 25 > the 20-index threshold
+  sel <- FarFirst(25L, dat$d, strategy = 1L)   # 25 > the 20-index threshold
   line <- format(sel)
   expect_match(line, "\\.\\.\\. \\(\\+5 more\\)")
   # A short selection is shown in full, no ellipsis.
-  expect_false(grepl("more", format(FarFirst(dat$d, 5L, strategy = 1L))))
+  expect_false(grepl("more", format(FarFirst(5L, dat$d, strategy = 1L))))
 })
 
 test_that("print returns its argument invisibly and emits the format line", {
   dat <- MakeData(N = 30)
-  sel <- FarFirst(dat$d, 4L, strategy = "peripheral")
+  sel <- FarFirst(4L, dat$d, strategy = "peripheral")
   expect_output(ret <- withVisible(print(sel)), "selected by")
   expect_false(ret$visible)
   expect_identical(ret$value, sel)
@@ -74,7 +74,7 @@ test_that("print returns its argument invisibly and emits the format line", {
 test_that("an empty selection is left bare (no class)", {
   expect_identical(MaxMin:::.AsMaxMinSelection(integer(0), "FarFirst"),
                    integer(0))
-  expect_identical(FarFirst(MakeData(N = 10)$d, 0L), integer(0))
+  expect_identical(FarFirst(0L, MakeData(N = 10)$d), integer(0))
 })
 
 test_that(".FarFirstSelectedBy reports a tie among winning strategies", {
@@ -124,7 +124,7 @@ test_that("MaxMinExact prints proof status, indices and objective", {
 test_that("summary of a FarFirst ensemble prints the per-strategy table", {
   dat <- MakeData(N = 30)
   set.seed(1)
-  sel <- FarFirst(dat$d, 6L)
+  sel <- FarFirst(6L, dat$d)
   out <- capture.output(ret <- withVisible(summary(sel)))
   expect_false(ret$visible)
   expect_identical(ret$value, sel)
@@ -138,7 +138,7 @@ test_that("summary of a FarFirst ensemble prints the per-strategy table", {
 
 test_that("summary of a single FarFirst pass is just the headline", {
   dat <- MakeData(N = 30)
-  out <- capture.output(summary(FarFirst(dat$d, 6L, strategy = "diameter")))
+  out <- capture.output(summary(FarFirst(6L, dat$d, strategy = "diameter")))
   expect_length(out, 1L)
   expect_match(out, "Gonzalez farthest-first")
 })
@@ -164,7 +164,7 @@ test_that("summary of Grasp reports iterations and path-relinking calls", {
 test_that("summary table tolerates NA T_k (all-NA ensemble)", {
   dat <- MakeData(N = 30)
   set.seed(1)
-  out <- capture.output(summary(FarFirst(dat$d, 1L)))   # m = 1 => every T_k NA
+  out <- capture.output(summary(FarFirst(1L, dat$d)))   # m = 1 => every T_k NA
   expect_true(any(grepl("\\bNA\\b", out)))
 })
 

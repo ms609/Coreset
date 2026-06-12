@@ -14,18 +14,11 @@ FarFirst(
 )
 }
 \arguments{
-\item{d}{A \code{dist} object, a square numeric matrix of pairwise distances, or
-a distance function that takes an index \code{i} and returns the distance from
-\code{i} to each other element (see §Details). Ignored when \code{points} is supplied.}
-
 \item{k}{Integer: number of points to select.}
 
-\item{strategy}{Integer or character defining how to seed the greedy pass.
-Pass the name of one or more seeding strategies described in \code{\link[=MaxMinSeed]{MaxMinSeed()}}
-to run each strategy and return the best solution.}
-
-\item{nseeds}{Integer: number of distinct seeds to draw under the
-\code{"random_furthest"} strategy.}
+\item{d}{A \code{dist} object, a square numeric matrix of pairwise distances, or
+a distance function that takes an index \code{i} and returns the distance from
+\code{i} to each other element (see §Distance function). Ignored when \code{points} is supplied.}
 
 \item{points}{Optional \verb{N x dim} numeric coordinate matrix. When supplied,
 the selection is computed directly from coordinates in
@@ -37,10 +30,12 @@ supported.}
 the distance-column oracle path, where it cannot be inferred from the
 closure; ignored for the matrix and coordinate paths.}
 
-\item{progress}{Logical; show a progress bar during greedy selection on the
-distance-column oracle path (the only path slow enough to warrant one).
-Default: \code{TRUE} in interactive sessions, \code{FALSE} otherwise
-(\code{getOption("MaxMin.progress", interactive())}).}
+\item{strategy}{Integer or character defining how to seed the greedy pass.
+Pass the name of one or more seeding strategies described in \code{\link[=MaxMinSeed]{MaxMinSeed()}}
+to run each strategy and return the best solution.}
+
+\item{nseeds}{Integer: number of distinct seeds to draw under the
+\code{"random_furthest"} strategy.}
 }
 \value{
 \code{MaxMin()} returns an integer vector with class \code{MaxMinSelection},
@@ -72,22 +67,29 @@ The function will be called once per selected element, to avoid building a
 complete \eqn{N x N} matrix.
 }
 
+\section{Progress bar}{
+
+The distance-column oracle path shows a progress bar controlled by
+\code{getOption("MaxMin.progress", interactive())} — \code{TRUE} by default in
+interactive sessions, \code{FALSE} otherwise.
+}
+
 \examples{
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
 # Default: best of eight random-furthest starts (set.seed for reproducibility):
-FarFirst(d, 5L)
+FarFirst(5L, d)
 # More random-furthest starts:
-FarFirst(d, 5L, nseeds = 15L)
+FarFirst(5L, d, nseeds = 15L)
 # Custom two-anchor ensemble:
-FarFirst(d, 5L, strategy = c("diameter", "anti_medoid"))
+FarFirst(5L, d, strategy = c("diameter", "anti_medoid"))
 # A single strategy:
-FarFirst(d, 5L, strategy = "diameter")
+FarFirst(5L, d, strategy = "diameter")
 # An explicit start index (integer strategy):
-FarFirst(d, 5L, strategy = 1L)
+FarFirst(5L, d, strategy = 1L)
 # Matrix-free coordinate path (identical result, O(N) memory):
-FarFirst(k = 5L, points = pts, strategy = 1L)
+FarFirst(5L, points = pts, strategy = 1L)
 
 # Distance-column oracle: supply one column at a time, never the full matrix.
 data("USArrests")
@@ -96,7 +98,7 @@ StateDist <- function(i) {
   diffs <- sweep(arrestTypes, 2, unlist(arrestTypes[i, ]), "-")
   sqrt(rowSums(diffs ^ 2))
 }
-idx <- FarFirst(StateDist, k = 4L, N = nrow(arrestTypes), strategy = 1L)
+idx <- FarFirst(4L, StateDist, N = nrow(arrestTypes), strategy = 1L)
 arrestTypes[idx, ]
 }
 \references{

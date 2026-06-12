@@ -35,7 +35,7 @@ existing selection against a different distance matrix.
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
-MinDist(d, FarFirst(d, 5L))
+MinDist(d, FarFirst(5L, d))
 }
 \seealso{
 \code{\link[=FarFirst]{FarFirst()}}, \code{\link[=DropAdd]{DropAdd()}}, \code{\link[=Grasp]{Grasp()}} and \code{\link[=ExactMaxMin]{ExactMaxMin()}}, whose

@@ -4,12 +4,12 @@
 \alias{.MaxMinSeed}
 \title{Peripheral seed index for Gonzalez selection (distance matrix)}
 \usage{
-.MaxMinSeed(d, method)
+.MaxMinSeed(d, strategy)
 }
 \arguments{
 \item{d}{Square numeric distance matrix.}
 
-\item{method}{Anchor name; see \code{\link[=MaxMinSeed]{MaxMinSeed()}}. Also accepts \code{"first"} (1).}
+\item{strategy}{Anchor name; see \code{\link[=MaxMinSeed]{MaxMinSeed()}}. Also accepts \code{"first"} (1).}
 }
 \value{
 Integer seed index.

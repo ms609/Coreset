@@ -70,7 +70,7 @@ d <- dist(pts)
 centres <- KCentre(d, 5L)
 KCentreRadius(d, centres)
 # CDSh covers at least as tightly as the Gonzalez 2-approximation:
-KCentreRadius(d, FarFirst(d, 5L, strategy = "peripheral"))
+KCentreRadius(d, FarFirst(5L, d, strategy = "peripheral"))
 }
 \references{
 \insertAllCited{}

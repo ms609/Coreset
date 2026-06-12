@@ -1,4 +1,4 @@
-﻿# Tests for MaxMinSeed() and MinDist().
+# Tests for MaxMinSeed() and MinDist().
 
 MakeData <- function(seed = 7, N = 50, dim = 3) {
   set.seed(seed)
@@ -43,7 +43,7 @@ test_that("centroid seed is the farthest point from the coordinate mean", {
                    as.integer(which.max(d2)))
   # It has no distance-matrix form.
   expect_error(MaxMinSeed(dat$d, strategy = "centroid"), "coordinates")
-  expect_error(FarFirst(dat$d, 5L, strategy = "centroid"), "coordinates")
+  expect_error(FarFirst(5L, dat$d, strategy = "centroid"), "coordinates")
 })
 
 test_that("random_furthest is reproducible under set.seed", {
@@ -91,7 +91,7 @@ test_that("MinDist rejects NA and duplicate idx (F-604/F-605)", {
 
 test_that("Gonzalez strategy='first' uses index 1 as anchor (both paths)", {
   dat <- MakeData()
-  rMat <- FarFirst(dat$d, 4L, strategy = "first")
+  rMat <- FarFirst(4L, dat$d, strategy = "first")
   expect_identical(rMat[1L], 1L)
   rPts <- FarFirst(k = 4L, points = dat$pts, strategy = "first")
   expect_identical(rPts[1L], 1L)
@@ -107,7 +107,7 @@ test_that("diameter anchor returns 1 on zero-distance data", {
   expect_identical(MaxMinSeed(dDegen, strategy = "diameter"), 1L)
   expect_identical(MaxMinSeed(points = ptsDegen, strategy = "diameter"), 1L)
   # Ensemble paths: AnchorSeed("diameter") hits the degenerate branch.
-  ensM  <- FarFirst(dDegen, 2L, strategy = c("diameter", "rowsum"))
+  ensM  <- FarFirst(2L, dDegen, strategy = c("diameter", "rowsum"))
   ensPt <- FarFirst(k = 2L, points = ptsDegen, strategy = c("diameter", "rowsum"))
   expect_length(ensM,  2L)
   expect_length(ensPt, 2L)
@@ -126,13 +126,13 @@ test_that(".GonzEnsemble non-first anchor wins when it is the better one", {
     pts <- matrix(rnorm(80L * 3L), ncol = 3L)
     d   <- as.matrix(dist(pts))
     n   <- 6L
-    tkD  <- MinDist(d, FarFirst(d, n, strategy = "diameter"))
-    tkAm <- MinDist(d, FarFirst(d, n, strategy = "anti_medoid"))
+    tkD  <- MinDist(d, FarFirst(n, d, strategy = "diameter"))
+    tkAm <- MinDist(d, FarFirst(n, d, strategy = "anti_medoid"))
     if (isTRUE(all.equal(tkD, tkAm))) next
     loser  <- if (tkAm > tkD) "diameter"    else "anti_medoid"
     winner <- if (tkAm > tkD) "anti_medoid" else "diameter"
     bestTk <- max(tkD, tkAm)
-    ensM  <- FarFirst(d, n, strategy = c(loser, winner))
+    ensM  <- FarFirst(n, d, strategy = c(loser, winner))
     ensPt <- FarFirst(k = n, points = pts, strategy = c(loser, winner))
     expect_gte(MinDist(d, ensM),  bestTk - 1e-9)
     expect_gte(MinDist(d, ensPt), bestTk - 1e-9)
@@ -212,7 +212,7 @@ test_that(".GonzEnsembleFromPoints k=1 propagates NA t_k through all strategies"
 test_that(".GonzEnsemble medoid branch covered via multi-anchor ensemble", {
   dat <- MakeData()
   # medoid in a 2-anchor ensemble -> AnchorSeed("medoid") = GetMedoid() fires
-  res <- FarFirst(dat$d, 5L, strategy = c("medoid", "peripheral"))
+  res <- FarFirst(5L, dat$d, strategy = c("medoid", "peripheral"))
   expect_length(res, 5L)
   expect_true(all(attr(res, "winning_strategy") %in% c("medoid", "peripheral")))
 })

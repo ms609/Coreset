@@ -185,7 +185,7 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' centres <- KCentre(d, 5L)
 #' KCentreRadius(d, centres)
 #' # CDSh covers at least as tightly as the Gonzalez 2-approximation:
-#' KCentreRadius(d, FarFirst(d, 5L, strategy = "peripheral"))
+#' KCentreRadius(d, FarFirst(5L, d, strategy = "peripheral"))
 #' @export
 KCentre <- function(d, k, nstart = 1L, effort = 1L, seeds = NULL) {
   needSymCheck <- !inherits(d, "dist")          # a dist object is symmetric
@@ -241,9 +241,9 @@ KCentre <- function(d, k, nstart = 1L, effort = 1L, seeds = NULL) {
   # session RNG).
   if (effort >= 1L) {
     gonz <- if (effort == 1L) {
-      as.integer(FarFirst(d, k, strategy = "peripheral"))
+      as.integer(FarFirst(k, d, strategy = "peripheral"))
     } else {
-      as.integer(FarFirst(d, k, nseeds = effort))
+      as.integer(FarFirst(k, d, nseeds = effort))
     }
     gonzR <- KCentreRadius(d, gonz)
     if (gonzR < bestR) {

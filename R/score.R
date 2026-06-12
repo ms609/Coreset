@@ -24,7 +24,7 @@
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' d <- dist(pts)
-#' MinDist(d, FarFirst(d, 5L))
+#' MinDist(d, FarFirst(5L, d))
 #' @export
 MinDist <- function(d = NULL, idx, points = NULL) {
   idx <- as.integer(idx)

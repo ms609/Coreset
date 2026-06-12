@@ -1,4 +1,4 @@
-﻿# Discrete k-centre: covering-radius score, CDSh heuristic, exact covering IP.
+# Discrete k-centre: covering-radius score, CDSh heuristic, exact covering IP.
 
 # Brute-force optimum covering radius over all k-subsets (tiny n only).
 brute_kcentre <- function(d, k) {
@@ -73,7 +73,7 @@ test_that("CDSh covers at least as tightly as Gonzalez (the SOTA-beat)", {
     pts <- centres[rep(1:4, each = 30), ] + matrix(rnorm(240), ncol = 2)
     d <- as.matrix(stats::dist(pts))
     cdsh <- c(cdsh, KCentreRadius(d, as.integer(KCentre(d, 6L))))
-    gonz <- c(gonz, KCentreRadius(d, as.integer(FarFirst(d, 6L, strategy = "peripheral"))))
+    gonz <- c(gonz, KCentreRadius(d, as.integer(FarFirst(6L, d, strategy = "peripheral"))))
   }
   expect_true(all(cdsh <= gonz + 1e-9))   # never worse
   expect_lt(mean(cdsh), mean(gonz))        # strictly better on average
@@ -174,7 +174,7 @@ test_that("KCentre is never worse than Gonzalez on small random instances (KC-00
     d <- as.matrix(stats::dist(matrix(rnorm(n * 2L), ncol = 2L)))
     k <- sample(2:min(8L, n - 1L), 1L)
     cdsh <- KCentreRadius(d, as.integer(KCentre(d, k)))
-    gonz <- KCentreRadius(d, as.integer(FarFirst(d, k, strategy = "peripheral")))
+    gonz <- KCentreRadius(d, as.integer(FarFirst(k, d, strategy = "peripheral")))
     expect_lte(cdsh, gonz + 1e-9)
   }
 })
@@ -253,7 +253,7 @@ test_that("effort controls the Gonzalez floor", {
     expect_equal(attr(res, "radius"), KCentreRadius(d, as.integer(res)))
   }
   # effort >= 1 guarantees never-worse-than-Gonzalez; effort = 0 does not.
-  gonz <- KCentreRadius(d, as.integer(FarFirst(d, 8L, strategy = "peripheral")))
+  gonz <- KCentreRadius(d, as.integer(FarFirst(8L, d, strategy = "peripheral")))
   expect_lte(attr(one, "radius"), gonz + 1e-9)
   expect_lte(attr(multi, "radius"), gonz + 1e-9)
   expect_error(KCentre(d, 8L, effort = -1L), "non-negative")
@@ -271,7 +271,7 @@ test_that("the Gonzalez floor strictly improves a sub-Gonzalez CDSh result (KC-0
   floored <- attr(KCentre(d, k, effort = 1L), "radius")          # floor applied
   expect_lt(floored, raw)                                        # floor helped
   expect_equal(floored,
-               KCentreRadius(d, as.integer(FarFirst(d, k, strategy = "peripheral"))))
+               KCentreRadius(d, as.integer(FarFirst(k, d, strategy = "peripheral"))))
 })
 
 test_that("KCentre accepts user-supplied seeds and rejects out-of-range ones", {

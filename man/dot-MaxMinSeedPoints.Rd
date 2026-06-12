@@ -4,12 +4,12 @@
 \alias{.MaxMinSeedPoints}
 \title{Peripheral seed index for Gonzalez selection (coordinates)}
 \usage{
-.MaxMinSeedPoints(points, method)
+.MaxMinSeedPoints(points, strategy)
 }
 \arguments{
 \item{points}{A \code{double} \verb{N x dim} coordinate matrix.}
 
-\item{method}{Anchor name; see \code{\link[=MaxMinSeed]{MaxMinSeed()}}. Also accepts \code{"first"} (1).}
+\item{strategy}{Anchor name; see \code{\link[=MaxMinSeed]{MaxMinSeed()}}. Also accepts \code{"first"} (1).}
 }
 \value{
 Integer seed index.

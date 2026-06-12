@@ -1,4 +1,4 @@
----
+--
 title: "Introduction to MaxMin"
 author: "Martin R. Smith"
 date: today
@@ -69,7 +69,7 @@ data("eurodist")
 set.seed(1)
 
 # Select 4 maximally dispersed cities
-ffPick <- FarFirst(eurodist, k = 4L)
+ffPick <- FarFirst(4L, eurodist)
 
 # View distances between selected cities
 as.matrix(eurodist)[ffPick, ffPick]
@@ -115,7 +115,7 @@ whichever pass produced the highest T~k~.
 ```{r}
 #| label: gonzalez-random
 set.seed(1)
-picks <- FarFirst(eurodist, k = 6L)   # default: best of eight random starts
+picks <- FarFirst(6L, eurodist)   # default: best of eight random starts
 ```
 
 More random starts can be requested via the `nseeds` argument.
@@ -123,7 +123,7 @@ More random starts can be requested via the `nseeds` argument.
 ```{r}
 #| label: gonzalez-ensemble
 set.seed(1)
-picks <- FarFirst(eurodist, k = 6L, nseeds = 12L)
+picks <- FarFirst(6L, eurodist, nseeds = 12L)
 ```
 
 
@@ -133,7 +133,7 @@ will be returned.
 
 ```{r}
 #| label: gonzalez-seeds
-picks <- FarFirst(eurodist, k = 6L, strategy = c("diameter", "anti_medoid"))
+picks <- FarFirst(6L, eurodist, strategy = c("diameter", "anti_medoid"))
 MinDist(eurodist, picks)
 
 attr(picks, "winning_strategy")
@@ -156,7 +156,7 @@ StateDist <- function(i) {
   diffs <- sweep(arrestTypes, 2, unlist(arrestTypes[i, ]), "-")
   sqrt(rowSums(diffs ^ 2))
 }
-idx <- FarFirst(StateDist, k = 4L, N = nrow(arrestTypes), strategy = 1L)
+idx <- FarFirst(4L, StateDist, N = nrow(arrestTypes), strategy = 1L)
 arrestTypes[idx, ]
 ```
 
@@ -220,7 +220,7 @@ k   <- 8L
 
 ```{r}
 #| label: compare-run
-idx_ff <- FarFirst(d50, k)
+idx_ff <- FarFirst(k, d50)
 res_da50 <- DropAdd(d50, k = k, plateau = 500L)
 set.seed(42)
 res_gr50 <- Grasp(d50, k = k, plateau = 50L)
@@ -312,7 +312,7 @@ res_ex$proven      # TRUE  ⟹  objective is the global optimum
 res_ex$objective
 
 # Compare to the greedy heuristic on the same instance
-res_ff30 <- FarFirst(d30, k = 6L)
+res_ff30 <- FarFirst(6L, d30)
 c(exact    = res_ex$objective,
   Gonzalez = MinDist(d30, res_ff30))
 ```
@@ -368,7 +368,7 @@ baseline:
 
 ```{r}
 #| label: kcentre-radius
-ff <- FarFirst(eurodist, k = 4L, strategy = "peripheral")
+ff <- FarFirst(4L, eurodist, strategy = "peripheral")
 c(KCentre  = KCentreRadius(eurodist, centres),
   FarFirst = KCentreRadius(eurodist, ff))
 ```

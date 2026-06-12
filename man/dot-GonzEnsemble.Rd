@@ -22,7 +22,7 @@ Integer vector of selected indices with attributes.
 \description{
 Runs Gonzalez from each requested peripheral anchor and returns the subset
 maximising \eqn{T_k}. Internal driver for the ensemble path of \code{\link[=FarFirst]{FarFirst()}}
-(triggered when \code{method} is a character vector of length > 1 or
+(triggered when \code{strategy} is a character vector of length > 1 or
 \code{"random_furthest"}). The \code{"random_furthest"} token draws \code{nseeds} distinct
 furthest-point seeds via \code{\link[=.DrawDistinctSeeds]{.DrawDistinctSeeds()}}. The returned vector carries
 \code{strategy_results} and \code{winning_strategy} (character vector of all tied-best

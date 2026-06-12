@@ -232,46 +232,43 @@
   )
 }
 
-#' Peripheral seed index for Gonzalez farthest-first selection
+#' Seed to initialize farthest-first selection
 #'
-#' Returns the index of a single element, used to seed [FarFirst()].
+#' `MaxMinSeed()` implements a range of strategies to select a seed for greedy
+#' farthest-first selection. Propitious seeds yield better solutions.
 #'
-#' Anchors:
-#' \describe{
-#'   \item{`"centroid"`}{The point farthest from the coordinate mean
-#'     (\eqn{argmax ||x - x_bar||}), an \eqn{O(N * dim)} approximate diameter
-#'     endpoint.
-#'     Computed from coordinates, so it requires `points`; it is unavailable on
-#'     the distance-matrix path, where `"peripheral"` serves the same role.}
-#'   \item{`"peripheral"`}{Two sweeps: the point furthest from point 1, then
-#'     the point furthest from that (a diameter-endpoint approximation), in
-#'     \eqn{O(N)}. The only anchor reachable from a distance-column oracle (the
-#'     function path of [FarFirst()]).}
-#'   \item{`"random_furthest"`}{The point furthest from a random pivot, in
-#'     \eqn{O(N)}.}
-#'   \item{`"diameter"`}{A row endpoint of the diameter pair (the maximum
-#'     pairwise distance). Degenerate data (`d_max <= 0`) falls back to 1.}
-#'   \item{`"anti_medoid"`}{The point furthest from the 1-median (medoid).}
-#'   \item{`"medoid"`}{The 1-median.}
-#'   \item{`"rowsum"`}{The point maximising the sum of distances to all others
-#'     (the 1-anti-median).}
-#'   \item{`"rownorm"`}{The point maximising \eqn{\sqrt(\sum{d^2})}, the L2
-#'    counterpart of `"rowsum"`.}
-#' }
 #'
 #' @param d A `dist` object or square symmetric numeric matrix. Ignored when
 #'   `points` is supplied.
 #' @param points Optional `N x dim` numeric coordinate matrix; when supplied the
 #'   seed is computed from coordinates in `O(N)` memory. Required for the
 #'   `"centroid"` anchor, which has no distance-matrix form.
-#' @param strategy Anchor name (see above). Default `"peripheral"`.
+#' @param strategy Character specifying method to employ:
+#'
+#' \describe{
+#'   \item{`"peripheral"`(default)}{Two sweeps: the point furthest from point 1,
+#'    then the point furthest from that (a diameter-endpoint approximation).
+#'    \eqn{O(N)}.}
+#'   \item{`"centroid"`}{The point farthest from the coordinate mean
+#'     (\eqn{\argmax ||x - x_bar||}). \eqn{O(N * dim)}. Requires `points`.}
+#'   \item{`"random_furthest"`}{The point furthest from a random pivot.
+#'   \eqn{O(N)}.}
+#'   \item{`"diameter"`}{A row endpoint of the diameter pair (the maximum
+#'     pairwise distance).}
+#'   \item{`"anti_medoid"`}{The point furthest from the 1-median (medoid).}
+#'   \item{`"rowsum"`}{The point maximising the sum of distances to all others
+#'     (the 1-anti-median).}
+#'   \item{`"rownorm"`}{The point maximising \eqn{\sqrt(\sum{d^2})}, the L2
+#'    counterpart of `"rowsum"`.}
+#' }
+#'
 #' @return Integer seed index in `[1, N]`.
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' d <- dist(pts)
 #' MaxMinSeed(d, strategy = "diameter")
-#' FarFirst(d, 5L, strategy = MaxMinSeed(d, strategy = "diameter"))
+#' FarFirst(5L, d, strategy = MaxMinSeed(d, strategy = "diameter"))
 #' @seealso [FarFirst()], which seeds and runs the greedy pass in one call.
 #' @export
 MaxMinSeed <- function(d = NULL, points = NULL,
