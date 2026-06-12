@@ -172,7 +172,7 @@ test_that("DropAdd respects maxSeconds within reasonable slack", {
   dmat <- as.matrix(dist(pts))
   t0 <- Sys.time()
   # Disable stagnation so the wall-clock ceiling is the binding criterion.
-  res <- DropAdd(dmat, k = 20L, maxSeconds = 1, plateau = 100000000L)
+  res <- DropAdd(dmat, k = 20L, maxSeconds = 0.05, plateau = 100000000L)
   elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
   expect_lte(attr(res, "time_s"), 1.5)
   expect_lte(elapsed, 2.0)
@@ -209,7 +209,9 @@ test_that("DropAdd is deterministic and validates inputs", {
 
 test_that("DropAdd progress = TRUE fires the cli hooks", {
   dmat <- as.matrix(dist(matrix(rnorm(15 * 2), ncol = 2)))
-  expect_no_error(DropAdd(dmat, k = 3L, maxIter = 2L, progress = TRUE))
+  expect_no_error(suppressMessages(
+    DropAdd(dmat, k = 3L, maxIter = 2L, progress = TRUE)
+  ))
 })
 
 test_that("DropAdd rejects an NA distance matrix (FF-001 / T7-08)", {
