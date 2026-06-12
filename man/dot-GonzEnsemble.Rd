@@ -4,13 +4,7 @@
 \alias{.GonzEnsemble}
 \title{Ensemble Gonzalez over cheap peripheral-anchor strategies (distance matrix)}
 \usage{
-.GonzEnsemble(
-  d,
-  m,
-  anchors = "peripheral",
-  pivots = integer(0),
-  rfSeedFn = NULL
-)
+.GonzEnsemble(d, m, anchors = "peripheral", nseeds = .kDefaultNSeeds)
 }
 \arguments{
 \item{d}{Square numeric distance matrix (already coerced).}
@@ -19,13 +13,8 @@
 
 \item{anchors}{Character vector of anchor names.}
 
-\item{pivots}{Integer vector of pivot indices the \code{"random_furthest"} token
-expands over (empty contributes none).}
-
-\item{rfSeedFn}{Optional function mapping a \code{"random_furthest"} pivot to its
-seed index. \code{NULL} (default) uses the furthest-from-pivot rule; pass
-\code{\link[=identity]{identity()}} to treat \code{pivots} as already-resolved seed indices (the
-\code{nseeds} distinct-restart path of \code{\link[=FarFirst]{FarFirst()}}).}
+\item{nseeds}{Integer number of distinct random-furthest seeds to draw when
+\code{"random_furthest"} is in \code{anchors}.}
 }
 \value{
 Integer vector of selected indices with attributes.
@@ -33,10 +22,11 @@ Integer vector of selected indices with attributes.
 \description{
 Runs Gonzalez from each requested peripheral anchor and returns the subset
 maximising \eqn{T_k}. Internal driver for the ensemble path of \code{\link[=FarFirst]{FarFirst()}}
-(triggered when \code{seed} is a character vector of length > 1). The
-\code{"random_furthest"} token expands to one start per element of \code{pivots}. The
-returned vector carries \code{strategy_results} and \code{winning_strategy} (character
-vector of all tied-best strategies, with random starts labelled
-\code{random_furthest1}, \code{random_furthest2}, ...) attributes.
+(triggered when \code{method} is a character vector of length > 1 or
+\code{"random_furthest"}). The \code{"random_furthest"} token draws \code{nseeds} distinct
+furthest-point seeds via \code{\link[=.DrawDistinctSeeds]{.DrawDistinctSeeds()}}. The returned vector carries
+\code{strategy_results} and \code{winning_strategy} (character vector of all tied-best
+strategies, with random starts labelled \code{random_furthest1},
+\code{random_furthest2}, ...) attributes.
 }
 \keyword{internal}

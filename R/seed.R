@@ -23,7 +23,8 @@
 
 #' Draw distinct furthest-point seeds from random pivots
 #'
-#' The `nseeds` counterpart to an explicit `pivots` list (see [FarFirst()]):
+#' Used by [.GonzEnsemble()] and [.GonzEnsembleFromPoints()] to expand the
+#' `"random_furthest"` token (see [FarFirst()]):
 #' repeatedly draws a random pivot with the session RNG, resolves its
 #' furthest-point seed via `seedFn`, and collects distinct seed indices until
 #' `nseeds` are found. Two bounds stop the loop when the reachable seed pool is
@@ -240,24 +241,24 @@
 #' Anchors:
 #' \describe{
 #'   \item{`"centroid"`}{The point farthest from the coordinate mean
-#'     (`argmax ||x - x_bar||`), an `O(N * dim)` approximate diameter endpoint.
+#'     (\eqn{argmax ||x - x_bar||}), an \eqn{O(N * dim)} approximate diameter
+#'     endpoint.
 #'     Computed from coordinates, so it requires `points`; it is unavailable on
 #'     the distance-matrix path, where `"peripheral"` serves the same role.}
 #'   \item{`"peripheral"`}{Two sweeps: the point furthest from point 1, then
 #'     the point furthest from that (a diameter-endpoint approximation), in
-#'     `O(N)`. The only anchor reachable from a distance-column oracle (the
+#'     \eqn{O(N)}. The only anchor reachable from a distance-column oracle (the
 #'     function path of [FarFirst()]).}
 #'   \item{`"random_furthest"`}{The point furthest from a random pivot, in
-#'     `O(N)`. The pivot is drawn with the session RNG; set a seed
-#'     (`set.seed()`) for a reproducible index.}
+#'     \eqn{O(N)}.}
 #'   \item{`"diameter"`}{A row endpoint of the diameter pair (the maximum
 #'     pairwise distance). Degenerate data (`d_max <= 0`) falls back to 1.}
 #'   \item{`"anti_medoid"`}{The point furthest from the 1-median (medoid).}
-#'   \item{`"medoid"`}{The 1-median itself, `which.min(rowSums(d))`.}
+#'   \item{`"medoid"`}{The 1-median.}
 #'   \item{`"rowsum"`}{The point maximising the sum of distances to all others
 #'     (the 1-anti-median).}
-#'   \item{`"rownorm"`}{The point maximising `sqrt(sum d^2)`, the L2 counterpart
-#'     of `"rowsum"`.}
+#'   \item{`"rownorm"`}{The point maximising \eqn{\sqrt(\sum{d^2})}, the L2
+#'    counterpart of `"rowsum"`.}
 #' }
 #'
 #' @param d A `dist` object or square symmetric numeric matrix. Ignored when
@@ -384,8 +385,12 @@ MaxMinSeed <- function(d = NULL, points = NULL,
     )
   }
 
-  expanded <- .ExpandAnchors(anchors, pivots, AnchorSeed,
-                             rfSeedFn %||% function(r) which.max(d[, r]))
+  rfSeeds <- if ("random_furthest" %in% anchors) {
+    .DrawDistinctSeeds(function(r) which.max(d[, r]), nPts, nseeds)
+  } else {
+    integer(0)
+  }
+  expanded <- .ExpandAnchors(anchors, rfSeeds, AnchorSeed)
   labels   <- vapply(expanded, `[[`, character(1L), "label")
   .ResolveEnsemble(expanded, labels, RunGonz)
 }
@@ -395,15 +400,13 @@ MaxMinSeed <- function(d = NULL, points = NULL,
 #' Coordinate counterpart of [.GonzEnsemble()]; each anchor seed and the greedy
 #' expansion are computed from `points` via the coordinate primitives, so the
 #' returned indices and attributes match the matrix path on Euclidean data.
-#' `pivots` indexes points directly, so the `"random_furthest"` starts also
-#' match the matrix path.
 #' @param points A `double` `N x dim` coordinate matrix.
 #' @param m Integer subset size.
 #' @inheritParams .GonzEnsemble
 #' @return Integer vector of selected indices with attributes.
 #' @keywords internal
 .GonzEnsembleFromPoints <- function(points, m, anchors = .kDefaultEnsemble,
-                                    pivots = integer(0), rfSeedFn = NULL) {
+                                    nseeds = .kDefaultNSeeds) {
   points <- .AsPointsMatrix(points)
   m <- as.integer(m)
   if (length(m) != 1L || is.na(m) || m < 0L) {
@@ -486,10 +489,14 @@ MaxMinSeed <- function(d = NULL, points = NULL,
     )
   }
 
-  expanded <- .ExpandAnchors(
-    anchors, pivots, AnchorSeed,
-    rfSeedFn %||% function(r) which.max(EuclidColFromPoints_cpp(points, r))
-  )
+  rfSeeds <- if ("random_furthest" %in% anchors) {
+    .DrawDistinctSeeds(
+      function(r) which.max(EuclidColFromPoints_cpp(points, r)), nPts, nseeds
+    )
+  } else {
+    integer(0)
+  }
+  expanded <- .ExpandAnchors(anchors, rfSeeds, AnchorSeed)
   labels   <- vapply(expanded, `[[`, character(1L), "label")
   .ResolveEnsemble(expanded, labels, RunGonz)
 }

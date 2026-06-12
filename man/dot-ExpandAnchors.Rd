@@ -4,26 +4,23 @@
 \alias{.ExpandAnchors}
 \title{Expand ensemble anchor names into labelled seed specs}
 \usage{
-.ExpandAnchors(anchors, pivots, anchorSeed, rfSeed)
+.ExpandAnchors(anchors, rfSeeds, anchorSeed)
 }
 \arguments{
 \item{anchors}{Character vector of (de-duplicated) anchor names.}
 
-\item{pivots}{Integer vector of pivot indices the \code{"random_furthest"} token
-expands over (one start per pivot).}
+\item{rfSeeds}{Integer vector of already-resolved furthest-point seed indices
+for the \code{"random_furthest"} token.}
 
 \item{anchorSeed}{Function mapping a deterministic anchor name to an integer
 seed index.}
-
-\item{rfSeed}{Function mapping a pivot index to the furthest-point seed.}
 }
 \value{
 List of \code{list(label, s1)} specs.
 }
 \description{
 Maps each anchor name to a \code{list(label, s1)} spec. The \code{"random_furthest"}
-token expands to one spec per element of \code{pivots}, each seeded at the point
-furthest from that pivot (labelled \code{random_furthest1}, ...); an empty
-\code{pivots} contributes none.
+token expands to one spec per element of \code{rfSeeds} (already-resolved seed
+indices, labelled \code{random_furthest1}, ...); an empty vector contributes none.
 }
 \keyword{internal}

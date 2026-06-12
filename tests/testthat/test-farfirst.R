@@ -22,15 +22,15 @@ test_that("matrix and coordinate paths agree for every seed strategy", {
       expect_identical(mat, pt, info = paste("method", s, "k", n))
     }
   }
-  # A centroid-free ensemble agrees across paths. Explicit pivots index points
-  # directly and the distances are bit-identical on Euclidean data, so the
-  # random-furthest starts coincide too.
+  # A centroid-free ensemble agrees across paths. With the same RNG seed the
+  # random-furthest seeds coincide on both paths (distances are bit-identical on
+  # Euclidean data).
   for (n in c(2L, 6L, 12L)) {
-    mat <- FarFirst(dat$d, n, method = c("peripheral", "random_furthest"),
-                    pivots = c(3L, 17L, 28L))
+    set.seed(5)
+    mat <- FarFirst(dat$d, n, method = c("peripheral", "random_furthest"))
+    set.seed(5)
     pt  <- FarFirst(k = n, points = dat$pts,
-                    method = c("peripheral", "random_furthest"),
-                    pivots = c(3L, 17L, 28L))
+                    method = c("peripheral", "random_furthest"))
     expect_identical(as.integer(mat), as.integer(pt), info = paste("ensemble k", n))
     expect_equal(attr(mat, "score"), attr(pt, "score"), tolerance = 1e-12,
                  info = paste("ensemble score k", n))
@@ -68,16 +68,16 @@ test_that("ensemble keeps the best anchor by T_k", {
   expect_length(attr(two, "strategy_results"), 2L)
 })
 
-test_that("the default ensemble is three random-furthest starts", {
+test_that("the default ensemble is eight random-furthest starts", {
   dat <- MakeData()
   n   <- 8L
-  # Default is `"random_furthest"` alone -> three random starts on both paths.
+  # Default is `"random_furthest"` alone -> eight random starts on both paths.
   mat <- FarFirst(dat$d, n)
   expect_identical(names(attr(mat, "strategy_results")),
-                   c("random_furthest1", "random_furthest2", "random_furthest3"))
+                   paste0("random_furthest", 1:8))
   pt <- FarFirst(k = n, points = dat$pts)
   expect_identical(names(attr(pt, "strategy_results")),
-                   c("random_furthest1", "random_furthest2", "random_furthest3"))
+                   paste0("random_furthest", 1:8))
   # Neither path includes the deterministic anchors by default.
   expect_false("centroid" %in% names(attr(pt, "strategy_results")))
   expect_false("peripheral" %in% names(attr(mat, "strategy_results")))
@@ -90,30 +90,14 @@ test_that("the default selection is reproducible under set.seed", {
   expect_identical(c(a), c(b))
 })
 
-test_that("pivots vector controls the random-furthest starts", {
+test_that("nseeds controls the number of random-furthest starts", {
   dat <- MakeData()
   n   <- 8L
-  # Unspecified draws three pivots (default: 3 random-furthest starts).
-  expect_length(attr(FarFirst(dat$d, n), "strategy_results"), 3L)
-  # The vector's length sets the count.
-  expect_length(attr(FarFirst(dat$d, n, pivots = 1:6), "strategy_results"), 6L)
-  # User-chosen pivots are honoured: each seeds at the point furthest from it.
-  res <- FarFirst(dat$d, n, pivots = c(2L, 30L))
-  sr  <- attr(res, "strategy_results")
-  expect_identical(sr[["random_furthest1"]]$s1,
-                   as.integer(which.max(dat$d[, 2L])))
-  expect_identical(sr[["random_furthest2"]]$s1,
-                   as.integer(which.max(dat$d[, 30L])))
-  # integer(0), NA, and NULL all disable the random starts equivalently: under
-  # the default `method` that leaves no anchor, so it errors.
-  for (none in list(integer(0), NA, NULL)) {
-    expect_error(FarFirst(dat$d, n, pivots = none), "no seed strateg")
-  }
-  # Paired with a deterministic anchor, disabling the random starts is fine.
-  z <- FarFirst(dat$d, n, method = "peripheral", pivots = integer(0))
-  expect_length(z, n)
-  # Out-of-range pivots are rejected.
-  expect_error(FarFirst(dat$d, n, pivots = c(1L, 999L)), "pivots")
+  # Default is 8 random-furthest starts.
+  expect_length(attr(FarFirst(dat$d, n), "strategy_results"), 8L)
+  # nseeds sets the count.
+  expect_length(attr(FarFirst(dat$d, n, nseeds = 4L), "strategy_results"), 4L)
+  expect_length(attr(FarFirst(dat$d, n, nseeds = 1L), "strategy_results"), 1L)
 })
 
 test_that("trivial cardinalities are handled", {
@@ -171,8 +155,7 @@ test_that("FarFirst rejects an NA/non-finite distance matrix (FF-001)", {
 test_that("explicitly naming centroid in a matrix ensemble warns and drops it", {
   dat <- MakeData(N = 12)
   expect_warning(res <- FarFirst(dat$d, 4L,
-                                 method = c("centroid", "peripheral"),
-                                 pivots = integer(0)),
+                                 method = c("centroid", "peripheral")),
                  "coordinates")
   # Dropped, leaving peripheral alone.
   expect_identical(names(attr(res, "strategy_results")), "peripheral")
@@ -389,14 +372,8 @@ test_that("nseeds is reproducible under a fixed seed", {
   expect_identical(a, b)
 })
 
-test_that("nseeds overrides method/pivots with a warning, and validates", {
+test_that("nseeds validates its argument", {
   dat <- MakeData()
-  expect_warning(FarFirst(dat$d, 6L, method = "diameter", nseeds = 3L),
-                 "overrides")
-  expect_warning(FarFirst(dat$d, 6L, pivots = c(1L, 2L), nseeds = 3L),
-                 "overrides")
-  # No warning when only nseeds is supplied.
-  expect_silent(FarFirst(dat$d, 6L, nseeds = 3L))
   expect_error(FarFirst(dat$d, 6L, nseeds = 0L), "positive integer")
   expect_error(FarFirst(dat$d, 6L, nseeds = c(1L, 2L)), "single")
 })
@@ -411,8 +388,8 @@ test_that("nseeds caps at the reachable pool without error", {
   expect_gte(length(sr), 1L)
 })
 
-test_that("nseeds is rejected on the distance-column oracle path", {
+test_that("nseeds is silently ignored on the distance-column oracle path", {
   dat <- MakeData()
   colFn <- function(i) dat$d[, i]
-  expect_error(FarFirst(colFn, 6L, N = nrow(dat$d), nseeds = 3L), "oracle")
+  expect_no_error(FarFirst(colFn, 6L, N = nrow(dat$d), nseeds = 3L))
 })

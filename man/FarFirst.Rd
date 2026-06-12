@@ -8,8 +8,7 @@ FarFirst(
   d = NULL,
   k,
   method = .kDefaultEnsemble,
-  pivots = NULL,
-  nseeds = NULL,
+  nseeds = .kDefaultNSeeds,
   points = NULL,
   N = NULL,
   progress = getOption("MaxMin.progress", interactive())
@@ -35,42 +34,27 @@ or the lone \code{"random_furthest"} token -- requests an ensemble: each named
 anchor runs a full Gonzalez pass and the best result by \code{\link[=MinDist]{MinDist()}} is
 returned with \code{strategy_results} and \code{winning_strategy} (character vector
 of all tied-best strategies) attributes. The \code{"random_furthest"} token
-expands to one start per element of \code{pivots}, labelled \code{random_furthest1},
-\code{random_furthest2}, ...; named on its own it still runs the ensemble (one
-pass per pivot), so a single random start is best obtained via
-\code{\link[=MaxMinSeed]{MaxMinSeed()}}. Valid ensemble anchors: any subset of \code{c("centroid", "peripheral", "random_furthest", "diameter", "anti_medoid", "rowsum", "rownorm")} (\code{"centroid"} requires \code{points}). Default:
-\code{"random_furthest"} (three random starts; see \code{pivots}). See \code{\link[=MaxMinSeed]{MaxMinSeed()}}
-for anchor definitions. On the distance-column oracle path only an integer
-\code{method} is honoured; a named or ensemble \code{method} there warns and falls
-back to the peripheral seed (see \emph{Distance-column oracle}).}
+draws \code{nseeds} distinct furthest-point seeds, labelled \code{random_furthest1},
+\code{random_furthest2}, ...; named on its own it still runs the ensemble, so a
+single random start is best obtained via \code{\link[=MaxMinSeed]{MaxMinSeed()}}. Valid ensemble
+anchors: any subset of \code{c("centroid", "peripheral", "random_furthest", "diameter", "anti_medoid", "rowsum", "rownorm")} (\code{"centroid"} requires
+\code{points}). Default: \code{"random_furthest"} (eight distinct random starts;
+see \code{nseeds}). See \code{\link[=MaxMinSeed]{MaxMinSeed()}} for anchor definitions. On the
+distance-column oracle path only an integer \code{method} is honoured; a named
+or ensemble \code{method} there warns and falls back to the peripheral seed (see
+\emph{Distance-column oracle}).}
 
-\item{pivots}{Integer vector of pivot indices over which the
-\code{"random_furthest"} ensemble token expands: each pivot contributes one
-start, seeded at the point furthest from it, so the vector's length sets
-the number of random-furthest starts. Left unspecified, three pivots are
-drawn with the session RNG (\code{sample.int(N, 3)}; set a seed for a
-reproducible selection). Pass \code{integer(0)}, \code{NA}, or \code{NULL} to disable the
-random starts, or an index vector to choose the pivots (and their count)
-explicitly. Disabling the random starts errors under the default \code{method}
-(which names only \code{"random_furthest"}, leaving no anchor); pair it with a
-deterministic \code{method} such as \code{"peripheral"}.}
-
-\item{nseeds}{Optional integer: run a distinct-seed random restart. Random
-pivots are drawn with the session RNG and each one's furthest-point seed is
-collected, de-duplicated, until \code{nseeds} \emph{distinct} seeds are found (or the
-reachable pool is exhausted); Gonzalez runs from each and the best \eqn{T_k}
-is returned, with \code{strategy_results} / \code{winning_strategy} labelled
-\code{random_furthest1}, \code{random_furthest2}, ... This is the "give a count, not a
-list" counterpart to \code{pivots}: where \code{pivots} runs one start per supplied
-index, \code{nseeds} searches for that many \emph{distinct} peripheral seeds, never
-wasting a Gonzalez pass on a duplicate. Set a seed (\code{set.seed()}) for a
-reproducible selection. When supplied, \code{nseeds} overrides \code{method} and
-\code{pivots} (a warning is issued if either was also set explicitly); it is not
-available on the distance-column oracle path. Default \code{NULL} (use \code{method}).}
+\item{nseeds}{Integer: number of distinct random-furthest seeds to draw when
+\code{"random_furthest"} is among the ensemble anchors. Random pivots are drawn
+with the session RNG and each one's furthest-point seed is collected,
+de-duplicated, until \code{nseeds} distinct seeds are found (or the reachable
+pool is exhausted); Gonzalez runs from each and the best \eqn{T_k} is kept.
+Set \code{set.seed()} for a reproducible selection. Ignored on the
+distance-column oracle path. Default \code{8L}.}
 
 \item{points}{Optional \verb{N x dim} numeric coordinate matrix. When supplied,
-the selection is computed directly from coordinates in \code{O(N * k * dim)}
-time and \code{O(N)} memory, never materialising the \verb{N x N} distance matrix
+the selection is computed directly from coordinates in \eqn{O(N * k * dim)}
+time and \eqn{O(N)} memory, never materialising the \verb{N x N} distance matrix
 (\code{d} is then unused). For Euclidean data the returned indices are
 identical to the matrix path. Only complete (non-\code{NA}) data is supported.}
 
@@ -122,19 +106,17 @@ When \code{d} is a function, it will be passed a single 1-based index \code{i}, 
 should return the distances from element \code{i} to every element in turn,
 optionally omitting entry \code{i}, the self-distance.
 The function will be called once per selected element, to avoid building a
-complete \verb{N x N} matrix.
+complete \eqn{N x N} matrix.
 }
 
 \examples{
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
-# Default: best of three random-furthest starts (set.seed for reproducibility):
+# Default: best of eight random-furthest starts (set.seed for reproducibility):
 FarFirst(d, 5L)
-# More random-furthest starts (length of `pivots` sets the count):
-FarFirst(d, 5L, pivots = sample.int(nrow(as.matrix(d)), 8L))
-# Or choose the pivots explicitly:
-FarFirst(d, 5L, pivots = c(1L, 10L, 20L))
+# More random-furthest starts:
+FarFirst(d, 5L, nseeds = 15L)
 # Custom two-anchor ensemble:
 FarFirst(d, 5L, method = c("diameter", "anti_medoid"))
 # A single strategy:

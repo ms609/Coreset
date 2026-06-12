@@ -8,8 +8,7 @@
   points,
   m,
   anchors = .kDefaultEnsemble,
-  pivots = integer(0),
-  rfSeedFn = NULL
+  nseeds = .kDefaultNSeeds
 )
 }
 \arguments{
@@ -19,13 +18,8 @@
 
 \item{anchors}{Character vector of anchor names.}
 
-\item{pivots}{Integer vector of pivot indices the \code{"random_furthest"} token
-expands over (empty contributes none).}
-
-\item{rfSeedFn}{Optional function mapping a \code{"random_furthest"} pivot to its
-seed index. \code{NULL} (default) uses the furthest-from-pivot rule; pass
-\code{\link[=identity]{identity()}} to treat \code{pivots} as already-resolved seed indices (the
-\code{nseeds} distinct-restart path of \code{\link[=FarFirst]{FarFirst()}}).}
+\item{nseeds}{Integer number of distinct random-furthest seeds to draw when
+\code{"random_furthest"} is in \code{anchors}.}
 }
 \value{
 Integer vector of selected indices with attributes.
@@ -34,7 +28,5 @@ Integer vector of selected indices with attributes.
 Coordinate counterpart of \code{\link[=.GonzEnsemble]{.GonzEnsemble()}}; each anchor seed and the greedy
 expansion are computed from \code{points} via the coordinate primitives, so the
 returned indices and attributes match the matrix path on Euclidean data.
-\code{pivots} indexes points directly, so the \code{"random_furthest"} starts also
-match the matrix path.
 }
 \keyword{internal}

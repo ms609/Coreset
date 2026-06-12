@@ -33,24 +33,24 @@ when composing a custom selection pass.
 Anchors:
 \describe{
 \item{\code{"centroid"}}{The point farthest from the coordinate mean
-(\verb{argmax ||x - x_bar||}), an \code{O(N * dim)} approximate diameter endpoint.
+(\eqn{argmax ||x - x_bar||}), an \eqn{O(N * dim)} approximate diameter
+endpoint.
 Computed from coordinates, so it requires \code{points}; it is unavailable on
 the distance-matrix path, where \code{"peripheral"} serves the same role.}
 \item{\code{"peripheral"}}{Two sweeps: the point furthest from point 1, then
 the point furthest from that (a diameter-endpoint approximation), in
-\code{O(N)}. The only anchor reachable from a distance-column oracle (the
+\eqn{O(N)}. The only anchor reachable from a distance-column oracle (the
 function path of \code{\link[=FarFirst]{FarFirst()}}).}
 \item{\code{"random_furthest"}}{The point furthest from a random pivot, in
-\code{O(N)}. The pivot is drawn with the session RNG; set a seed
-(\code{set.seed()}) for a reproducible index.}
+\eqn{O(N)}.}
 \item{\code{"diameter"}}{A row endpoint of the diameter pair (the maximum
 pairwise distance). Degenerate data (\code{d_max <= 0}) falls back to 1.}
 \item{\code{"anti_medoid"}}{The point furthest from the 1-median (medoid).}
-\item{\code{"medoid"}}{The 1-median itself, \code{which.min(rowSums(d))}.}
+\item{\code{"medoid"}}{The 1-median.}
 \item{\code{"rowsum"}}{The point maximising the sum of distances to all others
 (the 1-anti-median).}
-\item{\code{"rownorm"}}{The point maximising \verb{sqrt(sum d^2)}, the L2 counterpart
-of \code{"rowsum"}.}
+\item{\code{"rownorm"}}{The point maximising \eqn{\sqrt(\sum{d^2})}, the L2
+counterpart of \code{"rowsum"}.}
 }
 }
 \examples{

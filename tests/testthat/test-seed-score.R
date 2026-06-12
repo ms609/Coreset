@@ -180,16 +180,13 @@ test_that(".GonzEnsembleFromPoints validates k and anchors and handles trivial k
   expect_identical(MaxMin:::.GonzEnsembleFromPoints(pts, 0L, "peripheral"), integer(0))
 })
 
-# ---- .ExpandAnchors empty-specs guard (only random_furthest + no pivots) ----
+# ---- .ExpandAnchors empty-specs guard (no anchors produce no specs) ----------
 
-test_that(".GonzEnsemble stops when random_furthest only and pivots is empty", {
-  dat <- MakeData()
+test_that(".ExpandAnchors stops when no specs are produced", {
+  # Calling the internal directly with empty rfSeeds and no deterministic anchors
+  # triggers the guard; nseeds = 0 can't be reached via FarFirst (validated >= 1).
   expect_error(
-    MaxMin:::.GonzEnsemble(dat$d, 4L, "random_furthest", integer(0)),
-    "no seed strateg"
-  )
-  expect_error(
-    MaxMin:::.GonzEnsembleFromPoints(dat$pts, 4L, "random_furthest", integer(0)),
+    MaxMin:::.ExpandAnchors("random_furthest", integer(0), function(n) 1L),
     "no seed strateg"
   )
 })
@@ -215,7 +212,7 @@ test_that(".GonzEnsembleFromPoints k=1 propagates NA t_k through all strategies"
 test_that(".GonzEnsemble medoid branch covered via multi-anchor ensemble", {
   dat <- MakeData()
   # medoid in a 2-anchor ensemble -> AnchorSeed("medoid") = GetMedoid() fires
-  res <- FarFirst(dat$d, 5L, method = c("medoid", "peripheral"), pivots = integer(0))
+  res <- FarFirst(dat$d, 5L, method = c("medoid", "peripheral"))
   expect_length(res, 5L)
   expect_true(all(attr(res, "winning_strategy") %in% c("medoid", "peripheral")))
 })
@@ -224,8 +221,7 @@ test_that(".GonzEnsembleFromPoints medoid/centroid/rownorm branches covered via 
   dat <- MakeData()
   # Three anchors only reachable through the points-path ensemble AnchorSeed
   res <- FarFirst(k = 5L, points = dat$pts,
-                  method = c("medoid", "centroid", "rownorm"),
-                  pivots = integer(0))
+                  method = c("medoid", "centroid", "rownorm"))
   expect_length(res, 5L)
   expect_true(all(attr(res, "winning_strategy") %in%
                   c("medoid", "centroid", "rownorm")))

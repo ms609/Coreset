@@ -115,19 +115,15 @@ whichever pass produced the highest T~k~.
 ```{r}
 #| label: gonzalez-random
 set.seed(1)
-picks <- FarFirst(eurodist, k = 6L)   # default: best of three random starts
+picks <- FarFirst(eurodist, k = 6L)   # default: best of eight random starts
 ```
 
-More random starts, or pivots of your own devising, can be accomplished by a
-vector of pivot points to a `pivots` vector.
+More random starts can be requested via the `nseeds` argument.
 
 ```{r}
 #| label: gonzalez-ensemble
 set.seed(1)
-nCities <- attr(eurodist, "Size")
-# Use 5 random starts
-pivots <- sample(nCities, 5)
-picks <- FarFirst(eurodist, k = 6L, pivots = pivots)
+picks <- FarFirst(eurodist, k = 6L, nseeds = 12L)
 ```
 
 

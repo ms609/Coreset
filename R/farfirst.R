@@ -164,7 +164,7 @@
 #' should return the distances from element `i` to every element in turn,
 #' optionally omitting entry `i`, the self-distance.
 #' The function will be called once per selected element, to avoid building a
-#' complete `N x N` matrix.
+#' complete \eqn{N x N} matrix.
 #'
 #' @param d A `dist` object, a square numeric matrix of pairwise distances, or
 #'   a distance function (see *§Distance function*). Asymmetric matrices are
@@ -172,8 +172,8 @@
 #'   independent. Ignored when `points` is supplied.
 #' @param k Integer: number of points to select.
 #' @param points Optional `N x dim` numeric coordinate matrix. When supplied,
-#'   the selection is computed directly from coordinates in `O(N * k * dim)`
-#'   time and `O(N)` memory, never materialising the `N x N` distance matrix
+#'   the selection is computed directly from coordinates in \eqn{O(N * k * dim)}
+#'   time and \eqn{O(N)} memory, never materialising the `N x N` distance matrix
 #'   (`d` is then unused). For Euclidean data the returned indices are
 #'   identical to the matrix path. Only complete (non-`NA`) data is supported.
 #' @param N Integer: the total number of elements. Required (and used) only on
@@ -195,38 +195,23 @@
 #'   anchor runs a full Gonzalez pass and the best result by [MinDist()] is
 #'   returned with `strategy_results` and `winning_strategy` (character vector
 #'   of all tied-best strategies) attributes. The `"random_furthest"` token
-#'   expands to one start per element of `pivots`, labelled `random_furthest1`,
-#'   `random_furthest2`, ...; named on its own it still runs the ensemble (one
-#'   pass per pivot), so a single random start is best obtained via
-#'   [MaxMinSeed()]. Valid ensemble anchors: any subset of `c("centroid",
-#'   "peripheral", "random_furthest", "diameter", "anti_medoid", "rowsum",
-#'    "rownorm")` (`"centroid"` requires `points`). Default:
-#'   `"random_furthest"` (three random starts; see `pivots`). See [MaxMinSeed()]
-#'   for anchor definitions. On the distance-column oracle path only an integer
-#'   `method` is honoured; a named or ensemble `method` there warns and falls
-#'   back to the peripheral seed (see *Distance-column oracle*).
-#' @param pivots Integer vector of pivot indices over which the
-#'   `"random_furthest"` ensemble token expands: each pivot contributes one
-#'   start, seeded at the point furthest from it, so the vector's length sets
-#'   the number of random-furthest starts. Left unspecified, three pivots are
-#'   drawn with the session RNG (`sample.int(N, 3)`; set a seed for a
-#'   reproducible selection). Pass `integer(0)`, `NA`, or `NULL` to disable the
-#'   random starts, or an index vector to choose the pivots (and their count)
-#'   explicitly. Disabling the random starts errors under the default `method`
-#'   (which names only `"random_furthest"`, leaving no anchor); pair it with a
-#'   deterministic `method` such as `"peripheral"`.
-#' @param nseeds Optional integer: run a distinct-seed random restart. Random
-#'   pivots are drawn with the session RNG and each one's furthest-point seed is
-#'   collected, de-duplicated, until `nseeds` *distinct* seeds are found (or the
-#'   reachable pool is exhausted); Gonzalez runs from each and the best \eqn{T_k}
-#'   is returned, with `strategy_results` / `winning_strategy` labelled
-#'   `random_furthest1`, `random_furthest2`, ... This is the "give a count, not a
-#'   list" counterpart to `pivots`: where `pivots` runs one start per supplied
-#'   index, `nseeds` searches for that many *distinct* peripheral seeds, never
-#'   wasting a Gonzalez pass on a duplicate. Set a seed (`set.seed()`) for a
-#'   reproducible selection. When supplied, `nseeds` overrides `method` and
-#'   `pivots` (a warning is issued if either was also set explicitly); it is not
-#'   available on the distance-column oracle path. Default `NULL` (use `method`).
+#'   draws `nseeds` distinct furthest-point seeds, labelled `random_furthest1`,
+#'   `random_furthest2`, ...; named on its own it still runs the ensemble, so a
+#'   single random start is best obtained via [MaxMinSeed()]. Valid ensemble
+#'   anchors: any subset of `c("centroid", "peripheral", "random_furthest",
+#'   "diameter", "anti_medoid", "rowsum", "rownorm")` (`"centroid"` requires
+#'   `points`). Default: `"random_furthest"` (eight distinct random starts;
+#'   see `nseeds`). See [MaxMinSeed()] for anchor definitions. On the
+#'   distance-column oracle path only an integer `method` is honoured; a named
+#'   or ensemble `method` there warns and falls back to the peripheral seed (see
+#'   *Distance-column oracle*).
+#' @param nseeds Integer: number of distinct random-furthest seeds to draw when
+#'   `"random_furthest"` is among the ensemble anchors. Random pivots are drawn
+#'   with the session RNG and each one's furthest-point seed is collected,
+#'   de-duplicated, until `nseeds` distinct seeds are found (or the reachable
+#'   pool is exhausted); Gonzalez runs from each and the best \eqn{T_k} is kept.
+#'   Set `set.seed()` for a reproducible selection. Ignored on the
+#'   distance-column oracle path. Default `8L`.
 #' @return Integer vector of length `min(k, N)` of selected indices, in
 #'   the order they were selected.
 #'   The achieved \eqn{T_k} (the selection's minimum pairwise
@@ -242,12 +227,10 @@
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' d <- dist(pts)
-#' # Default: best of three random-furthest starts (set.seed for reproducibility):
+#' # Default: best of eight random-furthest starts (set.seed for reproducibility):
 #' FarFirst(d, 5L)
-#' # More random-furthest starts (length of `pivots` sets the count):
-#' FarFirst(d, 5L, pivots = sample.int(nrow(as.matrix(d)), 8L))
-#' # Or choose the pivots explicitly:
-#' FarFirst(d, 5L, pivots = c(1L, 10L, 20L))
+#' # More random-furthest starts:
+#' FarFirst(d, 5L, nseeds = 15L)
 #' # Custom two-anchor ensemble:
 #' FarFirst(d, 5L, method = c("diameter", "anti_medoid"))
 #' # A single strategy:
@@ -268,11 +251,10 @@
 #' arrestTypes[idx, ]
 #' @export
 FarFirst <- function(d = NULL, k,
-                     method = .kDefaultEnsemble, pivots = NULL, nseeds = NULL,
+                     method = .kDefaultEnsemble, nseeds = .kDefaultNSeeds,
                      points = NULL, N = NULL,
                      progress = getOption("MaxMin.progress", interactive())) {
   methodMissing <- missing(method)
-  pivotsMissing <- missing(pivots)
 
   # Every non-empty FarFirst result is a `MaxMinSelection` (a self-describing
   # integer index vector); see print.MaxMinSelection(). Stamping it at each
@@ -316,11 +298,6 @@ FarFirst <- function(d = NULL, k,
   # `method` (a `first` index) or the deterministic peripheral seed is reachable
   # here, since the richer anchors need O(N^2) work (see Details).
   if (is.function(d)) {
-    if (!is.null(nseeds)) {
-      stop("`nseeds` (distinct-seed random restart) is not supported on the ",
-           "distance-column oracle path; supply an integer `method` (a `first` ",
-           "index) instead")
-    }
     # A named/character `method` is unreachable from an oracle (it would need
     # the whole matrix); warn rather than silently substituting the peripheral
     # seed. `first` is non-NULL only for an integer `method`, which *is* honoured.
@@ -348,33 +325,9 @@ FarFirst <- function(d = NULL, k,
   k <- min(as.integer(k), nPts)
   if (k == 0L) return(integer(0))
 
-  # Distinct-seed random restart: draw random pivots, take each one's
-  # furthest-point seed, de-duplicate, until `nseeds` distinct seeds are
-  # collected (or the reachable pool is exhausted); run Gonzalez from each and
-  # keep the best. The "give a count" counterpart to an explicit `pivots` list;
-  # it overrides `method`/`pivots`. RNG is the session stream (set.seed()).
-  if (!is.null(nseeds)) {
-    nseeds <- as.integer(nseeds)
-    if (length(nseeds) != 1L || is.na(nseeds) || nseeds < 1L) {
-      stop("`nseeds` must be a single positive integer")
-    }
-    if (!methodMissing || !pivotsMissing) {
-      warning("`nseeds` runs the distinct-seed random restart and overrides ",
-              "`method`/`pivots`")
-    }
-    seedFn <- if (usePoints) {
-      function(r) which.max(EuclidColFromPoints_cpp(points, r))
-    } else {
-      function(r) which.max(d[, r])
-    }
-    seeds <- .DrawDistinctSeeds(seedFn, nPts, nseeds)
-    return(Classify(if (usePoints) {
-      .GonzEnsembleFromPoints(points, k, "random_furthest", pivots = seeds,
-                              rfSeedFn = identity)
-    } else {
-      .GonzEnsemble(d, k, "random_furthest", pivots = seeds,
-                    rfSeedFn = identity)
-    }))
+  nseeds <- as.integer(nseeds)
+  if (length(nseeds) != 1L || is.na(nseeds) || nseeds < 1L) {
+    stop("`nseeds` must be a single positive integer")
   }
 
   # The kernels attach a `t_k` attribute (the selection's min pairwise distance,
@@ -393,30 +346,11 @@ FarFirst <- function(d = NULL, k,
 
   # The ensemble path runs each named anchor as a full Gonzalez pass and keeps
   # the best by MinDist(). It is taken for a multi-anchor `method`, and also for
-  # a lone `"random_furthest"` (the default): that token is inherently
-  # multi-start -- it expands to one pass per `pivots` element -- so it belongs
-  # here, not on the single-strategy path. (`MaxMinSeed(method =
-  # "random_furthest")` still returns exactly one seed for callers who want a
-  # single random start.)
+  # a lone `"random_furthest"` (the default): that token draws `nseeds` distinct
+  # seeds, so it belongs here, not on the single-strategy path. (`MaxMinSeed(
+  # method = "random_furthest")` still returns exactly one seed for callers who
+  # want a single random start.)
   if (length(method) > 1L || "random_furthest" %in% method) {
-    # Pivots for the `"random_furthest"` token. Unspecified: draw three pivots
-    # with the session RNG (`set.seed()` for a reproducible selection). An empty
-    # / `NA` / `NULL` `pivots` disables the random starts; a supplied index
-    # vector is taken verbatim, its length setting the number of starts.
-    if (pivotsMissing) {
-      pivots <- if ("random_furthest" %in% method) {
-        sample.int(nPts, min(.kDefaultRandomStarts, nPts))
-      } else {
-        integer(0)
-      }
-    } else if (length(pivots) == 0L || all(is.na(pivots))) {
-      pivots <- integer(0)
-    } else {
-      pivots <- as.integer(pivots)
-      if (anyNA(pivots) || any(pivots < 1L | pivots > nPts)) {
-        stop("`pivots` must be indices in [1, N]")
-      }
-    }
     # Matrix path: `"centroid"` is coordinate-only, so drop it (the remaining
     # O(N) seeds cover that role here). Warn only if it was named explicitly,
     # not when filtering the default ensemble.
@@ -425,20 +359,10 @@ FarFirst <- function(d = NULL, k,
       warning("`centroid` seed requires coordinates; it is dropped on the ",
               "distance-matrix path, where `peripheral` covers the same role")
     }
-    # With `"random_furthest"` the only anchor and no pivots, nothing would run.
-    # This is reachable from the default `method` once the random starts are
-    # disabled (`pivots = integer(0)` / `NA` / `NULL`), so fail clearly rather
-    # than tripping the internal "no strategies" guard.
-    if (length(setdiff(anchors, "random_furthest")) == 0L &&
-        length(pivots) == 0L) {
-      stop("no seed strategies to run: disabling the random-furthest starts ",
-           "leaves the default ensemble with no anchor. Name a deterministic ",
-           "`method` (e.g. \"peripheral\") or supply non-empty `pivots`.")
-    }
     if (usePoints) {
-      return(Classify(.GonzEnsembleFromPoints(points, k, anchors, pivots)))
+      return(Classify(.GonzEnsembleFromPoints(points, k, anchors, nseeds = nseeds)))
     }
-    return(Classify(.GonzEnsemble(d, k, anchors, pivots)))
+    return(Classify(.GonzEnsemble(d, k, anchors, nseeds = nseeds)))
   }
 
   if (!usePoints && method == "centroid") {
