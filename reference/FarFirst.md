@@ -12,8 +12,8 @@ FarFirst(
   d = NULL,
   points = NULL,
   N = NULL,
-  strategy = .kDefaultEnsemble,
-  nseeds = .kDefaultNSeeds
+  strategy = "random_furthest",
+  nSeeds = 8L
 )
 ```
 
@@ -50,9 +50,9 @@ FarFirst(
   [`PickPoint()`](https://ms609.github.io/MaxMin/reference/PickPoint.md)
   to run each strategy and return the best solution.
 
-- nseeds:
+- nSeeds:
 
-  Integer: number of distinct seeds to draw under the
+  Integer: number of distinct seeds to draw under the (default)
   `"random_furthest"` strategy.
 
 ## Value
@@ -103,11 +103,11 @@ d <- dist(pts)
 
 # Default: best of eight random-furthest starts (set.seed for reproducibility):
 FarFirst(5L, d)
-#> 5 elements (14 4 26 5 28) selected by farthest-first (best of 5 strategies, 3 tied: random_furthest2, random_furthest4, random_furthest5), each at distance >= 1.765
+#> 5 elements (4 14 26 5 28) selected by farthest-first (best of 5 strategies, 3 tied: random_furthest1, random_furthest2, random_furthest3), each at distance >= 1.765
 
 # More random-furthest starts:
-FarFirst(5L, d, nseeds = 15L)
-#> 5 elements (4 14 26 5 28) selected by farthest-first (best of 5 strategies, 3 tied: random_furthest1, random_furthest3, random_furthest5), each at distance >= 1.765
+FarFirst(5L, d, nSeeds = 15L)
+#> 5 elements (4 14 26 5 28) selected by farthest-first (best of 5 strategies, 3 tied: random_furthest1, random_furthest2, random_furthest3), each at distance >= 1.765
 
 # Custom two-anchor ensemble:
 FarFirst(5L, d, strategy = c("diameter", "anti_medoid"))

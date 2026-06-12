@@ -9,12 +9,7 @@ the matrix path on Euclidean data.
 ## Usage
 
 ``` r
-.GonzEnsembleFromPoints(
-  points,
-  m,
-  anchors = .kDefaultEnsemble,
-  nseeds = .kDefaultNSeeds
-)
+.GonzEnsembleFromPoints(points, m, anchors = "random_furthest", nSeeds = 8L)
 ```
 
 ## Arguments
@@ -31,7 +26,7 @@ the matrix path on Euclidean data.
 
   Character vector of anchor names.
 
-- nseeds:
+- nSeeds:
 
   Integer number of distinct random-furthest seeds to draw when
   `"random_furthest"` is in `anchors`.

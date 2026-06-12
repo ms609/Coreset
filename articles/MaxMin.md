@@ -102,29 +102,44 @@ unselected point is farthest from the current selection. This greedy
 rule guarantees a 2-approximation to the optimal T_(k) and runs in O(*N*
 · *m*) time.
 
+The choice of seed point influences the quality of the selection.
+Peripheral seeds are more likely than central seeds to represent
+extremes of the data, and hence to feature in the optimal selection.
+[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
+supports several methods for identifying starting points for the greedy
+search.
+
+The default is a two-step strategy that starts from a random selects a
+point at random, then starts greedy search from the point furthest from
+
 By default
 [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
-runs three `"random_furthest"` starts, each beginning from the point
-furthest from a randomly selected ‘pivot’ point, and returns whichever
-pass produced the highest T_(k).
+runs eight `"random_furthest"` starts, each of which takes a randomly
+selected point, moves to the point furthest from it, and begins the
+farthest-first sweep from there. The results of the pass with the
+highest T_(k) are returned.
 
 ``` r
 
 set.seed(1)
-ffPick <- FarFirst(6L, eurodist)   # default: best of eight random starts
+FarFirst(6L, eurodist)   # default: best of eight random starts
+#> 6 elements (1 12 20 16 5 2) selected by farthest-first (best of 4 strategies, 4 tied: random_furthest1, random_furthest2, random_furthest3, random_furthest4), each at distance >= 1014
 ```
 
-More random starts can be requested via the `nseeds` argument.
+The number of random starts can be configured via the `nSeeds` argument.
 
 ``` r
 
 set.seed(1)
-ffPick <- FarFirst(6L, eurodist, nseeds = 12L)
+# Fewer starts provides a faster run, but the solution found may be inferior
+FarFirst(6L, eurodist, nSeeds = 2L)
+#> 6 elements (1 12 20 16 5 2) selected by farthest-first (best of 2 strategies, 2 tied: random_furthest1, random_furthest2), each at distance >= 1014
 ```
 
-Peripheral seeds may also be selected by deterministic strategies: one
-or more such strategies can be selected via the `strategy` argument. The
-best solution found will be returned.
+Other, deterministic strategies to select peripheral seeds are available
+via the `strategy` argument; these are described at
+\[[`PickPoint()`](https://ms609.github.io/MaxMin/reference/PickPoint.md)\].
+All named strategies are attempted, and the best solution is returned.
 
 ``` r
 
@@ -136,15 +151,11 @@ attr(ffPick, "winning_strategy")
 #> [1] "diameter"    "anti_medoid"
 ```
 
-When only pairwise distances between objects are known — there are no
-coordinates to work from — and computing or storing all N×N distances at
-once would be too expensive, a function may be passed in place of the
-distance matrix. This function will be passed one index `i`, and should
-returns the distances from object `i` to all N objects — one column of
-the matrix.
-[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
-calls it $`k`$ times, so the full N×N matrix is never built. `N`, the
-number of objects, must be supplied.
+Where points are not associated with natural coordinates and computing
+or storing all N×N distances at once is infeasible, a function may be
+passed in place of the distance matrix. This function is passed one
+index `i`, and must return the distance from object `i` to each other
+object. `N`, the number of objects, must be supplied.
 
 ``` r
 

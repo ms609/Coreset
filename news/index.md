@@ -35,9 +35,9 @@
   ….
 
 - [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
-  gains an `nseeds` argument: a distinct-seed random restart that draws
+  gains an `nSeeds` argument: a distinct-seed random restart that draws
   random pivots, collects each one’s furthest-point seed de-duplicated
-  until `nseeds` *distinct* seeds are found (or the reachable pool is
+  until `nSeeds` *distinct* seeds are found (or the reachable pool is
   exhausted), runs Gonzalez from each and returns the best `T_k`. It is
   the “give a count, not a list” counterpart to `pivots` – never wasting
   a Gonzalez pass on a duplicate seed – and overrides `method`/`pivots`

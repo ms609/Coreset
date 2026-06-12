@@ -162,19 +162,24 @@
 </section><section class="level2"><h2 id="fast-greedy-selection">Fast greedy selection<a class="anchor" aria-label="anchor" href="#fast-greedy-selection"></a>
 </h2>
 <p>The <span class="citation" data-cites="Gonzalez1985">González (<a href="#ref-Gonzalez1985" role="doc-biblioref">1985</a>)</span> algorithm builds the selection greedily: start from a seed point, then repeatedly add whichever unselected point is farthest from the current selection. This greedy rule guarantees a 2-approximation to the optimal T<sub>k</sub> and runs in O(<em>N</em> · <em>m</em>) time.</p>
-<p>By default <code><a href="../reference/FarFirst.html">FarFirst()</a></code> runs three <code>"random_furthest"</code> starts, each beginning from the point furthest from a randomly selected ‘pivot’ point, and returns whichever pass produced the highest T<sub>k</sub>.</p>
+<p>The choice of seed point influences the quality of the selection. Peripheral seeds are more likely than central seeds to represent extremes of the data, and hence to feature in the optimal selection. <code><a href="../reference/FarFirst.html">FarFirst()</a></code> supports several methods for identifying starting points for the greedy search.</p>
+<p>The default is a two-step strategy that starts from a random selects a point at random, then starts greedy search from the point furthest from</p>
+<p>By default <code><a href="../reference/FarFirst.html">FarFirst()</a></code> runs eight <code>"random_furthest"</code> starts, each of which takes a randomly selected point, moves to the point furthest from it, and begins the farthest-first sweep from there. The results of the pass with the highest T<sub>k</sub> are returned.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
-<span><span class="va">ffPick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="fl">6L</span>, <span class="va">eurodist</span><span class="op">)</span>   <span class="co"># default: best of eight random starts</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="fl">6L</span>, <span class="va">eurodist</span><span class="op">)</span>   <span class="co"># default: best of eight random starts</span></span>
+<span><span class="co">#&gt; 6 elements (1 12 20 16 5 2) selected by farthest-first (best of 4 strategies, 4 tied: random_furthest1, random_furthest2, random_furthest3, random_furthest4), each at distance &gt;= 1014</span></span></code></pre></div>
 </div>
-<p>More random starts can be requested via the <code>nseeds</code> argument.</p>
+<p>The number of random starts can be configured via the <code>nSeeds</code> argument.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
-<span><span class="va">ffPick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="fl">6L</span>, <span class="va">eurodist</span>, nseeds <span class="op">=</span> <span class="fl">12L</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># Fewer starts provides a faster run, but the solution found may be inferior</span></span>
+<span><span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="fl">6L</span>, <span class="va">eurodist</span>, nSeeds <span class="op">=</span> <span class="fl">2L</span><span class="op">)</span></span>
+<span><span class="co">#&gt; 6 elements (1 12 20 16 5 2) selected by farthest-first (best of 2 strategies, 2 tied: random_furthest1, random_furthest2), each at distance &gt;= 1014</span></span></code></pre></div>
 </div>
-<p>Peripheral seeds may also be selected by deterministic strategies: one or more such strategies can be selected via the <code>strategy</code> argument. The best solution found will be returned.</p>
+<p>Other, deterministic strategies to select peripheral seeds are available via the <code>strategy</code> argument; these are described at [<code><a href="../reference/PickPoint.html">PickPoint()</a></code>]. All named strategies are attempted, and the best solution is returned.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ffPick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="fl">6L</span>, <span class="va">eurodist</span>, strategy <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"diameter"</span>, <span class="st">"anti_medoid"</span><span class="op">)</span><span class="op">)</span></span>
@@ -184,7 +189,7 @@
 <span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">ffPick</span>, <span class="st">"winning_strategy"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "diameter"    "anti_medoid"</span></span></code></pre></div>
 </div>
-<p>When only pairwise distances between objects are known — there are no coordinates to work from — and computing or storing all N×N distances at once would be too expensive, a function may be passed in place of the distance matrix. This function will be passed one index <code>i</code>, and should returns the distances from object <code>i</code> to all N objects — one column of the matrix. <code><a href="../reference/FarFirst.html">FarFirst()</a></code> calls it <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> times, so the full N×N matrix is never built. <code>N</code>, the number of objects, must be supplied.</p>
+<p>Where points are not associated with natural coordinates and computing or storing all N×N distances at once is infeasible, a function may be passed in place of the distance matrix. This function is passed one index <code>i</code>, and must return the distance from object <code>i</code> to each other object. <code>N</code>, the number of objects, must be supplied.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"USArrests"</span><span class="op">)</span></span>

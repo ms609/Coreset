@@ -6,25 +6,24 @@ and
 [`.GonzEnsembleFromPoints()`](https://ms609.github.io/MaxMin/reference/dot-GonzEnsembleFromPoints.md)
 to expand the `"random_furthest"` token (see
 [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)):
-repeatedly draws a random pivot with the session RNG, resolves its
-furthest-point seed via `seedFn`, and collects distinct seed indices
-until `nseeds` are found. Two bounds stop the loop when the reachable
-seed pool is smaller than `nseeds`: a consecutive-miss limit (the pool
-is likely exhausted once many draws in a row yield only already-seen
-seeds) and an absolute draw budget. Returns between 1 and `nseeds`
-distinct indices; set a seed
+walks distinct random pivots (a partial shuffle of `1:nPts`, so no pivot
+is ever tried twice), resolves each pivot's furthest-point seed via
+`SeedFunc`, and collects distinct seed indices until `nSeeds` are found
+or the draw budget is spent. A `maxDraws` cap bounds the work when the
+reachable seed pool is smaller than `nSeeds`. Returns between 1 and
+`nSeeds` distinct indices (ascending); set a seed
 ([`set.seed()`](https://rdrr.io/r/base/Random.html)) for a reproducible
 set.
 
 ## Usage
 
 ``` r
-.DrawDistinctSeeds(seedFn, nPts, nseeds, maxDraws = NULL, missLimit = NULL)
+.DrawDistinctSeeds(SeedFunc, nPts, nSeeds, maxDraws = NULL)
 ```
 
 ## Arguments
 
-- seedFn:
+- SeedFunc:
 
   Function mapping a pivot index to its furthest-point seed index.
 
@@ -32,19 +31,16 @@ set.
 
   Integer number of points.
 
-- nseeds:
+- nSeeds:
 
   Integer target number of distinct seeds (`>= 1`).
 
 - maxDraws:
 
-  Integer absolute draw budget. Default `max(40 * nseeds, 100)`.
-
-- missLimit:
-
-  Integer consecutive-miss limit. Default `max(8 * nseeds, 30)`.
+  Integer cap on the number of distinct pivots tried. Default
+  `max(40 * nSeeds, 100)`.
 
 ## Value
 
 `.DrawDistinctSeeds()` returns an integer vector of distinct seed
-indices (length in `[1, nseeds]`).
+indices (length in `[1, nSeeds]`).

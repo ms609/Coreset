@@ -35,7 +35,7 @@ KCenter(k, d, nstart = 1L, effort = 1L)
   than the 2-approximation. `0` disables it (raw CDSh, fastest, no
   guarantee); `1` (default) runs one deterministic peripheral Gonzalez
   pass; `> 1` runs a distinct-seed Gonzalez restart with
-  `nseeds = effort` (a tighter floor that draws on the session RNG –
+  `nSeeds = effort` (a tighter floor that draws on the session RNG –
   call [`set.seed()`](https://rdrr.io/r/base/Random.html) to reproduce).
 
 ## Value
