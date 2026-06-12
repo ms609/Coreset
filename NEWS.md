@@ -18,9 +18,9 @@
   indexes a matrix or coordinate set directly), and a `MaxMinExact` is still the
   list with `$indices`, `$objective`, ....
 
-- `FarFirst()` gains an `nseeds` argument: a distinct-seed random restart that
+- `FarFirst()` gains an `nSeeds` argument: a distinct-seed random restart that
   draws random pivots, collects each one's furthest-point seed de-duplicated
-  until `nseeds` *distinct* seeds are found (or the reachable pool is exhausted),
+  until `nSeeds` *distinct* seeds are found (or the reachable pool is exhausted),
   runs Gonzalez from each and returns the best `T_k`. It is the "give a count,
   not a list" counterpart to `pivots` -- never wasting a Gonzalez pass on a
   duplicate seed -- and overrides `method`/`pivots` when supplied. Reproducible

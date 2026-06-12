@@ -162,7 +162,7 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' @param effort Integer; controls the Gonzalez floor that keeps the result no
 #'   worse than the 2-approximation. `0` disables it (raw CDSh, fastest, no
 #'   guarantee); `1` (default) runs one deterministic peripheral Gonzalez pass;
-#'   `> 1` runs a distinct-seed Gonzalez restart with `nseeds = effort` (a tighter
+#'   `> 1` runs a distinct-seed Gonzalez restart with `nSeeds = effort` (a tighter
 #'   floor that draws on the session RNG -- call [set.seed()] to reproduce).
 #' @return `KCentre()` returns an integer vector of length `<= k` (ascending): the chosen centres. The
 #'   achieved covering radius is attached as attribute `radius`. The vector has
@@ -223,13 +223,13 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L) {
   # the result is floored against a Gonzalez pass -- never worse than the
   # 2-approximation. `effort = 0` skips the floor (raw CDSh, no guarantee);
   # `effort = 1` runs one deterministic peripheral pass; `effort > 1` runs a
-  # distinct-seed restart with `nseeds = effort` (a tighter floor, drawing on the
+  # distinct-seed restart with `nSeeds = effort` (a tighter floor, drawing on the
   # session RNG).
   if (effort >= 1L) {
     gonz <- if (effort == 1L) {
       as.integer(FarFirst(k, d, strategy = "peripheral"))
     } else {
-      as.integer(FarFirst(k, d, nseeds = effort))
+      as.integer(FarFirst(k, d, nSeeds = effort))
     }
     gonzR <- KCentreRadius(d, gonz)
     if (gonzR < bestR) {

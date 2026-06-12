@@ -90,14 +90,14 @@ test_that("the default selection is reproducible under set.seed", {
   expect_identical(c(a), c(b))
 })
 
-test_that("nseeds controls the number of random-furthest starts", {
+test_that("nSeeds controls the number of random-furthest starts", {
   dat <- MakeData()
   n   <- 8L
   # Default is 8 random-furthest starts.
   expect_length(attr(FarFirst(n, dat$d), "strategy_results"), 8L)
-  # nseeds sets the count.
-  expect_length(attr(FarFirst(n, dat$d, nseeds = 4L), "strategy_results"), 4L)
-  expect_length(attr(FarFirst(n, dat$d, nseeds = 1L), "strategy_results"), 1L)
+  # nSeeds sets the count.
+  expect_length(attr(FarFirst(n, dat$d, nSeeds = 4L), "strategy_results"), 4L)
+  expect_length(attr(FarFirst(n, dat$d, nSeeds = 1L), "strategy_results"), 1L)
 })
 
 test_that("trivial cardinalities are handled", {
@@ -348,16 +348,16 @@ test_that("FarFirst(k = N)[1:5] equals FarFirst(k = 5) on all paths", {
   expect_identical(bare(over_mat[1:5]), bare(five_mat))
 })
 
-# ---- nseeds: distinct-seed random restart -----------------------------------
+# ---- nSeeds: distinct-seed random restart -----------------------------------
 
-test_that("nseeds runs a best-of over distinct peripheral seeds", {
+test_that("nSeeds runs a best-of over distinct peripheral seeds", {
   dat <- MakeData()
   set.seed(1)
-  r <- FarFirst(6L, dat$d, nseeds = 4L)
+  r <- FarFirst(6L, dat$d, nSeeds = 4L)
   expect_length(as.integer(r), 6L)
   sr <- attr(r, "strategy_results")
   expect_false(is.null(sr))
-  # At most `nseeds` strategies, and the seeds they ran from are distinct.
+  # At most `nSeeds` strategies, and the seeds they ran from are distinct.
   expect_lte(length(sr), 4L)
   s1s <- vapply(sr, `[[`, integer(1L), "s1")
   expect_identical(anyDuplicated(s1s), 0L)
@@ -367,40 +367,40 @@ test_that("nseeds runs a best-of over distinct peripheral seeds", {
   expect_equal(attr(r, "score"), max(tks))
 })
 
-test_that("nseeds: matrix and coordinate paths agree (same RNG)", {
+test_that("nSeeds: matrix and coordinate paths agree (same RNG)", {
   dat <- MakeData()
   for (n in c(2L, 6L, 12L)) {
-    set.seed(7); mat <- FarFirst(n, dat$d, nseeds = 5L)
-    set.seed(7); pt  <- FarFirst(k = n, points = dat$pts, nseeds = 5L)
-    expect_identical(mat, pt, info = paste("nseeds k", n))
+    set.seed(7); mat <- FarFirst(n, dat$d, nSeeds = 5L)
+    set.seed(7); pt  <- FarFirst(k = n, points = dat$pts, nSeeds = 5L)
+    expect_identical(mat, pt, info = paste("nSeeds k", n))
   }
 })
 
-test_that("nseeds is reproducible under a fixed seed", {
+test_that("nSeeds is reproducible under a fixed seed", {
   dat <- MakeData()
-  set.seed(3); a <- FarFirst(6L, dat$d, nseeds = 4L)
-  set.seed(3); b <- FarFirst(6L, dat$d, nseeds = 4L)
+  set.seed(3); a <- FarFirst(6L, dat$d, nSeeds = 4L)
+  set.seed(3); b <- FarFirst(6L, dat$d, nSeeds = 4L)
   expect_identical(a, b)
 })
 
-test_that("nseeds validates its argument", {
+test_that("nSeeds validates its argument", {
   dat <- MakeData()
-  expect_error(FarFirst(6L, dat$d, nseeds = 0L), "positive integer")
-  expect_error(FarFirst(6L, dat$d, nseeds = c(1L, 2L)), "single")
+  expect_error(FarFirst(6L, dat$d, nSeeds = 0L), "positive integer")
+  expect_error(FarFirst(6L, dat$d, nSeeds = c(1L, 2L)), "single")
 })
 
-test_that("nseeds caps at the reachable pool without error", {
-  # 8 points: at most 8 distinct seeds exist, so nseeds = 50 returns <= 8.
+test_that("nSeeds caps at the reachable pool without error", {
+  # 8 points: at most 8 distinct seeds exist, so nSeeds = 50 returns <= 8.
   dat <- MakeData(N = 8)
   set.seed(1)
-  r <- FarFirst(3L, dat$d, nseeds = 50L)
+  r <- FarFirst(3L, dat$d, nSeeds = 50L)
   sr <- attr(r, "strategy_results")
   expect_lte(length(sr), 8L)
   expect_gte(length(sr), 1L)
 })
 
-test_that("nseeds is silently ignored on the distance-column oracle path", {
+test_that("nSeeds is silently ignored on the distance-column oracle path", {
   dat <- MakeData()
   colFn <- function(i) dat$d[, i]
-  expect_no_error(FarFirst(6L, colFn, N = nrow(dat$d), nseeds = 3L))
+  expect_no_error(FarFirst(6L, colFn, N = nrow(dat$d), nSeeds = 3L))
 })

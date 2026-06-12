@@ -118,13 +118,13 @@ set.seed(1)
 ffPick <- FarFirst(6L, eurodist)   # default: best of eight random starts
 ```
 
-The number of random starts can be configured via the `nseeds` argument.
+The number of random starts can be configured via the `nSeeds` argument.
 
 ```{r}
 #| label: gonzalez-ensemble
 set.seed(1)
 # Fewer starts provides a faster run, but the solution found may be inferior
-ffPick <- FarFirst(6L, eurodist, nseeds = 2L)
+FarFirst(6L, eurodist, nSeeds = 2L)
 ```
 
 

@@ -163,7 +163,7 @@
 #' @param strategy Integer or character defining how to seed the greedy pass.
 #' Pass the name of one or more seeding strategies described in [`PickPoint()`]
 #' to run each strategy and return the best solution.
-#' @param nseeds Integer: number of distinct seeds to draw under the (default)
+#' @param nSeeds Integer: number of distinct seeds to draw under the (default)
 #' `"random_furthest"` strategy.
 #' @return `FarFirst()` returns an integer vector with class `MaxMinSelection`,
 #' listing the selected indices in the order they were selected.
@@ -185,7 +185,7 @@
 #' FarFirst(5L, d)
 #'
 #' # More random-furthest starts:
-#' FarFirst(5L, d, nseeds = 15L)
+#' FarFirst(5L, d, nSeeds = 15L)
 #'
 #' # Custom two-anchor ensemble:
 #' FarFirst(5L, d, strategy = c("diameter", "anti_medoid"))
@@ -210,7 +210,7 @@
 #' arrestTypes[idx, ]
 #' @export
 FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
-                     strategy = "random_furthest", nseeds = 8L) {
+                     strategy = "random_furthest", nSeeds = 8L) {
   progress <- getOption("MaxMin.progress", interactive())
   strategyMissing <- missing(strategy)
 
@@ -303,7 +303,7 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
 
   # The ensemble path runs each named anchor as a full Gonzalez pass and keeps
   # the best by MinDist(). It is taken for a multi-anchor `strategy`, and also for
-  # a lone `"random_furthest"` (the default): that token draws `nseeds` distinct
+  # a lone `"random_furthest"` (the default): that token draws `nSeeds` distinct
   # seeds, so it belongs here, not on the single-strategy path. (`PickPoint(
   # strategy = "random_furthest")` still returns exactly one seed for callers who
   # want a single random start.)
@@ -317,15 +317,15 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
               "distance-matrix path, where `peripheral` covers the same role")
     }
 
-    nseeds <- as.integer(nseeds)
-    if (length(nseeds) != 1L || is.na(nseeds) || nseeds < 1L) {
-      stop("`nseeds` must be a single positive integer")
+    nSeeds <- as.integer(nSeeds)
+    if (length(nSeeds) != 1L || is.na(nSeeds) || nSeeds < 1L) {
+      stop("`nSeeds` must be a single positive integer")
     }
 
     if (usePoints) {
-      return(Classify(.GonzEnsembleFromPoints(points, k, anchors, nseeds = nseeds)))
+      return(Classify(.GonzEnsembleFromPoints(points, k, anchors, nSeeds = nSeeds)))
     }
-    return(Classify(.GonzEnsemble(d, k, anchors, nseeds = nseeds)))
+    return(Classify(.GonzEnsemble(d, k, anchors, nSeeds = nSeeds)))
   }
 
   if (!usePoints && strategy == "anti_centroid") {

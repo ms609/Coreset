@@ -247,7 +247,7 @@ test_that("effort controls the Gonzalez floor", {
   d <- as.matrix(stats::dist(matrix(rnorm(200L), ncol = 2L)))   # n = 100
   raw   <- KCentre(d = d, 8L, effort = 0L)            # floor disabled (no guarantee)
   one   <- KCentre(d = d, 8L, effort = 1L)            # default single peripheral pass
-  multi <- KCentre(d = d, 8L, effort = 5L)            # distinct-seed restart, nseeds=5
+  multi <- KCentre(d = d, 8L, effort = 5L)            # distinct-seed restart, nSeeds=5
   for (res in list(raw, one, multi)) {
     expect_s3_class(res, "KCentreSelection")
     expect_equal(attr(res, "radius"), KCentreRadius(d = d, as.integer(res)))

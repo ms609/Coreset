@@ -184,7 +184,7 @@ test_that(".GonzEnsembleFromPoints validates k and anchors and handles trivial k
 
 test_that(".ExpandAnchors stops when no specs are produced", {
   # Calling the internal directly with empty rfSeeds and no deterministic anchors
-  # triggers the guard; nseeds = 0 can't be reached via FarFirst (validated >= 1).
+  # triggers the guard; nSeeds = 0 can't be reached via FarFirst (validated >= 1).
   expect_error(
     MaxMin:::.ExpandAnchors("random_furthest", integer(0), function(n) 1L),
     "no seed strateg"

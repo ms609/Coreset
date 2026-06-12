@@ -17,27 +17,27 @@
 #' `"random_furthest"` token (see [FarFirst()]):
 #' repeatedly draws a random pivot with the session RNG, resolves its
 #' furthest-point seed via `seedFn`, and collects distinct seed indices until
-#' `nseeds` are found. Two bounds stop the loop when the reachable seed pool is
-#' smaller than `nseeds`: a consecutive-miss limit (the pool is likely exhausted
+#' `nSeeds` are found. Two bounds stop the loop when the reachable seed pool is
+#' smaller than `nSeeds`: a consecutive-miss limit (the pool is likely exhausted
 #' once many draws in a row yield only already-seen seeds) and an absolute draw
-#' budget. Returns between 1 and `nseeds` distinct indices; set a seed
+#' budget. Returns between 1 and `nSeeds` distinct indices; set a seed
 #' (`set.seed()`) for a reproducible set.
 #' @param seedFn Function mapping a pivot index to its furthest-point seed index.
 #' @param nPts Integer number of points.
-#' @param nseeds Integer target number of distinct seeds (`>= 1`).
-#' @param maxDraws Integer absolute draw budget. Default `max(40 * nseeds, 100)`.
-#' @param missLimit Integer consecutive-miss limit. Default `max(8 * nseeds, 30)`.
-#' @return `.DrawDistinctSeeds()` returns an integer vector of distinct seed indices (length in `[1, nseeds]`).
+#' @param nSeeds Integer target number of distinct seeds (`>= 1`).
+#' @param maxDraws Integer absolute draw budget. Default `max(40 * nSeeds, 100)`.
+#' @param missLimit Integer consecutive-miss limit. Default `max(8 * nSeeds, 30)`.
+#' @return `.DrawDistinctSeeds()` returns an integer vector of distinct seed indices (length in `[1, nSeeds]`).
 #' @keywords internal
-.DrawDistinctSeeds <- function(seedFn, nPts, nseeds, maxDraws = NULL,
+.DrawDistinctSeeds <- function(seedFn, nPts, nSeeds, maxDraws = NULL,
                                missLimit = NULL) {
-  nseeds <- as.integer(nseeds)
-  if (is.null(maxDraws))  maxDraws  <- max(40L * nseeds, 100L)
-  if (is.null(missLimit)) missLimit <- max(8L * nseeds, 30L)
+  nSeeds <- as.integer(nSeeds)
+  if (is.null(maxDraws))  maxDraws  <- max(40L * nSeeds, 100L)
+  if (is.null(missLimit)) missLimit <- max(8L * nSeeds, 30L)
   seen  <- integer(0)
   draws <- 0L
   miss  <- 0L
-  while (length(seen) < nseeds && draws < maxDraws && miss < missLimit) {
+  while (length(seen) < nSeeds && draws < maxDraws && miss < missLimit) {
     s <- as.integer(seedFn(sample.int(nPts, 1L)))
     draws <- draws + 1L
     if (s %in% seen) {
@@ -283,7 +283,7 @@ PickPoint <- function(d = NULL, points = NULL,
 #' Runs Gonzalez from each requested peripheral anchor and returns the subset
 #' maximising \eqn{T_k}. Internal driver for the ensemble path of [FarFirst()]
 #' (triggered when `strategy` is a character vector of length > 1 or
-#' `"random_furthest"`). The `"random_furthest"` token draws `nseeds` distinct
+#' `"random_furthest"`). The `"random_furthest"` token draws `nSeeds` distinct
 #' furthest-point seeds via [.DrawDistinctSeeds()]. The returned vector carries
 #' `strategy_results` and `winning_strategy` (character vector of all tied-best
 #' strategies, with random starts labelled `random_furthest1`,
@@ -291,12 +291,12 @@ PickPoint <- function(d = NULL, points = NULL,
 #' @param d Square numeric distance matrix (already coerced).
 #' @param m Integer subset size (`1 <= m < nrow(d)`).
 #' @param anchors Character vector of anchor names.
-#' @param nseeds Integer number of distinct random-furthest seeds to draw when
+#' @param nSeeds Integer number of distinct random-furthest seeds to draw when
 #'   `"random_furthest"` is in `anchors`.
 #' @return `.GonzEnsemble()` returns an integer vector of selected indices with attributes.
 #' @keywords internal
 .GonzEnsemble <- function(d, m, anchors = "peripheral",
-                          nseeds = 8L) {
+                          nSeeds = 8L) {
   d <- .AsDistMatrix(d)
   m <- as.integer(m)
   if (length(m) != 1L || is.na(m) || m < 0L) {
@@ -375,7 +375,7 @@ PickPoint <- function(d = NULL, points = NULL,
   }
 
   rfSeeds <- if ("random_furthest" %in% anchors) {
-    .DrawDistinctSeeds(function(r) which.max(d[, r]), nPts, nseeds)
+    .DrawDistinctSeeds(function(r) which.max(d[, r]), nPts, nSeeds)
   } else {
     integer(0)
   }
@@ -395,7 +395,7 @@ PickPoint <- function(d = NULL, points = NULL,
 #' @return `.GonzEnsembleFromPoints()` returns an integer vector of selected indices with attributes.
 #' @keywords internal
 .GonzEnsembleFromPoints <- function(points, m, anchors = "random_furthest",
-                                    nseeds = 8L) {
+                                    nSeeds = 8L) {
   points <- .AsPointsMatrix(points)
   m <- as.integer(m)
   if (length(m) != 1L || is.na(m) || m < 0L) {
@@ -480,7 +480,7 @@ PickPoint <- function(d = NULL, points = NULL,
 
   rfSeeds <- if ("random_furthest" %in% anchors) {
     .DrawDistinctSeeds(
-      function(r) which.max(EuclidColFromPoints_cpp(points, r)), nPts, nseeds
+      function(r) which.max(EuclidColFromPoints_cpp(points, r)), nPts, nSeeds
     )
   } else {
     integer(0)
