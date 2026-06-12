@@ -331,7 +331,7 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
     stop("`anti_centroid` seed requires coordinates; supply `points=` or use ",
          "`peripheral` on the distance-matrix path")
   }
-  s <- if (usePoints) .MaxMinSeedPoints(points, strategy) else .PickPoint(d, strategy)
+  s <- if (usePoints) .PickPoints(points, strategy) else .PickPoint(d, strategy)
   Classify(Greedy(s))
 }
 

@@ -197,9 +197,9 @@
 #' data.
 #' @param points A `double` `N x dim` coordinate matrix.
 #' @param strategy Anchor name; see [PickPoint()]. Also accepts `"first"` (1).
-#' @return `.MaxMinSeedPoints()` returns an integer seed index.
+#' @return `.PickPoints()` returns an integer seed index.
 #' @keywords internal
-.MaxMinSeedPoints <- function(points, strategy) {
+.PickPoints <- function(points, strategy) {
   switch(strategy,
     first   = 1L,
     anti_centroid = as.integer(which.max(.CentroidSqDist(points))),
@@ -281,7 +281,7 @@ PickPoint <- function(d = NULL, points = NULL,
   strategy <- match.arg(strategy)
   if (!is.null(points)) {
     points <- .AsPointsMatrix(points)
-    return(.MaxMinSeedPoints(points, strategy))
+    return(.PickPoints(points, strategy))
   }
   d <- .AsDistMatrix(d)
   .PickPoint(d, strategy)

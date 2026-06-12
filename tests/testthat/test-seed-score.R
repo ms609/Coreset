@@ -87,7 +87,7 @@ test_that("MinDist rejects NA and duplicate idx (F-604/F-605)", {
   expect_error(MinDist(idx = c(1L, 1L), points = dat$pts), "duplicate")
 })
 
-# ---- "first" seed (.PickPoint line 16; .MaxMinSeedPoints line 55) ---------
+# ---- "first" seed (.PickPoint line 16; .PickPoints line 55) ---------
 
 test_that("Gonzalez strategy='first' uses index 1 as anchor (both paths)", {
   dat <- MakeData()
@@ -97,7 +97,7 @@ test_that("Gonzalez strategy='first' uses index 1 as anchor (both paths)", {
   expect_identical(rPts[1L], 1L)
 })
 
-# ---- Degenerate diameter (.PickPoint line 31; .MaxMinSeedPoints line 68;
+# ---- Degenerate diameter (.PickPoint line 31; .PickPoints line 68;
 #       .GonzEnsemble AnchorSeed line 206; .GonzEnsembleFromPoints line 328) -
 
 test_that("diameter anchor returns 1 on zero-distance data", {
@@ -142,12 +142,12 @@ test_that(".GonzEnsemble non-first anchor wins when it is the better one", {
   expect_true(found)
 })
 
-# ---- .PickPoint / .MaxMinSeedPoints unknown-method fallthrough -------------
+# ---- .PickPoint / .PickPoints unknown-method fallthrough -------------
 
-test_that(".PickPoint and .MaxMinSeedPoints stop on an unknown method", {
+test_that(".PickPoint and .PickPoints stop on an unknown method", {
   dat <- MakeData()
   expect_error(MaxMin:::.PickPoint(dat$d, "nope"), "Unknown")
-  expect_error(MaxMin:::.MaxMinSeedPoints(dat$pts, "nope"), "Unknown")
+  expect_error(MaxMin:::.PickPoints(dat$pts, "nope"), "Unknown")
 })
 
 # ---- .GonzEnsemble internal guards (bypassed by FarFirst() validation) -----
@@ -205,7 +205,7 @@ test_that(".GonzEnsembleFromPoints k=1 propagates NA t_k through all strategies"
 })
 
 # ---- ensemble AnchorSeed branches not covered by single-strategy FarFirst ----
-# Single-string strategy calls go through .MaxMinSeedPoints directly; the
+# Single-string strategy calls go through .PickPoints directly; the
 # AnchorSeed() closure inside .GonzEnsemble/.GonzEnsembleFromPoints is only
 # reached when those names appear in a multi-anchor ensemble call.
 
