@@ -77,39 +77,35 @@
 </div>
 </section><section class="level2"><h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
-<p><code>eurodist</code> is a built-in R <code>dist</code> object containing road distances (km) between 21 European cities.</p>
+<p>Our examples employ a built-in R <code>dist</code> object that contains road distances (in km) between 21 European cities.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># Load the `eurodist` dist object</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"eurodist"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Set a seed for a reproducible selection</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Select 4 maximally dispersed cities</span></span>
-<span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">eurodist</span>, k <span class="op">=</span> <span class="fl">4L</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/MinDist.html">MinDist</a></span><span class="op">(</span><span class="va">eurodist</span>, <span class="va">idx</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 2187</span></span>
+<span><span class="va">ffPick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">eurodist</span>, k <span class="op">=</span> <span class="fl">4L</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># View distances between chosen cities</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span><span class="op">[</span><span class="va">idx</span>, <span class="va">idx</span><span class="op">]</span></span>
+<span><span class="co"># View distances between selected cities</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span><span class="op">[</span><span class="va">ffPick</span>, <span class="va">ffPick</span><span class="op">]</span></span>
 <span><span class="co">#&gt;           Athens Lisbon Stockholm Milan</span></span>
 <span><span class="co">#&gt; Athens         0   4532      3927  2282</span></span>
 <span><span class="co">#&gt; Lisbon      4532      0      3231  2250</span></span>
 <span><span class="co">#&gt; Stockholm   3927   3231         0  2187</span></span>
-<span><span class="co">#&gt; Milan       2282   2250      2187     0</span></span></code></pre></div>
+<span><span class="co">#&gt; Milan       2282   2250      2187     0</span></span>
+<span></span>
+<span><span class="co"># Quickly extract the minimum distance for a given selection</span></span>
+<span><span class="fu"><a href="../reference/MinDist.html">MinDist</a></span><span class="op">(</span><span class="va">eurodist</span>, <span class="va">ffPick</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 2187</span></span></code></pre></div>
 </div>
 <p><code><a href="../reference/FarFirst.html">FarFirst()</a></code> returned the indices of the four cities whose nearest-neighbour distance within the selection is largest. <code><a href="../reference/MinDist.html">MinDist()</a></code> reports that value explicitly.</p>
 </section><section class="level2"><h2 id="methods-at-a-glance">Methods at a glance<a class="anchor" aria-label="anchor" href="#methods-at-a-glance"></a>
 </h2>
-<p>MaxMin provides solvers and a scorer for each objective:</p>
+<p>MaxMin provides solvers for each objective:</p>
 <table class="table caption-top">
-<colgroup>
-<col style="width: 20%">
-<col style="width: 20%">
-<col style="width: 20%">
-<col style="width: 20%">
-<col style="width: 20%">
-</colgroup>
 <thead><tr class="header">
 <th>Function</th>
 <th>Objective</th>
@@ -120,80 +116,63 @@
 <tbody>
 <tr class="odd">
 <td><code><a href="../reference/FarFirst.html">FarFirst()</a></code></td>
-<td>dispersion (MMDP)</td>
+<td>both</td>
 <td>Good (2-approximation)</td>
 <td>Very fast</td>
 <td>No</td>
 </tr>
 <tr class="even">
 <td><code><a href="../reference/DropAdd.html">DropAdd()</a></code></td>
-<td>dispersion (MMDP)</td>
+<td>MMDP</td>
 <td>High (≈ 99 % optimal)</td>
 <td>Fast</td>
 <td>No</td>
 </tr>
 <tr class="odd">
 <td><code><a href="../reference/Grasp.html">Grasp()</a></code></td>
-<td>dispersion (MMDP)</td>
+<td>MMDP</td>
 <td>Highest</td>
 <td>Moderate</td>
 <td>Yes (<code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code>)</td>
 </tr>
 <tr class="even">
 <td><code><a href="../reference/ExactMaxMin.html">ExactMaxMin()</a></code></td>
-<td>dispersion (MMDP)</td>
+<td>MMDP</td>
 <td>Optimal (NP-hard)</td>
 <td>Slow</td>
 <td>No</td>
 </tr>
 <tr class="odd">
-<td><code><a href="../reference/MinDist.html">MinDist()</a></code></td>
-<td>dispersion (MMDP)</td>
-<td>Scoring only</td>
-<td>Instant</td>
-<td>No</td>
-</tr>
-<tr class="even">
 <td><code><a href="../reference/KCentre.html">KCentre()</a></code></td>
-<td>covering (k-centre)</td>
+<td>k-centre</td>
 <td>Near-optimal (CDSh)</td>
 <td>Fast</td>
 <td>No</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code><a href="../reference/ExactKCentre.html">ExactKCentre()</a></code></td>
-<td>covering (k-centre)</td>
+<td>k-centre</td>
 <td>Optimal (NP-hard)</td>
 <td>Slow</td>
 <td>No</td>
 </tr>
-<tr class="even">
-<td><code><a href="../reference/KCentreRadius.html">KCentreRadius()</a></code></td>
-<td>covering (k-centre)</td>
-<td>Scoring only</td>
-<td>Instant</td>
-<td>No</td>
-</tr>
 </tbody>
 </table>
-<p>We walk through the dispersion methods first, then the k-centre methods.</p>
-</section><section class="level2"><h2 id="gonzalez-fast-greedy-selection">Gonzalez: fast greedy selection<a class="anchor" aria-label="anchor" href="#gonzalez-fast-greedy-selection"></a>
+<p>To compute the score for an arbitrary selection of points under each objective, use <code><a href="../reference/MinDist.html">MinDist()</a></code> (MMDP) and <code><a href="../reference/KCentreRadius.html">KCentreRadius()</a></code> (k-centre).</p>
+</section><section class="level2"><h2 id="fast-greedy-selection">Fast greedy selection<a class="anchor" aria-label="anchor" href="#fast-greedy-selection"></a>
 </h2>
 <p>The <span class="citation" data-cites="Gonzalez1985">González (<a href="#ref-Gonzalez1985" role="doc-biblioref">1985</a>)</span> algorithm builds the selection greedily: start from a seed point, then repeatedly add whichever unselected point is farthest from the current selection. This greedy rule guarantees a 2-approximation to the optimal T<sub>k</sub> and runs in O(<em>N</em> · <em>m</em>) time.</p>
 <p>By default <code><a href="../reference/FarFirst.html">FarFirst()</a></code> runs three <code>"random_furthest"</code> starts, each beginning from the point furthest from a randomly selected ‘pivot’ point, and returns whichever pass produced the highest T<sub>k</sub>.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
-<span><span class="va">picks</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">eurodist</span>, k <span class="op">=</span> <span class="fl">6L</span><span class="op">)</span>   <span class="co"># default: best of three random starts</span></span></code></pre></div>
+<span><span class="va">picks</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">eurodist</span>, k <span class="op">=</span> <span class="fl">6L</span><span class="op">)</span>   <span class="co"># default: best of eight random starts</span></span></code></pre></div>
 </div>
-<p>More random starts, or pivots of your own devising, can be accomplished by a vector of pivot points to a <code>pivots</code> vector.</p>
+<p>More random starts can be requested via the <code>nseeds</code> argument.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
-<span><span class="va">nCities</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">eurodist</span>, <span class="st">"Size"</span><span class="op">)</span></span>
-<span><span class="co"># Use 5 random starts</span></span>
-<span><span class="va">pivots</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="va">nCities</span>, <span class="fl">5</span><span class="op">)</span></span>
-<span><span class="va">picks</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">eurodist</span>, k <span class="op">=</span> <span class="fl">6L</span>, pivots <span class="op">=</span> <span class="va">pivots</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">picks</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">eurodist</span>, k <span class="op">=</span> <span class="fl">6L</span>, nseeds <span class="op">=</span> <span class="fl">12L</span><span class="op">)</span></span></code></pre></div>
 </div>
 <p>Peripheral seeds may also be selected by deterministic methods: one or more such methods can be selected via the <code>method</code> argument. The best solution found will be returned.</p>
 <div class="cell">

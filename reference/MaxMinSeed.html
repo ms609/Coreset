@@ -81,20 +81,20 @@ seed is computed from coordinates in <code>O(N)</code> memory. Required for the
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Anchors:</p><dl><dt><code>"centroid"</code></dt>
 <dd><p>The point farthest from the coordinate mean
-(<code>argmax ||x - x_bar||</code>), an <code>O(N * dim)</code> approximate diameter endpoint.
+(\(argmax ||x - x_bar||\)), an \(O(N * dim)\) approximate diameter
+endpoint.
 Computed from coordinates, so it requires <code>points</code>; it is unavailable on
 the distance-matrix path, where <code>"peripheral"</code> serves the same role.</p></dd>
 
 <dt><code>"peripheral"</code></dt>
 <dd><p>Two sweeps: the point furthest from point 1, then
 the point furthest from that (a diameter-endpoint approximation), in
-<code>O(N)</code>. The only anchor reachable from a distance-column oracle (the
+\(O(N)\). The only anchor reachable from a distance-column oracle (the
 function path of <code><a href="FarFirst.html">FarFirst()</a></code>).</p></dd>
 
 <dt><code>"random_furthest"</code></dt>
 <dd><p>The point furthest from a random pivot, in
-<code>O(N)</code>. The pivot is drawn with the session RNG; set a seed
-(<code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code>) for a reproducible index.</p></dd>
+\(O(N)\).</p></dd>
 
 <dt><code>"diameter"</code></dt>
 <dd><p>A row endpoint of the diameter pair (the maximum
@@ -104,15 +104,15 @@ pairwise distance). Degenerate data (<code>d_max &lt;= 0</code>) falls back to 1
 <dd><p>The point furthest from the 1-median (medoid).</p></dd>
 
 <dt><code>"medoid"</code></dt>
-<dd><p>The 1-median itself, <code>which.min(rowSums(d))</code>.</p></dd>
+<dd><p>The 1-median.</p></dd>
 
 <dt><code>"rowsum"</code></dt>
 <dd><p>The point maximising the sum of distances to all others
 (the 1-anti-median).</p></dd>
 
 <dt><code>"rownorm"</code></dt>
-<dd><p>The point maximising <code>sqrt(sum d^2)</code>, the L2 counterpart
-of <code>"rowsum"</code>.</p></dd>
+<dd><p>The point maximising \(\sqrt(\sum{d^2})\), the L2
+counterpart of <code>"rowsum"</code>.</p></dd>
 
 
 </dl></div>

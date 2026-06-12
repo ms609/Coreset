@@ -68,8 +68,7 @@ costlier \(O(N^2)\) anchors (<code>"diameter"</code>, <code>"anti_medoid"</code>
 <span>  d <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">k</span>,</span>
 <span>  method <span class="op">=</span> <span class="va">.kDefaultEnsemble</span>,</span>
-<span>  pivots <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  nseeds <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  nseeds <span class="op">=</span> <span class="va">.kDefaultNSeeds</span>,</span>
 <span>  points <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  N <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  progress <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"MaxMin.progress"</span>, <span class="fu"><a href="https://rdrr.io/r/base/interactive.html" class="external-link">interactive</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
@@ -83,14 +82,12 @@ costlier \(O(N^2)\) anchors (<code>"diameter"</code>, <code>"anti_medoid"</code>
 <dl><dt id="arg-d">d<a class="anchor" aria-label="anchor" href="#arg-d"></a></dt>
 <dd><p>A <code>dist</code> object, a square numeric matrix of pairwise distances, or
 a distance function (see <em>§Distance function</em>). Asymmetric matrices are
-accepted; symmetry is not checked (an <code>O(N^2)</code> check is intentionally
-omitted), and the algorithm treats \(d_{ij}\) and \(d_{ji}\) as
+accepted; the algorithm treats \(d_{ij}\) and \(d_{ji}\) as
 independent. Ignored when <code>points</code> is supplied.</p></dd>
 
 
 <dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
-<dd><p>Integer: number of points to select. If <code>k &gt; N</code>, all <code>N</code> indices
-are returned in Gonzalez (farthest-first) order.</p></dd>
+<dd><p>Integer: number of points to select.</p></dd>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
@@ -106,48 +103,31 @@ or the lone <code>"random_furthest"</code> token – requests an ensemble: each 
 anchor runs a full Gonzalez pass and the best result by <code><a href="MinDist.html">MinDist()</a></code> is
 returned with <code>strategy_results</code> and <code>winning_strategy</code> (character vector
 of all tied-best strategies) attributes. The <code>"random_furthest"</code> token
-expands to one start per element of <code>pivots</code>, labelled <code>random_furthest1</code>,
-<code>random_furthest2</code>, ...; named on its own it still runs the ensemble (one
-pass per pivot), so a single random start is best obtained via
-<code><a href="MaxMinSeed.html">MaxMinSeed()</a></code>. Valid ensemble anchors: any subset of <code>c("centroid", "peripheral", "random_furthest", "diameter", "anti_medoid", "rowsum", "rownorm")</code> (<code>"centroid"</code> requires <code>points</code>). Default:
-<code>"random_furthest"</code> (three random starts; see <code>pivots</code>). See <code><a href="MaxMinSeed.html">MaxMinSeed()</a></code>
-for anchor definitions. On the distance-column oracle path only an integer
-<code>method</code> is honoured; a named or ensemble <code>method</code> there warns and falls
-back to the peripheral seed (see <em>Distance-column oracle</em>).</p></dd>
-
-
-<dt id="arg-pivots">pivots<a class="anchor" aria-label="anchor" href="#arg-pivots"></a></dt>
-<dd><p>Integer vector of pivot indices over which the
-<code>"random_furthest"</code> ensemble token expands: each pivot contributes one
-start, seeded at the point furthest from it, so the vector's length sets
-the number of random-furthest starts. Left unspecified, three pivots are
-drawn with the session RNG (<code>sample.int(N, 3)</code>; set a seed for a
-reproducible selection). Pass <code>integer(0)</code>, <code>NA</code>, or <code>NULL</code> to disable the
-random starts, or an index vector to choose the pivots (and their count)
-explicitly. Disabling the random starts errors under the default <code>method</code>
-(which names only <code>"random_furthest"</code>, leaving no anchor); pair it with a
-deterministic <code>method</code> such as <code>"peripheral"</code>.</p></dd>
+draws <code>nseeds</code> distinct furthest-point seeds, labelled <code>random_furthest1</code>,
+<code>random_furthest2</code>, ...; named on its own it still runs the ensemble, so a
+single random start is best obtained via <code><a href="MaxMinSeed.html">MaxMinSeed()</a></code>. Valid ensemble
+anchors: any subset of <code>c("centroid", "peripheral", "random_furthest", "diameter", "anti_medoid", "rowsum", "rownorm")</code> (<code>"centroid"</code> requires
+<code>points</code>). Default: <code>"random_furthest"</code> (eight distinct random starts;
+see <code>nseeds</code>). See <code><a href="MaxMinSeed.html">MaxMinSeed()</a></code> for anchor definitions. On the
+distance-column oracle path only an integer <code>method</code> is honoured; a named
+or ensemble <code>method</code> there warns and falls back to the peripheral seed (see
+<em>Distance-column oracle</em>).</p></dd>
 
 
 <dt id="arg-nseeds">nseeds<a class="anchor" aria-label="anchor" href="#arg-nseeds"></a></dt>
-<dd><p>Optional integer: run a distinct-seed random restart. Random
-pivots are drawn with the session RNG and each one's furthest-point seed is
-collected, de-duplicated, until <code>nseeds</code> <em>distinct</em> seeds are found (or the
-reachable pool is exhausted); Gonzalez runs from each and the best \(T_k\)
-is returned, with <code>strategy_results</code> / <code>winning_strategy</code> labelled
-<code>random_furthest1</code>, <code>random_furthest2</code>, ... This is the "give a count, not a
-list" counterpart to <code>pivots</code>: where <code>pivots</code> runs one start per supplied
-index, <code>nseeds</code> searches for that many <em>distinct</em> peripheral seeds, never
-wasting a Gonzalez pass on a duplicate. Set a seed (<code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code>) for a
-reproducible selection. When supplied, <code>nseeds</code> overrides <code>method</code> and
-<code>pivots</code> (a warning is issued if either was also set explicitly); it is not
-available on the distance-column oracle path. Default <code>NULL</code> (use <code>method</code>).</p></dd>
+<dd><p>Integer: number of distinct random-furthest seeds to draw when
+<code>"random_furthest"</code> is among the ensemble anchors. Random pivots are drawn
+with the session RNG and each one's furthest-point seed is collected,
+de-duplicated, until <code>nseeds</code> distinct seeds are found (or the reachable
+pool is exhausted); Gonzalez runs from each and the best \(T_k\) is kept.
+Set <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> for a reproducible selection. Ignored on the
+distance-column oracle path. Default <code>8L</code>.</p></dd>
 
 
 <dt id="arg-points">points<a class="anchor" aria-label="anchor" href="#arg-points"></a></dt>
 <dd><p>Optional <code>N x dim</code> numeric coordinate matrix. When supplied,
-the selection is computed directly from coordinates in <code>O(N * k * dim)</code>
-time and <code>O(N)</code> memory, never materialising the <code>N x N</code> distance matrix
+the selection is computed directly from coordinates in \(O(N * k * dim)\)
+time and \(O(N)\) memory, never materialising the <code>N x N</code> distance matrix
 (<code>d</code> is then unused). For Euclidean data the returned indices are
 identical to the matrix path. Only complete (non-<code>NA</code>) data is supported.</p></dd>
 
@@ -168,9 +148,8 @@ Default: <code>TRUE</code> in interactive sessions, <code>FALSE</code> otherwise
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>Integer vector of length <code>min(k, N)</code> of selected indices, in
-farthest-first (greedy) selection order – <strong>not</strong> sorted (unlike
-<code><a href="DropAdd.html">DropAdd()</a></code>, <code><a href="Grasp.html">Grasp()</a></code> and <code>ExactMaxMin()$indices</code>, which return ascending
-indices). The achieved \(T_k\) (the selection's minimum pairwise
+the order they were selected.
+The achieved \(T_k\) (the selection's minimum pairwise
 distance) is attached as attribute <code>score</code>. An ensemble <code>method</code>
 additionally carries <code>strategy_results</code> and <code>winning_strategy</code> attributes.
 The vector has class <code>"MaxMinSelection"</code> and prints as a one-line summary
@@ -203,7 +182,7 @@ may be computed on demand.</p></dd>
 should return the distances from element <code>i</code> to every element in turn,
 optionally omitting entry <code>i</code>, the self-distance.
 The function will be called once per selected element, to avoid building a
-complete <code>N x N</code> matrix.</p>
+complete \(N x N\) matrix.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -228,15 +207,12 @@ complete <code>N x N</code> matrix.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">pts</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">60</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/dist.html" class="external-link">dist</a></span><span class="op">(</span><span class="va">pts</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="co"># Default: best of three random-furthest starts (set.seed for reproducibility):</span></span></span>
+<span class="r-in"><span><span class="co"># Default: best of eight random-furthest starts (set.seed for reproducibility):</span></span></span>
 <span class="r-in"><span><span class="fu">FarFirst</span><span class="op">(</span><span class="va">d</span>, <span class="fl">5L</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first (best of 3 strategies, winner random_furthest2), each at distance &gt;= 1.765</span>
-<span class="r-in"><span><span class="co"># More random-furthest starts (length of `pivots` sets the count):</span></span></span>
-<span class="r-in"><span><span class="fu">FarFirst</span><span class="op">(</span><span class="va">d</span>, <span class="fl">5L</span>, pivots <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample.int</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">d</span><span class="op">)</span><span class="op">)</span>, <span class="fl">8L</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first (best of 8 strategies, 5 tied: random_furthest1, random_furthest3, random_furthest5, random_furthest6, random_furthest7), each at distance &gt;= 1.765</span>
-<span class="r-in"><span><span class="co"># Or choose the pivots explicitly:</span></span></span>
-<span class="r-in"><span><span class="fu">FarFirst</span><span class="op">(</span><span class="va">d</span>, <span class="fl">5L</span>, pivots <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1L</span>, <span class="fl">10L</span>, <span class="fl">20L</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (5 26 14 21 28) selected by Gonzalez farthest-first (best of 3 strategies, winner random_furthest1), each at distance &gt;= 1.765</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first (best of 5 strategies, 3 tied: random_furthest2, random_furthest4, random_furthest5), each at distance &gt;= 1.765</span>
+<span class="r-in"><span><span class="co"># More random-furthest starts:</span></span></span>
+<span class="r-in"><span><span class="fu">FarFirst</span><span class="op">(</span><span class="va">d</span>, <span class="fl">5L</span>, nseeds <span class="op">=</span> <span class="fl">15L</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (4 14 26 5 28) selected by Gonzalez farthest-first (best of 5 strategies, 3 tied: random_furthest1, random_furthest3, random_furthest5), each at distance &gt;= 1.765</span>
 <span class="r-in"><span><span class="co"># Custom two-anchor ensemble:</span></span></span>
 <span class="r-in"><span><span class="fu">FarFirst</span><span class="op">(</span><span class="va">d</span>, <span class="fl">5L</span>, method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"diameter"</span>, <span class="st">"anti_medoid"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first (best of 2 strategies, 2 tied: diameter, anti_medoid), each at distance &gt;= 1.765</span>

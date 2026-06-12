@@ -41,28 +41,31 @@ install.packages("MaxMin")
 
 ## Quick start
 
-`eurodist` is a built-in R `dist` object containing road distances (km)
-between 21 European cities.
+Our examples employ a built-in R `dist` object that contains road
+distances (in km) between 21 European cities.
 
 ``` r
 
-data(eurodist)
+# Load the `eurodist` dist object
+data("eurodist")
 
 # Set a seed for a reproducible selection
 set.seed(1)
 
 # Select 4 maximally dispersed cities
-idx <- FarFirst(eurodist, k = 4L)
-MinDist(eurodist, idx)
-#> [1] 2187
+ffPick <- FarFirst(eurodist, k = 4L)
 
-# View distances between chosen cities
-as.matrix(eurodist)[idx, idx]
+# View distances between selected cities
+as.matrix(eurodist)[ffPick, ffPick]
 #>           Athens Lisbon Stockholm Milan
 #> Athens         0   4532      3927  2282
 #> Lisbon      4532      0      3231  2250
 #> Stockholm   3927   3231         0  2187
 #> Milan       2282   2250      2187     0
+
+# Quickly extract the minimum distance for a given selection
+MinDist(eurodist, ffPick)
+#> [1] 2187
 ```
 
 [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
@@ -73,22 +76,25 @@ reports that value explicitly.
 
 ## Methods at a glance
 
-MaxMin provides solvers and a scorer for each objective:
+MaxMin provides solvers for each objective:
 
 | Function | Objective | Quality | Speed | Stochastic? |
 |----|----|----|----|----|
-| [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) | dispersion (MMDP) | Good (2-approximation) | Very fast | No |
-| [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) | dispersion (MMDP) | High (≈ 99 % optimal) | Fast | No |
-| [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) | dispersion (MMDP) | Highest | Moderate | Yes ([`set.seed()`](https://rdrr.io/r/base/Random.html)) |
-| [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md) | dispersion (MMDP) | Optimal (NP-hard) | Slow | No |
-| [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md) | dispersion (MMDP) | Scoring only | Instant | No |
-| [`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md) | covering (k-centre) | Near-optimal (CDSh) | Fast | No |
-| [`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md) | covering (k-centre) | Optimal (NP-hard) | Slow | No |
-| [`KCentreRadius()`](https://ms609.github.io/MaxMin/reference/KCentreRadius.md) | covering (k-centre) | Scoring only | Instant | No |
+| [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) | both | Good (2-approximation) | Very fast | No |
+| [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) | MMDP | High (≈ 99 % optimal) | Fast | No |
+| [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) | MMDP | Highest | Moderate | Yes ([`set.seed()`](https://rdrr.io/r/base/Random.html)) |
+| [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md) | MMDP | Optimal (NP-hard) | Slow | No |
+| [`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md) | k-centre | Near-optimal (CDSh) | Fast | No |
+| [`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md) | k-centre | Optimal (NP-hard) | Slow | No |
 
-We walk through the dispersion methods first, then the k-centre methods.
+To compute the score for an arbitrary selection of points under each
+objective, use
+[`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md)
+(MMDP) and
+[`KCentreRadius()`](https://ms609.github.io/MaxMin/reference/KCentreRadius.md)
+(k-centre).
 
-## Gonzalez: fast greedy selection
+## Fast greedy selection
 
 The González ([1985](#ref-Gonzalez1985)) algorithm builds the selection
 greedily: start from a seed point, then repeatedly add whichever
@@ -105,19 +111,15 @@ pass produced the highest T_(k).
 ``` r
 
 set.seed(1)
-picks <- FarFirst(eurodist, k = 6L)   # default: best of three random starts
+picks <- FarFirst(eurodist, k = 6L)   # default: best of eight random starts
 ```
 
-More random starts, or pivots of your own devising, can be accomplished
-by a vector of pivot points to a `pivots` vector.
+More random starts can be requested via the `nseeds` argument.
 
 ``` r
 
 set.seed(1)
-nCities <- attr(eurodist, "Size")
-# Use 5 random starts
-pivots <- sample(nCities, 5)
-picks <- FarFirst(eurodist, k = 6L, pivots = pivots)
+picks <- FarFirst(eurodist, k = 6L, nseeds = 12L)
 ```
 
 Peripheral seeds may also be selected by deterministic methods: one or

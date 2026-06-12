@@ -44,24 +44,22 @@ Anchors:
 
 - `"centroid"`:
 
-  The point farthest from the coordinate mean (`argmax ||x - x_bar||`),
-  an `O(N * dim)` approximate diameter endpoint. Computed from
-  coordinates, so it requires `points`; it is unavailable on the
-  distance-matrix path, where `"peripheral"` serves the same role.
+  The point farthest from the coordinate mean (\\argmax \|\|x -
+  x_bar\|\|\\), an \\O(N \* dim)\\ approximate diameter endpoint.
+  Computed from coordinates, so it requires `points`; it is unavailable
+  on the distance-matrix path, where `"peripheral"` serves the same
+  role.
 
 - `"peripheral"`:
 
   Two sweeps: the point furthest from point 1, then the point furthest
-  from that (a diameter-endpoint approximation), in `O(N)`. The only
+  from that (a diameter-endpoint approximation), in \\O(N)\\. The only
   anchor reachable from a distance-column oracle (the function path of
   [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)).
 
 - `"random_furthest"`:
 
-  The point furthest from a random pivot, in `O(N)`. The pivot is drawn
-  with the session RNG; set a seed
-  ([`set.seed()`](https://rdrr.io/r/base/Random.html)) for a
-  reproducible index.
+  The point furthest from a random pivot, in \\O(N)\\.
 
 - `"diameter"`:
 
@@ -74,7 +72,7 @@ Anchors:
 
 - `"medoid"`:
 
-  The 1-median itself, `which.min(rowSums(d))`.
+  The 1-median.
 
 - `"rowsum"`:
 
@@ -83,7 +81,7 @@ Anchors:
 
 - `"rownorm"`:
 
-  The point maximising `sqrt(sum d^2)`, the L2 counterpart of
+  The point maximising \\\sqrt(\sum{d^2})\\, the L2 counterpart of
   `"rowsum"`.
 
 ## See also

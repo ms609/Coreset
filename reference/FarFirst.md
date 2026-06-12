@@ -16,8 +16,7 @@ FarFirst(
   d = NULL,
   k,
   method = .kDefaultEnsemble,
-  pivots = NULL,
-  nseeds = NULL,
+  nseeds = .kDefaultNSeeds,
   points = NULL,
   N = NULL,
   progress = getOption("MaxMin.progress", interactive())
@@ -30,14 +29,12 @@ FarFirst(
 
   A `dist` object, a square numeric matrix of pairwise distances, or a
   distance function (see *§Distance function*). Asymmetric matrices are
-  accepted; symmetry is not checked (an `O(N^2)` check is intentionally
-  omitted), and the algorithm treats \\d\_{ij}\\ and \\d\_{ji}\\ as
+  accepted; the algorithm treats \\d\_{ij}\\ and \\d\_{ji}\\ as
   independent. Ignored when `points` is supplied.
 
 - k:
 
-  Integer: number of points to select. If `k > N`, all `N` indices are
-  returned in Gonzalez (farthest-first) order.
+  Integer: number of points to select.
 
 - method:
 
@@ -56,58 +53,39 @@ FarFirst(
   [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md) is
   returned with `strategy_results` and `winning_strategy` (character
   vector of all tied-best strategies) attributes. The
-  `"random_furthest"` token expands to one start per element of
-  `pivots`, labelled `random_furthest1`, `random_furthest2`, ...; named
-  on its own it still runs the ensemble (one pass per pivot), so a
-  single random start is best obtained via
+  `"random_furthest"` token draws `nseeds` distinct furthest-point
+  seeds, labelled `random_furthest1`, `random_furthest2`, ...; named on
+  its own it still runs the ensemble, so a single random start is best
+  obtained via
   [`MaxMinSeed()`](https://ms609.github.io/MaxMin/reference/MaxMinSeed.md).
   Valid ensemble anchors: any subset of
   `c("centroid", "peripheral", "random_furthest", "diameter", "anti_medoid", "rowsum", "rownorm")`
-  (`"centroid"` requires `points`). Default: `"random_furthest"` (three
-  random starts; see `pivots`). See
+  (`"centroid"` requires `points`). Default: `"random_furthest"` (eight
+  distinct random starts; see `nseeds`). See
   [`MaxMinSeed()`](https://ms609.github.io/MaxMin/reference/MaxMinSeed.md)
   for anchor definitions. On the distance-column oracle path only an
   integer `method` is honoured; a named or ensemble `method` there warns
   and falls back to the peripheral seed (see *Distance-column oracle*).
 
-- pivots:
-
-  Integer vector of pivot indices over which the `"random_furthest"`
-  ensemble token expands: each pivot contributes one start, seeded at
-  the point furthest from it, so the vector's length sets the number of
-  random-furthest starts. Left unspecified, three pivots are drawn with
-  the session RNG (`sample.int(N, 3)`; set a seed for a reproducible
-  selection). Pass `integer(0)`, `NA`, or `NULL` to disable the random
-  starts, or an index vector to choose the pivots (and their count)
-  explicitly. Disabling the random starts errors under the default
-  `method` (which names only `"random_furthest"`, leaving no anchor);
-  pair it with a deterministic `method` such as `"peripheral"`.
-
 - nseeds:
 
-  Optional integer: run a distinct-seed random restart. Random pivots
-  are drawn with the session RNG and each one's furthest-point seed is
-  collected, de-duplicated, until `nseeds` *distinct* seeds are found
-  (or the reachable pool is exhausted); Gonzalez runs from each and the
-  best \\T_k\\ is returned, with `strategy_results` / `winning_strategy`
-  labelled `random_furthest1`, `random_furthest2`, ... This is the "give
-  a count, not a list" counterpart to `pivots`: where `pivots` runs one
-  start per supplied index, `nseeds` searches for that many *distinct*
-  peripheral seeds, never wasting a Gonzalez pass on a duplicate. Set a
-  seed ([`set.seed()`](https://rdrr.io/r/base/Random.html)) for a
-  reproducible selection. When supplied, `nseeds` overrides `method` and
-  `pivots` (a warning is issued if either was also set explicitly); it
-  is not available on the distance-column oracle path. Default `NULL`
-  (use `method`).
+  Integer: number of distinct random-furthest seeds to draw when
+  `"random_furthest"` is among the ensemble anchors. Random pivots are
+  drawn with the session RNG and each one's furthest-point seed is
+  collected, de-duplicated, until `nseeds` distinct seeds are found (or
+  the reachable pool is exhausted); Gonzalez runs from each and the best
+  \\T_k\\ is kept. Set
+  [`set.seed()`](https://rdrr.io/r/base/Random.html) for a reproducible
+  selection. Ignored on the distance-column oracle path. Default `8L`.
 
 - points:
 
   Optional `N x dim` numeric coordinate matrix. When supplied, the
-  selection is computed directly from coordinates in `O(N * k * dim)`
-  time and `O(N)` memory, never materialising the `N x N` distance
-  matrix (`d` is then unused). For Euclidean data the returned indices
-  are identical to the matrix path. Only complete (non-`NA`) data is
-  supported.
+  selection is computed directly from coordinates in \\O(N \* k \*
+  dim)\\ time and \\O(N)\\ memory, never materialising the `N x N`
+  distance matrix (`d` is then unused). For Euclidean data the returned
+  indices are identical to the matrix path. Only complete (non-`NA`)
+  data is supported.
 
 - N:
 
@@ -124,15 +102,12 @@ FarFirst(
 
 ## Value
 
-Integer vector of length `min(k, N)` of selected indices, in
-farthest-first (greedy) selection order – **not** sorted (unlike
-[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md),
-[`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) and
-`ExactMaxMin()$indices`, which return ascending indices). The achieved
-\\T_k\\ (the selection's minimum pairwise distance) is attached as
-attribute `score`. An ensemble `method` additionally carries
-`strategy_results` and `winning_strategy` attributes. The vector has
-class `"MaxMinSelection"` and prints as a one-line summary (see
+Integer vector of length `min(k, N)` of selected indices, in the order
+they were selected. The achieved \\T_k\\ (the selection's minimum
+pairwise distance) is attached as attribute `score`. An ensemble
+`method` additionally carries `strategy_results` and `winning_strategy`
+attributes. The vector has class `"MaxMinSelection"` and prints as a
+one-line summary (see
 [print.MaxMinSelection](https://ms609.github.io/MaxMin/reference/print.MaxMin.md));
 it is otherwise an ordinary integer vector and indexes a matrix or
 coordinate set directly.
@@ -161,7 +136,7 @@ When `d` is a function, it will be passed a single 1-based index `i`,
 and should return the distances from element `i` to every element in
 turn, optionally omitting entry `i`, the self-distance. The function
 will be called once per selected element, to avoid building a complete
-`N x N` matrix.
+\\N x N\\ matrix.
 
 ## References
 
@@ -189,15 +164,12 @@ for higher-effort solvers.
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
-# Default: best of three random-furthest starts (set.seed for reproducibility):
+# Default: best of eight random-furthest starts (set.seed for reproducibility):
 FarFirst(d, 5L)
-#> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first (best of 3 strategies, winner random_furthest2), each at distance >= 1.765
-# More random-furthest starts (length of `pivots` sets the count):
-FarFirst(d, 5L, pivots = sample.int(nrow(as.matrix(d)), 8L))
-#> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first (best of 8 strategies, 5 tied: random_furthest1, random_furthest3, random_furthest5, random_furthest6, random_furthest7), each at distance >= 1.765
-# Or choose the pivots explicitly:
-FarFirst(d, 5L, pivots = c(1L, 10L, 20L))
-#> 5 elements (5 26 14 21 28) selected by Gonzalez farthest-first (best of 3 strategies, winner random_furthest1), each at distance >= 1.765
+#> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first (best of 5 strategies, 3 tied: random_furthest2, random_furthest4, random_furthest5), each at distance >= 1.765
+# More random-furthest starts:
+FarFirst(d, 5L, nseeds = 15L)
+#> 5 elements (4 14 26 5 28) selected by Gonzalez farthest-first (best of 5 strategies, 3 tied: random_furthest1, random_furthest3, random_furthest5), each at distance >= 1.765
 # Custom two-anchor ensemble:
 FarFirst(d, 5L, method = c("diameter", "anti_medoid"))
 #> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first (best of 2 strategies, 2 tied: diameter, anti_medoid), each at distance >= 1.765

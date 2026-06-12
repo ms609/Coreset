@@ -1,14 +1,14 @@
 # Expand ensemble anchor names into labelled seed specs
 
 Maps each anchor name to a `list(label, s1)` spec. The
-`"random_furthest"` token expands to one spec per element of `pivots`,
-each seeded at the point furthest from that pivot (labelled
-`random_furthest1`, ...); an empty `pivots` contributes none.
+`"random_furthest"` token expands to one spec per element of `rfSeeds`
+(already-resolved seed indices, labelled `random_furthest1`, ...); an
+empty vector contributes none.
 
 ## Usage
 
 ``` r
-.ExpandAnchors(anchors, pivots, anchorSeed, rfSeed)
+.ExpandAnchors(anchors, rfSeeds, anchorSeed)
 ```
 
 ## Arguments
@@ -17,18 +17,14 @@ each seeded at the point furthest from that pivot (labelled
 
   Character vector of (de-duplicated) anchor names.
 
-- pivots:
+- rfSeeds:
 
-  Integer vector of pivot indices the `"random_furthest"` token expands
-  over (one start per pivot).
+  Integer vector of already-resolved furthest-point seed indices for the
+  `"random_furthest"` token.
 
 - anchorSeed:
 
   Function mapping a deterministic anchor name to an integer seed index.
-
-- rfSeed:
-
-  Function mapping a pivot index to the furthest-point seed.
 
 ## Value
 

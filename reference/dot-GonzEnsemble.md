@@ -3,8 +3,10 @@
 Runs Gonzalez from each requested peripheral anchor and returns the
 subset maximising \\T_k\\. Internal driver for the ensemble path of
 [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
-(triggered when `seed` is a character vector of length \> 1). The
-`"random_furthest"` token expands to one start per element of `pivots`.
+(triggered when `method` is a character vector of length \> 1 or
+`"random_furthest"`). The `"random_furthest"` token draws `nseeds`
+distinct furthest-point seeds via
+[`.DrawDistinctSeeds()`](https://ms609.github.io/MaxMin/reference/dot-DrawDistinctSeeds.md).
 The returned vector carries `strategy_results` and `winning_strategy`
 (character vector of all tied-best strategies, with random starts
 labelled `random_furthest1`, `random_furthest2`, ...) attributes.
@@ -12,13 +14,7 @@ labelled `random_furthest1`, `random_furthest2`, ...) attributes.
 ## Usage
 
 ``` r
-.GonzEnsemble(
-  d,
-  m,
-  anchors = "peripheral",
-  pivots = integer(0),
-  rfSeedFn = NULL
-)
+.GonzEnsemble(d, m, anchors = "peripheral", nseeds = .kDefaultNSeeds)
 ```
 
 ## Arguments
@@ -35,19 +31,10 @@ labelled `random_furthest1`, `random_furthest2`, ...) attributes.
 
   Character vector of anchor names.
 
-- pivots:
+- nseeds:
 
-  Integer vector of pivot indices the `"random_furthest"` token expands
-  over (empty contributes none).
-
-- rfSeedFn:
-
-  Optional function mapping a `"random_furthest"` pivot to its seed
-  index. `NULL` (default) uses the furthest-from-pivot rule; pass
-  [`identity()`](https://rdrr.io/r/base/identity.html) to treat `pivots`
-  as already-resolved seed indices (the `nseeds` distinct-restart path
-  of
-  [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)).
+  Integer number of distinct random-furthest seeds to draw when
+  `"random_furthest"` is in `anchors`.
 
 ## Value
 

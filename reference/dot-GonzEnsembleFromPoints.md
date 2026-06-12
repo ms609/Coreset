@@ -4,8 +4,7 @@ Coordinate counterpart of
 [`.GonzEnsemble()`](https://ms609.github.io/MaxMin/reference/dot-GonzEnsemble.md);
 each anchor seed and the greedy expansion are computed from `points` via
 the coordinate primitives, so the returned indices and attributes match
-the matrix path on Euclidean data. `pivots` indexes points directly, so
-the `"random_furthest"` starts also match the matrix path.
+the matrix path on Euclidean data.
 
 ## Usage
 
@@ -14,8 +13,7 @@ the `"random_furthest"` starts also match the matrix path.
   points,
   m,
   anchors = .kDefaultEnsemble,
-  pivots = integer(0),
-  rfSeedFn = NULL
+  nseeds = .kDefaultNSeeds
 )
 ```
 
@@ -33,19 +31,10 @@ the `"random_furthest"` starts also match the matrix path.
 
   Character vector of anchor names.
 
-- pivots:
+- nseeds:
 
-  Integer vector of pivot indices the `"random_furthest"` token expands
-  over (empty contributes none).
-
-- rfSeedFn:
-
-  Optional function mapping a `"random_furthest"` pivot to its seed
-  index. `NULL` (default) uses the furthest-from-pivot rule; pass
-  [`identity()`](https://rdrr.io/r/base/identity.html) to treat `pivots`
-  as already-resolved seed indices (the `nseeds` distinct-restart path
-  of
-  [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)).
+  Integer number of distinct random-furthest seeds to draw when
+  `"random_furthest"` is in `anchors`.
 
 ## Value
 
