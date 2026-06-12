@@ -178,7 +178,7 @@ test_that("DropAdd points path: deterministic and input validation", {
 test_that("DropAdd points path: progress = TRUE fires the cli hooks", {
   pts <- matrix(rnorm(20 * 2), ncol = 2)
   expect_no_error(
-    DropAdd(points = pts, k = 3L, maxIter = 2L, progress = TRUE)
+    suppressMessages(DropAdd(points = pts, k = 3L, maxIter = 2L, progress = TRUE))
   )
 })
 
