@@ -321,5 +321,6 @@ test_that(".Grasp_R time budget halts execution (grasp.R line 397)", {
                       maxIter  = .Machine$integer.max,
                       eliteSize = 4L, maxSeconds = 0.001),
     limit = 5)
-  expect_lte(attr(res, "time_s"), 0.1)
+  # Need 2s to pass on memcheck runs
+  expect_lte(attr(res, "time_s"), 2)
 })

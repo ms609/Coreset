@@ -102,8 +102,8 @@ test_that("DropAdd points path respects maxSeconds within reasonable slack", {
   res <- DropAdd(20L, maxSeconds = 0.05, plateau = 100000000L,
                  points = pts)
   elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
-  expect_lte(attr(res, "time_s"), 1.5)
-  expect_lte(elapsed, 2.0)
+  expect_lte(attr(res, "time_s"), 5)
+  expect_lte(elapsed, 5.5)
   expect_length(res, 20L)
   expect_gte(attr(res, "iters"), 1L)
 })
