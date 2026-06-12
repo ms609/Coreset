@@ -109,14 +109,13 @@ test_that("DropAdd points path respects maxSeconds within reasonable slack", {
 })
 
 # ---------------------------------------------------------------------------
-# 4. maxIter = 0 returns the constructive solution, scoring it correctly.
+# 4. Returned score is accurate on the points path.
 # ---------------------------------------------------------------------------
-test_that("DropAdd points path construction-only result matches its MaxMin score", {
+test_that("DropAdd points path: reported score equals actual MaxMin of returned indices", {
   set.seed(11)
   pts <- matrix(rnorm(60 * 4), ncol = 4)
-  res <- DropAdd(6L, maxIter = 0L, points = pts)
+  res <- DropAdd(6L, points = pts)
   expect_length(res, 6L)
-  expect_equal(attr(res, "iters"), 0L)
   expect_equal(attr(res, "score"), .MaxminPts(res, pts), tolerance = 1e-12)
 })
 
@@ -147,8 +146,9 @@ test_that("DropAdd points path: deterministic and input validation", {
   pts <- matrix(rnorm(30 * 3), ncol = 3)
 
   # RNG-free: repeated calls are identical (the no-op `seed` arg was removed).
-  r1 <- DropAdd(4L, maxIter = 0L, points = pts)
-  r2 <- DropAdd(4L, maxIter = 0L, points = pts)
+  r1 <- DropAdd(4L, plateau = 100L, points = pts)
+  r2 <- DropAdd(4L, plateau = 100L, points = pts)
+  attr(r1, "time_s") <- attr(r2, "time_s") <- NULL
   expect_identical(r1, r2)
 
   # k validation
@@ -158,9 +158,6 @@ test_that("DropAdd points path: deterministic and input validation", {
   # plateau validation
   expect_error(DropAdd(4L, plateau = 0L, points = pts),
                "plateau")
-
-  # maxIter validation
-  expect_error(DropAdd(4L, maxIter = -1L, points = pts), "maxIter")
 
   # maxSeconds validation
   expect_error(DropAdd(4L, maxSeconds = 0, points = pts),
@@ -179,7 +176,7 @@ test_that("DropAdd points path: MaxMin.progress option fires the cli hooks", {
   pts <- matrix(rnorm(20 * 2), ncol = 2)
   old <- options(MaxMin.progress = TRUE)
   on.exit(options(old))
-  expect_no_error(suppressMessages(DropAdd(3L, maxIter = 2L, points = pts)))
+  expect_no_error(suppressMessages(DropAdd(3L, maxSeconds = 0.1, points = pts)))
 })
 
 # ---------------------------------------------------------------------------
@@ -193,9 +190,8 @@ test_that("DropAdd points path C++: construction covers sum_dist tie-break (line
   # but sum_dist[Q]=2*sqrt(5)+sqrt(2) > sum_dist[P]=2*sqrt(2)+sqrt(5) -> Q wins.
   # When A is added: d(P,A)=sqrt(2)==min_dist[P] -> line 152 (equality) fires.
   pts5 <- rbind(c(0, 0), c(3, 0), c(0, 2), c(1, 1), c(2, 1))
-  res <- DropAdd(4L, maxIter = 0L, points = pts5)
+  res <- DropAdd(4L, points = pts5)
   expect_length(res, 4L)
-  expect_equal(attr(res, "iters"), 0L)
 })
 
 test_that("DropAdd points path C++: k=2 covers DROP else-branch (lines 263-264)", {
@@ -204,7 +200,7 @@ test_that("DropAdd points path C++: k=2 covers DROP else-branch (lines 263-264)"
   # Drop (0,0): (2,0) loses its sole selected peer; need_recompute fires;
   # self-mask inside recompute leaves mns=Inf -> else branch (lines 263-264).
   pts_rh <- rbind(c(0, 0), c(1, 1), c(2, 0), c(1, -1))
-  res <- DropAdd(2L, maxIter = 4L, points = pts_rh)
+  res <- DropAdd(2L, points = pts_rh)
   expect_length(res, 2L)
 })
 
@@ -214,7 +210,6 @@ test_that("DropAdd points path C++: main-loop ADD covers tie-break (304-307) and
   # Drop ANC: X and Y tied on min_dist=1; sum_dist[Y]=9>sum_dist[X]~8.12 ->
   # lines 304-307 fire. When Y added: d(Y,W)=0.5==min_dist[W]=0.5 -> line 327.
   pts7 <- rbind(c(0, 0), c(4, 0), c(0, 4), c(10, 10), c(1, 0), c(3, 0), c(3.5, 0))
-  res <- DropAdd(4L, maxIter = 1L, points = pts7)
+  res <- DropAdd(4L, points = pts7)
   expect_length(res, 4L)
-  expect_equal(attr(res, "iters"), 1L)
 })

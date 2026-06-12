@@ -301,16 +301,17 @@ print.KCentreSelection <- function(x, ...) {
 #' @rdname print.KCentre
 #' @export
 format.KCentreExact <- function(x, ...) {
-  nc <- length(x$indices)
-  status <- if (isTRUE(x$proven)) {
-    sprintf("exact MILP (%s), proven optimal", x$solver)
+  idx <- as.integer(x)
+  nc <- length(idx)
+  status <- if (isTRUE(attr(x, "proven"))) {
+    sprintf("exact MILP (%s), proven optimal", attr(x, "solver"))
   } else {
-    sprintf("exact MILP (%s), unproven incumbent", x$solver)
+    sprintf("exact MILP (%s), unproven incumbent", attr(x, "solver"))
   }
-  rel <- if (isTRUE(x$proven)) "=" else "<="
+  rel <- if (isTRUE(attr(x, "proven"))) "=" else "<="
   sprintf("%d centre%s (%s) by %s, covering radius %s %s",
-          nc, if (nc == 1L) "" else "s", .FormatIndexList(x$indices),
-          status, rel, format(signif(x$radius, 4L)))
+          nc, if (nc == 1L) "" else "s", .FormatIndexList(idx),
+          status, rel, format(signif(attr(x, "radius"), 4L)))
 }
 
 #' @rdname print.KCentre

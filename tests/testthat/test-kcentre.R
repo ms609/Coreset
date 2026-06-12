@@ -111,11 +111,11 @@ test_that("ExactKCentre proves the brute-force optimum on small instances", {
     for (k in c(1L, 2L, 3L)) {
       res <- ExactKCentre(d = d, k)
       expect_s3_class(res, "KCentreExact")
-      expect_true(res$proven)
-      expect_lte(res$n_centres, k)
-      expect_equal(res$radius, brute_kcentre(d, k))
+      expect_true(attr(res, "proven"))
+      expect_lte(attr(res, "n_centres"), k)
+      expect_equal(attr(res, "radius"), brute_kcentre(d, k))
       # Returned centres genuinely achieve the proven radius.
-      expect_equal(KCentreRadius(d = d, res$indices), res$radius)
+      expect_equal(KCentreRadius(d = d, as.integer(res)), attr(res, "radius"))
     }
   }
 })
@@ -128,8 +128,8 @@ test_that("ExactKCentre is no worse than CDSh, which is no worse than optimal", 
   k <- 3L
   exact <- ExactKCentre(d = d, k)
   heur <- KCentreRadius(d = d, as.integer(KCentre(d = d, k)))
-  expect_lte(exact$radius, heur + 1e-9)       # exact optimum <= heuristic
-  expect_equal(exact$radius, brute_kcentre(d, k))
+  expect_lte(attr(exact, "radius"), heur + 1e-9)       # exact optimum <= heuristic
+  expect_equal(attr(exact, "radius"), brute_kcentre(d, k))
 })
 
 test_that("ExactKCentre handles k = n trivially", {
@@ -137,8 +137,8 @@ test_that("ExactKCentre handles k = n trivially", {
   skip_if_not_installed("Matrix")
   d <- as.matrix(stats::dist(matrix(rnorm(16), ncol = 2)))
   res <- ExactKCentre(d = d, nrow(d))
-  expect_true(res$proven)
-  expect_equal(res$radius, 0)
+  expect_true(attr(res, "proven"))
+  expect_equal(attr(res, "radius"), 0)
 })
 
 # ----- US-spelling aliases --------------------------------------------------
@@ -159,8 +159,8 @@ test_that("US-spelling aliases give the same results as the UK functions", {
   skip_if_not_installed("highs")
   skip_if_not_installed("Matrix")
   d10 <- d[1:10, 1:10]
-  expect_equal(ExactKCenter(d = d10, 3L)$radius,
-               ExactKCentre(d = d10, 3L)$radius)
+  expect_equal(attr(ExactKCenter(d = d10, 3L), "radius"),
+               attr(ExactKCentre(d = d10, 3L), "radius"))
 })
 
 # ----- red-team regressions (Round 8: KC-001..007) --------------------------
@@ -185,7 +185,7 @@ test_that("KCentre never exceeds twice the optimum (restored 2-approx; KC-001)",
   for (seed in 1:6) {
     set.seed(200L + seed)
     d <- as.matrix(stats::dist(matrix(rnorm(40L), ncol = 2L)))   # n = 20 (exhaustive)
-    opt <- ExactKCentre(d = d, 4L)$radius
+    opt <- attr(ExactKCentre(d = d, 4L), "radius")
     heur <- KCentreRadius(d = d, as.integer(KCentre(d = d, 4L)))
     if (opt > 0) expect_lte(heur, 2 * opt + 1e-9)
   }
@@ -215,11 +215,11 @@ test_that("ExactKCentre returns a consistent unproven incumbent under a tiny bud
   set.seed(61)
   d <- as.matrix(stats::dist(matrix(rnorm(60L), ncol = 2L)))     # n = 30
   res <- ExactKCentre(d = d, 4L, maxSeconds = 1e-6)
-  expect_false(res$proven)
-  expect_lte(res$n_centres, 4L)
+  expect_false(attr(res, "proven"))
+  expect_lte(attr(res, "n_centres"), 4L)
   # The reported radius is the true covering radius of the returned centres,
   # proven or not (KC-004).
-  expect_equal(res$radius, KCentreRadius(d = d, res$indices))
+  expect_equal(attr(res, "radius"), KCentreRadius(d = d, as.integer(res)))
 })
 
 test_that("KCentre collapses duplicate centres with a consistent radius (KC-007)", {
@@ -310,13 +310,15 @@ test_that("KCentreSelection format and print summarise the selection", {
 
 test_that("KCentreExact format and print cover proven and unproven states", {
   proven <- structure(
-    list(indices = c(2L, 5L), radius = 0.5, proven = TRUE, time_s = 0.1,
-         solver = "highs", n = 10L, k = 2L, n_centres = 2L),
-    class = "KCentreExact")
+    c(2L, 5L),
+    radius = 0.5, proven = TRUE, time_s = 0.1,
+    solver = "highs", n = 10L, k = 2L, n_centres = 2L,
+    class = c("KCentreExact", "KCentreSelection"))
   unproven <- structure(
-    list(indices = 3L, radius = 1.2, proven = FALSE, time_s = 0.1,
-         solver = "highs", n = 10L, k = 1L, n_centres = 1L),
-    class = "KCentreExact")
+    3L,
+    radius = 1.2, proven = FALSE, time_s = 0.1,
+    solver = "highs", n = 10L, k = 1L, n_centres = 1L,
+    class = c("KCentreExact", "KCentreSelection"))
   expect_match(format(proven), "proven optimal, covering radius = ")
   expect_match(format(unproven), "unproven incumbent, covering radius <= ")
   expect_match(format(unproven), "^1 centre ")   # singular

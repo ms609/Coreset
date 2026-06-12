@@ -8,7 +8,6 @@ DropAdd(
   k,
   d = NULL,
   plateau = 5000L,
-  maxIter = NULL,
   maxSeconds = Inf,
   points = NULL
 )
@@ -24,10 +23,6 @@ iterations that do not improve the best objective. The primary,
 deterministic stopping criterion. The search is RNG-free (ties broken by
 smallest index), so for a given instance the result is reproducible and
 machine-independent. Default 5000.}
-
-\item{maxIter}{Optional integer hard cap on iterations (excluding
-construction). \code{NULL} (default) leaves \code{plateau} in sole
-control.}
 
 \item{maxSeconds}{Optional wall-clock ceiling in seconds, checked at
 iteration boundaries. Default \code{Inf} (no ceiling, fully reproducible).

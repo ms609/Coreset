@@ -48,16 +48,14 @@ test_that("DropAdd smoke: 20 pts in 5-D, k=5", {
 })
 
 # ---------------------------------------------------------------------------
-# 2. Construction-only sanity
+# 2. Score attribute sanity
 # ---------------------------------------------------------------------------
-test_that("DropAdd construction-only result matches its MaxMin score", {
+test_that("DropAdd reported score equals actual MaxMin of returned indices", {
   set.seed(11)
   pts <- matrix(rnorm(30 * 4), ncol = 4)
   dmat <- as.matrix(dist(pts))
-  res <- DropAdd(6L, dmat, maxIter = 0L)
+  res <- DropAdd(6L, dmat)
   expect_length(res, 6L)
-  expect_equal(attr(res, "iters"), 0L)
-  # Objective stored equals the actual MaxMin over the returned indices.
   expect_equal(attr(res, "score"), .MaxminBrute(res, dmat))
 })
 
@@ -72,9 +70,10 @@ test_that("DropAdd never worsens the constructive solution", {
   geo <- geoEnv$read_mdplib_geo(path)
   dmat <- geoEnv$mdplib_geo_dist(geo)
 
-  cons <- DropAdd(10L, dmat, maxIter = 0L)
+  cons <- MaxMin:::.DropAddConstruct(dmat, 10L)
+  consScore <- .MaxminBrute(cons$S, dmat)
   full <- DropAdd(10L, dmat, plateau = 2000L)
-  expect_gte(attr(full, "score"), attr(cons, "score") - 1e-9)
+  expect_gte(attr(full, "score"), consScore - 1e-9)
 })
 
 # ---------------------------------------------------------------------------
@@ -171,9 +170,9 @@ test_that("DropAdd is deterministic and validates inputs", {
   # The search is RNG-free, so repeated calls are identical. (The old `seed`
   # argument was a documented no-op and has been removed from the API.)
   set.seed(1)
-  r1 <- DropAdd(4L, dmat, maxIter = 0L)
+  r1 <- DropAdd(4L, dmat, plateau = 100L)
   set.seed(999)
-  r2 <- DropAdd(4L, dmat, maxIter = 0L)
+  r2 <- DropAdd(4L, dmat, plateau = 100L)
   attr(r1, "time_s") <- attr(r2, "time_s") <- NULL
   expect_identical(r1, r2, label = "DropAdd is RNG-independent: different seeds give identical result")
 
@@ -182,8 +181,6 @@ test_that("DropAdd is deterministic and validates inputs", {
   expect_error(DropAdd(25L, dmat),  "2 <= k")
   # plateau validation
   expect_error(DropAdd(4L, dmat, plateau = 0L),  "plateau")
-  # maxIter validation
-  expect_error(DropAdd(4L, dmat, maxIter = -1L),  "maxIter")
   # maxSeconds validation
   expect_error(DropAdd(4L, dmat, maxSeconds = 0),   "maxSeconds")
   expect_error(DropAdd(4L, dmat, maxSeconds = NA_real_), "maxSeconds")
@@ -193,7 +190,7 @@ test_that("DropAdd MaxMin.progress option fires the cli hooks", {
   dmat <- as.matrix(dist(matrix(rnorm(15 * 2), ncol = 2)))
   old <- options(MaxMin.progress = TRUE)
   on.exit(options(old))
-  expect_no_error(suppressMessages(DropAdd(3L, dmat, maxIter = 2L)))
+  expect_no_error(suppressMessages(DropAdd(3L, dmat, maxSeconds = 0.1)))
 })
 
 test_that("DropAdd rejects an NA distance matrix (FF-001 / T7-08)", {
@@ -218,12 +215,9 @@ test_that("DropAdd performs no iterations when k == n", {
 test_that("DropAdd time budget halts when both other criteria are disabled", {
   set.seed(1)
   dmat <- as.matrix(dist(matrix(rnorm(30 * 3), ncol = 3)))
-  # .Machine$integer.max disables both other stopping criteria; only the
-  # wall-clock budget can end the loop.
+  # .Machine$integer.max disables plateau; only the wall-clock budget can end.
   res <- expect_returns_within(
-    DropAdd(5L, dmat,
-            maxIter = .Machine$integer.max, plateau = .Machine$integer.max,
-            maxSeconds = 0.001),
+    DropAdd(5L, dmat, plateau = .Machine$integer.max, maxSeconds = 0.001),
     limit = 5)
   expect_gte(attr(res, "iters"), 1L)    # at least one iteration ran
   expect_lte(attr(res, "time_s"), 0.5)
@@ -245,9 +239,8 @@ test_that("DropAdd C++ construction covers sumDist tie-break (lines 82-85)", {
   # When A is added, d(P,A)=sqrt(2)==minDist[P] -> line 103 fires too.
   pts <- rbind(c(0,0), c(3,0), c(0,2), c(1,1), c(2,1))
   d   <- as.matrix(dist(pts))
-  res <- DropAdd(4L, d, maxIter = 0L)
+  res <- DropAdd(4L, d)
   expect_length(res, 4L)
-  expect_equal(attr(res, "iters"), 0L)
 })
 
 test_that("DropAdd C++ k=2 covers DROP else-branch (lines 214-215)", {
@@ -258,7 +251,7 @@ test_that("DropAdd C++ k=2 covers DROP else-branch (lines 214-215)", {
   # skips the only surviving S member, leaving mns=Inf -> else branch fires.
   ptsRh <- rbind(c(0,0), c(1,1), c(2,0), c(1,-1))
   dRh   <- as.matrix(dist(ptsRh))
-  res <- DropAdd(2L, dRh, maxIter = 4L)
+  res <- DropAdd(2L, dRh)
   expect_length(res, 2L)
 })
 
@@ -272,9 +265,8 @@ test_that("DropAdd C++ main-loop ADD covers tie-break (255-258) and equality (27
   # Construction: ANC -> P -> Q -> R  (ANC has max row-sum).
   pts7 <- rbind(c(0,0), c(4,0), c(0,4), c(10,10), c(1,0), c(3,0), c(3.5,0))
   d7   <- as.matrix(dist(pts7))
-  res <- DropAdd(4L, d7, maxIter = 1L)
+  res <- DropAdd(4L, d7)
   expect_length(res, 4L)
-  expect_equal(attr(res, "iters"), 1L)
 })
 
 # ---------------------------------------------------------------------------
@@ -306,26 +298,6 @@ test_that("DropAdd C++ main-loop ADD covers tie-break (255-258) and equality (27
   M
 }
 
-test_that("DropAdd C++ trajectory matches frozen golden values (maxIter)", {
-  M <- .DropAddGoldenMatrix()
-  # idx | score | secondary | iters, frozen from the production C++ path.
-  golden <- list(
-    "0"   = list(idx = c(1,7,8,9,13,18,21,23),    score = 304, sec = 19133, it = 0L),
-    "1"   = list(idx = c(1,7,8,9,13,18,21,23),    score = 304, sec = 19133, it = 1L),
-    "5"   = list(idx = c(1,7,8,9,13,18,21,23),    score = 304, sec = 19133, it = 5L),
-    "50"  = list(idx = c(6,8,15,16,19,20,21,23),  score = 330, sec = 16975, it = 50L),
-    "200" = list(idx = c(6,8,15,16,19,20,21,23),  score = 330, sec = 16975, it = 200L)
-  )
-  for (mi in names(golden)) {
-    g   <- golden[[mi]]
-    res <- DropAdd(8L, M, maxIter = as.integer(mi))
-    expect_identical(as.integer(res), as.integer(g$idx), info = paste("maxIter", mi))
-    expect_equal(attr(res, "score"),     g$score, tolerance = 1e-12, info = mi)
-    expect_equal(attr(res, "secondary"), g$sec,   tolerance = 1e-12, info = mi)
-    expect_identical(attr(res, "iters"), g$it,             info = mi)
-  }
-})
-
 test_that("DropAdd C++ trajectory matches frozen golden values (plateau)", {
   M <- .DropAddGoldenMatrix()
   # The run length under plateau is itself an output, so frozen `iters` confirms
@@ -349,7 +321,7 @@ test_that("DropAdd secondary attribute equals upper-triangle distance sum", {
   set.seed(2026)
   pts <- matrix(rnorm(20 * 3), ncol = 3)
   dmat <- as.matrix(dist(pts))
-  res <- DropAdd(5L, dmat, maxIter = 20L)
+  res <- DropAdd(5L, dmat, plateau = 5L)
   # Brute-force the secondary: upper-triangle sum of distances within selection.
   sub <- dmat[res, res]
   expected_secondary <- sum(sub[upper.tri(sub)])

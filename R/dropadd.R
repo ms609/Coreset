@@ -139,9 +139,6 @@
 #'   deterministic stopping criterion. The search is RNG-free (ties broken by
 #'   smallest index), so for a given instance the result is reproducible and
 #'   machine-independent. Default 5000.
-#' @param maxIter Optional integer hard cap on iterations (excluding
-#'   construction). \code{NULL} (default) leaves \code{plateau} in sole
-#'   control.
 #' @param maxSeconds Optional wall-clock ceiling in seconds, checked at
 #'   iteration boundaries. Default \code{Inf} (no ceiling, fully reproducible).
 #'   A finite value caps runtime but makes the result machine-dependent.
@@ -168,8 +165,7 @@
 #' @references \insertAllCited{}
 #'
 #' @export
-DropAdd <- function(k, d = NULL, plateau = 5000L, maxIter = NULL,
-                    maxSeconds = Inf,
+DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
                     points = NULL) {
   progress <- getOption("MaxMin.progress", interactive())
   if (!is.null(points) && !is.null(d)) {
@@ -192,12 +188,6 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxIter = NULL,
       plateau < 1L) {
     stop("`plateau` must be a single positive integer")
   }
-  if (!is.null(maxIter)) {
-    maxIter <- as.integer(maxIter)
-    if (length(maxIter) != 1L || is.na(maxIter) || maxIter < 0L) {
-      stop("`maxIter` must be NULL or a single non-negative integer")
-    }
-  }
   if (!is.numeric(maxSeconds) || length(maxSeconds) != 1L ||
       is.na(maxSeconds) || maxSeconds <= 0) {
     stop("`maxSeconds` must be a single positive numeric (or Inf)")
@@ -208,7 +198,6 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxIter = NULL,
 
   # --- Matrix-free (coordinate) path ----------------------------------------
   if (usePoints) {
-    cppMaxIter <- if (is.null(maxIter)) .Machine$integer.max else maxIter
     if (progress) {
       cli::cli_process_start(
         "DropAdd tabu search (n = {n}, k = {k}, budget = {maxSeconds}s)",
@@ -216,7 +205,7 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxIter = NULL,
       )
     }
     out <- DropAdd_points_cpp(points, k, as.double(maxSeconds),
-                                cppMaxIter, plateau, FALSE)
+                                .Machine$integer.max, plateau, FALSE)
     timeS <- proc.time()[[3L]] - t0
     if (progress) {
       itersMsg <- as.integer(out$iters)
@@ -235,7 +224,6 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxIter = NULL,
   }
 
   # --- C++ drop-add tabu search (the sole compute path) -------------------
-  cppMaxIter <- if (is.null(maxIter)) .Machine$integer.max else maxIter
   if (progress) {
     cli::cli_process_start(
       "DropAdd tabu search (n = {n}, k = {k}, budget = {maxSeconds}s)",
@@ -243,7 +231,7 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxIter = NULL,
     )
   }
   out <- DropAdd_cpp(dmat, k, as.double(maxSeconds),
-                       cppMaxIter, plateau, FALSE)
+                       .Machine$integer.max, plateau, FALSE)
   timeS <- proc.time()[[3L]] - t0
   if (progress) {
     itersMsg <- as.integer(out$iters)
