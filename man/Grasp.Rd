@@ -8,7 +8,6 @@ Grasp(
   k,
   d,
   plateau = 100L,
-  maxIter = NULL,
   eliteSize = 10L,
   alpha = 0.8,
   maxSeconds = Inf
@@ -22,10 +21,6 @@ Grasp(
 \item{plateau}{Integer; stop after this many consecutive GRASP
 iterations without an improvement to the best elite objective. The
 primary, deterministic stopping criterion. Default 100.}
-
-\item{maxIter}{Optional integer hard cap on GRASP refinement iterations
-(excluding the elite-set construction). \code{NULL} (default) leaves
-\code{plateau} in sole control.}
 
 \item{eliteSize}{Size of the elite set |ES|. Default 10.}
 

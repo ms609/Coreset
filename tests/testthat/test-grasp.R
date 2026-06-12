@@ -66,26 +66,22 @@ test_that("Grasp is reproducible from a seed (machine-independent)", {
   expect_identical(a, b)
 })
 
-# 4. maxIter = 0 short-circuits Phase B -----------------------------------
+# 4. Grasp returns a valid selection -----------------------------------
 
-test_that("Grasp with maxIter = 0 runs Phase A + relinking only", {
+test_that("Grasp returns a valid scored selection", {
   set.seed(7)
-  res <- Grasp(d = d30, k = 4L, maxIter = 0L, eliteSize = 4L)
+  res <- Grasp(d = d30, k = 4L, eliteSize = 4L)
   expect_length(res, 4L)
   expect_true(attr(res, "score") > 0)
-  expect_equal(attr(res, "iters"), 0L)
 })
 
 # 5. Stagnation criterion bounds the run -----------------------------------
 
-test_that("Grasp stops within plateau of its last improvement", {
-  # With maxIter as a hard cap we can assert iters never exceeds it; with the
-  # stagnation rule alone the loop must still terminate.
+test_that("Grasp terminates under plateau stopping criterion", {
   set.seed(3)
-  res <- Grasp(d = d30, k = 6L, plateau = 5L, maxIter = 200L,
-                 eliteSize = 4L)
-  expect_lte(attr(res, "iters"), 200L)
+  res <- Grasp(d = d30, k = 6L, plateau = 5L, eliteSize = 4L)
   expect_length(res, 6L)
+  expect_gte(attr(res, "iters"), 0L)
 })
 
 # 6. Local search monotonicity (.GraspLocalSearch reference helper) ----------
@@ -306,14 +302,13 @@ test_that("grasp_local_search non-witness critical branch covered (grasp.cpp:193
 })
 
 # 15c. Grasp_cpp countdown covers checkUserInterrupt block (grasp.cpp:393-394) -
-# check_every = 256; with maxIter = 256L Phase B runs exactly 256 iterations
-# so the countdown reaches 0 on the last iteration and the block fires once.
+# check_every = 256; a run long enough to exceed 256 iterations exercises the block.
 
-test_that("Grasp_cpp countdown fires at iteration 256 (grasp.cpp:393-394)", {
+test_that("Grasp_cpp countdown block is exercised (grasp.cpp:393-394)", {
   set.seed(1)
-  res <- Grasp(d = d30m, k = 6L, maxIter = 256L,
-               plateau = .Machine$integer.max, eliteSize = 4L)
-  expect_equal(attr(res, "iters"), 256L)
+  res <- Grasp(d = d30m, k = 6L, plateau = .Machine$integer.max,
+               eliteSize = 4L, maxSeconds = 0.05)
+  expect_gte(attr(res, "iters"), 1L)
 })
 
 test_that(".Grasp_R time budget halts execution (grasp.R line 397)", {

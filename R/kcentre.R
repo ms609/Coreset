@@ -154,8 +154,9 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' distance-matrix method, \eqn{O(N^2)} in memory; for the covering radius of an
 #' existing selection at larger `N`, [KCentreRadius()] has a matrix-free path.
 #'
-#' @param k Integer number of centres, `1 <= k <= nrow(d)`.
-#' @param d A `dist` object or a square symmetric numeric distance matrix.
+#' @param k Integer specifying maximum number of centres to identify,
+#' `1 <= k <= nrow(d)`.
+#' @param d `dist` object or a square symmetric numeric distance matrix.
 #' @param nstart Integer; how many deterministic peripheral seeds to try, keeping
 #'   the lowest-radius result. Default `1`. Ignored if `seeds` is supplied.
 #' @param effort Integer; controls the Gonzalez floor that keeps the result no

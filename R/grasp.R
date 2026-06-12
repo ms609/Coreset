@@ -289,9 +289,6 @@
 #' @param plateau Integer; stop after this many consecutive GRASP
 #'   iterations without an improvement to the best elite objective. The
 #'   primary, deterministic stopping criterion. Default 100.
-#' @param maxIter Optional integer hard cap on GRASP refinement iterations
-#'   (excluding the elite-set construction). `NULL` (default) leaves
-#'   `plateau` in sole control.
 #' @param eliteSize Size of the elite set |ES|. Default 10.
 #' @param alpha RCL threshold; `alpha = 1` is pure greedy, `alpha = 0`
 #'   uniform random. Default 0.8.
@@ -321,8 +318,8 @@
 #' res <- Grasp(5L, dist(pts), plateau = 20L, eliteSize = 4L)
 #' res
 #' @export
-Grasp <- function(k, d, plateau = 100L, maxIter = NULL,
-                    eliteSize = 10L, alpha = 0.8, maxSeconds = Inf) {
+Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
+                  maxSeconds = Inf) {
   d <- .AsDistMatrix(d)
   n <- nrow(d)
   k <- as.integer(k)
@@ -331,12 +328,6 @@ Grasp <- function(k, d, plateau = 100L, maxIter = NULL,
   stopifnot(eliteSize >= 1L)
   plateau <- as.integer(plateau)
   stopifnot(plateau >= 1L)
-  if (is.null(maxIter)) {
-    maxIter <- .Machine$integer.max
-  } else {
-    maxIter <- as.integer(maxIter)
-    stopifnot(maxIter >= 0L)
-  }
   if (!is.numeric(maxSeconds) || length(maxSeconds) != 1L ||
       is.na(maxSeconds) || maxSeconds <= 0) {
     stop("`maxSeconds` must be a single positive numeric (or Inf)")
@@ -349,7 +340,7 @@ Grasp <- function(k, d, plateau = 100L, maxIter = NULL,
     stop("`alpha` must be a single number in [0, 1]")
   }
 
-  out <- Grasp_cpp(d, k, plateau, maxIter, eliteSize,
+  out <- Grasp_cpp(d, k, plateau, .Machine$integer.max, eliteSize,
                      as.double(alpha), as.double(maxSeconds))
   # Return:
   .AsMaxMinSelection(structure(
