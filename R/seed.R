@@ -290,8 +290,7 @@ PickPoint <- function(d = NULL, points = NULL,
 #'   `"random_furthest"` is in `anchors`.
 #' @return `.GonzEnsemble()` returns an integer vector of selected indices with attributes.
 #' @keywords internal
-.GonzEnsemble <- function(d, m, anchors = "peripheral",
-                          nSeeds = 8L) {
+.GonzEnsemble <- function(d, m, anchors = "peripheral", nSeeds = 8L) {
   d <- .AsDistMatrix(d)
   m <- as.integer(m)
   if (length(m) != 1L || is.na(m) || m < 0L) {

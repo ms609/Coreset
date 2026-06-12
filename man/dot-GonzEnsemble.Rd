@@ -4,7 +4,7 @@
 \alias{.GonzEnsemble}
 \title{Ensemble Gonzalez over cheap peripheral-anchor strategies (distance matrix)}
 \usage{
-.GonzEnsemble(d, m, anchors = "peripheral", nseeds = 8L)
+.GonzEnsemble(d, m, anchors = "peripheral", nSeeds = 8L)
 }
 \arguments{
 \item{d}{Square numeric distance matrix (already coerced).}
@@ -13,7 +13,7 @@
 
 \item{anchors}{Character vector of anchor names.}
 
-\item{nseeds}{Integer number of distinct random-furthest seeds to draw when
+\item{nSeeds}{Integer number of distinct random-furthest seeds to draw when
 \code{"random_furthest"} is in \code{anchors}.}
 }
 \value{
@@ -23,7 +23,7 @@
 Runs Gonzalez from each requested peripheral anchor and returns the subset
 maximising \eqn{T_k}. Internal driver for the ensemble path of \code{\link[=FarFirst]{FarFirst()}}
 (triggered when \code{strategy} is a character vector of length > 1 or
-\code{"random_furthest"}). The \code{"random_furthest"} token draws \code{nseeds} distinct
+\code{"random_furthest"}). The \code{"random_furthest"} token draws \code{nSeeds} distinct
 furthest-point seeds via \code{\link[=.DrawDistinctSeeds]{.DrawDistinctSeeds()}}. The returned vector carries
 \code{strategy_results} and \code{winning_strategy} (character vector of all tied-best
 strategies, with random starts labelled \code{random_furthest1},

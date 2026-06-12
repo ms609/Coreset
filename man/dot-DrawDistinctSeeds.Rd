@@ -4,31 +4,29 @@
 \alias{.DrawDistinctSeeds}
 \title{Draw distinct furthest-point seeds from random pivots}
 \usage{
-.DrawDistinctSeeds(seedFn, nPts, nseeds, maxDraws = NULL, missLimit = NULL)
+.DrawDistinctSeeds(SeedFunc, nPts, nSeeds, maxDraws = NULL)
 }
 \arguments{
-\item{seedFn}{Function mapping a pivot index to its furthest-point seed index.}
+\item{SeedFunc}{Function mapping a pivot index to its furthest-point seed index.}
 
 \item{nPts}{Integer number of points.}
 
-\item{nseeds}{Integer target number of distinct seeds (\verb{>= 1}).}
+\item{nSeeds}{Integer target number of distinct seeds (\verb{>= 1}).}
 
-\item{maxDraws}{Integer absolute draw budget. Default \code{max(40 * nseeds, 100)}.}
-
-\item{missLimit}{Integer consecutive-miss limit. Default \code{max(8 * nseeds, 30)}.}
+\item{maxDraws}{Integer cap on the number of distinct pivots tried.
+Default \code{max(40 * nSeeds, 100)}.}
 }
 \value{
-\code{.DrawDistinctSeeds()} returns an integer vector of distinct seed indices (length in \verb{[1, nseeds]}).
+\code{.DrawDistinctSeeds()} returns an integer vector of distinct seed indices (length in \verb{[1, nSeeds]}).
 }
 \description{
 Used by \code{\link[=.GonzEnsemble]{.GonzEnsemble()}} and \code{\link[=.GonzEnsembleFromPoints]{.GonzEnsembleFromPoints()}} to expand the
-\code{"random_furthest"} token (see \code{\link[=FarFirst]{FarFirst()}}):
-repeatedly draws a random pivot with the session RNG, resolves its
-furthest-point seed via \code{seedFn}, and collects distinct seed indices until
-\code{nseeds} are found. Two bounds stop the loop when the reachable seed pool is
-smaller than \code{nseeds}: a consecutive-miss limit (the pool is likely exhausted
-once many draws in a row yield only already-seen seeds) and an absolute draw
-budget. Returns between 1 and \code{nseeds} distinct indices; set a seed
+\code{"random_furthest"} token (see \code{\link[=FarFirst]{FarFirst()}}): walks distinct random pivots
+(a partial shuffle of \code{1:nPts}, so no pivot is ever tried twice), resolves
+each pivot's furthest-point seed via \code{SeedFunc}, and collects distinct seed
+indices until \code{nSeeds} are found or the draw budget is spent. A \code{maxDraws}
+cap bounds the work when the reachable seed pool is smaller than \code{nSeeds}.
+Returns between 1 and \code{nSeeds} distinct indices (ascending); set a seed
 (\code{set.seed()}) for a reproducible set.
 }
 \keyword{internal}

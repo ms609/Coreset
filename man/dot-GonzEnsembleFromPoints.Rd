@@ -4,7 +4,7 @@
 \alias{.GonzEnsembleFromPoints}
 \title{Coordinate (matrix-free) multi-anchor Gonzalez ensemble}
 \usage{
-.GonzEnsembleFromPoints(points, m, anchors = "random_furthest", nseeds = 8L)
+.GonzEnsembleFromPoints(points, m, anchors = "random_furthest", nSeeds = 8L)
 }
 \arguments{
 \item{points}{A \code{double} \verb{N x dim} coordinate matrix.}
@@ -13,7 +13,7 @@
 
 \item{anchors}{Character vector of anchor names.}
 
-\item{nseeds}{Integer number of distinct random-furthest seeds to draw when
+\item{nSeeds}{Integer number of distinct random-furthest seeds to draw when
 \code{"random_furthest"} is in \code{anchors}.}
 }
 \value{

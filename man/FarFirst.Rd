@@ -10,7 +10,7 @@ FarFirst(
   points = NULL,
   N = NULL,
   strategy = "random_furthest",
-  nseeds = 8L
+  nSeeds = 8L
 )
 }
 \arguments{
@@ -35,7 +35,7 @@ closure; ignored for the matrix and coordinate paths.}
 Pass the name of one or more seeding strategies described in \code{\link[=PickPoint]{PickPoint()}}
 to run each strategy and return the best solution.}
 
-\item{nseeds}{Integer: number of distinct seeds to draw under the (default)
+\item{nSeeds}{Integer: number of distinct seeds to draw under the (default)
 \code{"random_furthest"} strategy.}
 }
 \value{
@@ -70,7 +70,7 @@ d <- dist(pts)
 FarFirst(5L, d)
 
 # More random-furthest starts:
-FarFirst(5L, d, nseeds = 15L)
+FarFirst(5L, d, nSeeds = 15L)
 
 # Custom two-anchor ensemble:
 FarFirst(5L, d, strategy = c("diameter", "anti_medoid"))

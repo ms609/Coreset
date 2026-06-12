@@ -21,7 +21,7 @@ the lowest-radius result. Default \code{1}.}
 \item{effort}{Integer; controls the Gonzalez floor that keeps the result no
 worse than the 2-approximation. \code{0} disables it (raw CDSh, fastest, no
 guarantee); \code{1} (default) runs one deterministic peripheral Gonzalez pass;
-\verb{> 1} runs a distinct-seed Gonzalez restart with \code{nseeds = effort} (a tighter
+\verb{> 1} runs a distinct-seed Gonzalez restart with \code{nSeeds = effort} (a tighter
 floor that draws on the session RNG -- call \code{\link[=set.seed]{set.seed()}} to reproduce).}
 }
 \value{
