@@ -234,9 +234,7 @@
 
 #' Peripheral seed index for Gonzalez farthest-first selection
 #'
-#' Returns the index of a single deterministic peripheral seed, the starting
-#' point used by [FarFirst()] under the corresponding `seed` strategy. Useful
-#' when composing a custom selection pass.
+#' Returns the index of a single element, used to seed [FarFirst()].
 #'
 #' Anchors:
 #' \describe{
