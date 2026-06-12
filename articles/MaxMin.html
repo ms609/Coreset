@@ -228,14 +228,10 @@
 <div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">picksDA</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/DropAdd.html">DropAdd</a></span><span class="op">(</span><span class="va">eurodist</span>, k <span class="op">=</span> <span class="fl">6L</span>, plateau <span class="op">=</span> <span class="fl">500L</span><span class="op">)</span></span>
 <span></span>
+<span><span class="va">picksDA</span></span>
+<span><span class="co">#&gt; 6 elements (1 2 5 12 20 21) selected by DropAdd tabu search, each at distance &gt;= 1294</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/labels.html" class="external-link">labels</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span><span class="op">[</span><span class="va">picksDA</span><span class="op">]</span></span>
-<span><span class="co">#&gt; [1] "Athens"    "Barcelona" "Cherbourg" "Lisbon"    "Stockholm" "Vienna"</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">picksDA</span>, <span class="st">"score"</span><span class="op">)</span>  <span class="co"># T_k achieved</span></span>
-<span><span class="co">#&gt; [1] 1294</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">picksDA</span>, <span class="st">"iters"</span><span class="op">)</span>      <span class="co"># iterations completed</span></span>
-<span><span class="co">#&gt; [1] 516</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">picksDA</span>, <span class="st">"time_s"</span><span class="op">)</span>     <span class="co"># wall-clock seconds</span></span>
-<span><span class="co">#&gt; [1] 0.001</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "Athens"    "Barcelona" "Cherbourg" "Lisbon"    "Stockholm" "Vienna"</span></span></code></pre></div>
 </div>
 <p>The algorithm terminates after <code>plateau</code> iterations do not improve T<sub>k</sub>. Where <em>N</em> is too large for a distance matrix to fit in memory (roughly N &gt; 46 000), pass a coordinate matrix via <code>DropAdd(points = ...)</code>.</p>
 </section><section class="level2"><h2 id="grasp-with-path-relinking">GRASP with path relinking<a class="anchor" aria-label="anchor" href="#grasp-with-path-relinking"></a>
@@ -245,11 +241,10 @@
 <div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
 <span><span class="va">res_gr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Grasp.html">Grasp</a></span><span class="op">(</span><span class="va">eurodist</span>, k <span class="op">=</span> <span class="fl">6L</span>, plateau <span class="op">=</span> <span class="fl">50L</span><span class="op">)</span></span>
-<span></span>
+<span><span class="va">res_gr</span></span>
+<span><span class="co">#&gt; 6 elements (1 2 4 12 20 21) selected by GRASP with path-relinking, each at distance &gt;= 1305</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/labels.html" class="external-link">labels</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span><span class="op">[</span><span class="va">res_gr</span><span class="op">]</span></span>
 <span><span class="co">#&gt; [1] "Athens"    "Barcelona" "Calais"    "Lisbon"    "Stockholm" "Vienna"</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">res_gr</span>, <span class="st">"score"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 1305</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">res_gr</span>, <span class="st">"pr_calls"</span><span class="op">)</span>   <span class="co"># path-relinking calls performed</span></span>
 <span><span class="co">#&gt; [1] 90</span></span></code></pre></div>
 </div>

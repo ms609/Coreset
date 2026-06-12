@@ -169,14 +169,10 @@ from the selection; it typically reaches ≈ 99 % of the optimal T_(k).
 
 picksDA <- DropAdd(eurodist, k = 6L, plateau = 500L)
 
+picksDA
+#> 6 elements (1 2 5 12 20 21) selected by DropAdd tabu search, each at distance >= 1294
 labels(eurodist)[picksDA]
 #> [1] "Athens"    "Barcelona" "Cherbourg" "Lisbon"    "Stockholm" "Vienna"
-attr(picksDA, "score")  # T_k achieved
-#> [1] 1294
-attr(picksDA, "iters")      # iterations completed
-#> [1] 516
-attr(picksDA, "time_s")     # wall-clock seconds
-#> [1] 0.001
 ```
 
 The algorithm terminates after `plateau` iterations do not improve
@@ -200,11 +196,10 @@ reproducible run:
 
 set.seed(42)
 res_gr <- Grasp(eurodist, k = 6L, plateau = 50L)
-
+res_gr
+#> 6 elements (1 2 4 12 20 21) selected by GRASP with path-relinking, each at distance >= 1305
 labels(eurodist)[res_gr]
 #> [1] "Athens"    "Barcelona" "Calais"    "Lisbon"    "Stockholm" "Vienna"
-attr(res_gr, "score")
-#> [1] 1305
 attr(res_gr, "pr_calls")   # path-relinking calls performed
 #> [1] 90
 ```

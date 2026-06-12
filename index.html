@@ -52,14 +52,17 @@
 </h1></div>
 <!-- badges: start -->
 
-<p><code>MaxMin</code> provides solvers to select a dispersed subsample of points in order to maxmize coverage.</p>
+<p><code>MaxMin</code> implements algorithms that select a dispersed subsample of points that maxmizes coverage of a larger set, under one of two objectives:</p>
 <p>The <strong>Max-Min Diversity Problem</strong> (MMDP, the discrete <em>p</em>-dispersion objective) maximises separation. It selects <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> elements such that the minimum distance between any pair of selected elements is as large as possible; the chosen elements are maximally distinct. This can reward selections that leave the interior of the set unrepresented.</p>
 <p>The <strong>discrete <em>k</em>-centre problem</strong> selects <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> elements such that the largest distance from <em>any</em> element to its nearest selected element is as small as possible. This rewards selections that reach the whole set, such that each point has a nearby representative; it can pull centres inward and collapse well-separated modes onto a central compromise.</p>
-<p>Both problems can be quickly approximated within a factor of two by the greedy farthest-first heuristic <code><a href="reference/FarFirst.html">FarFirst()</a></code>.</p>
 <div class="section level2">
 <h2 id="solvers">Solvers<a class="anchor" aria-label="anchor" href="#solvers"></a>
 </h2>
-<p>MMDP (max-min dispersion):</p>
+<p>The greedy farthest-first heuristic <code><a href="reference/FarFirst.html">FarFirst()</a></code> serves as a quick approximate solver to both problems, providing a solution that is guaranteed to be within a factor of two of the optimum (and typically much closer).</p>
+<p>Better approximations can be accomplished, at the cost of longer runs, by specialized solvers.</p>
+<div class="section level3">
+<h3 id="mmdp-max-min-dispersion">MMDP (max-min dispersion)<a class="anchor" aria-label="anchor" href="#mmdp-max-min-dispersion"></a>
+</h3>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -89,7 +92,11 @@
 </tr>
 </tbody>
 </table>
-<p><em>k</em>-centre (min-max covering):</p>
+</div>
+<div class="section level3">
+<h3 id="k-centre-min-max-covering">
+<em>k</em>-centre (min-max covering)<a class="anchor" aria-label="anchor" href="#k-centre-min-max-covering"></a>
+</h3>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -118,6 +125,7 @@
 <p>Solvers support precomputed distance matrices (<code>dist</code> objects), matrices of Euclidian coordinates, or lists of elements from which distances can be calculated.</p>
 <p><code><a href="reference/MinDist.html">MinDist()</a></code> returns the minimum pairwise distance within a selection (the MMDP objective) and <code><a href="reference/KCentreRadius.html">KCentreRadius()</a></code> returns its covering radius (the <em>k</em>-centre objective).</p>
 </div>
+</div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -128,11 +136,23 @@
 <div class="section level2">
 <h2 id="related-problems">Related problems<a class="anchor" aria-label="anchor" href="#related-problems"></a>
 </h2>
-<p><code>MaxMin</code> selects a subset of existing elements. Several established packages solve neighbouring objectives:</p>
+<p><code>MaxMin</code> selects a subset from a given set of elements. Several established packages solve neighbouring objectives:</p>
 <ul>
-<li><p><strong>k-medoids / k-median</strong> minimises the mean distance from each element to its nearest centre. Implementations include <a href="https://cran.r-project.org/package=cluster" class="external-link"><code>cluster::pam()</code></a>, <code>clara()</code> (PAM / FastPAM / FasterPAM), <a href="https://cran.r-project.org/package=ClusterR" class="external-link"><code>ClusterR::Cluster_Medoids()</code></a>, and <a href="https://cran.r-project.org/package=banditpam" class="external-link"><code>banditpam</code></a>. <code>pam()</code> holds the full <em>O(N²)</em> dissimilarity matrix (and caps at <em>n</em> ≤ 65 536); <code>clara()</code> samples to scale; <code>banditpam</code> is <em>O(N</em> log <em>N)</em> and matrix-free but accepts only coordinate data.</p></li>
-<li><p><strong>k-means</strong> (<a href="https://rdrr.io/r/stats/kmeans.html" class="external-link"><code>stats::kmeans()</code></a>) minimises within-cluster sum of squares around centres that are coordinate means, not data points, so it applies only to Euclidean coordinates. <a href="https://ms609.github.io/TreeDist/reference/KMeansPP.html" class="external-link"><code>TreeDist::KMeansPP()</code></a> shares that objective, differing in its initialisation via D²-weighted seeding, a randomized relative of <code><a href="reference/FarFirst.html">FarFirst()</a></code>’s farthest-first traversal.</p></li>
-<li><p><a href="https://cran.r-project.org/package=maximin" class="external-link"><code>maximin</code></a> constructs continuous space-filling designs by generating new points in a coordinate box to maximise the minimum inter-point distance.</p></li>
+<li>
+<p><strong>k-medoids / k-median</strong> selects elements that minimize the mean distance from each element to its nearest centre. Implementations include:</p>
+<ul>
+<li>
+<a href="https://cran.r-project.org/package=cluster" class="external-link"><code>cluster::pam()</code></a>: generates the full <em>O(N²)</em> dissimilarity matrix, and hence caps at <em>n</em> ≤ 65 536;</li>
+<li>
+<a href="https://cran.r-project.org/package=banditpam" class="external-link"><code>banditpam</code></a>, a matrix-free <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false" form="prefix">(</mo><mi>N</mi><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mi>N</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">O(N \log N)</annotation></semantics></math> implementation restricted to coordinate data;</li>
+<li>
+<code><a href="https://rdrr.io/pkg/cluster/man/clara.html" class="external-link">cluster::clara()</a></code> (PAM / FastPAM / FasterPAM);</li>
+<li>
+<a href="https://cran.r-project.org/package=ClusterR" class="external-link"><code>ClusterR::Cluster_Medoids()</code></a>.</li>
+</ul>
+</li>
+<li><p><strong>k-means</strong> (<a href="https://rdrr.io/r/stats/kmeans.html" class="external-link"><code>stats::kmeans()</code></a>) selects elements so as to minimize the within-cluster sum of squares around centres that are coordinate means, not data points; as such, it applies only to Euclidean coordinates. k-means++ (<a href="https://ms609.github.io/TreeDist/reference/KMeansPP.html" class="external-link"><code>TreeDist::KMeansPP()</code></a>) initializes its selection using D²-weighted seeding, a randomized relative of <code><a href="reference/FarFirst.html">FarFirst()</a></code>’s farthest-first traversal.</p></li>
+<li><p><a href="https://cran.r-project.org/package=maximin" class="external-link"><code>maximin</code></a> solves the related design problem of adding <em>new</em> points at positions that maximize the minimum inter-point distance.</p></li>
 </ul>
 </div>
 </div>
