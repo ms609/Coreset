@@ -23,10 +23,9 @@ ExactKCenter(k, d, maxSeconds = 60)
 
 - maxSeconds:
 
-  Wall-clock budget in seconds for the whole search (shared across the
-  internal IP solves). If it expires before the optimum is proven, the
-  smallest radius proven feasible so far is returned with
-  `proven = FALSE`.
+  Wall-clock budget in seconds for the whole search. If it expires
+  before the optimum is proven, the smallest radius proven feasible so
+  far is returned, with the attribute `proven = FALSE`.
 
 ## Value
 

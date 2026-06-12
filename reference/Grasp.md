@@ -1,24 +1,14 @@
 # GRASP with Path Relinking for the Max-Min Diversity Problem
 
-Solves the Max-Min Diversity Problem (discrete p-dispersion) with the
-GRASP / path-relinking metaheuristic of Resende et al. (2010) , static
-variant (their Fig. 4): a randomised-greedy construction with
-extended-improvement local search builds and maintains an elite set,
-followed by a single pass of path relinking over all elite pairs. On the
-application benchmark this attains the highest \\T_k\\ of the methods in
-this package, at correspondingly higher cost.
+`Grasp()` solves the Max-Min Diversity Problem (discrete p-dispersion)
+with the static variant of the GRASP / path-relinking metaheuristic
+(Resende et al. 2010) . This is the most expensive heuristic in this
+package, and attains correspondingly high-quality selections.
 
 ## Usage
 
 ``` r
-Grasp(
-  k,
-  d,
-  plateau = 100L,
-  eliteSize = 10L,
-  alpha = 0.8,
-  maxSeconds = Inf
-)
+Grasp(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8, maxSeconds = Inf)
 ```
 
 ## Arguments
@@ -82,6 +72,11 @@ it is otherwise an ordinary integer vector.
 
 ## Details
 
+The GRASP with path-relinking algorithm conducts a randomised-greedy
+construction with extended-improvement local search builds; it
+identifies an elite set, then conducts a single pass of path relinking
+over all elite pairs (Resende et al. 2010) .
+
 **Deterministic termination.** The refinement loop stops after `plateau`
 consecutive GRASP iterations that fail to improve the best elite
 objective (rather than after a wall-clock budget). Call
@@ -106,6 +101,11 @@ instances.
 
 ## References
 
+Adummy A (2026). “Some keys from package MaxMin are not avalable.”
+Failed to insert reference with keys: Resende2010, @fig. 4 from package
+= 'MaxMin'. Possible cause - missing REFERENCES.bib in package 'MaxMin'
+or 'MaxMin' not installed.  
+  
 Resende MGC, Martí R, Gallego M, Duarte A (2010). “GRASP and path
 relinking for the max-min diversity problem.” *Computers & Operations
 Research*, **37**(3), 498–508.

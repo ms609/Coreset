@@ -8,13 +8,7 @@ neighbour-evaluation tricks (algorithms 1–4 in Porumbel et al. 2011) .
 ## Usage
 
 ``` r
-DropAdd(
-  k,
-  d = NULL,
-  plateau = 5000L,
-  maxSeconds = Inf,
-  points = NULL
-)
+DropAdd(k, d = NULL, plateau = 5000L, maxSeconds = Inf, points = NULL)
 ```
 
 ## Arguments
