@@ -9,13 +9,13 @@
 \arguments{
 \item{points}{A \code{double} \verb{N x dim} coordinate matrix.}
 
-\item{strategy}{Anchor name; see \code{\link[=MaxMinSeed]{MaxMinSeed()}}. Also accepts \code{"first"} (1).}
+\item{strategy}{Anchor name; see \code{\link[=PickPoint]{PickPoint()}}. Also accepts \code{"first"} (1).}
 }
 \value{
 \code{.MaxMinSeedPoints()} returns an integer seed index.
 }
 \description{
-Coordinate counterpart of \code{\link[=.MaxMinSeed]{.MaxMinSeed()}}; each anchor is computed from the
+Coordinate counterpart of \code{\link[=.PickPoint]{.PickPoint()}}; each anchor is computed from the
 \verb{…FromPoints_cpp} primitives, bit-identical to the matrix path on Euclidean
 data.
 }

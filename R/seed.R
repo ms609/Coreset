@@ -2,7 +2,7 @@
 #
 # Peripheral seeding strategies for Gonzalez farthest-first selection, and the
 # ensemble driver that runs several and keeps the best by MinDist(). The single
-# anchors are exposed through MaxMinSeed(); FarFirst(strategy = ) selects among them
+# anchors are exposed through PickPoint(); FarFirst(strategy = ) selects among them
 # (or the ensemble) and runs the greedy pass.
 
 # The default seed ensemble: the `"random_furthest"` token alone, which draws
@@ -151,10 +151,10 @@
 #' Peripheral seed index for Gonzalez selection (distance matrix)
 #'
 #' @param d Square numeric distance matrix.
-#' @param strategy Anchor name; see [MaxMinSeed()]. Also accepts `"first"` (1).
-#' @return `.MaxMinSeed()` returns an integer seed index.
+#' @param strategy Anchor name; see [PickPoint()]. Also accepts `"first"` (1).
+#' @return `.PickPoint()` returns an integer seed index.
 #' @keywords internal
-.MaxMinSeed <- function(d, strategy) {
+.PickPoint <- function(d, strategy) {
   switch(strategy,
     first   = 1L,
     anti_centroid = stop("`anti_centroid` strategy requires coordinates; supply `points=` ",
@@ -192,11 +192,11 @@
 
 #' Peripheral seed index for Gonzalez selection (coordinates)
 #'
-#' Coordinate counterpart of [.MaxMinSeed()]; each anchor is computed from the
+#' Coordinate counterpart of [.PickPoint()]; each anchor is computed from the
 #' `…FromPoints_cpp` primitives, bit-identical to the matrix path on Euclidean
 #' data.
 #' @param points A `double` `N x dim` coordinate matrix.
-#' @param strategy Anchor name; see [MaxMinSeed()]. Also accepts `"first"` (1).
+#' @param strategy Anchor name; see [PickPoint()]. Also accepts `"first"` (1).
 #' @return `.MaxMinSeedPoints()` returns an integer seed index.
 #' @keywords internal
 .MaxMinSeedPoints <- function(points, strategy) {
@@ -234,7 +234,7 @@
 
 #' Seed to initialize farthest-first selection
 #'
-#' `MaxMinSeed()` implements a range of strategies to select a seed for greedy
+#' `PickPoint()` implements a range of strategies to select a seed for greedy
 #' farthest-first selection. Propitious seeds yield better solutions.
 #'
 #'
@@ -263,17 +263,17 @@
 #'    counterpart of `"rowsum"`.}
 #' }
 #'
-#' @return `MaxMinSeed()` returns an integer that identifies the index of a
+#' @return `PickPoint()` returns an integer that identifies the index of a
 #' proposed seed in `d` or `points`.
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' d <- dist(pts)
-#' MaxMinSeed(d, strategy = "diameter")
-#' FarFirst(5L, d, strategy = MaxMinSeed(d, strategy = "diameter"))
+#' PickPoint(d, strategy = "diameter")
+#' FarFirst(5L, d, strategy = PickPoint(d, strategy = "diameter"))
 #' @seealso [FarFirst()], which seeds and runs the greedy pass in one call.
 #' @export
-MaxMinSeed <- function(d = NULL, points = NULL,
+PickPoint <- function(d = NULL, points = NULL,
                        strategy = c("peripheral", "anti_centroid",
                                     "random_furthest", "diameter",
                                     "anti_medoid", "medoid", "rowsum",
@@ -284,7 +284,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
     return(.MaxMinSeedPoints(points, strategy))
   }
   d <- .AsDistMatrix(d)
-  .MaxMinSeed(d, strategy)
+  .PickPoint(d, strategy)
 }
 
 #' Ensemble Gonzalez over cheap peripheral-anchor strategies (distance matrix)

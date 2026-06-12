@@ -2,7 +2,7 @@
 % Please edit documentation in R/farfirst.R
 \name{FarFirst}
 \alias{FarFirst}
-\title{Deterministic Gonzalez furthest-point selection}
+\title{Greedy farthest-first point selection}
 \usage{
 FarFirst(
   k,
@@ -32,7 +32,7 @@ the distance-column oracle path, where it cannot be inferred from the
 closure; ignored for the matrix and coordinate paths.}
 
 \item{strategy}{Integer or character defining how to seed the greedy pass.
-Pass the name of one or more seeding strategies described in \code{\link[=MaxMinSeed]{MaxMinSeed()}}
+Pass the name of one or more seeding strategies described in \code{\link[=PickPoint]{PickPoint()}}
 to run each strategy and return the best solution.}
 
 \item{nseeds}{Integer: number of distinct seeds to draw under the
@@ -51,7 +51,7 @@ optimal score..
 }
 \description{
 Greedy \emph{k}-centre selection \insertCite{Gonzalez1985,Hochbaum1985}{MaxMin}
-iteratively selects the point furthest from the current selection, a
+iteratively selects the point furthest from the current selection to yield a
 2-approximation to the \emph{k}-centre problem.
 }
 \section{Progress bar}{
@@ -65,16 +65,22 @@ interactive sessions, \code{FALSE} otherwise.
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
+
 # Default: best of eight random-furthest starts (set.seed for reproducibility):
 FarFirst(5L, d)
+
 # More random-furthest starts:
 FarFirst(5L, d, nseeds = 15L)
+
 # Custom two-anchor ensemble:
 FarFirst(5L, d, strategy = c("diameter", "anti_medoid"))
+
 # A single strategy:
 FarFirst(5L, d, strategy = "diameter")
+
 # An explicit start index (integer strategy):
 FarFirst(5L, d, strategy = 1L)
+
 # Matrix-free coordinate path (identical result, O(N) memory):
 FarFirst(5L, points = pts, strategy = 1L)
 
@@ -92,6 +98,6 @@ arrestTypes[idx, ]
 \insertAllCited{}
 }
 \seealso{
-\code{\link[=MaxMinSeed]{MaxMinSeed()}} for the seed indices alone; \code{\link[=DropAdd]{DropAdd()}} and
+\code{\link[=PickPoint]{PickPoint()}} for the seed indices alone; \code{\link[=DropAdd]{DropAdd()}} and
 \code{\link[=ExactMaxMin]{ExactMaxMin()}} for higher-effort solvers.
 }

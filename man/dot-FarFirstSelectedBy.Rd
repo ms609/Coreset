@@ -13,7 +13,7 @@
 \code{.FarFirstSelectedBy()} returns a length-1 character phrase.
 }
 \description{
-A bare single pass is just "Gonzalez farthest-first"; an ensemble pass
+A bare single pass is just "farthest-first"; an ensemble pass
 (which carries \code{winning_strategy} / \code{strategy_results}) additionally names
 the winning strategy and how many were tried.
 }

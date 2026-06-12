@@ -58,7 +58,7 @@
 
 - `FarFirst()`: the subset-size argument is renamed `n` -> `m`, matching the
   other solvers; and the `seed` argument is renamed `method` (matching
-  `MaxMinSeed(method =)`), since it selects a seeding *strategy*, not an RNG
+  `PickPoint(method =)`), since it selects a seeding *strategy*, not an RNG
   seed.
 - `DropAdd()` and `Grasp()`: the `seed` argument is removed. `DropAdd()`'s was
   a documented no-op (the search is RNG-free); for a reproducible `Grasp()` run,
@@ -97,4 +97,4 @@
   dense-matrix-only refinement metaheuristic that attains the highest `T_k`
   of the package's methods on small to medium instances.
 - `MinDist()`: the k-centre objective (minimum pairwise distance).
-- `MaxMinSeed()`: exposes the peripheral seed indices directly.
+- `PickPoint()`: exposes the peripheral seed indices directly.

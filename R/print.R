@@ -76,7 +76,7 @@
 
 #' Name the seeding outcome of a [FarFirst()] selection
 #'
-#' A bare single pass is just "Gonzalez farthest-first"; an ensemble pass
+#' A bare single pass is just "farthest-first"; an ensemble pass
 #' (which carries `winning_strategy` / `strategy_results`) additionally names
 #' the winning strategy and how many were tried.
 #' @param x A `MaxMinSelection` from [FarFirst()].
@@ -96,7 +96,7 @@
       sprintf("%d tied: %s", length(winners), paste(winners, collapse = ", "))
     }
     # Return:
-    sprintf("Gonzalez farthest-first (best of %d strateg%s, %s)",
+    sprintf("farthest-first (best of %d strateg%s, %s)",
             nStrat, plural, detail)
   }
 }

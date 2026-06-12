@@ -23,7 +23,7 @@ test_that("the ensemble summary names the winning strategy and count", {
   sel <- FarFirst(6L, dat$d)               # default: 8 random-furthest starts
   line <- format(sel)
   expect_match(line, "^6 elements \\([0-9 ]+\\) selected by ")
-  expect_match(line, "Gonzalez farthest-first \\(best of [0-9]+ strategies")
+  expect_match(line, "farthest-first \\(best of [0-9]+ strategies")
   expect_match(line, "each at distance >= ")
 })
 
@@ -31,7 +31,7 @@ test_that("a single pass omits the ensemble clause", {
   dat <- MakeData(N = 30)
   sel <- FarFirst(6L, dat$d, strategy = "diameter")
   line <- format(sel)
-  expect_match(line, "selected by Gonzalez farthest-first, each at distance >= ")
+  expect_match(line, "selected by farthest-first, each at distance >= ")
   expect_false(grepl("best of", line))
 })
 
@@ -39,7 +39,7 @@ test_that("a single element drops the distance clause (NA score)", {
   dat <- MakeData(N = 30)
   sel <- FarFirst(1L, dat$d, strategy = "medoid")
   line <- format(sel)
-  expect_match(line, "^1 element \\([0-9]+\\) selected by Gonzalez farthest-first$")
+  expect_match(line, "^1 element \\([0-9]+\\) selected by farthest-first$")
   expect_false(grepl("distance", line))
 })
 
@@ -140,7 +140,7 @@ test_that("summary of a single FarFirst pass is just the headline", {
   dat <- MakeData(N = 30)
   out <- capture.output(summary(FarFirst(6L, dat$d, strategy = "diameter")))
   expect_length(out, 1L)
-  expect_match(out, "Gonzalez farthest-first")
+  expect_match(out, "farthest-first")
 })
 
 test_that("summary of DropAdd reports the secondary objective and effort", {

@@ -76,9 +76,9 @@ if (requireNamespace("highs", quietly = TRUE)) {
       FurthestPoint::ExactMaxMin(dm[1:20, 1:20], 4L)$indices)
 } else cat("highs not installed; skipping ExactMaxMin\n")
 
-# MaxMinSeed sanity vs internal anchors
-chk("MaxMinSeed medoid matrix",
-    MaxMin::MaxMinSeed(dm, method = "medoid"),
+# PickPoint sanity vs internal anchors
+chk("PickPoint medoid matrix",
+    MaxMin::PickPoint(dm, method = "medoid"),
     as.integer(which.min(rowSums(dm))))
 
 cat("\nOVERALL:", if (ok) "ALL PARITY CHECKS PASS" else "*** FAILURES ABOVE ***", "\n")

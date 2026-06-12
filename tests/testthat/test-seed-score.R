@@ -1,4 +1,4 @@
-# Tests for MaxMinSeed() and MinDist().
+# Tests for PickPoint() and MinDist().
 
 MakeData <- function(seed = 7, N = 50, dim = 3) {
   set.seed(seed)
@@ -6,31 +6,31 @@ MakeData <- function(seed = 7, N = 50, dim = 3) {
   list(pts = pts, d = as.matrix(dist(pts)))
 }
 
-test_that("MaxMinSeed anchors match their definitions (matrix)", {
+test_that("PickPoint anchors match their definitions (matrix)", {
   dat <- MakeData()
   d <- dat$d
-  expect_identical(MaxMinSeed(d, strategy = "medoid"),
+  expect_identical(PickPoint(d, strategy = "medoid"),
                    as.integer(which.min(rowSums(d))))
-  expect_identical(MaxMinSeed(d, strategy = "rowsum"),
+  expect_identical(PickPoint(d, strategy = "rowsum"),
                    as.integer(which.max(rowSums(d))))
-  expect_identical(MaxMinSeed(d, strategy = "rownorm"),
+  expect_identical(PickPoint(d, strategy = "rownorm"),
                    as.integer(which.max(rowSums(d ^ 2))))
   med <- which.min(rowSums(d))
   dd <- d[, med]; dd[med] <- -Inf
-  expect_identical(MaxMinSeed(d, strategy = "anti_medoid"),
+  expect_identical(PickPoint(d, strategy = "anti_medoid"),
                    as.integer(which.max(dd)))
   dOff <- d; diag(dOff) <- -Inf
-  expect_identical(MaxMinSeed(d, strategy = "diameter"),
+  expect_identical(PickPoint(d, strategy = "diameter"),
                    as.integer(arrayInd(which.max(dOff), dim(dOff))[1L, 1L]))
 })
 
-test_that("MaxMinSeed coordinate path matches the matrix path", {
+test_that("PickPoint coordinate path matches the matrix path", {
   dat <- MakeData()
   for (k in c("peripheral", "random_furthest", "diameter", "anti_medoid",
               "medoid", "rowsum", "rownorm")) {
     # Seed identically so the random_furthest pivot matches across paths.
-    set.seed(1); pt  <- MaxMinSeed(points = dat$pts, strategy = k)
-    set.seed(1); mat <- MaxMinSeed(dat$d, strategy = k)
+    set.seed(1); pt  <- PickPoint(points = dat$pts, strategy = k)
+    set.seed(1); mat <- PickPoint(dat$d, strategy = k)
     expect_identical(pt, mat, info = k)
   }
 })
@@ -39,24 +39,24 @@ test_that("anti_centroid seed is the farthest point from the coordinate mean", {
   dat <- MakeData()
   mu  <- colMeans(dat$pts)
   d2  <- rowSums((dat$pts - rep(mu, each = nrow(dat$pts))) ^ 2)
-  expect_identical(MaxMinSeed(points = dat$pts, strategy = "anti_centroid"),
+  expect_identical(PickPoint(points = dat$pts, strategy = "anti_centroid"),
                    as.integer(which.max(d2)))
   # It has no distance-matrix form.
-  expect_error(MaxMinSeed(dat$d, strategy = "anti_centroid"), "coordinates")
+  expect_error(PickPoint(dat$d, strategy = "anti_centroid"), "coordinates")
   expect_error(FarFirst(5L, dat$d, strategy = "anti_centroid"), "coordinates")
 })
 
 test_that("random_furthest is reproducible under set.seed", {
   dat <- MakeData()
-  set.seed(1); a <- MaxMinSeed(points = dat$pts, strategy = "random_furthest")
-  set.seed(1); b <- MaxMinSeed(points = dat$pts, strategy = "random_furthest")
+  set.seed(1); a <- PickPoint(points = dat$pts, strategy = "random_furthest")
+  set.seed(1); b <- PickPoint(points = dat$pts, strategy = "random_furthest")
   expect_identical(a, b)
 })
 
-test_that("MaxMinSeed validates method", {
+test_that("PickPoint validates method", {
   dat <- MakeData(N = 8)
-  expect_error(MaxMinSeed(dat$d, strategy = "ensemble"))
-  expect_error(MaxMinSeed(dat$d, strategy = "first"))
+  expect_error(PickPoint(dat$d, strategy = "ensemble"))
+  expect_error(PickPoint(dat$d, strategy = "first"))
 })
 
 # ---- MinDist ------------------------------------------------------------
@@ -87,7 +87,7 @@ test_that("MinDist rejects NA and duplicate idx (F-604/F-605)", {
   expect_error(MinDist(idx = c(1L, 1L), points = dat$pts), "duplicate")
 })
 
-# ---- "first" seed (.MaxMinSeed line 16; .MaxMinSeedPoints line 55) ---------
+# ---- "first" seed (.PickPoint line 16; .MaxMinSeedPoints line 55) ---------
 
 test_that("Gonzalez strategy='first' uses index 1 as anchor (both paths)", {
   dat <- MakeData()
@@ -97,15 +97,15 @@ test_that("Gonzalez strategy='first' uses index 1 as anchor (both paths)", {
   expect_identical(rPts[1L], 1L)
 })
 
-# ---- Degenerate diameter (.MaxMinSeed line 31; .MaxMinSeedPoints line 68;
+# ---- Degenerate diameter (.PickPoint line 31; .MaxMinSeedPoints line 68;
 #       .GonzEnsemble AnchorSeed line 206; .GonzEnsembleFromPoints line 328) -
 
 test_that("diameter anchor returns 1 on zero-distance data", {
   # All points at the origin -> all pairwise distances are 0 -> dMax <= 0.
   ptsDegen <- matrix(0, nrow = 5L, ncol = 2L)
   dDegen   <- as.matrix(dist(ptsDegen))
-  expect_identical(MaxMinSeed(dDegen, strategy = "diameter"), 1L)
-  expect_identical(MaxMinSeed(points = ptsDegen, strategy = "diameter"), 1L)
+  expect_identical(PickPoint(dDegen, strategy = "diameter"), 1L)
+  expect_identical(PickPoint(points = ptsDegen, strategy = "diameter"), 1L)
   # Ensemble paths: AnchorSeed("diameter") hits the degenerate branch.
   ensM  <- FarFirst(2L, dDegen, strategy = c("diameter", "rowsum"))
   ensPt <- FarFirst(k = 2L, points = ptsDegen, strategy = c("diameter", "rowsum"))
@@ -142,11 +142,11 @@ test_that(".GonzEnsemble non-first anchor wins when it is the better one", {
   expect_true(found)
 })
 
-# ---- .MaxMinSeed / .MaxMinSeedPoints unknown-method fallthrough -------------
+# ---- .PickPoint / .MaxMinSeedPoints unknown-method fallthrough -------------
 
-test_that(".MaxMinSeed and .MaxMinSeedPoints stop on an unknown method", {
+test_that(".PickPoint and .MaxMinSeedPoints stop on an unknown method", {
   dat <- MakeData()
-  expect_error(MaxMin:::.MaxMinSeed(dat$d, "nope"), "Unknown")
+  expect_error(MaxMin:::.PickPoint(dat$d, "nope"), "Unknown")
   expect_error(MaxMin:::.MaxMinSeedPoints(dat$pts, "nope"), "Unknown")
 })
 

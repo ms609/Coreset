@@ -15,7 +15,7 @@ reference:
     desc: Farthest-first (Gonzalez) selection and its seeding strategies.
     contents:
       - FarFirst
-      - MaxMinSeed
+      - PickPoint
   - title: Max-Min diversity problem solvers
     contents:
       - DropAdd
