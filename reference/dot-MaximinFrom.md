@@ -6,7 +6,7 @@ specified index.
 ## Usage
 
 ``` r
-.MaximinFrom(d, m, first)
+.MaximinFrom(d, k, first)
 ```
 
 ## Arguments
@@ -15,7 +15,7 @@ specified index.
 
   Square pairwise distance matrix.
 
-- m:
+- k:
 
   Integer: target subsample size (`>= 1`).
 
@@ -25,4 +25,4 @@ specified index.
 
 ## Value
 
-Integer vector of length `m` of selected row/col indices.
+Integer vector of length `k` of selected row/col indices.

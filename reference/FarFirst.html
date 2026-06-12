@@ -66,7 +66,7 @@ costlier \(O(N^2)\) anchors (<code>"diameter"</code>, <code>"anti_medoid"</code>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">FarFirst</span><span class="op">(</span></span>
 <span>  d <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  <span class="va">m</span>,</span>
+<span>  <span class="va">k</span>,</span>
 <span>  method <span class="op">=</span> <span class="va">.kDefaultEnsemble</span>,</span>
 <span>  pivots <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  nseeds <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -88,8 +88,8 @@ omitted), and the algorithm treats \(d_{ij}\) and \(d_{ji}\) as
 independent. Ignored when <code>points</code> is supplied.</p></dd>
 
 
-<dt id="arg-m">m<a class="anchor" aria-label="anchor" href="#arg-m"></a></dt>
-<dd><p>Integer: number of points to select. If <code>m &gt; N</code>, all <code>N</code> indices
+<dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
+<dd><p>Integer: number of points to select. If <code>k &gt; N</code>, all <code>N</code> indices
 are returned in Gonzalez (farthest-first) order.</p></dd>
 
 
@@ -146,7 +146,7 @@ available on the distance-column oracle path. Default <code>NULL</code> (use <co
 
 <dt id="arg-points">points<a class="anchor" aria-label="anchor" href="#arg-points"></a></dt>
 <dd><p>Optional <code>N x dim</code> numeric coordinate matrix. When supplied,
-the selection is computed directly from coordinates in <code>O(N * m * dim)</code>
+the selection is computed directly from coordinates in <code>O(N * k * dim)</code>
 time and <code>O(N)</code> memory, never materialising the <code>N x N</code> distance matrix
 (<code>d</code> is then unused). For Euclidean data the returned indices are
 identical to the matrix path. Only complete (non-<code>NA</code>) data is supported.</p></dd>
@@ -167,7 +167,7 @@ Default: <code>TRUE</code> in interactive sessions, <code>FALSE</code> otherwise
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Integer vector of length <code>min(m, N)</code> of selected indices, in
+    <p>Integer vector of length <code>min(k, N)</code> of selected indices, in
 farthest-first (greedy) selection order – <strong>not</strong> sorted (unlike
 <code><a href="DropAdd.html">DropAdd()</a></code>, <code><a href="Grasp.html">Grasp()</a></code> and <code>ExactMaxMin()$indices</code>, which return ascending
 indices). The achieved \(T_k\) (the selection's minimum pairwise
@@ -247,8 +247,8 @@ complete <code>N x N</code> matrix.</p>
 <span class="r-in"><span><span class="fu">FarFirst</span><span class="op">(</span><span class="va">d</span>, <span class="fl">5L</span>, method <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (1 5 24 4 14) selected by Gonzalez farthest-first, each at distance &gt;= 1.701</span>
 <span class="r-in"><span><span class="co"># Matrix-free coordinate path (identical result, O(N) memory):</span></span></span>
-<span class="r-in"><span><span class="fu">FarFirst</span><span class="op">(</span>m <span class="op">=</span> <span class="fl">5L</span>, points <span class="op">=</span> <span class="va">pts</span>, method <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in FarFirst(m = 5L, points = pts, method = 1L):</span> unused argument (m = 5)</span>
+<span class="r-in"><span><span class="fu">FarFirst</span><span class="op">(</span>k <span class="op">=</span> <span class="fl">5L</span>, points <span class="op">=</span> <span class="va">pts</span>, method <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (1 5 24 4 14) selected by Gonzalez farthest-first, each at distance &gt;= 1.701</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Distance-column oracle: supply one column at a time, never the full matrix.</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"USArrests"</span><span class="op">)</span></span></span>
@@ -257,10 +257,13 @@ complete <code>N x N</code> matrix.</p>
 <span class="r-in"><span>  <span class="va">diffs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sweep.html" class="external-link">sweep</a></span><span class="op">(</span><span class="va">arrestTypes</span>, <span class="fl">2</span>, <span class="fu"><a href="https://rdrr.io/r/base/unlist.html" class="external-link">unlist</a></span><span class="op">(</span><span class="va">arrestTypes</span><span class="op">[</span><span class="va">i</span>, <span class="op">]</span><span class="op">)</span>, <span class="st">"-"</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowSums</a></span><span class="op">(</span><span class="va">diffs</span> <span class="op">^</span> <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
-<span class="r-in"><span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu">FarFirst</span><span class="op">(</span><span class="va">StateDist</span>, m <span class="op">=</span> <span class="fl">4L</span>, N <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">arrestTypes</span><span class="op">)</span>, method <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in FarFirst(StateDist, m = 4L, N = nrow(arrestTypes), method = 1L):</span> unused argument (m = 4)</span>
+<span class="r-in"><span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu">FarFirst</span><span class="op">(</span><span class="va">StateDist</span>, k <span class="op">=</span> <span class="fl">4L</span>, N <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">arrestTypes</span><span class="op">)</span>, method <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">arrestTypes</span><span class="op">[</span><span class="va">idx</span>, <span class="op">]</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'idx' not found</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                Murder Assault Rape</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Alabama          13.2     236 21.2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> North Dakota      0.8      45  7.3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> North Carolina   13.0     337 16.1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Washington        4.0     145 26.2</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

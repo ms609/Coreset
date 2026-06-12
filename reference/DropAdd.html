@@ -57,7 +57,7 @@ the streamlined neighbour-evaluation tricks of Algorithms 3 and 4.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">DropAdd</span><span class="op">(</span></span>
 <span>  d <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  <span class="va">m</span>,</span>
+<span>  <span class="va">k</span>,</span>
 <span>  plateau <span class="op">=</span> <span class="fl">5000L</span>,</span>
 <span>  maxIter <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  maxSeconds <span class="op">=</span> <span class="cn">Inf</span>,</span>
@@ -77,8 +77,8 @@ the streamlined neighbour-evaluation tricks of Algorithms 3 and 4.</p>
 Mutually exclusive with <code>points</code>; supply exactly one.</p></dd>
 
 
-<dt id="arg-m">m<a class="anchor" aria-label="anchor" href="#arg-m"></a></dt>
-<dd><p>Integer; subset size, \(2 \le m \le n\).</p></dd>
+<dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
+<dd><p>Integer; subset size, \(2 \le k \le n\).</p></dd>
 
 
 <dt id="arg-plateau">plateau<a class="anchor" aria-label="anchor" href="#arg-plateau"></a></dt>
@@ -131,7 +131,7 @@ and added index sequences are written into it as <code>drops</code> and <code>ad
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>An integer vector of length <code>m</code> containing the 1-based selected
+    <p>An integer vector of length <code>k</code> containing the 1-based selected
 indices <strong>sorted ascending</strong> (unlike <code><a href="FarFirst.html">FarFirst()</a></code>, which returns
 farthest-first order), with attributes:</p><dl><dt>score</dt>
 <dd><p>numeric(1), achieved MaxMin objective

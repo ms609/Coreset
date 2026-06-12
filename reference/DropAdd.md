@@ -11,7 +11,7 @@ the streamlined neighbour-evaluation tricks of Algorithms 3 and 4.
 ``` r
 DropAdd(
   d = NULL,
-  m,
+  k,
   plateau = 5000L,
   maxIter = NULL,
   maxSeconds = Inf,
@@ -29,9 +29,9 @@ DropAdd(
   A `dist` object or square symmetric numeric matrix. Mutually exclusive
   with `points`; supply exactly one.
 
-- m:
+- k:
 
-  Integer; subset size, \\2 \le m \le n\\.
+  Integer; subset size, \\2 \le k \le n\\.
 
 - plateau:
 
@@ -82,7 +82,7 @@ DropAdd(
 
 ## Value
 
-An integer vector of length `m` containing the 1-based selected indices
+An integer vector of length `k` containing the 1-based selected indices
 **sorted ascending** (unlike
 [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md),
 which returns farthest-first order), with attributes:

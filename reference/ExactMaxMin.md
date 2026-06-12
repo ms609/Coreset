@@ -14,7 +14,7 @@ matrix.
 ``` r
 ExactMaxMin(
   d,
-  m,
+  k,
   solver = NULL,
   maxSeconds = 60,
   warmStart = NULL,
@@ -28,9 +28,9 @@ ExactMaxMin(
 
   A `dist` object or a square symmetric numeric distance matrix.
 
-- m:
+- k:
 
-  Integer target subset size, `2 <= m <= nrow(d)`.
+  Integer target subset size, `2 <= k <= nrow(d)`.
 
 - solver:
 
@@ -46,9 +46,9 @@ ExactMaxMin(
 
 - warmStart:
 
-  Optional integer vector: a candidate `m`-subset (1-based indices into
+  Optional integer vector: a candidate `k`-subset (1-based indices into
   `d`) to add to the heuristic warm-start pool, e.g. a selection already
-  computed by another solver. Ignored unless it is a valid `m`-subset.
+  computed by another solver. Ignored unless it is a valid `k`-subset.
   The internal heuristics run regardless; a good `warmStart` can only
   reduce the number of IP solves, never change the proven optimum.
 
@@ -91,7 +91,7 @@ optimum and a proof status. The fields are
 
   Name of the MILP backend used.
 
-- n, m:
+- n, k:
 
   Instance size and target subset size.
 

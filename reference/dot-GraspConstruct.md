@@ -5,7 +5,7 @@ One randomised greedy construction.
 ## Usage
 
 ``` r
-.GraspConstruct(d, m, alpha)
+.GraspConstruct(d, k, alpha)
 ```
 
 ## Arguments
@@ -14,7 +14,7 @@ One randomised greedy construction.
 
   Square distance matrix.
 
-- m:
+- k:
 
   Target subset size.
 
@@ -24,4 +24,4 @@ One randomised greedy construction.
 
 ## Value
 
-Integer vector of length m.
+Integer vector of length k.

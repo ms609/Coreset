@@ -14,7 +14,7 @@ starts from randomly selected peripheral seeds. The deterministic
 ``` r
 FarFirst(
   d = NULL,
-  m,
+  k,
   method = .kDefaultEnsemble,
   pivots = NULL,
   nseeds = NULL,
@@ -34,9 +34,9 @@ FarFirst(
   omitted), and the algorithm treats \\d\_{ij}\\ and \\d\_{ji}\\ as
   independent. Ignored when `points` is supplied.
 
-- m:
+- k:
 
-  Integer: number of points to select. If `m > N`, all `N` indices are
+  Integer: number of points to select. If `k > N`, all `N` indices are
   returned in Gonzalez (farthest-first) order.
 
 - method:
@@ -103,7 +103,7 @@ FarFirst(
 - points:
 
   Optional `N x dim` numeric coordinate matrix. When supplied, the
-  selection is computed directly from coordinates in `O(N * m * dim)`
+  selection is computed directly from coordinates in `O(N * k * dim)`
   time and `O(N)` memory, never materialising the `N x N` distance
   matrix (`d` is then unused). For Euclidean data the returned indices
   are identical to the matrix path. Only complete (non-`NA`) data is
@@ -124,7 +124,7 @@ FarFirst(
 
 ## Value
 
-Integer vector of length `min(m, N)` of selected indices, in
+Integer vector of length `min(k, N)` of selected indices, in
 farthest-first (greedy) selection order – **not** sorted (unlike
 [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md),
 [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) and
@@ -208,8 +208,8 @@ FarFirst(d, 5L, method = "diameter")
 FarFirst(d, 5L, method = 1L)
 #> 5 elements (1 5 24 4 14) selected by Gonzalez farthest-first, each at distance >= 1.701
 # Matrix-free coordinate path (identical result, O(N) memory):
-FarFirst(m = 5L, points = pts, method = 1L)
-#> Error in FarFirst(m = 5L, points = pts, method = 1L): unused argument (m = 5)
+FarFirst(k = 5L, points = pts, method = 1L)
+#> 5 elements (1 5 24 4 14) selected by Gonzalez farthest-first, each at distance >= 1.701
 
 # Distance-column oracle: supply one column at a time, never the full matrix.
 data("USArrests")
@@ -218,8 +218,11 @@ StateDist <- function(i) {
   diffs <- sweep(arrestTypes, 2, unlist(arrestTypes[i, ]), "-")
   sqrt(rowSums(diffs ^ 2))
 }
-idx <- FarFirst(StateDist, m = 4L, N = nrow(arrestTypes), method = 1L)
-#> Error in FarFirst(StateDist, m = 4L, N = nrow(arrestTypes), method = 1L): unused argument (m = 4)
+idx <- FarFirst(StateDist, k = 4L, N = nrow(arrestTypes), method = 1L)
 arrestTypes[idx, ]
-#> Error: object 'idx' not found
+#>                Murder Assault Rape
+#> Alabama          13.2     236 21.2
+#> North Dakota      0.8      45  7.3
+#> North Carolina   13.0     337 16.1
+#> Washington        4.0     145 26.2
 ```

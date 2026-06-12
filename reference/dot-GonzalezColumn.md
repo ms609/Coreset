@@ -7,7 +7,7 @@ Implements the distance-column oracle path of
 greedy step the distances from the newly selected element to all `N`
 elements are obtained from `colFn`, and a running nearest-distance
 vector is maintained, so the `N x N` distance matrix is never
-materialised: `O(N * m)` oracle calls and `O(N)` memory.
+materialised: `O(N * k)` oracle calls and `O(N)` memory.
 
 ## Usage
 
@@ -15,7 +15,7 @@ materialised: `O(N * m)` oracle calls and `O(N)` memory.
 .GonzalezColumn(
   colFn,
   N,
-  m,
+  k,
   first = NULL,
   progress = getOption("MaxMin.progress", interactive())
 )
@@ -34,9 +34,9 @@ materialised: `O(N * m)` oracle calls and `O(N)` memory.
 
   Integer: the total number of elements.
 
-- m:
+- k:
 
-  Integer: number of elements to select. If `m > N`, all `N` indices are
+  Integer: number of elements to select. If `k > N`, all `N` indices are
   returned in Gonzalez (farthest-first) order.
 
 - first:
@@ -52,4 +52,4 @@ materialised: `O(N * m)` oracle calls and `O(N)` memory.
 
 ## Value
 
-Integer vector of length `min(m, N)` of selected indices.
+Integer vector of length `min(k, N)` of selected indices.

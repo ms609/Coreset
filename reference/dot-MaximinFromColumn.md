@@ -9,7 +9,7 @@ the selection is identical to the matrix path on symmetric input.
 ## Usage
 
 ``` r
-.MaximinFromColumn(colFn, N, m, first, progress = FALSE)
+.MaximinFromColumn(colFn, N, k, first, progress = FALSE)
 ```
 
 ## Arguments
@@ -23,7 +23,7 @@ the selection is identical to the matrix path on symmetric input.
 
   Integer element count.
 
-- m:
+- k:
 
   Integer subset size (`>= 2`).
 

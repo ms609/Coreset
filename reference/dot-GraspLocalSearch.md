@@ -18,8 +18,8 @@ if it preserves d\* while reducing the count of pairs at d\*.
 
 - sel:
 
-  Integer vector of size m.
+  Integer vector of size k.
 
 ## Value
 
-Improved integer vector of size m.
+Improved integer vector of size k.

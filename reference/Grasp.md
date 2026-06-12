@@ -13,7 +13,7 @@ this package, at correspondingly higher cost.
 ``` r
 Grasp(
   d,
-  m,
+  k,
   plateau = 100L,
   maxIter = NULL,
   eliteSize = 10L,
@@ -28,9 +28,9 @@ Grasp(
 
   Either a `dist` object or a square symmetric numeric matrix.
 
-- m:
+- k:
 
-  Integer subset size, `2 <= m <= nrow(d)`.
+  Integer subset size, `2 <= k <= nrow(d)`.
 
 - plateau:
 
@@ -61,7 +61,7 @@ Grasp(
 
 ## Value
 
-An integer vector of length `m` (1-based) **sorted ascending** (unlike
+An integer vector of length `k` (1-based) **sorted ascending** (unlike
 [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md),
 which returns farthest-first order) with attributes:
 
@@ -132,8 +132,7 @@ set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 # Call set.seed() before Grasp() for a reproducible run:
 set.seed(1)
-res <- Grasp(dist(pts), m = 5L, plateau = 20L, eliteSize = 4L)
-#> Error in Grasp(dist(pts), m = 5L, plateau = 20L, eliteSize = 4L): argument 2 matches multiple formal arguments
+res <- Grasp(dist(pts), k = 5L, plateau = 20L, eliteSize = 4L)
 res
-#> Error: object 'res' not found
+#> 5 elements (3 4 5 24 25) selected by GRASP with path-relinking, each at distance >= 1.778
 ```
