@@ -14,40 +14,35 @@
 #' Draw distinct furthest-point seeds from random pivots
 #'
 #' Used by [.GonzEnsemble()] and [.GonzEnsembleFromPoints()] to expand the
-#' `"random_furthest"` token (see [FarFirst()]):
-#' repeatedly draws a random pivot with the session RNG, resolves its
-#' furthest-point seed via `seedFn`, and collects distinct seed indices until
-#' `nSeeds` are found. Two bounds stop the loop when the reachable seed pool is
-#' smaller than `nSeeds`: a consecutive-miss limit (the pool is likely exhausted
-#' once many draws in a row yield only already-seen seeds) and an absolute draw
-#' budget. Returns between 1 and `nSeeds` distinct indices; set a seed
+#' `"random_furthest"` token (see [FarFirst()]): walks distinct random pivots
+#' (a partial shuffle of `1:nPts`, so no pivot is ever tried twice), resolves
+#' each pivot's furthest-point seed via `SeedFunc`, and collects distinct seed
+#' indices until `nSeeds` are found or the draw budget is spent. A `maxDraws`
+#' cap bounds the work when the reachable seed pool is smaller than `nSeeds`.
+#' Returns between 1 and `nSeeds` distinct indices (ascending); set a seed
 #' (`set.seed()`) for a reproducible set.
-#' @param seedFn Function mapping a pivot index to its furthest-point seed index.
+#' @param SeedFunc Function mapping a pivot index to its furthest-point seed index.
 #' @param nPts Integer number of points.
 #' @param nSeeds Integer target number of distinct seeds (`>= 1`).
-#' @param maxDraws Integer absolute draw budget. Default `max(40 * nSeeds, 100)`.
-#' @param missLimit Integer consecutive-miss limit. Default `max(8 * nSeeds, 30)`.
+#' @param maxDraws Integer cap on the number of distinct pivots tried.
+#'   Default `max(40 * nSeeds, 100)`.
 #' @return `.DrawDistinctSeeds()` returns an integer vector of distinct seed indices (length in `[1, nSeeds]`).
 #' @keywords internal
-.DrawDistinctSeeds <- function(seedFn, nPts, nSeeds, maxDraws = NULL,
-                               missLimit = NULL) {
+.DrawDistinctSeeds <- function(SeedFunc, nPts, nSeeds, maxDraws = NULL) {
   nSeeds <- as.integer(nSeeds)
-  if (is.null(maxDraws))  maxDraws  <- max(40L * nSeeds, 100L)
-  if (is.null(missLimit)) missLimit <- max(8L * nSeeds, 30L)
-  seen  <- integer(0)
-  draws <- 0L
-  miss  <- 0L
-  while (length(seen) < nSeeds && draws < maxDraws && miss < missLimit) {
-    s <- as.integer(seedFn(sample.int(nPts, 1L)))
-    draws <- draws + 1L
-    if (s %in% seen) {
-      miss <- miss + 1L
-    } else {
-      seen <- c(seen, s)
-      miss <- 0L
+  if (is.null(maxDraws)) maxDraws <- max(40L * nSeeds, 100L)
+  seen  <- logical(nPts)
+  found <- 0L
+  for (r in sample.int(nPts, min(as.integer(maxDraws), nPts))) {
+    s <- SeedFunc(r)
+    if (!seen[s]) {
+      seen[s] <- TRUE
+      found <- found + 1L
+      if (found >= nSeeds) break
     }
   }
-  seen
+  # Return:
+  which(seen)
 }
 
 #' Squared distance of every point to the coordinate anti_centroid
