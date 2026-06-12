@@ -113,24 +113,23 @@
 
 #' Format and print MaxMin solver results
 #'
-#' One-line, human-readable summaries of the objects returned by the MaxMin
-#' solvers. A `MaxMinSelection` (from [FarFirst()], [DropAdd()] and [Grasp()])
-#' reports its size, the selected indices, the algorithm (and, for a
-#' [FarFirst()] ensemble, the winning strategy), and the achieved \eqn{T_k}; a
-#' `MaxMinExact` (from [ExactMaxMin()]) additionally states whether optimality
-#' was proven. `MaxMinExact` extends `MaxMinSelection`
-#' (`class = c("MaxMinExact", "MaxMinSelection")`), so
-#' `inherits(x, "MaxMinSelection")` is `TRUE` for any solver result.
-#' Both objects are otherwise unchanged -- a `MaxMinSelection`
-#' still indexes like the bare integer vector it wraps -- so these methods only
-#' affect display.
+#' Terse summaries of the objects returned by the MaxMin solvers.
+#'
 #' @param x A `MaxMinSelection` or `MaxMinExact` object.
 #' @param ... Ignored; present for S3 compatibility.
-#' @return `print.MaxMin()` returns `x`, invisibly (`print`); a length-1 character string (`format`).
+#' @return
+#' `print.MaxMin()` returns `x`, invisibly. It is called for its side-effect
+#' of printing `format(x)` to the console.
+#' `format.MaxMin()` returns a character string describing a `MaxMinSelection`
+#' (from [FarFirst()], [DropAdd()] and [Grasp()]); it reports its size, the
+#' selected indices, the algorithm (and if applicable strategy),
+#' and the achieved \eqn{T_k}. A `MaxMinExact` (from [ExactMaxMin()]) object
+#' additionally states whether optimality was proven.
+#'
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
-#' FarFirst(5L, dist(pts))
+#' print(FarFirst(5L, dist(pts)))
 #' @name print.MaxMin
 #' @family reporting functions
 #' @export
@@ -262,4 +261,61 @@ summary.MaxMinExact <- function(object, ...) {
   .SummaryField("time", paste(.SummaryNum(object$time_s), "s"), 12L)
   # Return:
   invisible(object)
+}
+
+#' Format and print k-centre solver results
+#'
+#' Terse summaries of the objects returned by [KCentre()]
+#' (`"KCentreSelection"`) and [ExactKCentre()] (`"KCentreExact"`)
+#'
+#' @param x A `"KCentreSelection"` or `"KCentreExact"` object.
+#' @param ... Ignored; present for S3 compatibility.
+#' @return
+#' `print.KCentre()` returns `x`, invisibly. It is called for its side-effect
+#' of printing `format(x)` to the console.
+#' `format.KCentre()` returns a character string describing a `KCentreSelection`;
+#' it reports the centre count, the chosen indices, the method, and the achieved
+#' covering radius (with proof status for the exact solver).
+#'
+#' @name print.KCentre
+#' @family reporting functions
+#' @examples
+#' set.seed(1)
+#' KCentre(4L, dist(matrix(rnorm(60), ncol = 2)))
+#' @export
+format.KCentreSelection <- function(x, ...) {
+  idx <- as.integer(x)
+  nc <- length(idx)
+  sprintf("%d centre%s (%s) by CDSh, covering radius <= %s",
+          nc, if (nc == 1L) "" else "s", .FormatIndexList(idx),
+          format(signif(attr(x, "radius"), 4L)))
+}
+
+#' @rdname print.KCentre
+#' @export
+print.KCentreSelection <- function(x, ...) {
+  cat(format(x, ...), "\n", sep = "")
+  invisible(x)
+}
+
+#' @rdname print.KCentre
+#' @export
+format.KCentreExact <- function(x, ...) {
+  nc <- length(x$indices)
+  status <- if (isTRUE(x$proven)) {
+    sprintf("exact MILP (%s), proven optimal", x$solver)
+  } else {
+    sprintf("exact MILP (%s), unproven incumbent", x$solver)
+  }
+  rel <- if (isTRUE(x$proven)) "=" else "<="
+  sprintf("%d centre%s (%s) by %s, covering radius %s %s",
+          nc, if (nc == 1L) "" else "s", .FormatIndexList(x$indices),
+          status, rel, format(signif(x$radius, 4L)))
+}
+
+#' @rdname print.KCentre
+#' @export
+print.KCentreExact <- function(x, ...) {
+  cat(format(x, ...), "\n", sep = "")
+  invisible(x)
 }

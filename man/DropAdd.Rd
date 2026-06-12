@@ -5,8 +5,8 @@
 \title{DropAdd Tabu Search for the Max-Min Diversity Problem}
 \usage{
 DropAdd(
-  d = NULL,
   k,
+  d = NULL,
   plateau = 5000L,
   maxIter = NULL,
   maxSeconds = Inf,
@@ -15,10 +15,10 @@ DropAdd(
 )
 }
 \arguments{
+\item{k}{Integer; subset size, \eqn{2 \le k \le n}.}
+
 \item{d}{A \code{dist} object or square symmetric numeric matrix.
 Mutually exclusive with \code{points}; supply exactly one.}
-
-\item{k}{Integer; subset size, \eqn{2 \le k \le n}.}
 
 \item{plateau}{Integer; stop after this many consecutive drop-add
 iterations that do not improve the best objective. The primary,

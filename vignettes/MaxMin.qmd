@@ -75,7 +75,7 @@ ffPick <- FarFirst(4L, eurodist)
 as.matrix(eurodist)[ffPick, ffPick]
 
 # Quickly extract the minimum distance for a given selection
-MinDist(ffPick, eurodist)
+MinDist(eurodist, ffPick)
 ```
 
 `FarFirst()` returned the indices of the four cities whose nearest-neighbour
@@ -134,7 +134,7 @@ will be returned.
 ```{r}
 #| label: gonzalez-seeds
 ffPick <- FarFirst(6L, eurodist, strategy = c("diameter", "anti_medoid"))
-MinDist(ffPick, eurodist)
+MinDist(eurodist, ffPick)
 
 attr(ffPick, "winning_strategy")
 ```
@@ -169,7 +169,7 @@ typically reaches ≈ 99 % of the optimal T~k~.
 
 ```{r}
 #| label: dropadd
-daPick <- DropAdd(eurodist, k = 6L, plateau = 500L)
+daPick <- DropAdd(6L, eurodist, plateau = 500L)
 
 daPick
 labels(eurodist)[daPick]
@@ -221,7 +221,7 @@ k   <- 8L
 ```{r}
 #| label: compare-run
 ffPick <- FarFirst(k, d50)
-da50Pick <- DropAdd(d50, k = k, plateau = 500L)
+da50Pick <- DropAdd(k, d50, plateau = 500L)
 set.seed(42)
 gr50Pick <- Grasp(k, d50, plateau = 50L)
 ```
@@ -232,7 +232,7 @@ dispersed selection.
 ```{r}
 #| label: compare-scores
 scores <- c(
-  FarFirst  = MinDist(ffPick, d50),
+  FarFirst  = MinDist(d50, ffPick),
   DropAdd = attr(da50Pick, "score"),
   Grasp   = attr(gr50Pick, "score")
 )
@@ -332,8 +332,8 @@ via the `points` argument:
 
 ```{r}
 #| label: MinDist
-MinDist(ffPick, d50)                               # from dist
-MinDist(ffPick, as.matrix(d50))                    # from square matrix
+MinDist(d50, ffPick)                               # from dist
+MinDist(as.matrix(d50), ffPick)                    # from square matrix
 MinDist(points = pts, idx = ffPick)                # from coordinates
 ```
 
@@ -369,8 +369,8 @@ baseline:
 ```{r}
 #| label: kcentre-radius
 ff <- FarFirst(4L, eurodist, strategy = "peripheral")
-c(KCentre  = KCentreRadius(centres, eurodist),
-  FarFirst = KCentreRadius(ff, eurodist))
+c(KCentre  = KCentreRadius(eurodist, centres),
+  FarFirst = KCentreRadius(eurodist, ff))
 ```
 
 Like `MinDist()`, `KCentreRadius()` also accepts a `points` coordinate matrix,

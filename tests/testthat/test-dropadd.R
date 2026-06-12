@@ -38,7 +38,7 @@ test_that("DropAdd smoke: 20 pts in 5-D, k=5", {
   set.seed(7)
   pts <- matrix(rnorm(20 * 5), ncol = 5)
   d <- dist(pts)
-  res <- DropAdd(d, k = 5L, maxSeconds = 1)
+  res <- DropAdd(5L, d, maxSeconds = 1)
   expect_length(res, 5L)
   expect_equal(length(unique(res)), 5L)
   expect_true(all(res %in% seq_len(20L)))
@@ -54,7 +54,7 @@ test_that("DropAdd construction-only result matches its MaxMin score", {
   set.seed(11)
   pts <- matrix(rnorm(30 * 4), ncol = 4)
   dmat <- as.matrix(dist(pts))
-  res <- DropAdd(dmat, k = 6L, maxIter = 0L)
+  res <- DropAdd(6L, dmat, maxIter = 0L)
   expect_length(res, 6L)
   expect_equal(attr(res, "iters"), 0L)
   # Objective stored equals the actual MaxMin over the returned indices.
@@ -72,8 +72,8 @@ test_that("DropAdd never worsens the constructive solution", {
   geo <- geoEnv$read_mdplib_geo(path)
   dmat <- geoEnv$mdplib_geo_dist(geo)
 
-  cons <- DropAdd(dmat, k = 10L, maxIter = 0L)
-  full <- DropAdd(dmat, k = 10L, plateau = 2000L)
+  cons <- DropAdd(10L, dmat, maxIter = 0L)
+  full <- DropAdd(10L, dmat, plateau = 2000L)
   expect_gte(attr(full, "score"), attr(cons, "score") - 1e-9)
 })
 
@@ -99,7 +99,7 @@ test_that("DropAdd reaches the Geo 100 1 m=10 optimum (89.37)", {
   # Time-budgeted oracle: run the full 10 s, as before, to confirm the search
   # reaches the proven optimum (this is a correctness oracle, not a frozen
   # result, so a wall-clock budget is appropriate here).
-  res <- DropAdd(dmat, k = 10L, maxSeconds = 10, plateau = 100000000L)
+  res <- DropAdd(10L, dmat, maxSeconds = 10, plateau = 100000000L)
   bestKnown <- 89.37
   expect_gte(attr(res, "score"), 0.999 * bestKnown)
   # Returned indices truly achieve the reported objective.
@@ -154,7 +154,7 @@ test_that("DropAdd respects maxSeconds within reasonable slack", {
   dmat <- as.matrix(dist(pts))
   t0 <- Sys.time()
   # Disable stagnation so the wall-clock ceiling is the binding criterion.
-  res <- DropAdd(dmat, k = 20L, maxSeconds = 0.05, plateau = 100000000L)
+  res <- DropAdd(20L, dmat, maxSeconds = 0.05, plateau = 100000000L)
   elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
   expect_lte(attr(res, "time_s"), 1.5)
   expect_lte(elapsed, 2.0)
@@ -171,28 +171,28 @@ test_that("DropAdd is deterministic and validates inputs", {
   # The search is RNG-free, so repeated calls are identical. (The old `seed`
   # argument was a documented no-op and has been removed from the API.)
   set.seed(1)
-  r1 <- DropAdd(dmat, k = 4L, maxIter = 0L)
+  r1 <- DropAdd(4L, dmat, maxIter = 0L)
   set.seed(999)
-  r2 <- DropAdd(dmat, k = 4L, maxIter = 0L)
+  r2 <- DropAdd(4L, dmat, maxIter = 0L)
   attr(r1, "time_s") <- attr(r2, "time_s") <- NULL
   expect_identical(r1, r2, label = "DropAdd is RNG-independent: different seeds give identical result")
 
   # k validation
-  expect_error(DropAdd(dmat, k = 1L),   "2 <= k")
-  expect_error(DropAdd(dmat, k = 25L),  "2 <= k")
+  expect_error(DropAdd(1L, dmat),   "2 <= k")
+  expect_error(DropAdd(25L, dmat),  "2 <= k")
   # plateau validation
-  expect_error(DropAdd(dmat, k = 4L, plateau = 0L),  "plateau")
+  expect_error(DropAdd(4L, dmat, plateau = 0L),  "plateau")
   # maxIter validation
-  expect_error(DropAdd(dmat, k = 4L, maxIter = -1L),  "maxIter")
+  expect_error(DropAdd(4L, dmat, maxIter = -1L),  "maxIter")
   # maxSeconds validation
-  expect_error(DropAdd(dmat, k = 4L, maxSeconds = 0),   "maxSeconds")
-  expect_error(DropAdd(dmat, k = 4L, maxSeconds = NA_real_), "maxSeconds")
+  expect_error(DropAdd(4L, dmat, maxSeconds = 0),   "maxSeconds")
+  expect_error(DropAdd(4L, dmat, maxSeconds = NA_real_), "maxSeconds")
 })
 
 test_that("DropAdd progress = TRUE fires the cli hooks", {
   dmat <- as.matrix(dist(matrix(rnorm(15 * 2), ncol = 2)))
   expect_no_error(suppressMessages(
-    DropAdd(dmat, k = 3L, maxIter = 2L, progress = TRUE)
+    DropAdd(3L, dmat, maxIter = 2L, progress = TRUE)
   ))
 })
 
@@ -200,7 +200,7 @@ test_that("DropAdd rejects an NA distance matrix (FF-001 / T7-08)", {
   # The matrix path coerces via .AsDistMatrix, which now guards against NA so
   # the search cannot silently accept a corrupt matrix.
   naMat <- matrix(c(0, 5, NA, 5, 0, NA, NA, NA, 0), 3L, 3L)
-  expect_error(DropAdd(naMat, k = 3L), "NA")
+  expect_error(DropAdd(3L, naMat), "NA")
 })
 
 # ---------------------------------------------------------------------------
@@ -209,7 +209,7 @@ test_that("DropAdd rejects an NA distance matrix (FF-001 / T7-08)", {
 # ---------------------------------------------------------------------------
 test_that("DropAdd performs no iterations when k == n", {
   dmat <- as.matrix(dist(matrix(rnorm(5 * 2), ncol = 2)))
-  res  <- DropAdd(dmat, k = 5L)
+  res  <- DropAdd(5L, dmat)
   # All 5 points selected, no drop-add move exists.
   expect_length(res, 5L)
   expect_equal(attr(res, "iters"), 0L)
@@ -221,7 +221,7 @@ test_that("DropAdd time budget halts when both other criteria are disabled", {
   # .Machine$integer.max disables both other stopping criteria; only the
   # wall-clock budget can end the loop.
   res <- expect_returns_within(
-    DropAdd(dmat, k = 5L,
+    DropAdd(5L, dmat,
             maxIter = .Machine$integer.max, plateau = .Machine$integer.max,
             maxSeconds = 0.001),
     limit = 5)
@@ -245,7 +245,7 @@ test_that("DropAdd C++ construction covers sumDist tie-break (lines 82-85)", {
   # When A is added, d(P,A)=sqrt(2)==minDist[P] -> line 103 fires too.
   pts <- rbind(c(0,0), c(3,0), c(0,2), c(1,1), c(2,1))
   d   <- as.matrix(dist(pts))
-  res <- DropAdd(d, k = 4L, maxIter = 0L)
+  res <- DropAdd(4L, d, maxIter = 0L)
   expect_length(res, 4L)
   expect_equal(attr(res, "iters"), 0L)
 })
@@ -258,7 +258,7 @@ test_that("DropAdd C++ k=2 covers DROP else-branch (lines 214-215)", {
   # skips the only surviving S member, leaving mns=Inf -> else branch fires.
   ptsRh <- rbind(c(0,0), c(1,1), c(2,0), c(1,-1))
   dRh   <- as.matrix(dist(ptsRh))
-  res <- DropAdd(dRh, k = 2L, maxIter = 4L)
+  res <- DropAdd(2L, dRh, maxIter = 4L)
   expect_length(res, 2L)
 })
 
@@ -272,7 +272,7 @@ test_that("DropAdd C++ main-loop ADD covers tie-break (255-258) and equality (27
   # Construction: ANC -> P -> Q -> R  (ANC has max row-sum).
   pts7 <- rbind(c(0,0), c(4,0), c(0,4), c(10,10), c(1,0), c(3,0), c(3.5,0))
   d7   <- as.matrix(dist(pts7))
-  res <- DropAdd(d7, k = 4L, maxIter = 1L)
+  res <- DropAdd(4L, d7, maxIter = 1L)
   expect_length(res, 4L)
   expect_equal(attr(res, "iters"), 1L)
 })
@@ -318,7 +318,7 @@ test_that("DropAdd C++ trajectory matches frozen golden values (maxIter)", {
   )
   for (mi in names(golden)) {
     g   <- golden[[mi]]
-    res <- DropAdd(M, k = 8L, maxIter = as.integer(mi))
+    res <- DropAdd(8L, M, maxIter = as.integer(mi))
     expect_identical(as.integer(res), as.integer(g$idx), info = paste("maxIter", mi))
     expect_equal(attr(res, "score"),     g$score, tolerance = 1e-12, info = mi)
     expect_equal(attr(res, "secondary"), g$sec,   tolerance = 1e-12, info = mi)
@@ -337,7 +337,7 @@ test_that("DropAdd C++ trajectory matches frozen golden values (plateau)", {
   )
   for (pl in names(golden)) {
     g   <- golden[[pl]]
-    res <- DropAdd(M, k = 8L, plateau = as.integer(pl))
+    res <- DropAdd(8L, M, plateau = as.integer(pl))
     expect_identical(as.integer(res), as.integer(g$idx), info = paste("plateau", pl))
     expect_equal(attr(res, "score"),     g$score, tolerance = 1e-12, info = pl)
     expect_equal(attr(res, "secondary"), g$sec,   tolerance = 1e-12, info = pl)
@@ -349,7 +349,7 @@ test_that("DropAdd secondary attribute equals upper-triangle distance sum", {
   set.seed(2026)
   pts <- matrix(rnorm(20 * 3), ncol = 3)
   dmat <- as.matrix(dist(pts))
-  res <- DropAdd(dmat, k = 5L, maxIter = 20L)
+  res <- DropAdd(5L, dmat, maxIter = 20L)
   # Brute-force the secondary: upper-triangle sum of distances within selection.
   sub <- dmat[res, res]
   expected_secondary <- sum(sub[upper.tri(sub)])

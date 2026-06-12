@@ -38,7 +38,7 @@ test_that("Grasp_cpp == .Grasp_R across seeds and parameters", {
     al  <- grid$alpha[r]
 
     set.seed(s)
-    ref <- MaxMin:::.Grasp_R(d30m, k = 6L, plateau = mni,
+    ref <- MaxMin:::.Grasp_R(6L, d30m, plateau = mni,
                                eliteSize = es, alpha = al)
     set.seed(s)
     ker <- Grasp(d = d30m, k = 6L, plateau = mni, eliteSize = es,
@@ -154,7 +154,7 @@ test_that("Grasp validates maxSeconds", {
 test_that("Grasp survives alpha = 1 (empty-RCL fallback) and matches the R reference", {
   for (s in 1:30) {
     set.seed(s)
-    ref <- MaxMin:::.Grasp_R(d30m, k = 5L, plateau = 15L, eliteSize = 4L,
+    ref <- MaxMin:::.Grasp_R(5L, d30m, plateau = 15L, eliteSize = 4L,
                              alpha = 1)
     set.seed(s)
     ker <- Grasp(d = d30m, k = 5L, plateau = 15L, eliteSize = 4L, alpha = 1)
@@ -175,7 +175,7 @@ test_that("Grasp validates alpha", {
 
 test_that(".Grasp_R stops exactly at maxIter", {
   set.seed(1)
-  ref <- MaxMin:::.Grasp_R(d30m, k = 5L, plateau = 1000L,
+  ref <- MaxMin:::.Grasp_R(5L, d30m, plateau = 1000L,
                               maxIter = 3L, eliteSize = 4L)
   expect_lte(attr(ref, "iters"), 3L)
 })
@@ -251,7 +251,7 @@ test_that(".Grasp_R phase-C path relinking fires lines 422-423", {
 
     # Full run (Phase A + C, no Phase B).
     set.seed(s)
-    res <- MaxMin:::.Grasp_R(d, k = k, plateau = 1000L,
+    res <- MaxMin:::.Grasp_R(k, d, plateau = 1000L,
                                 maxIter = 0L, eliteSize = es, alpha = alpha)
 
     if (attr(res, "score") > phaseABest + 1e-9) {
@@ -298,7 +298,7 @@ test_that("grasp_local_search non-witness critical branch covered (grasp.cpp:193
   # reference; the R reference is known to hit line 193 (all 4 corners are
   # critical, corners 2 and 3 are non-witnesses).
   set.seed(1)
-  ref <- MaxMin:::.Grasp_R(dSq5, k = 4L, plateau = 10L, eliteSize = 4L)
+  ref <- MaxMin:::.Grasp_R(4L, dSq5, plateau = 10L, eliteSize = 4L)
   set.seed(1)
   ker <- Grasp(d = dSq5, k = 4L, plateau = 10L, eliteSize = 4L)
   attr(ker, "time_s") <- attr(ref, "time_s") <- NULL
@@ -321,7 +321,7 @@ test_that(".Grasp_R time budget halts execution (grasp.R line 397)", {
   # .Machine$integer.max disables both other stopping criteria; only the
   # budget can end Phase B.
   res <- expect_returns_within(
-    MaxMin:::.Grasp_R(d30m, k = 6L,
+    MaxMin:::.Grasp_R(6L, d30m,
                       plateau  = .Machine$integer.max,
                       maxIter  = .Machine$integer.max,
                       eliteSize = 4L, maxSeconds = 0.001),

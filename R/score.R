@@ -5,9 +5,9 @@
 #' Returns the minimum pairwise distance among selected points \eqn{T_k}.
 #' A set of points that is more dispersed will exhibit a higher value.
 #'
-#' @param idx Integer vector of selected row/col indices.
 #' @param d Pairwise distance matrix or `dist` object. Ignored when `points`
 #'   is supplied.
+#' @param idx Integer vector of selected row/col indices.
 #' @param points Optional `N x dim` numeric coordinate matrix. When supplied,
 #'   the score is computed from `stats::dist()` on the selected
 #'   sub-coordinates only (`k x k`), never the full `N x N` matrix (`d` is then
@@ -24,9 +24,9 @@
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' d <- dist(pts)
-#' MinDist(FarFirst(5L, d), d)
+#' MinDist(d, FarFirst(5L, d))
 #' @export
-MinDist <- function(idx, d = NULL, points = NULL) {
+MinDist <- function(d = NULL, idx, points = NULL) {
   idx <- as.integer(idx)
   # NA in `idx` previously gave a silent NA on the matrix path but an error on
   # the coordinate path (F-605); duplicate indices made any selection score 0,

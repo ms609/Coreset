@@ -22,25 +22,21 @@
 \item{...}{Ignored; present for S3 compatibility.}
 }
 \value{
-\code{print.MaxMin()} returns \code{x}, invisibly (\code{print}); a length-1 character string (\code{format}).
+\code{print.MaxMin()} returns \code{x}, invisibly. It is called for its side-effect
+of printing \code{format(x)} to the console.
+\code{format.MaxMin()} returns a character string describing a \code{MaxMinSelection}
+(from \code{\link[=FarFirst]{FarFirst()}}, \code{\link[=DropAdd]{DropAdd()}} and \code{\link[=Grasp]{Grasp()}}); it reports its size, the
+selected indices, the algorithm (and if applicable strategy),
+and the achieved \eqn{T_k}. A \code{MaxMinExact} (from \code{\link[=ExactMaxMin]{ExactMaxMin()}}) object
+additionally states whether optimality was proven.
 }
 \description{
-One-line, human-readable summaries of the objects returned by the MaxMin
-solvers. A \code{MaxMinSelection} (from \code{\link[=FarFirst]{FarFirst()}}, \code{\link[=DropAdd]{DropAdd()}} and \code{\link[=Grasp]{Grasp()}})
-reports its size, the selected indices, the algorithm (and, for a
-\code{\link[=FarFirst]{FarFirst()}} ensemble, the winning strategy), and the achieved \eqn{T_k}; a
-\code{MaxMinExact} (from \code{\link[=ExactMaxMin]{ExactMaxMin()}}) additionally states whether optimality
-was proven. \code{MaxMinExact} extends \code{MaxMinSelection}
-(\code{class = c("MaxMinExact", "MaxMinSelection")}), so
-\code{inherits(x, "MaxMinSelection")} is \code{TRUE} for any solver result.
-Both objects are otherwise unchanged -- a \code{MaxMinSelection}
-still indexes like the bare integer vector it wraps -- so these methods only
-affect display.
+Terse summaries of the objects returned by the MaxMin solvers.
 }
 \examples{
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
-FarFirst(5L, dist(pts))
+print(FarFirst(5L, dist(pts)))
 }
 \seealso{
 Other reporting functions:

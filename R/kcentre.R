@@ -59,9 +59,9 @@
 
 # ----- covering-radius score ------------------------------------------------
 
-#' Covering radius of a set of selected centres
+#' Covering radius of a set of centres
 #'
-#' Returns the covering radius of a set of centres: the largest distance from
+#' `KCentreRadius()` computes the covering radius of a set of centres: the largest distance from
 #' any of the `N` points to its nearest centre,
 #' \eqn{R = \max_p \min_{c \in \mathrm{idx}} d(p, c)}. This is the min-max
 #' \emph{k}-centre objective \insertCite{Gonzalez1985}{MaxMin}, the quantity
@@ -71,9 +71,9 @@
 #' selection (the MMDP objective) -- the covering radius is taken over
 #' \emph{all} `N` points and measures how well the centres cover the data.
 #'
-#' @param idx Integer vector of centre indices (`>= 1`).
 #' @param d Pairwise distance matrix or `dist` object. Ignored when `points` is
 #'   supplied.
+#' @param idx Integer vector of centre indices (`>= 1`).
 #' @param points Optional `N x dim` numeric coordinate matrix. When supplied the
 #'   per-point nearest-centre distances are recomputed from coordinates one
 #'   centre column at a time, never materialising the `N x N` matrix (`d` is then
@@ -89,9 +89,9 @@
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' d <- dist(pts)
 #' centres <- KCentre(4L, d)
-#' KCentreRadius(centres, d)
+#' KCentreRadius(d, centres)
 #' @export
-KCentreRadius <- function(idx, d = NULL, points = NULL) {
+KCentreRadius <- function(d = NULL, idx, points = NULL) {
   idx <- as.integer(idx)
   if (anyNA(idx)) {
     stop("`idx` must not contain NA")
@@ -183,9 +183,9 @@ KCentreRadius <- function(idx, d = NULL, points = NULL) {
 #' pts <- matrix(rnorm(120), ncol = 2)
 #' d <- dist(pts)
 #' centres <- KCentre(5L, d)
-#' KCentreRadius(centres, d)
+#' KCentreRadius(d, centres)
 #' # CDSh covers at least as tightly as the Gonzalez 2-approximation:
-#' KCentreRadius(FarFirst(5L, d, strategy = "peripheral"), d)
+#' KCentreRadius(d, FarFirst(5L, d, strategy = "peripheral"))
 #' @export
 KCentre <- function(k, d, nstart = 1L, effort = 1L, seeds = NULL) {
   needSymCheck <- !inherits(d, "dist")          # a dist object is symmetric
@@ -245,7 +245,7 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L, seeds = NULL) {
     } else {
       as.integer(FarFirst(k, d, nseeds = effort))
     }
-    gonzR <- KCentreRadius(gonz, d)
+    gonzR <- KCentreRadius(d, gonz)
     if (gonzR < bestR) {
       bestR <- gonzR
       best <- gonz
@@ -402,7 +402,7 @@ ExactKCentre <- function(k, d, solver = NULL, maxSeconds = 60,
   Pack <- function(indices, proven) {
     indices <- sort(as.integer(indices))
     structure(
-      list(indices = indices, radius = KCentreRadius(indices, d), proven = proven,
+      list(indices = indices, radius = KCentreRadius(d, indices), proven = proven,
            time_s = Elapsed(), solver = solver, n = n, k = k,
            n_centres = length(indices)),
       class = "KCentreExact"
@@ -459,64 +459,7 @@ ExactKCentre <- function(k, d, solver = NULL, maxSeconds = 60,
   Pack(bestWitness, !inconclusive)
 }
 
-# ----- S3 display -----------------------------------------------------------
-
-#' Format and print k-centre solver results
-#'
-#' One-line summaries of the objects returned by [KCentre()]
-#' (`"KCentreSelection"`) and [ExactKCentre()] (`"KCentreExact"`): the centre
-#' count, the chosen indices, the method, and the achieved covering radius (with
-#' proof status for the exact solver). Both objects are otherwise unchanged.
-#' @param x A `"KCentreSelection"` or `"KCentreExact"` object.
-#' @param ... Ignored; present for S3 compatibility.
-#' @return `print.KCentre()` returns `x`, invisibly (`print`); a length-1 character string (`format`).
-#' @name print.KCentre
-#' @family reporting functions
-#' @examples
-#' set.seed(1)
-#' KCentre(4L, dist(matrix(rnorm(60), ncol = 2)))
-#' @export
-format.KCentreSelection <- function(x, ...) {
-  idx <- as.integer(x)
-  nc <- length(idx)
-  sprintf("%d centre%s (%s) by CDSh, covering radius <= %s",
-          nc, if (nc == 1L) "" else "s", .FormatIndexList(idx),
-          format(signif(attr(x, "radius"), 4L)))
-}
-
-#' @rdname print.KCentre
-#' @export
-print.KCentreSelection <- function(x, ...) {
-  cat(format(x, ...), "\n", sep = "")
-  invisible(x)
-}
-
-#' @rdname print.KCentre
-#' @export
-format.KCentreExact <- function(x, ...) {
-  nc <- length(x$indices)
-  status <- if (isTRUE(x$proven)) {
-    sprintf("exact MILP (%s), proven optimal", x$solver)
-  } else {
-    sprintf("exact MILP (%s), unproven incumbent", x$solver)
-  }
-  rel <- if (isTRUE(x$proven)) "=" else "<="
-  sprintf("%d centre%s (%s) by %s, covering radius %s %s",
-          nc, if (nc == 1L) "" else "s", .FormatIndexList(x$indices),
-          status, rel, format(signif(x$radius, 4L)))
-}
-
-#' @rdname print.KCentre
-#' @export
-print.KCentreExact <- function(x, ...) {
-  cat(format(x, ...), "\n", sep = "")
-  invisible(x)
-}
-
-# ----- US-spelling aliases --------------------------------------------------
-# UK spelling (KCentre / ExactKCentre / KCentreRadius) is canonical; these
-# expose the US spelling of each exported k-centre function as an identical
-# alias, so callers using either spelling reach the same function.
+# ----- US spelling aliases --------------------------------------------------
 
 #' @rdname KCentreRadius
 #' @export

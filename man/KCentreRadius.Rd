@@ -5,15 +5,15 @@
 \alias{KCenterRadius}
 \title{Covering radius of a set of selected centres}
 \usage{
-KCentreRadius(idx, d = NULL, points = NULL)
+KCentreRadius(d = NULL, idx, points = NULL)
 
-KCenterRadius(idx, d = NULL, points = NULL)
+KCenterRadius(d = NULL, idx, points = NULL)
 }
 \arguments{
-\item{idx}{Integer vector of centre indices (\verb{>= 1}).}
-
 \item{d}{Pairwise distance matrix or \code{dist} object. Ignored when \code{points} is
 supplied.}
+
+\item{idx}{Integer vector of centre indices (\verb{>= 1}).}
 
 \item{points}{Optional \verb{N x dim} numeric coordinate matrix. When supplied the
 per-point nearest-centre distances are recomputed from coordinates one
@@ -42,7 +42,7 @@ set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
 centres <- KCentre(4L, d)
-KCentreRadius(centres, d)
+KCentreRadius(d, centres)
 }
 \references{
 \insertAllCited{}

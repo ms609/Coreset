@@ -45,7 +45,7 @@ test_that("a single element drops the distance clause (NA score)", {
 
 test_that("DropAdd and Grasp report their own algorithm names", {
   dat <- MakeData(N = 30)
-  da <- DropAdd(dat$d, k = 6L)
+  da <- DropAdd(6L, dat$d)
   expect_s3_class(da, "MaxMinSelection")
   expect_match(format(da), "selected by DropAdd tabu search, each at distance >= ")
   set.seed(1)
@@ -145,7 +145,7 @@ test_that("summary of a single FarFirst pass is just the headline", {
 
 test_that("summary of DropAdd reports the secondary objective and effort", {
   dat <- MakeData(N = 30)
-  out <- capture.output(summary(DropAdd(dat$d, 6L)))
+  out <- capture.output(summary(DropAdd(6L, dat$d)))
   expect_match(out[1], "DropAdd tabu search")
   expect_true(any(grepl("sum of pairwise distances:", out)))
   expect_true(any(grepl("iterations:", out)))

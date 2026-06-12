@@ -124,6 +124,7 @@
 #' neighbour-evaluation tricks
 #' \insertCite{@algorithms 1--4 in @Porumbel2011}{MaxMin}.
 #'
+#' @param k Integer; subset size, \eqn{2 \le k \le n}.
 #' @param d A \code{dist} object or square symmetric numeric matrix.
 #'   Mutually exclusive with \code{points}; supply exactly one.
 #' @param points A numeric \eqn{n \times \mathrm{dim}} coordinate matrix (or an
@@ -133,7 +134,6 @@
 #'   distance matrix, giving \eqn{O(n)} working memory and enabling use at
 #'   \eqn{n} far exceeding the matrix path's ceiling (R's
 #'   \code{as.matrix.dist} overflows at \eqn{n = 46340}).
-#' @param k Integer; subset size, \eqn{2 \le k \le n}.
 #' @param plateau Integer; stop after this many consecutive drop-add
 #'   iterations that do not improve the best objective. The primary,
 #'   deterministic stopping criterion. The search is RNG-free (ties broken by
@@ -167,10 +167,10 @@
 #' @references \insertAllCited{}
 #'
 #' @export
-DropAdd <- function(d = NULL, k, plateau = 5000L, maxIter = NULL,
-                      maxSeconds = Inf,
-                      progress = getOption("MaxMin.progress", interactive()),
-                      points = NULL) {
+DropAdd <- function(k, d = NULL, plateau = 5000L, maxIter = NULL,
+                    maxSeconds = Inf,
+                    progress = getOption("MaxMin.progress", interactive()),
+                    points = NULL) {
   if (!is.null(points) && !is.null(d)) {
     stop("supply `d` or `points`, not both")
   }

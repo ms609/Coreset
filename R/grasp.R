@@ -370,7 +370,7 @@ Grasp <- function(k, d, plateau = 100L, maxIter = NULL,
 # `maxIter` is an optional hard cap; `maxSeconds` an optional ceiling
 # (Inf = off) that leaves the result reproducible.
 #' @keywords internal
-.Grasp_R <- function(d, k, plateau, maxIter = .Machine$integer.max,
+.Grasp_R <- function(k, d, plateau, maxIter = .Machine$integer.max,
                        eliteSize = 10L, alpha = 0.8, maxSeconds = Inf) {
   d <- .AsDistMatrix(d)
   n <- nrow(d)
