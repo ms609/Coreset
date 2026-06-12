@@ -62,26 +62,24 @@ is supplied.</p></dd>
 <dt id="arg-points">points<a class="anchor" aria-label="anchor" href="#arg-points"></a></dt>
 <dd><p>Optional <code>N x dim</code> numeric coordinate matrix. When supplied,
 the score is computed from <code><a href="https://rdrr.io/r/stats/dist.html" class="external-link">stats::dist()</a></code> on the selected
-sub-coordinates only (<code>k x k</code>), never the full <code>N x N</code> matrix (<code>d</code> is then
-unused). For Euclidean data the result is identical to the matrix path.</p></dd>
+sub-coordinates only (<code>k x k</code>).</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p><code>MinDist()</code> returns a numeric scalar; <code>NA_real_</code> if <code>length(idx) &lt; 2</code>.</p>
+    <p><code>MinDist()</code> returns a numeric specifying the minimum distance between
+two selected points (or <code>NA_real_</code>, if <code>length(idx) &lt; 2</code>).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The solvers in this package (<code><a href="FarFirst.html">FarFirst()</a></code>, <code><a href="DropAdd.html">DropAdd()</a></code>, <code><a href="Grasp.html">Grasp()</a></code>)
-already attach the achieved \(T_k\) as a <code>score</code> attribute, so
-<code>MinDist()</code> is mainly for scoring a selection produced elsewhere – a
-matrix-free or externally generated index set – or for re-scoring an
-existing selection against a different distance matrix.</p>
+already attach the achieved \(T_k\) as a <code>score</code> attribute.
+<code>MinDist()</code> allows arbitrary selections to be scored, or an existing
+selection to be scored against a different distance matrix.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="FarFirst.html">FarFirst()</a></code>, <code><a href="DropAdd.html">DropAdd()</a></code>, <code><a href="Grasp.html">Grasp()</a></code> and <code><a href="ExactMaxMin.html">ExactMaxMin()</a></code>, whose
-results already carry the objective.</p></div>
+    <div class="dont-index"><p><code><a href="FarFirst.html">FarFirst()</a></code>, <code><a href="DropAdd.html">DropAdd()</a></code>, <code><a href="Grasp.html">Grasp()</a></code> and <code><a href="ExactMaxMin.html">ExactMaxMin()</a></code>.</p></div>
     </div>
 
     <div class="section level2">

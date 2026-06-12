@@ -125,7 +125,7 @@ Farthest-first (Gonzalez) selection and its seeding strategies.
   Minimum pairwise distance within a selection
 - [`KCentreRadius()`](https://ms609.github.io/MaxMin/reference/KCentreRadius.md)
   [`KCenterRadius()`](https://ms609.github.io/MaxMin/reference/KCentreRadius.md)
-  : Covering radius of a set of selected centres
+  : Covering radius of a set of centres
 
 ## Reporting
 

@@ -1,12 +1,10 @@
 # Format and print k-centre solver results
 
-One-line summaries of the objects returned by
+Terse summaries of the objects returned by
 [`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md)
 (`"KCentreSelection"`) and
 [`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md)
-(`"KCentreExact"`): the centre count, the chosen indices, the method,
-and the achieved covering radius (with proof status for the exact
-solver). Both objects are otherwise unchanged.
+(`"KCentreExact"`)
 
 ## Usage
 
@@ -36,8 +34,11 @@ print(x, ...)
 
 ## Value
 
-`print.KCentre()` returns `x`, invisibly (`print`); a length-1 character
-string (`format`).
+`print.KCentre()` returns `x`, invisibly. It is called for its
+side-effect of printing `format(x)` to the console. `format.KCentre()`
+returns a character string describing a `KCentreSelection`; it reports
+the centre count, the chosen indices, the method, and the achieved
+covering radius (with proof status for the exact solver).
 
 ## See also
 

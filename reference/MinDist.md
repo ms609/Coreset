@@ -24,13 +24,12 @@ MinDist(d = NULL, idx, points = NULL)
 
   Optional `N x dim` numeric coordinate matrix. When supplied, the score
   is computed from [`stats::dist()`](https://rdrr.io/r/stats/dist.html)
-  on the selected sub-coordinates only (`k x k`), never the full `N x N`
-  matrix (`d` is then unused). For Euclidean data the result is
-  identical to the matrix path.
+  on the selected sub-coordinates only (`k x k`).
 
 ## Value
 
-`MinDist()` returns a numeric scalar; `NA_real_` if `length(idx) < 2`.
+`MinDist()` returns a numeric specifying the minimum distance between
+two selected points (or `NA_real_`, if `length(idx) < 2`).
 
 ## Details
 
@@ -38,9 +37,8 @@ The solvers in this package
 ([`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md),
 [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md),
 [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md)) already
-attach the achieved \\T_k\\ as a `score` attribute, so `MinDist()` is
-mainly for scoring a selection produced elsewhere – a matrix-free or
-externally generated index set – or for re-scoring an existing selection
+attach the achieved \\T_k\\ as a `score` attribute. `MinDist()` allows
+arbitrary selections to be scored, or an existing selection to be scored
 against a different distance matrix.
 
 ## See also
@@ -48,8 +46,7 @@ against a different distance matrix.
 [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md),
 [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md),
 [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) and
-[`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md),
-whose results already carry the objective.
+[`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md).
 
 ## Examples
 
