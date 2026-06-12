@@ -1,47 +1,46 @@
 Package: MaxMin
-Title: Maximum-Minimum Diversity and Dispersion Subset Selection
+Title: Maximum-Minimum Diversity and Discrete k-Centre Subset Selection
 Version: 0.0.0.9003
 Authors@R:
-    person("Martin R.", "Smith",
-           email = "martin.smith@durham.ac.uk",
-           role = c("aut", "cre", "cph"),
-           comment = c(ORCID = "0000-0001-5660-1727"))
-Description: Selects a maximally dispersed subset of a fixed set of candidate
-    items under the Max-Min Diversity Problem (MMDP, the discrete p-dispersion
-    objective): maximise the minimum pairwise distance within the chosen
-    subset. Provides a tiered toolbox that operates on a distance matrix, on
-    Euclidean coordinates without materialising the distance matrix, or on an
-    on-demand distance-column oracle for spaces with no coordinate embedding:
-    deterministic Gonzalez farthest-first selection (Gonzalez 1985)
-    <doi:10.1016/0304-3975(85)90224-5> with a choice of peripheral seeding
-    strategies and a robust ensemble default, the DropAdd tabu-search heuristic
-    (Porumbel, Hao & Glover 2011) <doi:10.1007/s10479-011-0898-z>, an exact
-    node-packing integer program (Sayyady & Fathi 2016)
-    <doi:10.1016/j.ejor.2016.02.026>, a GRASP with path-relinking heuristic
-    (Resende, Marti, Gallego & Duarte 2010)
-    <doi:10.1016/j.cor.2008.05.011>, and a local-search polish.
+  person("Martin R.", "Smith",
+         email = "martin.smith@durham.ac.uk",
+         role = c("aut", "cre", "cph"),
+         comment = c(ORCID = "0000-0001-5660-1727"))
+Description: Solves discrete location objectives on a distance matrix or
+  Euclidean coordinate set. The Max-Min Diversity (MMDP / p-dispersion)
+  objective, which maximises the minimum pairwise distance within a selection
+  of k items, is solved by farthest-first selection (Gonzalez 1985)
+  <doi:10.1016/0304-3975(85)90224-5>; the DropAdd tabu-search heuristic
+  (Porumbel, Hao & Glover 2011) <doi:10.1007/s10479-011-0898-z>, GRASP with 
+  path-relinking (Resende, Marti, Gallego & Duarte 2010)
+  <doi:10.1016/j.cor.2008.05.011>, and an exact node-packing integer program
+  (Sayyady & Fathi 2016) <doi:10.1016/j.ejor.2016.02.026>.
+  The discrete k-centre (min-max covering / facility location) objective,
+  which chooses k centres to minimise the largest distance from any point to
+  its nearest centre, is solved via the CDSh heuristic (Garcia-Diaz et al. 
+  2017 <doi:10.1007/s10732-017-9345-x>, 2019 <doi:10.1109/ACCESS.2019.2933875>),
+  and an exact minimum-cover integer program.
 License: GPL (>= 3)
 Encoding: UTF-8
 Language: en-GB
 Depends:
-    R (>= 4.1)
+  R (>= 4.1)
 Imports:
-    cli (>= 3.0.0),
-    Rcpp,
-    Rdpack (>= 0.7),
-    stats
+  cli (>= 3.0.0),
+  Rcpp,
+  Rdpack (>= 0.7),
+  stats
 RdMacros: Rdpack
 Suggests:
-    highs,
-    knitr,
-    Matrix,
-    quarto,
-    rprojroot,
-    spelling,
-    testthat (>= 3.0.0)
+  highs,
+  knitr,
+  Matrix,
+  quarto,
+  rprojroot,
+  spelling,
+  testthat (>= 3.0.0)
 VignetteBuilder: quarto
-LinkingTo:
-    Rcpp
+LinkingTo: Rcpp
 URL: https://ms609.github.com/MaxMin/
 BugReports: https://github.com/ms609/MaxMin/issues
 Config/Needs/benchmark: bench, highs

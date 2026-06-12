@@ -2,8 +2,8 @@
   "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
   "@type": "SoftwareSourceCode",
   "identifier": "MaxMin",
-  "description": "Selects a maximally dispersed subset of a fixed set of candidate items under the Max-Min Diversity Problem (MMDP, the discrete p-dispersion objective): maximise the minimum pairwise distance within the chosen subset. Provides a tiered toolbox that operates on a distance matrix, on Euclidean coordinates without materialising the distance matrix, or on an on-demand distance-column oracle for spaces with no coordinate embedding: deterministic Gonzalez farthest-first selection (Gonzalez 1985) <doi:10.1016/0304-3975(85)90224-5> with a choice of peripheral seeding strategies and a robust ensemble default, the DropAdd tabu-search heuristic (Porumbel, Hao & Glover 2011) <doi:10.1007/s10479-011-0898-z>, an exact node-packing integer program (Sayyady & Fathi 2016) <doi:10.1016/j.ejor.2016.02.026>, a GRASP with path-relinking heuristic (Resende, Marti, Gallego & Duarte 2010) <doi:10.1016/j.cor.2008.05.011>, and a local-search polish.",
-  "name": "MaxMin: Maximum-Minimum Diversity and Dispersion Subset Selection",
+  "description": "Solves discrete location objectives on a distance matrix or Euclidean coordinate set. The Max-Min Diversity (MMDP / p-dispersion) objective, which maximises the minimum pairwise distance within a selection of k items, is solved by farthest-first selection (Gonzalez 1985) <doi:10.1016/0304-3975(85)90224-5>; the DropAdd tabu-search heuristic (Porumbel, Hao & Glover 2011) <doi:10.1007/s10479-011-0898-z>, GRASP with path-relinking (Resende, Marti, Gallego & Duarte 2010) <doi:10.1016/j.cor.2008.05.011>, and an exact node-packing integer program (Sayyady & Fathi 2016) <doi:10.1016/j.ejor.2016.02.026>. The discrete k-centre (min-max covering / facility location) objective, which chooses k centres to minimise the largest distance from any point to its nearest centre, is solved via the CDSh heuristic (Garcia-Diaz et al. 2017 <doi:10.1007/s10732-017-9345-x>, 2019 <doi:10.1109/ACCESS.2019.2933875>), and an exact minimum-cover integer program.",
+  "name": "MaxMin: Maximum-Minimum Diversity and Discrete k-Centre Subset Selection",
   "codeRepository": "https://ms609.github.com/MaxMin/",
   "issueTracker": "https://github.com/ms609/MaxMin/issues",
   "license": "https://spdx.org/licenses/GPL-3.0",
@@ -180,7 +180,7 @@
     },
     "SystemRequirements": null
   },
-  "fileSize": "4730.213KB",
+  "fileSize": "1472.414KB",
   "citation": [
     {
       "@type": "SoftwareSourceCode",
