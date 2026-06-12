@@ -1,4 +1,4 @@
---
+---
 title: "Introduction to MaxMin"
 author: "Martin R. Smith"
 date: today
