@@ -4,17 +4,17 @@
 \alias{.GraspConstruct}
 \title{One randomised greedy construction.}
 \usage{
-.GraspConstruct(d, m, alpha)
+.GraspConstruct(d, k, alpha)
 }
 \arguments{
 \item{d}{Square distance matrix.}
 
-\item{m}{Target subset size.}
+\item{k}{Target subset size.}
 
 \item{alpha}{RCL threshold parameter (alpha=1 -> greedy, alpha=0 -> random).}
 }
 \value{
-Integer vector of length m.
+Integer vector of length k.
 }
 \description{
 One randomised greedy construction.

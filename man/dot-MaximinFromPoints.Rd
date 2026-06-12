@@ -4,12 +4,12 @@
 \alias{.MaximinFromPoints}
 \title{Gonzalez maximin from coordinates (matrix-free)}
 \usage{
-.MaximinFromPoints(points, m, first, mask = 0L)
+.MaximinFromPoints(points, k, first, mask = 0L)
 }
 \arguments{
 \item{points}{A \code{double} \verb{N x dim} coordinate matrix.}
 
-\item{m}{Integer: target subsample size (\verb{>= 1}).}
+\item{k}{Integer: target subsample size (\verb{>= 1}).}
 
 \item{first}{Integer: index of the first selected point.}
 

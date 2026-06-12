@@ -4,14 +4,14 @@
 \alias{.MaximinFromColumn}
 \title{Gonzalez maximin from a distance-column oracle (worker)}
 \usage{
-.MaximinFromColumn(colFn, N, m, first, progress = FALSE)
+.MaximinFromColumn(colFn, N, k, first, progress = FALSE)
 }
 \arguments{
 \item{colFn}{Column oracle; see \code{\link[=FarFirst]{FarFirst()}}.}
 
 \item{N}{Integer element count.}
 
-\item{m}{Integer subset size (\verb{>= 2}).}
+\item{k}{Integer subset size (\verb{>= 2}).}
 
 \item{first}{Integer seed index.}
 }

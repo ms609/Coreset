@@ -6,7 +6,7 @@
 \usage{
 Grasp(
   d,
-  m,
+  k,
   plateau = 100L,
   maxIter = NULL,
   eliteSize = 10L,
@@ -17,7 +17,7 @@ Grasp(
 \arguments{
 \item{d}{Either a \code{dist} object or a square symmetric numeric matrix.}
 
-\item{m}{Integer subset size, \verb{2 <= m <= nrow(d)}.}
+\item{k}{Integer subset size, \verb{2 <= k <= nrow(d)}.}
 
 \item{plateau}{Integer; stop after this many consecutive GRASP
 iterations without an improvement to the best elite objective. The
@@ -37,7 +37,7 @@ uniform random. Default 0.8.}
 the result machine-dependent.}
 }
 \value{
-An integer vector of length \code{m} (1-based) \strong{sorted ascending}
+An integer vector of length \code{k} (1-based) \strong{sorted ascending}
 (unlike \code{\link[=FarFirst]{FarFirst()}}, which returns farthest-first order)
 with attributes:
 \describe{
@@ -82,7 +82,7 @@ set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 # Call set.seed() before Grasp() for a reproducible run:
 set.seed(1)
-res <- Grasp(dist(pts), m = 5L, plateau = 20L, eliteSize = 4L)
+res <- Grasp(dist(pts), k = 5L, plateau = 20L, eliteSize = 4L)
 res
 }
 \references{

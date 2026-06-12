@@ -6,7 +6,7 @@
 \usage{
 DropAdd(
   d = NULL,
-  m,
+  k,
   plateau = 5000L,
   maxIter = NULL,
   maxSeconds = Inf,
@@ -20,7 +20,7 @@ DropAdd(
 \item{d}{A \code{dist} object or square symmetric numeric matrix.
 Mutually exclusive with \code{points}; supply exactly one.}
 
-\item{m}{Integer; subset size, \eqn{2 \le m \le n}.}
+\item{k}{Integer; subset size, \eqn{2 \le k \le n}.}
 
 \item{plateau}{Integer; stop after this many consecutive drop-add
 iterations that do not improve the best objective. The primary,
@@ -57,7 +57,7 @@ Default \code{FALSE} (the C++ fast path). Only applies to the \code{d} path.}
 and added index sequences are written into it as \code{drops} and \code{adds}.}
 }
 \value{
-An integer vector of length \code{m} containing the 1-based selected
+An integer vector of length \code{k} containing the 1-based selected
 indices \strong{sorted ascending} (unlike \code{\link[=FarFirst]{FarFirst()}}, which returns
 farthest-first order), with attributes:
 \describe{

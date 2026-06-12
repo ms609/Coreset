@@ -9,10 +9,10 @@
 \arguments{
 \item{d}{Square distance matrix.}
 
-\item{sel}{Integer vector of size m.}
+\item{sel}{Integer vector of size k.}
 }
 \value{
-Improved integer vector of size m.
+Improved integer vector of size k.
 }
 \description{
 Iterates 1-swap moves on critical elements (those participating in a

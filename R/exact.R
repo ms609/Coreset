@@ -2,18 +2,18 @@
 #
 # Exact solver for the Max-Min Diversity Problem (MMDP = discrete
 # p-dispersion): given an n x n symmetric distance matrix and a target size
-# m, find the m-subset S maximising T_k = min_{i != j in S} d(i, j).
+# k, find the k-subset S maximising T_k = min_{i != j in S} d(i, j).
 #
 # Method: iterated node-packing (Sayyady & Fathi 2016, EJOR 253(1):216-225).
 # The MaxMin optimum is the largest threshold lambda over the achieved
 # distinct pairwise distances such that the threshold graph
 #   G(lambda) = (V, { (i, j) : d(i, j) < lambda })
-# admits an independent set of size >= m. An independent set in G(lambda) is
-# a set of points all pairwise >= lambda apart -- i.e. a feasible m-subset
+# admits an independent set of size >= k. An independent set in G(lambda) is
+# a set of points all pairwise >= lambda apart -- i.e. a feasible k-subset
 # with min-distance >= lambda. At each tested lambda we solve a maximum-
 # independent-set feasibility IP
 #   maximize sum_i x_i  s.t.  x_i + x_j <= 1 for every edge (i, j);  x in {0,1}
-# declaring lambda feasible iff the optimum (the independence number) >= m.
+# declaring lambda feasible iff the optimum (the independence number) >= k.
 #
 # Two structural choices make this practical well beyond toy sizes:
 #
@@ -86,7 +86,7 @@
 }
 
 # Solve one maximum-independent-set feasibility probe on the threshold graph
-# G(lambda) and classify the result against the target size m.
+# G(lambda) and classify the result against the target size k.
 #
 # `ei`, `ej` are the endpoint index vectors of the edges (pairs with
 # d(i, j) < lambda), supplied by the caller from a one-off upper-triangle
@@ -94,17 +94,17 @@
 # matrix (two non-zeros per edge), then sum x is maximised over binary
 # variables. The returned witness is validated independently of the solver
 # status: x is rounded, the selected set is checked to contain no G(lambda)
-# edge, and its size is compared to m. This makes the classification robust to
+# edge, and its size is compared to k. This makes the classification robust to
 # solver status-code or time-limit quirks.
 #
 # Returns list(verdict, witness) where verdict is one of:
-#   "feasible"     -- a validated independent set of size >= m was found
+#   "feasible"     -- a validated independent set of size >= k was found
 #                     (witness = its vertex indices; min-distance >= lambda),
 #   "infeasible"   -- the IP was solved to proven optimality and the maximum
-#                     independent set has size < m (witness = integer(0)),
+#                     independent set has size < k (witness = integer(0)),
 #   "inconclusive" -- the budget expired before either could be established
 #                     (witness = integer(0)).
-.MaxISVerdict <- function(d, n, ei, ej, lambda, m, timeLimit) {
+.MaxISVerdict <- function(d, n, ei, ej, lambda, k, timeLimit) {
   if (!is.finite(timeLimit) || timeLimit <= 0) { # nocov start
     return(list(verdict = "inconclusive", witness = integer(0)))
   } # nocov end
@@ -169,14 +169,14 @@
 #' optimality by iterated node-packing \insertCite{Sayyady2016;textual}{MaxMin}: the optimum is
 #' the largest threshold `lambda`, over the achieved distinct pairwise
 #' distances, for which the threshold graph `G(lambda)` (edges join pairs
-#' closer than `lambda`) contains an independent set of size at least `m`.
+#' closer than `lambda`) contains an independent set of size at least `k`.
 #' Each probe solves a maximum-independent-set integer program with the `highs`
 #' MILP backend, the packing constraints held as a sparse matrix.
 #'
 #' The search is warm-started from a heuristic lower bound (the best of several
 #' [Grasp()] restarts and a [DropAdd()] pass), then gallops upward from that
 #' bound to the first infeasible threshold and bisects the resulting bracket.
-#' When a heuristic already attains the optimum -- common at the small `m` for
+#' When a heuristic already attains the optimum -- common at the small `k` for
 #' which an exact reference is wanted -- a single infeasibility solve certifies
 #' it. The warm start only sets the starting lower bound: the returned optimum
 #' is proven regardless of heuristic quality (a loose seed merely costs extra
@@ -209,7 +209,7 @@
 #'   deliberately returns a list, since it reports both the optimum and a proof
 #'   status. The fields are
 #'   \describe{
-#'     \item{indices}{Integer vector of length `m`, sorted ascending: the
+#'     \item{indices}{Integer vector of length `k`, sorted ascending: the
 #'       selected points.}
 #'     \item{objective}{The achieved `T_k` -- the minimum pairwise distance
 #'       within `indices`. When `proven` is `TRUE` this equals the threshold
@@ -259,7 +259,7 @@ ExactMaxMin <- function(d, k, solver = NULL, maxSeconds = 60,
   # Candidate thresholds: the achieved distinct pairwise distances, ascending.
   # The optimum is necessarily one of these (it is a realised distance), so
   # searching this finite grid is exact. cand[1] (the smallest distance) gives
-  # an edgeless graph, feasible whenever m <= n -- the guaranteed lower bound,
+  # an edgeless graph, feasible whenever k <= n -- the guaranteed lower bound,
   # established without any IP solve.
   cand <- sort(unique(ud))
   nCand <- length(cand)
@@ -273,7 +273,7 @@ ExactMaxMin <- function(d, k, solver = NULL, maxSeconds = 60,
   # independent set of size >= k?
   feas <- function(idx, remaining) {
     lambda <- cand[idx]
-    e <- ud < lambda
+    e <- (ud < lambda)
     .MaxISVerdict(d, n, ui[e], uj[e], lambda, k, remaining)
   }
 

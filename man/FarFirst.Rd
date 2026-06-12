@@ -6,7 +6,7 @@
 \usage{
 FarFirst(
   d = NULL,
-  m,
+  k,
   method = .kDefaultEnsemble,
   pivots = NULL,
   nseeds = NULL,
@@ -22,7 +22,7 @@ accepted; symmetry is not checked (an \code{O(N^2)} check is intentionally
 omitted), and the algorithm treats \eqn{d_{ij}} and \eqn{d_{ji}} as
 independent. Ignored when \code{points} is supplied.}
 
-\item{m}{Integer: number of points to select. If \code{m > N}, all \code{N} indices
+\item{k}{Integer: number of points to select. If \code{k > N}, all \code{N} indices
 are returned in Gonzalez (farthest-first) order.}
 
 \item{method}{Integer or character (scalar or vector); how to seed the
@@ -71,7 +71,7 @@ reproducible selection. When supplied, \code{nseeds} overrides \code{method} and
 available on the distance-column oracle path. Default \code{NULL} (use \code{method}).}
 
 \item{points}{Optional \verb{N x dim} numeric coordinate matrix. When supplied,
-the selection is computed directly from coordinates in \code{O(N * m * dim)}
+the selection is computed directly from coordinates in \code{O(N * k * dim)}
 time and \code{O(N)} memory, never materialising the \verb{N x N} distance matrix
 (\code{d} is then unused). For Euclidean data the returned indices are
 identical to the matrix path. Only complete (non-\code{NA}) data is supported.}
@@ -86,7 +86,7 @@ Default: \code{TRUE} in interactive sessions, \code{FALSE} otherwise
 (\code{getOption("MaxMin.progress", interactive())}).}
 }
 \value{
-Integer vector of length \code{min(m, N)} of selected indices, in
+Integer vector of length \code{min(k, N)} of selected indices, in
 farthest-first (greedy) selection order -- \strong{not} sorted (unlike
 \code{\link[=DropAdd]{DropAdd()}}, \code{\link[=Grasp]{Grasp()}} and \code{ExactMaxMin()$indices}, which return ascending
 indices). The achieved \eqn{T_k} (the selection's minimum pairwise
@@ -145,7 +145,7 @@ FarFirst(d, 5L, method = "diameter")
 # An explicit start index (integer method):
 FarFirst(d, 5L, method = 1L)
 # Matrix-free coordinate path (identical result, O(N) memory):
-FarFirst(m = 5L, points = pts, method = 1L)
+FarFirst(k = 5L, points = pts, method = 1L)
 
 # Distance-column oracle: supply one column at a time, never the full matrix.
 data("USArrests")
@@ -154,7 +154,7 @@ StateDist <- function(i) {
   diffs <- sweep(arrestTypes, 2, unlist(arrestTypes[i, ]), "-")
   sqrt(rowSums(diffs ^ 2))
 }
-idx <- FarFirst(StateDist, m = 4L, N = nrow(arrestTypes), method = 1L)
+idx <- FarFirst(StateDist, k = 4L, N = nrow(arrestTypes), method = 1L)
 arrestTypes[idx, ]
 }
 \references{

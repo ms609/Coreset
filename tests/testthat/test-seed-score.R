@@ -26,12 +26,12 @@ test_that("MaxMinSeed anchors match their definitions (matrix)", {
 
 test_that("MaxMinSeed coordinate path matches the matrix path", {
   dat <- MakeData()
-  for (m in c("peripheral", "random_furthest", "diameter", "anti_medoid",
+  for (k in c("peripheral", "random_furthest", "diameter", "anti_medoid",
               "medoid", "rowsum", "rownorm")) {
     # Seed identically so the random_furthest pivot matches across paths.
-    set.seed(1); pt  <- MaxMinSeed(points = dat$pts, method = m)
-    set.seed(1); mat <- MaxMinSeed(dat$d, method = m)
-    expect_identical(pt, mat, info = m)
+    set.seed(1); pt  <- MaxMinSeed(points = dat$pts, method = k)
+    set.seed(1); mat <- MaxMinSeed(dat$d, method = k)
+    expect_identical(pt, mat, info = k)
   }
 })
 
@@ -93,7 +93,7 @@ test_that("Gonzalez method='first' uses index 1 as anchor (both paths)", {
   dat <- MakeData()
   rMat <- FarFirst(dat$d, 4L, method = "first")
   expect_identical(rMat[1L], 1L)
-  rPts <- FarFirst(m = 4L, points = dat$pts, method = "first")
+  rPts <- FarFirst(k = 4L, points = dat$pts, method = "first")
   expect_identical(rPts[1L], 1L)
 })
 
@@ -108,7 +108,7 @@ test_that("diameter anchor returns 1 on zero-distance data", {
   expect_identical(MaxMinSeed(points = ptsDegen, method = "diameter"), 1L)
   # Ensemble paths: AnchorSeed("diameter") hits the degenerate branch.
   ensM  <- FarFirst(dDegen, 2L, method = c("diameter", "rowsum"))
-  ensPt <- FarFirst(m = 2L, points = ptsDegen, method = c("diameter", "rowsum"))
+  ensPt <- FarFirst(k = 2L, points = ptsDegen, method = c("diameter", "rowsum"))
   expect_length(ensM,  2L)
   expect_length(ensPt, 2L)
 })
@@ -133,7 +133,7 @@ test_that(".GonzEnsemble non-first anchor wins when it is the better one", {
     winner <- if (tkAm > tkD) "anti_medoid" else "diameter"
     bestTk <- max(tkD, tkAm)
     ensM  <- FarFirst(d, n, method = c(loser, winner))
-    ensPt <- FarFirst(m = n, points = pts, method = c(loser, winner))
+    ensPt <- FarFirst(k = n, points = pts, method = c(loser, winner))
     expect_gte(MinDist(d, ensM),  bestTk - 1e-9)
     expect_gte(MinDist(d, ensPt), bestTk - 1e-9)
     found <- TRUE
@@ -152,13 +152,13 @@ test_that(".MaxMinSeed and .MaxMinSeedPoints stop on an unknown method", {
 
 # ---- .GonzEnsemble internal guards (bypassed by FarFirst() validation) -----
 
-test_that(".GonzEnsemble validates m and anchors and handles trivial m", {
+test_that(".GonzEnsemble validates k and anchors and handles trivial k", {
   dat <- MakeData()
   d   <- dat$d
   n   <- nrow(d)
   expect_error(MaxMin:::.GonzEnsemble(d, -1L, "peripheral"), "non-negative")
   expect_error(MaxMin:::.GonzEnsemble(d, 3L, character(0)), "at least one")
-  # m >= nPts: all points returned with score = NA_real_ (FF-005)
+  # k >= nPts: all points returned with score = NA_real_ (FF-005)
   trivial <- MaxMin:::.GonzEnsemble(d, n, "peripheral")
   expect_identical(as.integer(trivial), seq_len(n))
   expect_true(is.na(attr(trivial, "score")))
@@ -167,13 +167,13 @@ test_that(".GonzEnsemble validates m and anchors and handles trivial m", {
 
 # ---- .GonzEnsembleFromPoints internal guards --------------------------------
 
-test_that(".GonzEnsembleFromPoints validates m and anchors and handles trivial m", {
+test_that(".GonzEnsembleFromPoints validates k and anchors and handles trivial k", {
   dat  <- MakeData()
   pts  <- dat$pts
   nPts <- nrow(pts)
   expect_error(MaxMin:::.GonzEnsembleFromPoints(pts, -1L, "peripheral"), "non-negative")
   expect_error(MaxMin:::.GonzEnsembleFromPoints(pts, 3L, character(0)), "at least one")
-  # m >= nPts: all points returned with score = NA_real_ (FF-005)
+  # k >= nPts: all points returned with score = NA_real_ (FF-005)
   trivial <- MaxMin:::.GonzEnsembleFromPoints(pts, nPts, "peripheral")
   expect_identical(as.integer(trivial), seq_len(nPts))
   expect_true(is.na(attr(trivial, "score")))
@@ -194,14 +194,14 @@ test_that(".GonzEnsemble stops when random_furthest only and pivots is empty", {
   )
 })
 
-# ---- m = 1 ensemble on the points path (.GonzEnsembleFromPoints line 360,
+# ---- k = 1 ensemble on the points path (.GonzEnsembleFromPoints line 360,
 #       368) -----------------------------------------------------------------
 
-test_that(".GonzEnsembleFromPoints m=1 propagates NA t_k through all strategies", {
+test_that(".GonzEnsembleFromPoints k=1 propagates NA t_k through all strategies", {
   dat <- MakeData()
   # Each strategy returns one point -> t_k = NA -> is.na(tk) next fires for
   # every non-first strategy (line 360); is.na(bestTk) selects bestI (line 368).
-  res <- FarFirst(m = 1L, points = dat$pts)
+  res <- FarFirst(k = 1L, points = dat$pts)
   expect_length(res, 1L)
   strat <- attr(res, "strategy_results")
   expect_true(all(is.na(vapply(strat, `[[`, numeric(1L), "t_k"))))
@@ -223,7 +223,7 @@ test_that(".GonzEnsemble medoid branch covered via multi-anchor ensemble", {
 test_that(".GonzEnsembleFromPoints medoid/centroid/rownorm branches covered via ensemble", {
   dat <- MakeData()
   # Three anchors only reachable through the points-path ensemble AnchorSeed
-  res <- FarFirst(m = 5L, points = dat$pts,
+  res <- FarFirst(k = 5L, points = dat$pts,
                   method = c("medoid", "centroid", "rownorm"),
                   pivots = integer(0))
   expect_length(res, 5L)

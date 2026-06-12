@@ -4,17 +4,17 @@
 \alias{.MaximinFrom}
 \title{Gonzalez maximin from a single starting index}
 \usage{
-.MaximinFrom(d, m, first)
+.MaximinFrom(d, k, first)
 }
 \arguments{
 \item{d}{Square pairwise distance matrix.}
 
-\item{m}{Integer: target subsample size (\verb{>= 1}).}
+\item{k}{Integer: target subsample size (\verb{>= 1}).}
 
 \item{first}{Integer: index of the first selected point.}
 }
 \value{
-Integer vector of length \code{m} of selected row/col indices.
+Integer vector of length \code{k} of selected row/col indices.
 }
 \description{
 Internal helper: greedy furthest-point selection starting from a specified

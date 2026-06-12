@@ -6,7 +6,7 @@
 \usage{
 ExactMaxMin(
   d,
-  m,
+  k,
   solver = NULL,
   maxSeconds = 60,
   warmStart = NULL,
@@ -16,7 +16,7 @@ ExactMaxMin(
 \arguments{
 \item{d}{A \code{dist} object or a square symmetric numeric distance matrix.}
 
-\item{m}{Integer target subset size, \verb{2 <= m <= nrow(d)}.}
+\item{k}{Integer target subset size, \verb{2 <= k <= nrow(d)}.}
 
 \item{solver}{Solver to use. Currently only \code{"highs"} is implemented;
 \code{NULL} selects it. Other values raise an error.}
@@ -26,9 +26,9 @@ ExactMaxMin(
 optimum is proven, the largest threshold proven feasible so far is
 returned with \code{proven = FALSE}.}
 
-\item{warmStart}{Optional integer vector: a candidate \code{m}-subset (1-based
+\item{warmStart}{Optional integer vector: a candidate \code{k}-subset (1-based
 indices into \code{d}) to add to the heuristic warm-start pool, e.g. a selection
-already computed by another solver. Ignored unless it is a valid \code{m}-subset.
+already computed by another solver. Ignored unless it is a valid \code{k}-subset.
 The internal heuristics run regardless; a good \code{warmStart} can only reduce
 the number of IP solves, never change the proven optimum.}
 
@@ -52,7 +52,7 @@ bound on the optimum.}
 within the budget, \code{FALSE} if it returned an unproven incumbent.}
 \item{time_s}{Wall-clock seconds elapsed.}
 \item{solver}{Name of the MILP backend used.}
-\item{n, m}{Instance size and target subset size.}
+\item{n, k}{Instance size and target subset size.}
 }
 The list has class \code{c("MaxMinExact", "MaxMinSelection")} and prints as a
 one-line summary (size, indices, solver, proof status and achieved \code{T_k};
