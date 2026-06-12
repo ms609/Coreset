@@ -35,15 +35,15 @@ test_that("MaxMinSeed coordinate path matches the matrix path", {
   }
 })
 
-test_that("centroid seed is the farthest point from the coordinate mean", {
+test_that("anti_centroid seed is the farthest point from the coordinate mean", {
   dat <- MakeData()
   mu  <- colMeans(dat$pts)
   d2  <- rowSums((dat$pts - rep(mu, each = nrow(dat$pts))) ^ 2)
-  expect_identical(MaxMinSeed(points = dat$pts, strategy = "centroid"),
+  expect_identical(MaxMinSeed(points = dat$pts, strategy = "anti_centroid"),
                    as.integer(which.max(d2)))
   # It has no distance-matrix form.
-  expect_error(MaxMinSeed(dat$d, strategy = "centroid"), "coordinates")
-  expect_error(FarFirst(5L, dat$d, strategy = "centroid"), "coordinates")
+  expect_error(MaxMinSeed(dat$d, strategy = "anti_centroid"), "coordinates")
+  expect_error(FarFirst(5L, dat$d, strategy = "anti_centroid"), "coordinates")
 })
 
 test_that("random_furthest is reproducible under set.seed", {
@@ -217,12 +217,12 @@ test_that(".GonzEnsemble medoid branch covered via multi-anchor ensemble", {
   expect_true(all(attr(res, "winning_strategy") %in% c("medoid", "peripheral")))
 })
 
-test_that(".GonzEnsembleFromPoints medoid/centroid/rownorm branches covered via ensemble", {
+test_that(".GonzEnsembleFromPoints medoid/anti_centroid/rownorm branches covered via ensemble", {
   dat <- MakeData()
   # Three anchors only reachable through the points-path ensemble AnchorSeed
   res <- FarFirst(k = 5L, points = dat$pts,
-                  strategy = c("medoid", "centroid", "rownorm"))
+                  strategy = c("medoid", "anti_centroid", "rownorm"))
   expect_length(res, 5L)
   expect_true(all(attr(res, "winning_strategy") %in%
-                  c("medoid", "centroid", "rownorm")))
+                  c("medoid", "anti_centroid", "rownorm")))
 })

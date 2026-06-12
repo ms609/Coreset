@@ -6,7 +6,7 @@
 # The reference is the matrix path DropAdd(as.matrix(dist(points))). The two
 # differ only in the construction seed: the matrix path uses Porumbel's
 # max-row-sum seed (O(n^2*dim)), the matrix-free path uses the O(n*dim)
-# farthest-from-centroid proxy. Empirically the proxy picks the SAME seed as
+# farthest-from-anti_centroid proxy. Empirically the proxy picks the SAME seed as
 # Porumbel on ~97-98% of random Gaussian instances (so the whole trajectory is
 # then bit-identical); on the minority where the seeds differ, the final
 # objective is within ~3.7% (worst case observed over ~800 random instances at
@@ -47,7 +47,7 @@ test_that("DropAdd points path: objective equals recomputed min-pairwise distanc
 # ---------------------------------------------------------------------------
 # 2a. Comparable quality to the matrix path on a COINCIDENT-seed instance.
 #
-# On instances where the centroid proxy picks Porumbel's max-row-sum seed
+# On instances where the anti_centroid proxy picks Porumbel's max-row-sum seed
 # (the common case), the matrix-free trajectory matches the matrix path
 # exactly: the on-the-fly Euclidean distances reproduce stats::dist()'s bits,
 # so every argmax resolves to the same index. We assert seed coincidence, then
@@ -199,7 +199,7 @@ test_that("DropAdd points path C++: construction covers sum_dist tie-break (line
 })
 
 test_that("DropAdd points path C++: k=2 covers DROP else-branch (lines 263-264)", {
-  # Rhombus: (0,0),(1,1),(2,0),(1,-1). All from-centroid distances equal ->
+  # Rhombus: (0,0),(1,1),(2,0),(1,-1). All from-anti_centroid distances equal ->
   # seed = index 1 (ties -> smallest). Construction: {(0,0),(2,0)}.
   # Drop (0,0): (2,0) loses its sole selected peer; need_recompute fires;
   # self-mask inside recompute leaves mns=Inf -> else branch (lines 263-264).
@@ -210,7 +210,7 @@ test_that("DropAdd points path C++: k=2 covers DROP else-branch (lines 263-264)"
 
 test_that("DropAdd points path C++: main-loop ADD covers tie-break (304-307) and equality (327)", {
   # 7-point: P=(0,0),Q=(4,0),R=(0,4),ANC=(10,10),X=(1,0),Y=(3,0),W=(3.5,0).
-  # ANC is farthest from centroid -> seed. Construction: ANC->P->Q->R.
+  # ANC is farthest from anti_centroid -> seed. Construction: ANC->P->Q->R.
   # Drop ANC: X and Y tied on min_dist=1; sum_dist[Y]=9>sum_dist[X]~8.12 ->
   # lines 304-307 fire. When Y added: d(Y,W)=0.5==min_dist[W]=0.5 -> line 327.
   pts7 <- rbind(c(0, 0), c(4, 0), c(0, 4), c(10, 10), c(1, 0), c(3, 0), c(3.5, 0))

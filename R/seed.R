@@ -8,15 +8,15 @@
 # The default seed ensemble: the `"random_furthest"` token alone, which draws
 # `nseeds` (default 8) distinct furthest-point seeds via the session RNG and
 # returns the best Gonzalez pass. Set a seed (`set.seed()`) for a reproducible
-# draw. The deterministic anchors (`"centroid"`, `"peripheral"`, ...) remain
+# draw. The deterministic anchors (`"anti_centroid"`, `"peripheral"`, ...) remain
 # available as opt-in `strategy=` options.
 .kDefaultEnsemble <- "random_furthest"
 
 # Seeds available to the ensemble drivers. The matrix path lacks coordinates, so
-# `"centroid"` is reachable only from the coordinate path.
+# `"anti_centroid"` is reachable only from the coordinate path.
 .kMatrixEnsembleSeeds <- c("peripheral", "random_furthest", "diameter",
                            "anti_medoid", "medoid", "rowsum", "rownorm")
-.kPointEnsembleSeeds  <- c("centroid", .kMatrixEnsembleSeeds)
+.kPointEnsembleSeeds  <- c("anti_centroid", .kMatrixEnsembleSeeds)
 
 # Default number of distinct random-furthest seeds.
 .kDefaultNSeeds <- 8L
@@ -60,9 +60,9 @@
   seen
 }
 
-#' Squared distance of every point to the coordinate centroid
+#' Squared distance of every point to the coordinate anti_centroid
 #'
-#' The `O(N * dim)` basis of the `"centroid"` seed: its argmax is the point
+#' The `O(N * dim)` basis of the `"anti_centroid"` seed: its argmax is the point
 #' farthest from the coordinate mean, an approximate diameter endpoint.
 #' @param points A `double` `N x dim` coordinate matrix.
 #' @return Numeric vector of length `N` of squared distances to the mean.
@@ -157,7 +157,7 @@
 .MaxMinSeed <- function(d, strategy) {
   switch(strategy,
     first   = 1L,
-    centroid = stop("`centroid` strategy requires coordinates; supply `points=` ",
+    anti_centroid = stop("`anti_centroid` strategy requires coordinates; supply `points=` ",
                     "or use `peripheral` on the distance-matrix path"),
     medoid  = as.integer(which.min(rowSums(d))),
     rowsum  = as.integer(which.max(rowSums(d))),
@@ -202,7 +202,7 @@
 .MaxMinSeedPoints <- function(points, strategy) {
   switch(strategy,
     first   = 1L,
-    centroid = as.integer(which.max(.CentroidSqDist(points))),
+    anti_centroid = as.integer(which.max(.CentroidSqDist(points))),
     medoid  = as.integer(which.min(RowSumsFromPoints_cpp(points))),
     rowsum  = as.integer(which.max(RowSumsFromPoints_cpp(points))),
     rownorm = as.integer(which.max(RowSqSumsFromPoints_cpp(points))),
@@ -242,19 +242,20 @@
 #'   `points` is supplied.
 #' @param points Optional `N x dim` numeric coordinate matrix; when supplied the
 #'   seed is computed from coordinates in `O(N)` memory. Required for the
-#'   `"centroid"` anchor, which has no distance-matrix form.
+#'   `"anti_centroid"` anchor, which has no distance-matrix form.
 #' @param strategy Character specifying method to employ:
 #'
 #' \describe{
 #'   \item{`"peripheral"`(default)}{Two sweeps: the point furthest from point 1,
 #'    then the point furthest from that (a diameter-endpoint approximation).
 #'    \eqn{O(N)}.}
-#'   \item{`"centroid"`}{The point farthest from the coordinate mean
+#'   \item{`"anti_centroid"`}{The point farthest from the coordinate mean
 #'     (\eqn{\argmax ||x - x_bar||}). \eqn{O(N * dim)}. Requires `points`.}
 #'   \item{`"random_furthest"`}{The point furthest from a random pivot.
 #'   \eqn{O(N)}.}
 #'   \item{`"diameter"`}{A row endpoint of the diameter pair (the maximum
 #'     pairwise distance).}
+#'   \item{`"medoid"`}{The point furthest from the 1-median (medoid).}
 #'   \item{`"anti_medoid"`}{The point furthest from the 1-median (medoid).}
 #'   \item{`"rowsum"`}{The point maximising the sum of distances to all others
 #'     (the 1-anti-median).}
@@ -272,8 +273,9 @@
 #' @seealso [FarFirst()], which seeds and runs the greedy pass in one call.
 #' @export
 MaxMinSeed <- function(d = NULL, points = NULL,
-                       strategy = c("peripheral", "centroid", "random_furthest",
-                                    "diameter", "anti_medoid", "medoid", "rowsum",
+                       strategy = c("peripheral", "anti_centroid",
+                                    "random_furthest", "diameter",
+                                    "anti_medoid", "medoid", "rowsum",
                                     "rownorm")) {
   strategy <- match.arg(strategy)
   if (!is.null(points)) {
@@ -473,7 +475,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
         distFromMedoid[med] <- -Inf
         as.integer(which.max(distFromMedoid))
       },
-      centroid  = as.integer(which.max(GetCentroidD2())),
+      anti_centroid  = as.integer(which.max(GetCentroidD2())),
       medoid    = GetMedoid(),
       peripheral = {
         s1 <- which.max(EuclidColFromPoints_cpp(points, 1L))

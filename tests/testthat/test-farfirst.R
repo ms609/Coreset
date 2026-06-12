@@ -22,7 +22,7 @@ test_that("matrix and coordinate paths agree for every seed strategy", {
       expect_identical(mat, pt, info = paste("strategy", s, "k", n))
     }
   }
-  # A centroid-free ensemble agrees across paths. With the same RNG seed the
+  # A anti_centroid-free ensemble agrees across paths. With the same RNG seed the
   # random-furthest seeds coincide on both paths (distances are bit-identical on
   # Euclidean data).
   for (n in c(2L, 6L, 12L)) {
@@ -79,7 +79,7 @@ test_that("the default ensemble is eight random-furthest starts", {
   expect_identical(names(attr(pt, "strategy_results")),
                    paste0("random_furthest", 1:8))
   # Neither path includes the deterministic anchors by default.
-  expect_false("centroid" %in% names(attr(pt, "strategy_results")))
+  expect_false("anti_centroid" %in% names(attr(pt, "strategy_results")))
   expect_false("peripheral" %in% names(attr(mat, "strategy_results")))
 })
 
@@ -152,10 +152,10 @@ test_that("FarFirst rejects an NA/non-finite distance matrix (FF-001)", {
   expect_error(FarFirst(3L, naCol, N = 8L, strategy = 1L), "NA|NaN")
 })
 
-test_that("explicitly naming centroid in a matrix ensemble warns and drops it", {
+test_that("explicitly naming anti_centroid in a matrix ensemble warns and drops it", {
   dat <- MakeData(N = 12)
   expect_warning(res <- FarFirst(4L, dat$d,
-                                 strategy = c("centroid", "peripheral")),
+                                 strategy = c("anti_centroid", "peripheral")),
                  "coordinates")
   # Dropped, leaving peripheral alone.
   expect_identical(names(attr(res, "strategy_results")), "peripheral")
@@ -254,9 +254,9 @@ test_that(".AsPointsMatrix coerces non-matrix, converts integer, and rejects bad
 test_that(".MaximinFromColumn progress bar fires without error", {
   dat <- MakeData()
   colFn <- function(i) dat$d[, i]
-  withr::with_options(list(MaxMin.progress = TRUE), {
-    expect_no_error(FarFirst(5L, colFn, N = nrow(dat$d), strategy = 1L))
-  })
+  old <- options(MaxMin.progress = TRUE)
+  on.exit(options(old))
+  expect_no_error(FarFirst(5L, colFn, N = nrow(dat$d), strategy = 1L))
 })
 
 # ---- .GonzalezColumn N/k/first validation (lines 311, 314, 323) ------------

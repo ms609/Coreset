@@ -91,8 +91,8 @@ test_that("Grasp stops within plateau of its last improvement", {
 # 6. Local search monotonicity (.GraspLocalSearch reference helper) ----------
 
 test_that(".GraspLocalSearch never decreases the MaxMin objective", {
-  centroid <- colMeans(pts30)
-  toCentroid <- sqrt(rowSums(sweep(pts30, 2L, centroid)^2))
+  anti_centroid <- colMeans(pts30)
+  toCentroid <- sqrt(rowSums(sweep(pts30, 2L, anti_centroid)^2))
   badSel <- order(toCentroid)[1:5]
   zStart <- MaxMin:::.GraspObjective(d30m, badSel)
   improved <- MaxMin:::.GraspLocalSearch(d30m, badSel)

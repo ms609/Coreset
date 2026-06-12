@@ -143,7 +143,7 @@
 #' 2-approximation to the _k_-centre problem.
 #' The quality of the result depends on the first (seed) point; by default
 #' `FarFirst()` runs three starts from randomly selected peripheral seeds.
-#' The deterministic \eqn{O(N)} anchors (`"centroid"`, `"peripheral"`) and the
+#' The deterministic \eqn{O(N)} anchors (`"anti_centroid"`, `"peripheral"`) and the
 #' costlier \eqn{O(N^2)} anchors (`"diameter"`, `"anti_medoid"`,
 #' `"rowsum"`, `"rownorm"`) are alternative `seed` strategies.
 #'
@@ -241,7 +241,7 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
   } else if (length(strategy) > 1L) {
     # A multi-element `strategy` requests an ensemble. The downstream
     # match.arg(several.ok = TRUE) silently *drops* names that fail to match,
-    # so validate explicitly here against the ensemble anchors (centroid
+    # so validate explicitly here against the ensemble anchors (anti_centroid
     # included -- the matrix path drops it later with a warning, not an error).
     bad <- setdiff(strategy, .kPointEnsembleSeeds)
     if (length(bad)) {
@@ -314,12 +314,12 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
   # strategy = "random_furthest")` still returns exactly one seed for callers who
   # want a single random start.)
   if (length(strategy) > 1L || "random_furthest" %in% strategy) {
-    # Matrix path: `"centroid"` is coordinate-only, so drop it (the remaining
+    # Matrix path: `"anti_centroid"` is coordinate-only, so drop it (the remaining
     # O(N) seeds cover that role here). Warn only if it was named explicitly,
     # not when filtering the default ensemble.
-    anchors <- if (usePoints) strategy else strategy[strategy != "centroid"]
+    anchors <- if (usePoints) strategy else strategy[strategy != "anti_centroid"]
     if (!usePoints && !strategyMissing && length(anchors) < length(strategy)) {
-      warning("`centroid` seed requires coordinates; it is dropped on the ",
+      warning("`anti_centroid` seed requires coordinates; it is dropped on the ",
               "distance-matrix path, where `peripheral` covers the same role")
     }
     if (usePoints) {
@@ -328,8 +328,8 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
     return(Classify(.GonzEnsemble(d, k, anchors, nseeds = nseeds)))
   }
 
-  if (!usePoints && strategy == "centroid") {
-    stop("`centroid` seed requires coordinates; supply `points=` or use ",
+  if (!usePoints && strategy == "anti_centroid") {
+    stop("`anti_centroid` seed requires coordinates; supply `points=` or use ",
          "`peripheral` on the distance-matrix path")
   }
   s <- if (usePoints) .MaxMinSeedPoints(points, strategy) else .MaxMinSeed(d, strategy)

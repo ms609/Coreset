@@ -28,10 +28,10 @@
 // DEVIATION (documented): seed point.
 // Porumbel's construction seed is argmax_x sum_y d(x, y) (max row-sum), which is
 // O(n^2 * dim) — the very cost this variant avoids. We substitute a cheap
-// O(n * dim) proxy: the point farthest from the coordinate centroid,
+// O(n * dim) proxy: the point farthest from the coordinate anti_centroid,
 //     seed = argmax_x || points[x,] - mean_x ||,
 // which approximates the peripheral max-row-sum point (a point far from the
-// centroid tends to have a large sum of distances to all others). Ties break to
+// anti_centroid tends to have a large sum of distances to all others). Ties break to
 // the smallest index, as in the matrix kernel. The subsequent greedy max-min
 // construction and the drop-add search are faithful; only the single seed
 // differs, so on instances where the two seed rules coincide the entire
@@ -91,21 +91,21 @@ List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
   std::vector<double> col(n);
 
   // -- Construction (Algorithm 1) -----------------------------------------
-  // Seed: farthest point from the coordinate centroid (O(n*dim) proxy for the
+  // Seed: farthest point from the coordinate anti_centroid (O(n*dim) proxy for the
   // O(n^2*dim) max-row-sum seed). Ties → smallest index. See header DEVIATION.
   int seed = 0;
   {
-    std::vector<double> centroid(dim, 0.0);
+    std::vector<double> anti_centroid(dim, 0.0);
     for (int j = 0; j < dim; ++j) {
       long double s = 0.0L;            // long-double accumulator: stable mean
       for (int i = 0; i < n; ++i) s += P[i + (R_xlen_t)j * n];
-      centroid[j] = static_cast<double>(s / static_cast<long double>(n));
+      anti_centroid[j] = static_cast<double>(s / static_cast<long double>(n));
     }
     double best_d2 = R_NegInf;
     for (int i = 0; i < n; ++i) {
       double s = 0.0;
       for (int j = 0; j < dim; ++j) {
-        double dev = P[i + (R_xlen_t)j * n] - centroid[j];
+        double dev = P[i + (R_xlen_t)j * n] - anti_centroid[j];
         s += dev * dev;
       }
       if (s > best_d2) { best_d2 = s; seed = i; }

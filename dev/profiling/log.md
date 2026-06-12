@@ -128,7 +128,7 @@ The actionable targets are both in the construction phase of `DropAdd_cpp` /
 1. Matrix path `dropadd.cpp` lines 50–58: O(n²) seed computation (double loop over
    all (i,j) pairs for row-sums). At n=4000, construction is 115 ms vs 90 ms for
    1500 search iters — construction ≈ 56% of total call cost. The O(n²) seed can be
-   replaced by the same O(n·dim) centroid-distance proxy already used in
+   replaced by the same O(n·dim) anti_centroid-distance proxy already used in
    `dropadd_mf.cpp`.
 2. Points path `dropadd_mf.cpp` lines 119–165: O(m·n·dim) greedy construction loop;
    at n=20000 m=10000, construction is 1060–1880 ms vs 390–680 ms for 1500 iters.
