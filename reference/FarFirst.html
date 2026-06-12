@@ -91,37 +91,14 @@ independent. Ignored when <code>points</code> is supplied.</p></dd>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
-<dd><p>Integer or character (scalar or vector); how to seed the
-greedy pass (matching the <code>method</code> argument of <code><a href="MaxMinSeed.html">MaxMinSeed()</a></code>). An
-<strong>integer</strong> gives the explicit 1-based index of the first selected point
-(a single bare Gonzalez pass). A <strong>length-1 character</strong> names a single
-deterministic seeding strategy run as one bare pass: <code>"centroid"</code>
-(coordinates only), <code>"peripheral"</code> (two-sweep diameter-endpoint
-approximation), <code>"diameter"</code>, <code>"anti_medoid"</code>, <code>"rowsum"</code>,
-<code>"rownorm"</code>, or <code>"first"</code> (index 1). A <strong>length &gt; 1 character vector</strong> –
-or the lone <code>"random_furthest"</code> token – requests an ensemble: each named
-anchor runs a full Gonzalez pass and the best result by <code><a href="MinDist.html">MinDist()</a></code> is
-returned with <code>strategy_results</code> and <code>winning_strategy</code> (character vector
-of all tied-best strategies) attributes. The <code>"random_furthest"</code> token
-draws <code>nseeds</code> distinct furthest-point seeds, labelled <code>random_furthest1</code>,
-<code>random_furthest2</code>, ...; named on its own it still runs the ensemble, so a
-single random start is best obtained via <code><a href="MaxMinSeed.html">MaxMinSeed()</a></code>. Valid ensemble
-anchors: any subset of <code>c("centroid", "peripheral", "random_furthest", "diameter", "anti_medoid", "rowsum", "rownorm")</code> (<code>"centroid"</code> requires
-<code>points</code>). Default: <code>"random_furthest"</code> (eight distinct random starts;
-see <code>nseeds</code>). See <code><a href="MaxMinSeed.html">MaxMinSeed()</a></code> for anchor definitions. On the
-distance-column oracle path only an integer <code>method</code> is honoured; a named
-or ensemble <code>method</code> there warns and falls back to the peripheral seed (see
-<em>Distance-column oracle</em>).</p></dd>
+<dd><p>Integer or character defining how to seed the greedy pass.
+Pass the name of one or more seeding methods described in <code><a href="MaxMinSeed.html">MaxMinSeed()</a></code>
+to run each method and return the best solution.</p></dd>
 
 
 <dt id="arg-nseeds">nseeds<a class="anchor" aria-label="anchor" href="#arg-nseeds"></a></dt>
-<dd><p>Integer: number of distinct random-furthest seeds to draw when
-<code>"random_furthest"</code> is among the ensemble anchors. Random pivots are drawn
-with the session RNG and each one's furthest-point seed is collected,
-de-duplicated, until <code>nseeds</code> distinct seeds are found (or the reachable
-pool is exhausted); Gonzalez runs from each and the best \(T_k\) is kept.
-Set <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> for a reproducible selection. Ignored on the
-distance-column oracle path. Default <code>8L</code>.</p></dd>
+<dd><p>Integer: number of distinct seeds to draw under the
+<code>"random_furthest"</code> strategy.</p></dd>
 
 
 <dt id="arg-points">points<a class="anchor" aria-label="anchor" href="#arg-points"></a></dt>
@@ -147,15 +124,13 @@ Default: <code>TRUE</code> in interactive sessions, <code>FALSE</code> otherwise
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Integer vector of length <code>min(k, N)</code> of selected indices, in
-the order they were selected.
-The achieved \(T_k\) (the selection's minimum pairwise
-distance) is attached as attribute <code>score</code>. An ensemble <code>method</code>
-additionally carries <code>strategy_results</code> and <code>winning_strategy</code> attributes.
-The vector has class <code>"MaxMinSelection"</code> and prints as a one-line summary
-(see <a href="print.MaxMin.html">print.MaxMinSelection</a>); it is otherwise an ordinary integer vector
-and indexes a matrix or coordinate set directly.</p>
-    </div>
+    <p><code><a href="MaxMin-package.html">MaxMin()</a></code> returns an integer vector with class <code>MaxMinSelection</code>,
+listing the selected indices in the order they were selected.
+Attributes detail:</p><ul><li><p><code>score</code>: the selection's minimum pairwise distance (\(T_k\))</p></li>
+<li><p><code>winning_strategy</code>: character vector listing strategies that attained the
+optimal score..</p></li>
+<li><p><code>strategy_results</code>: results for each strategy</p></li>
+</ul></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Distances may be provided as:</p><dl><dt>a <strong>distance matrix</strong> (<code>d</code>)</dt>

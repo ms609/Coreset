@@ -38,45 +38,15 @@ FarFirst(
 
 - method:
 
-  Integer or character (scalar or vector); how to seed the greedy pass
-  (matching the `method` argument of
-  [`MaxMinSeed()`](https://ms609.github.io/MaxMin/reference/MaxMinSeed.md)).
-  An **integer** gives the explicit 1-based index of the first selected
-  point (a single bare Gonzalez pass). A **length-1 character** names a
-  single deterministic seeding strategy run as one bare pass:
-  `"centroid"` (coordinates only), `"peripheral"` (two-sweep
-  diameter-endpoint approximation), `"diameter"`, `"anti_medoid"`,
-  `"rowsum"`, `"rownorm"`, or `"first"` (index 1). A **length \> 1
-  character vector** – or the lone `"random_furthest"` token – requests
-  an ensemble: each named anchor runs a full Gonzalez pass and the best
-  result by
-  [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md) is
-  returned with `strategy_results` and `winning_strategy` (character
-  vector of all tied-best strategies) attributes. The
-  `"random_furthest"` token draws `nseeds` distinct furthest-point
-  seeds, labelled `random_furthest1`, `random_furthest2`, ...; named on
-  its own it still runs the ensemble, so a single random start is best
-  obtained via
-  [`MaxMinSeed()`](https://ms609.github.io/MaxMin/reference/MaxMinSeed.md).
-  Valid ensemble anchors: any subset of
-  `c("centroid", "peripheral", "random_furthest", "diameter", "anti_medoid", "rowsum", "rownorm")`
-  (`"centroid"` requires `points`). Default: `"random_furthest"` (eight
-  distinct random starts; see `nseeds`). See
+  Integer or character defining how to seed the greedy pass. Pass the
+  name of one or more seeding methods described in
   [`MaxMinSeed()`](https://ms609.github.io/MaxMin/reference/MaxMinSeed.md)
-  for anchor definitions. On the distance-column oracle path only an
-  integer `method` is honoured; a named or ensemble `method` there warns
-  and falls back to the peripheral seed (see *Distance-column oracle*).
+  to run each method and return the best solution.
 
 - nseeds:
 
-  Integer: number of distinct random-furthest seeds to draw when
-  `"random_furthest"` is among the ensemble anchors. Random pivots are
-  drawn with the session RNG and each one's furthest-point seed is
-  collected, de-duplicated, until `nseeds` distinct seeds are found (or
-  the reachable pool is exhausted); Gonzalez runs from each and the best
-  \\T_k\\ is kept. Set
-  [`set.seed()`](https://rdrr.io/r/base/Random.html) for a reproducible
-  selection. Ignored on the distance-column oracle path. Default `8L`.
+  Integer: number of distinct seeds to draw under the
+  `"random_furthest"` strategy.
 
 - points:
 
@@ -102,15 +72,16 @@ FarFirst(
 
 ## Value
 
-Integer vector of length `min(k, N)` of selected indices, in the order
-they were selected. The achieved \\T_k\\ (the selection's minimum
-pairwise distance) is attached as attribute `score`. An ensemble
-`method` additionally carries `strategy_results` and `winning_strategy`
-attributes. The vector has class `"MaxMinSelection"` and prints as a
-one-line summary (see
-[print.MaxMinSelection](https://ms609.github.io/MaxMin/reference/print.MaxMin.md));
-it is otherwise an ordinary integer vector and indexes a matrix or
-coordinate set directly.
+[`MaxMin()`](https://ms609.github.io/MaxMin/reference/MaxMin-package.md)
+returns an integer vector with class `MaxMinSelection`, listing the
+selected indices in the order they were selected. Attributes detail:
+
+- `score`: the selection's minimum pairwise distance (\\T_k\\)
+
+- `winning_strategy`: character vector listing strategies that attained
+  the optimal score..
+
+- `strategy_results`: results for each strategy
 
 ## Details
 
