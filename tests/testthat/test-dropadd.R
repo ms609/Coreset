@@ -189,11 +189,11 @@ test_that("DropAdd is deterministic and validates inputs", {
   expect_error(DropAdd(4L, dmat, maxSeconds = NA_real_), "maxSeconds")
 })
 
-test_that("DropAdd progress = TRUE fires the cli hooks", {
+test_that("DropAdd MaxMin.progress option fires the cli hooks", {
   dmat <- as.matrix(dist(matrix(rnorm(15 * 2), ncol = 2)))
-  expect_no_error(suppressMessages(
-    DropAdd(3L, dmat, maxIter = 2L, progress = TRUE)
-  ))
+  old <- options(MaxMin.progress = TRUE)
+  on.exit(options(old))
+  expect_no_error(suppressMessages(DropAdd(3L, dmat, maxIter = 2L)))
 })
 
 test_that("DropAdd rejects an NA distance matrix (FF-001 / T7-08)", {

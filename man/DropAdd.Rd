@@ -10,7 +10,6 @@ DropAdd(
   plateau = 5000L,
   maxIter = NULL,
   maxSeconds = Inf,
-  progress = getOption("MaxMin.progress", interactive()),
   points = NULL
 )
 }
@@ -33,10 +32,6 @@ control.}
 \item{maxSeconds}{Optional wall-clock ceiling in seconds, checked at
 iteration boundaries. Default \code{Inf} (no ceiling, fully reproducible).
 A finite value caps runtime but makes the result machine-dependent.}
-
-\item{progress}{Logical; show a start/done status line. Default: \code{TRUE} in
-interactive sessions, \code{FALSE} otherwise
-(\code{getOption("MaxMin.progress", interactive())}).}
 
 \item{points}{A numeric \eqn{n \times \mathrm{dim}} coordinate matrix (or an
 object coercible to one via \code{as.matrix}). Must be complete (no
@@ -69,6 +64,13 @@ followed by a first-in, first-out drop-add tabu search, with streamlined
 neighbour-evaluation tricks
 \insertCite{@algorithms 1--4 in @Porumbel2011}{MaxMin}.
 }
+\section{Progress bar}{
+
+Shows status messages controlled by
+\code{getOption("MaxMin.progress", interactive())} — \code{TRUE} by default in
+interactive sessions, \code{FALSE} otherwise.
+}
+
 \references{
 \insertAllCited{}
 }

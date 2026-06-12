@@ -25,8 +25,8 @@ for (ds in 1:4) {
         corr[[paste0(k, "_mx")]] <- as.integer(FarFirst(d, n, method = 1L))
       }
       for (m in c(3L, 10L, as.integer(N / 2))) {
-        da_m <- DropAdd(d, m, plateau = 200L, progress = FALSE)
-        da_p <- DropAdd(points = pts, m = m, plateau = 200L, progress = FALSE)
+        da_m <- DropAdd(d, m, plateau = 200L)
+        da_p <- DropAdd(points = pts, m = m, plateau = 200L)
         corr[[paste("da_mx", ds, N, dim, m, sep = "_")]] <-
           list(idx = as.integer(da_m), s = as.numeric(attr(da_m, "score")))
         corr[[paste("da_pt", ds, N, dim, m, sep = "_")]] <-
@@ -51,7 +51,7 @@ for (N in c(4000L, 6000L)) {
   pts <- matrix(rnorm(N * 2L), ncol = 2L); d <- as.matrix(dist(pts))
   timing[[paste0("da_seed_n", N)]] <- list(
     what = "DropAdd matrix construction (maxIter=0)", N = N,
-    ms = ms(function() DropAdd(d, 10L, maxIter = 0L, plateau = 1L, progress = FALSE)))
+    ms = ms(function() DropAdd(d, 10L, maxIter = 0L, plateau = 1L)))
 }
 # T-006 Grasp large m.
 set.seed(12)

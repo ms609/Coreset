@@ -78,7 +78,7 @@ Exact_v3 <- function(d, m, maxSeconds = 600, cutoff = TRUE, seedMethod = "dropad
 bench <- function(case, k = 10L) {
   pts <- as.matrix(cases[[case]][["points"]]); storage.mode(pts) <- "double"
   d <- as.matrix(stats::dist(pts)); n <- nrow(d)
-  t <- proc.time()[[3L]]; r0 <- MaxMin::ExactMaxMin(d, k, maxSeconds = 600, progress = FALSE); t0 <- proc.time()[[3L]] - t
+  t <- proc.time()[[3L]]; r0 <- MaxMin::ExactMaxMin(d, k, maxSeconds = 600); t0 <- proc.time()[[3L]] - t
   t <- proc.time()[[3L]]; rg <- Exact_v3(d, k, cutoff = FALSE, seedMethod = "grasp"); tg <- proc.time()[[3L]] - t
   t <- proc.time()[[3L]]; rb <- Exact_v3(d, k, cutoff = FALSE, seedMethod = "best");  tb <- proc.time()[[3L]] - t
   ok <- isTRUE(all.equal(r0$objective, rg$objective)) && isTRUE(all.equal(r0$objective, rb$objective)) &&

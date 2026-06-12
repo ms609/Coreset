@@ -318,17 +318,15 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L, seeds = NULL) {
 #' that caps the binary search, then bisects downward to the smallest feasible
 #' radius.
 #'
-#' @param k Integer centre budget, `1 <= k <= nrow(d)`.
+#' @param k Integer specifying maximum number of centres, `1 <= k <= nrow(d)`.
 #' @param d A `dist` object or a square symmetric numeric distance matrix.
-#' @param solver Solver to use. Currently only `"highs"` is implemented; `NULL`
-#'   selects it.
-#' @param maxSeconds Wall-clock budget in seconds for the whole search (shared
-#'   across the internal IP solves). If it expires before the optimum is proven,
-#'   the smallest radius proven feasible so far is returned with `proven = FALSE`.
-#' @param warmStart Currently unused; reserved for a caller-supplied feasible
-#'   centre set. The internal CDSh warm start runs regardless.
-#' @param progress Logical; show a progress indicator. Default: `TRUE` in
-#'   interactive sessions (`getOption("MaxMin.progress", interactive())`).
+#' @param maxSeconds Wall-clock budget in seconds for the whole search.
+#' If it expires before the optimum is proven, the smallest radius proven
+#' feasible so far is returned, with the attribute `proven = FALSE`.
+#' @section Progress bar:
+#' Shows a progress indicator controlled by
+#' `getOption("MaxMin.progress", interactive())` — `TRUE` by default in
+#' interactive sessions, `FALSE` otherwise.
 #' @return `ExactKCentre()` returns a list of class `"KCentreExact"` with fields
 #'   \describe{
 #'     \item{indices}{Integer vector (ascending), length `<= k`: the centres.}
@@ -336,7 +334,6 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L, seeds = NULL) {
 #'       `proven` is `TRUE`, otherwise a valid upper bound.}
 #'     \item{proven}{Logical: `TRUE` if optimality was certified within budget.}
 #'     \item{time_s}{Wall-clock seconds elapsed.}
-#'     \item{solver}{Name of the MILP backend used.}
 #'     \item{n, k}{Instance size and centre budget.}
 #'     \item{n_centres}{`length(indices)`.}
 #'   }
@@ -362,14 +359,9 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L, seeds = NULL) {
 #' }
 #' }
 #' @export
-ExactKCentre <- function(k, d, solver = NULL, maxSeconds = 60,
-                         warmStart = NULL,
-                         progress = getOption("MaxMin.progress", interactive())) {
+ExactKCentre <- function(k, d, maxSeconds = 60) {
+  progress <- getOption("MaxMin.progress", interactive())
   t0 <- proc.time()[[3L]]
-  if (is.null(solver)) solver <- "highs"
-  if (!identical(solver, "highs")) {
-    stop("Unsupported `solver`: ", solver, ". Only \"highs\" is implemented.")
-  }
   if (!requireNamespace("highs", quietly = TRUE)) { # nocov start
     stop("The `highs` package is required for ExactKCentre(). ",
          "Install it with install.packages(\"highs\").")
@@ -401,7 +393,7 @@ ExactKCentre <- function(k, d, solver = NULL, maxSeconds = 60,
     indices <- sort(as.integer(indices))
     structure(
       list(indices = indices, radius = KCentreRadius(d, indices), proven = proven,
-           time_s = Elapsed(), solver = solver, n = n, k = k,
+           time_s = Elapsed(), n = n, k = k,
            n_centres = length(indices)),
       class = "KCentreExact"
     )

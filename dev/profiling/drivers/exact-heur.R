@@ -6,7 +6,7 @@ sc <- function(d, idx) { s <- d[idx, idx]; diag(s) <- Inf; min(s) }
 for (cs in c("tc22_penguins", "tc11_ionosphere")) {
   pts <- as.matrix(cases[[cs]][["points"]]); storage.mode(pts) <- "double"
   d <- as.matrix(stats::dist(pts)); k <- 10L
-  opt <- MaxMin::ExactMaxMin(d, k, maxSeconds = 600, progress = FALSE)$objective
+  opt <- MaxMin::ExactMaxMin(d, k, maxSeconds = 600)$objective
   da512  <- sc(d, MaxMin::DropAdd(d = d, m = k, plateau = 512L))
   da5000 <- sc(d, MaxMin::DropAdd(d = d, m = k, plateau = 5000L))
   gp <- sc(d, MaxMin::Grasp(d, k, plateau = 50L, seed = 1L))

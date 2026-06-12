@@ -22,7 +22,7 @@ cat(sprintf("case=%s n=%d k=%d  (%d distinct distances)\n",
 
 gc(reset = TRUE)
 t0 <- proc.time()[[3L]]
-r  <- MaxMin::ExactMaxMin(d, m = k, maxSeconds = 600, progress = FALSE)
+r  <- MaxMin::ExactMaxMin(d, m = k, maxSeconds = 600)
 el <- proc.time()[[3L]] - t0
 g  <- gc()
 cat(sprintf("Elapsed: %.2f s   obj=%.6f  proven=%s\n", el, r$objective, r$proven))

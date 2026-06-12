@@ -151,13 +151,15 @@ test_that("ExactMaxMin validates k and solver", {
 })
 
 # ---------------------------------------------------------------------------
-# 7. progress = TRUE fires the cli progress bar
+# 7. MaxMin.progress option fires the cli progress bar
 # ---------------------------------------------------------------------------
-test_that("ExactMaxMin progress = TRUE fires the cli hooks", {
+test_that("ExactMaxMin MaxMin.progress option fires the cli hooks", {
   skip_if_no_highs()
   set.seed(1)
   d <- as.matrix(stats::dist(matrix(stats::rnorm(12 * 2), ncol = 2)))
-  expect_no_error(ExactMaxMin(3L, d, progress = TRUE))
+  old <- options(MaxMin.progress = TRUE)
+  on.exit(options(old))
+  expect_no_error(ExactMaxMin(3L, d))
 })
 
 # ---------------------------------------------------------------------------

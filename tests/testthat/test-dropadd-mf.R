@@ -100,7 +100,7 @@ test_that("DropAdd points path respects maxSeconds within reasonable slack", {
   t0 <- Sys.time()
   # Disable stagnation so the wall-clock ceiling is the binding criterion.
   res <- DropAdd(20L, maxSeconds = 0.05, plateau = 100000000L,
-                 points = pts, progress = FALSE)
+                 points = pts)
   elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
   expect_lte(attr(res, "time_s"), 1.5)
   expect_lte(elapsed, 2.0)
@@ -175,11 +175,11 @@ test_that("DropAdd points path: deterministic and input validation", {
                "supply")
 })
 
-test_that("DropAdd points path: progress = TRUE fires the cli hooks", {
+test_that("DropAdd points path: MaxMin.progress option fires the cli hooks", {
   pts <- matrix(rnorm(20 * 2), ncol = 2)
-  expect_no_error(
-    suppressMessages(DropAdd(3L, maxIter = 2L, progress = TRUE, points = pts))
-  )
+  old <- options(MaxMin.progress = TRUE)
+  on.exit(options(old))
+  expect_no_error(suppressMessages(DropAdd(3L, maxIter = 2L, points = pts)))
 })
 
 # ---------------------------------------------------------------------------

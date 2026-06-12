@@ -69,14 +69,14 @@ run_case <- function(path, dmat, pts, n_label, dim_label, m) {
   reps <- if (n_label >= 20000 && m >= 10000) 5L else 8L
   if (path == "matrix") {
     ms_tot <- bench1(DropAdd(d = dmat, m = m, maxIter = MAX_ITER,
-                             plateau = PLATEAU, progress = FALSE), iters = reps)
+                             plateau = PLATEAU), iters = reps)
     ms_con <- bench1(DropAdd(d = dmat, m = m, maxIter = 0L,
-                             plateau = PLATEAU, progress = FALSE), iters = reps)
+                             plateau = PLATEAU), iters = reps)
   } else {
     ms_tot <- bench1(DropAdd(points = pts, m = m, maxIter = MAX_ITER,
-                             plateau = PLATEAU, progress = FALSE), iters = reps)
+                             plateau = PLATEAU), iters = reps)
     ms_con <- bench1(DropAdd(points = pts, m = m, maxIter = 0L,
-                             plateau = PLATEAU, progress = FALSE), iters = reps)
+                             plateau = PLATEAU), iters = reps)
   }
   ms_srch <- ms_tot - ms_con
   data.frame(path = path, n = n_label, dim = dim_label, m = m,
@@ -130,8 +130,7 @@ cat("\n=== profvis triage — matrix large-m case (n=4000, m=2000) ===\n")
 K_prof <- 5L
 p_matrix <- profvis::profvis({
   for (i in seq_len(K_prof)) {
-    DropAdd(d = d4000, m = 2000L, maxIter = MAX_ITER, plateau = PLATEAU,
-            progress = FALSE)
+    DropAdd(d = d4000, m = 2000L, maxIter = MAX_ITER, plateau = PLATEAU)
   }
 })
 out_mat <- file.path("dev/profiling/drivers", "dropadd-profvis-matrix-large.html")
@@ -142,7 +141,7 @@ cat("\n=== profvis triage — points large-m case (n=20000, dim=2, m=10000) ===\
 p_points <- profvis::profvis({
   for (i in seq_len(K_prof)) {
     DropAdd(points = pts_20000_d2, m = 10000L, maxIter = MAX_ITER,
-            plateau = PLATEAU, progress = FALSE)
+            plateau = PLATEAU)
   }
 })
 out_pts <- file.path("dev/profiling/drivers", "dropadd-profvis-points-large.html")

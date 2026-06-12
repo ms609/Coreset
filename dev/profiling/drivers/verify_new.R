@@ -12,7 +12,7 @@ for (i in seq_len(nrow(old))) {
   d <- as.matrix(stats::dist(pts))
   set.seed(1)
   t <- proc.time()[[3L]]
-  r <- MaxMin::ExactMaxMin(d, k, maxSeconds = 600, progress = FALSE)
+  r <- MaxMin::ExactMaxMin(d, k, maxSeconds = 600)
   el <- proc.time()[[3L]] - t
   rows[[i]] <- data.frame(case = cs, n = nrow(d), k = k,
     old = old$objective[i], new = r$objective,
@@ -33,9 +33,9 @@ cat(sprintf("per-case speedup: min %.1fx  median %.1fx  max %.1fx\n",
 cat("\n================ RNG contract ================\n")
 pts <- as.matrix(cases[["tc9_iris"]][["points"]]); storage.mode(pts) <- "double"
 d <- as.matrix(stats::dist(pts))
-set.seed(1); a <- MaxMin::ExactMaxMin(d, 6L, progress = FALSE)
-set.seed(2); b <- MaxMin::ExactMaxMin(d, 6L, progress = FALSE)
-set.seed(1); a2 <- MaxMin::ExactMaxMin(d, 6L, progress = FALSE)
+set.seed(1); a <- MaxMin::ExactMaxMin(d, 6L)
+set.seed(2); b <- MaxMin::ExactMaxMin(d, 6L)
+set.seed(1); a2 <- MaxMin::ExactMaxMin(d, 6L)
 cat(sprintf("objective seed-independent (seed1 == seed2): %s\n",
     isTRUE(all.equal(a$objective, b$objective))))
 cat(sprintf("selection reproducible under same seed (seed1 == seed1): %s\n",

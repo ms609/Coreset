@@ -109,7 +109,7 @@ test_that("ExactKCentre proves the brute-force optimum on small instances", {
     pts <- matrix(rnorm(20), ncol = 2)          # n = 10
     d <- as.matrix(stats::dist(pts))
     for (k in c(1L, 2L, 3L)) {
-      res <- ExactKCentre(d = d, k, progress = FALSE)
+      res <- ExactKCentre(d = d, k)
       expect_s3_class(res, "KCentreExact")
       expect_true(res$proven)
       expect_lte(res$n_centres, k)
@@ -126,7 +126,7 @@ test_that("ExactKCentre is no worse than CDSh, which is no worse than optimal", 
   set.seed(41)
   d <- as.matrix(stats::dist(matrix(rnorm(24), ncol = 2)))   # n = 12
   k <- 3L
-  exact <- ExactKCentre(d = d, k, progress = FALSE)
+  exact <- ExactKCentre(d = d, k)
   heur <- KCentreRadius(d = d, as.integer(KCentre(d = d, k)))
   expect_lte(exact$radius, heur + 1e-9)       # exact optimum <= heuristic
   expect_equal(exact$radius, brute_kcentre(d, k))
@@ -136,7 +136,7 @@ test_that("ExactKCentre handles k = n trivially", {
   skip_if_not_installed("highs")
   skip_if_not_installed("Matrix")
   d <- as.matrix(stats::dist(matrix(rnorm(16), ncol = 2)))
-  res <- ExactKCentre(d = d, nrow(d), progress = FALSE)
+  res <- ExactKCentre(d = d, nrow(d))
   expect_true(res$proven)
   expect_equal(res$radius, 0)
 })
@@ -159,8 +159,8 @@ test_that("US-spelling aliases give the same results as the UK functions", {
   skip_if_not_installed("highs")
   skip_if_not_installed("Matrix")
   d10 <- d[1:10, 1:10]
-  expect_equal(ExactKCenter(d = d10, 3L, progress = FALSE)$radius,
-               ExactKCentre(d = d10, 3L, progress = FALSE)$radius)
+  expect_equal(ExactKCenter(d = d10, 3L)$radius,
+               ExactKCentre(d = d10, 3L)$radius)
 })
 
 # ----- red-team regressions (Round 8: KC-001..007) --------------------------
@@ -185,7 +185,7 @@ test_that("KCentre never exceeds twice the optimum (restored 2-approx; KC-001)",
   for (seed in 1:6) {
     set.seed(200L + seed)
     d <- as.matrix(stats::dist(matrix(rnorm(40L), ncol = 2L)))   # n = 20 (exhaustive)
-    opt <- ExactKCentre(d = d, 4L, progress = FALSE)$radius
+    opt <- ExactKCentre(d = d, 4L)$radius
     heur <- KCentreRadius(d = d, as.integer(KCentre(d = d, 4L)))
     if (opt > 0) expect_lte(heur, 2 * opt + 1e-9)
   }
@@ -197,7 +197,7 @@ test_that("KCentre and ExactKCentre reject asymmetric distance matrices (KC-002)
   expect_error(KCentre(d = d, 3L), "symmetric")
   skip_if_not_installed("highs")
   skip_if_not_installed("Matrix")
-  expect_error(ExactKCentre(d = d, 3L, progress = FALSE), "symmetric")
+  expect_error(ExactKCentre(d = d, 3L), "symmetric")
 })
 
 test_that("KCentreRadius rejects out-of-range indices on both paths (KC-003)", {
@@ -214,7 +214,7 @@ test_that("ExactKCentre returns a consistent unproven incumbent under a tiny bud
   skip_if_not_installed("Matrix")
   set.seed(61)
   d <- as.matrix(stats::dist(matrix(rnorm(60L), ncol = 2L)))     # n = 30
-  res <- ExactKCentre(d = d, 4L, maxSeconds = 1e-6, progress = FALSE)
+  res <- ExactKCentre(d = d, 4L, maxSeconds = 1e-6)
   expect_false(res$proven)
   expect_lte(res$n_centres, 4L)
   # The reported radius is the true covering radius of the returned centres,
@@ -291,10 +291,9 @@ test_that("ExactKCentre rejects an unsupported solver and bad k", {
   skip_if_not_installed("highs")
   skip_if_not_installed("Matrix")
   d <- as.matrix(stats::dist(matrix(rnorm(20L), ncol = 2L)))     # n = 10
-  expect_error(ExactKCentre(d = d, 3L, solver = "glpk"), "Unsupported")
-  expect_error(ExactKCentre(d = d, c(1L, 2L), progress = FALSE), "single positive")
-  expect_error(ExactKCentre(d = d, 0L, progress = FALSE), "single positive")
-  expect_error(ExactKCentre(d = d, nrow(d) + 1L, progress = FALSE), "1 <= k")
+  expect_error(ExactKCentre(d = d, c(1L, 2L)), "single positive")
+  expect_error(ExactKCentre(d = d, 0L), "single positive")
+  expect_error(ExactKCentre(d = d, nrow(d) + 1L), "1 <= k")
 })
 
 # ----- S3 display -----------------------------------------------------------

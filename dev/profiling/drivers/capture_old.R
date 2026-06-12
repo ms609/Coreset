@@ -13,7 +13,7 @@ for (cs in cs14) {
   d <- as.matrix(stats::dist(pts))
   for (k in ks) {
     t <- proc.time()[[3L]]
-    r <- MaxMin::ExactMaxMin(d, k, maxSeconds = 600, progress = FALSE)
+    r <- MaxMin::ExactMaxMin(d, k, maxSeconds = 600)
     rows[[length(rows)+1L]] <- data.frame(case = cs, n = nrow(d), k = k,
       objective = r$objective, proven = r$proven,
       time_s = proc.time()[[3L]] - t, stringsAsFactors = FALSE)

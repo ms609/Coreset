@@ -201,9 +201,10 @@
 #'   already computed by another solver. Ignored unless it is a valid `k`-subset.
 #'   The internal heuristics run regardless; a good `warmStart` can only reduce
 #'   the number of IP solves, never change the proven optimum.
-#' @param progress Logical; show a progress indicator during the search.
-#'   Default: `TRUE` in interactive sessions, `FALSE` otherwise
-#'   (`getOption("MaxMin.progress", interactive())`).
+#' @section Progress bar:
+#' Shows a progress indicator controlled by
+#' `getOption("MaxMin.progress", interactive())` — `TRUE` by default in
+#' interactive sessions, `FALSE` otherwise.
 #' @return `ExactMaxMin()` returns a list (unlike [DropAdd()], [Grasp()] and
 #'   [FarFirst()], which each return a bare integer vector carrying a `score`
 #'   attribute), since it reports both the optimum and a proof status. The fields
@@ -229,8 +230,8 @@
 #' @references \insertAllCited{}
 #' @export
 ExactMaxMin <- function(k, d, solver = NULL, maxSeconds = 60,
-                        warmStart = NULL,
-                        progress = getOption("MaxMin.progress", interactive())) {
+                        warmStart = NULL) {
+  progress <- getOption("MaxMin.progress", interactive())
   t0 <- proc.time()[[3L]]
   if (is.null(solver)) solver <- "highs"
   if (!identical(solver, "highs")) {

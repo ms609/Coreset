@@ -145,9 +145,10 @@
 #' @param maxSeconds Optional wall-clock ceiling in seconds, checked at
 #'   iteration boundaries. Default \code{Inf} (no ceiling, fully reproducible).
 #'   A finite value caps runtime but makes the result machine-dependent.
-#' @param progress Logical; show a start/done status line. Default: `TRUE` in
-#'   interactive sessions, `FALSE` otherwise
-#'   (`getOption("MaxMin.progress", interactive())`).
+#' @section Progress bar:
+#' Shows status messages controlled by
+#' `getOption("MaxMin.progress", interactive())` — `TRUE` by default in
+#' interactive sessions, `FALSE` otherwise.
 #'
 #' @return `DropAdd()` returns an integer vector of length \code{k} containing the 1-based selected
 #'   indices **sorted ascending** (unlike [FarFirst()], which returns
@@ -169,8 +170,8 @@
 #' @export
 DropAdd <- function(k, d = NULL, plateau = 5000L, maxIter = NULL,
                     maxSeconds = Inf,
-                    progress = getOption("MaxMin.progress", interactive()),
                     points = NULL) {
+  progress <- getOption("MaxMin.progress", interactive())
   if (!is.null(points) && !is.null(d)) {
     stop("supply `d` or `points`, not both")
   }

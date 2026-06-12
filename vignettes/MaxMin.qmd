@@ -389,7 +389,7 @@ dual of `ExactMaxMin()`'s node-packing programme — warm-started from the
 ```{r}
 #| label: exact-kcentre
 #| eval: !expr requireNamespace("highs", quietly = TRUE)
-kc <- ExactKCentre(4L, eurodist, progress = FALSE)
+kc <- ExactKCentre(4L, eurodist)
 kc
 kc$proven      # TRUE  ⟹  radius is the global covering optimum
 ```

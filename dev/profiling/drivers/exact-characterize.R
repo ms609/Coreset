@@ -30,7 +30,7 @@ for (cs in small) {
   pts <- as.matrix(cases[[cs]][["points"]]); storage.mode(pts) <- "double"
   d <- as.matrix(stats::dist(pts)); n <- nrow(d)
   for (k in ks) {
-    opt <- MaxMin::ExactMaxMin(d, k, maxSeconds = 600, progress = FALSE)
+    opt <- MaxMin::ExactMaxMin(d, k, maxSeconds = 600)
     bh  <- best_heur(d, k)
     rv  <- Exact_v3(d, k, cutoff = FALSE, seedMethod = "best")   # Grasp+DropAdd seed
     rows[[length(rows)+1L]] <- data.frame(

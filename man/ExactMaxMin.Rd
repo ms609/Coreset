@@ -4,14 +4,7 @@
 \alias{ExactMaxMin}
 \title{Exact Max-Min Diversity Problem optimum on small instances}
 \usage{
-ExactMaxMin(
-  k,
-  d,
-  solver = NULL,
-  maxSeconds = 60,
-  warmStart = NULL,
-  progress = getOption("MaxMin.progress", interactive())
-)
+ExactMaxMin(k, d, solver = NULL, maxSeconds = 60, warmStart = NULL)
 }
 \arguments{
 \item{k}{Integer target subset size, \verb{2 <= k <= nrow(d)}.}
@@ -31,10 +24,6 @@ indices into \code{d}) to add to the heuristic warm-start pool, e.g. a selection
 already computed by another solver. Ignored unless it is a valid \code{k}-subset.
 The internal heuristics run regardless; a good \code{warmStart} can only reduce
 the number of IP solves, never change the proven optimum.}
-
-\item{progress}{Logical; show a progress indicator during the search.
-Default: \code{TRUE} in interactive sessions, \code{FALSE} otherwise
-(\code{getOption("MaxMin.progress", interactive())}).}
 }
 \value{
 \code{ExactMaxMin()} returns a list (unlike \code{\link[=DropAdd]{DropAdd()}}, \code{\link[=Grasp]{Grasp()}} and
@@ -85,6 +74,13 @@ returned \code{indices} can vary when several subsets attain the optimum: the wa
 start draws on the session RNG via \code{\link[=Grasp]{Grasp()}} and, like \code{Grasp()}, advances it.
 Call \code{\link[=set.seed]{set.seed()}} before \code{ExactMaxMin()} for a reproducible selection.
 }
+\section{Progress bar}{
+
+Shows a progress indicator controlled by
+\code{getOption("MaxMin.progress", interactive())} — \code{TRUE} by default in
+interactive sessions, \code{FALSE} otherwise.
+}
+
 \references{
 \insertAllCited{}
 }

@@ -5,41 +5,18 @@
 \alias{ExactKCenter}
 \title{Exact discrete k-centre optimum on small instances}
 \usage{
-ExactKCentre(
-  k,
-  d,
-  solver = NULL,
-  maxSeconds = 60,
-  warmStart = NULL,
-  progress = getOption("MaxMin.progress", interactive())
-)
+ExactKCentre(k, d, maxSeconds = 60)
 
-ExactKCenter(
-  k,
-  d,
-  solver = NULL,
-  maxSeconds = 60,
-  warmStart = NULL,
-  progress = getOption("MaxMin.progress", interactive())
-)
+ExactKCenter(k, d, maxSeconds = 60)
 }
 \arguments{
-\item{k}{Integer centre budget, \verb{1 <= k <= nrow(d)}.}
+\item{k}{Integer specifying maximum number of centres, \verb{1 <= k <= nrow(d)}.}
 
 \item{d}{A \code{dist} object or a square symmetric numeric distance matrix.}
-
-\item{solver}{Solver to use. Currently only \code{"highs"} is implemented; \code{NULL}
-selects it.}
 
 \item{maxSeconds}{Wall-clock budget in seconds for the whole search (shared
 across the internal IP solves). If it expires before the optimum is proven,
 the smallest radius proven feasible so far is returned with \code{proven = FALSE}.}
-
-\item{warmStart}{Currently unused; reserved for a caller-supplied feasible
-centre set. The internal CDSh warm start runs regardless.}
-
-\item{progress}{Logical; show a progress indicator. Default: \code{TRUE} in
-interactive sessions (\code{getOption("MaxMin.progress", interactive())}).}
 }
 \value{
 \code{ExactKCentre()} returns a list of class \code{"KCentreExact"} with fields
@@ -49,7 +26,6 @@ interactive sessions (\code{getOption("MaxMin.progress", interactive())}).}
 \code{proven} is \code{TRUE}, otherwise a valid upper bound.}
 \item{proven}{Logical: \code{TRUE} if optimality was certified within budget.}
 \item{time_s}{Wall-clock seconds elapsed.}
-\item{solver}{Name of the MILP backend used.}
 \item{n, k}{Instance size and centre budget.}
 \item{n_centres}{\code{length(indices)}.}
 }
@@ -76,6 +52,13 @@ warm-started from the \code{\link[=KCentre]{KCentre()}} (CDSh) radius, a proven 
 that caps the binary search, then bisects downward to the smallest feasible
 radius.
 }
+\section{Progress bar}{
+
+Shows a progress indicator controlled by
+\code{getOption("MaxMin.progress", interactive())} — \code{TRUE} by default in
+interactive sessions, \code{FALSE} otherwise.
+}
+
 \examples{
 \donttest{
 if (requireNamespace("highs", quietly = TRUE) &&
