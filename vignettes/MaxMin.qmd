@@ -115,7 +115,7 @@ whichever pass produced the highest T~k~.
 ```{r}
 #| label: gonzalez-random
 set.seed(1)
-picks <- FarFirst(6L, eurodist)   # default: best of eight random starts
+ffPick <- FarFirst(6L, eurodist)   # default: best of eight random starts
 ```
 
 More random starts can be requested via the `nseeds` argument.
@@ -123,7 +123,7 @@ More random starts can be requested via the `nseeds` argument.
 ```{r}
 #| label: gonzalez-ensemble
 set.seed(1)
-picks <- FarFirst(6L, eurodist, nseeds = 12L)
+ffPick <- FarFirst(6L, eurodist, nseeds = 12L)
 ```
 
 
@@ -133,10 +133,10 @@ will be returned.
 
 ```{r}
 #| label: gonzalez-seeds
-picks <- FarFirst(6L, eurodist, strategy = c("diameter", "anti_medoid"))
-MinDist(eurodist, picks)
+ffPick <- FarFirst(6L, eurodist, strategy = c("diameter", "anti_medoid"))
+MinDist(eurodist, ffPick)
 
-attr(picks, "winning_strategy")
+attr(ffPick, "winning_strategy")
 ```
 
 When only pairwise distances between objects are known — there are no
@@ -169,10 +169,10 @@ typically reaches ≈ 99 % of the optimal T~k~.
 
 ```{r}
 #| label: dropadd
-picksDA <- DropAdd(eurodist, k = 6L, plateau = 500L)
+daPick <- DropAdd(eurodist, k = 6L, plateau = 500L)
 
-picksDA
-labels(eurodist)[picksDA]
+daPick
+labels(eurodist)[daPick]
 ```
 
 The algorithm terminates after `plateau` iterations do not improve T~k~.
@@ -194,10 +194,10 @@ Because the construction phase is stochastic, call `set.seed()` before
 ```{r}
 #| label: grasp
 set.seed(42)
-res_gr <- Grasp(eurodist, k = 6L, plateau = 50L)
-res_gr
-labels(eurodist)[res_gr]
-attr(res_gr, "pr_calls")   # path-relinking calls performed
+grPick <- Grasp(eurodist, k = 6L, plateau = 50L)
+grPick
+labels(eurodist)[grPick]
+attr(grPick, "pr_calls")   # path-relinking calls performed
 ```
 
 `plateau` controls how many consecutive non-improving GRASP iterations
@@ -220,10 +220,10 @@ k   <- 8L
 
 ```{r}
 #| label: compare-run
-idx_ff <- FarFirst(k, d50)
-res_da50 <- DropAdd(d50, k = k, plateau = 500L)
+ffPick <- FarFirst(k, d50)
+da50Pick <- DropAdd(d50, k = k, plateau = 500L)
 set.seed(42)
-res_gr50 <- Grasp(d50, k = k, plateau = 50L)
+gr50Pick <- Grasp(d50, k = k, plateau = 50L)
 ```
 
 Even a small difference in T~k~ can correspond to a meaningfully more
@@ -232,9 +232,9 @@ dispersed selection.
 ```{r}
 #| label: compare-scores
 scores <- c(
-  FarFirst  = MinDist(d50, idx_ff),
-  DropAdd = attr(res_da50, "score"),
-  Grasp   = attr(res_gr50, "score")
+  FarFirst  = MinDist(d50, ffPick),
+  DropAdd = attr(da50Pick, "score"),
+  Grasp   = attr(gr50Pick, "score")
 )
 round(scores, 3)
 ```
@@ -253,9 +253,9 @@ above captures the quality distinction even when the visual overlap is high.
 #|   full candidate set. A small jitter separates symbols at shared indices."
 
 methods <- list(
-  FarFirst  = idx_ff,
-  DropAdd = res_da50,
-  Grasp   = res_gr50
+  FarFirst  = ffPick,
+  DropAdd = da50Pick,
+  Grasp   = gr50Pick
 )
 cols <- c(FarFirst = "#E41A1C", DropAdd = "#377EB8", Grasp = "#4DAF4A")
 pchs <- c(FarFirst = 24L, DropAdd = 21L, Grasp = 22L)
@@ -306,15 +306,15 @@ d30   <- dist(pts30)
 ```{r}
 #| label: exact
 #| eval: !expr requireNamespace("highs", quietly = TRUE)
-res_ex <- ExactMaxMin(d30, k = 6L, maxSeconds = 30L)
+exPick <- ExactMaxMin(d30, k = 6L, maxSeconds = 30L)
 
-res_ex$proven      # TRUE  ⟹  objective is the global optimum
-res_ex$objective
+exPick$proven      # TRUE  ⟹  objective is the global optimum
+exPick$objective
 
 # Compare to the greedy heuristic on the same instance
-res_ff30 <- FarFirst(6L, d30)
-c(exact    = res_ex$objective,
-  Gonzalez = MinDist(d30, res_ff30))
+ff30Pick <- FarFirst(6L, d30)
+c(exact    = exPick$objective,
+  farFirst = MinDist(d30, ff30Pick))
 ```
 
 `$proven = TRUE` certifies that no selection can achieve a higher T~k~.
@@ -332,9 +332,9 @@ via the `points` argument:
 
 ```{r}
 #| label: MinDist
-MinDist(d50, idx_ff)                               # from dist
-MinDist(as.matrix(d50), idx_ff)                    # from square matrix
-MinDist(points = pts, idx = idx_ff)                # from coordinates
+MinDist(d50, ffPick)                               # from dist
+MinDist(as.matrix(d50), ffPick)                    # from square matrix
+MinDist(points = pts, idx = ffPick)                # from coordinates
 ```
 
 
@@ -389,9 +389,9 @@ dual of `ExactMaxMin()`'s node-packing programme — warm-started from the
 ```{r}
 #| label: exact-kcentre
 #| eval: !expr requireNamespace("highs", quietly = TRUE)
-res_kc <- ExactKCentre(eurodist, k = 4L, progress = FALSE)
-res_kc
-res_kc$proven      # TRUE  ⟹  radius is the global covering optimum
+kc <- ExactKCentre(eurodist, k = 4L, progress = FALSE)
+kc
+kc$proven      # TRUE  ⟹  radius is the global covering optimum
 ```
 
 The covering optimum is sometimes attained by fewer centres (once every
@@ -408,8 +408,8 @@ city near a centre.
 #| label: dispersion-vs-covering
 #| eval: !expr requireNamespace("highs", quietly = TRUE)
 disp <- sort(ExactMaxMin(eurodist, k = 4L)$indices)
-labels(eurodist)[disp]            # dispersion: pushed to the extremes
-labels(eurodist)[sort(res_kc$indices)]  # covering: pulled toward the interior
+labels(eurodist)[disp]              # dispersion: pushed to the extremes
+labels(eurodist)[sort(kc$indices)]  # covering: pulled toward the interior
 ```
 
 
