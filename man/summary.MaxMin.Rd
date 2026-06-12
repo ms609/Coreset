@@ -19,7 +19,7 @@
 \code{object}, invisibly.
 }
 \description{
-A fuller counterpart to \link{print.MaxMinSelection}: the one-line headline,
+A fuller counterpart to \code{\link[=print.MaxMinSelection]{print.MaxMinSelection()}}: the one-line headline,
 followed by the achieved objective(s), search effort, and -- for a
 \code{\link[=FarFirst]{FarFirst()}} ensemble -- the per-strategy \eqn{T_k} table.
 }

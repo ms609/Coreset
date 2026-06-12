@@ -3,7 +3,7 @@
 \name{KCentre}
 \alias{KCentre}
 \alias{KCenter}
-\title{Near-optimal discrete k-centre by CDSh}
+\title{Near-optimal discrete k-centre solver}
 \usage{
 KCentre(d, k, nstart = 1L, effort = 1L, seeds = NULL)
 
@@ -33,10 +33,13 @@ class \code{"KCentreSelection"} and prints as a one-line summary; it is otherwis
 an ordinary integer vector and indexes a matrix or coordinate set directly.
 }
 \description{
-Chooses \code{k} centres minimising the covering radius (the largest distance from
-any point to its nearest centre) with the CDSh heuristic of
-\insertCite{GarciaDiaz2019;textual}{MaxMin} (see also
-\insertCite{GarciaDiaz2017}{MaxMin}). CDSh binary-searches the achieved
+\code{KCentre()} selects \code{k} elements (centres) so as to minimize the largest
+distance from any point to its nearest centre (the covering radius),
+using the CDSh heuristic
+\insertCite{GarciaDiaz2017,GarciaDiaz2019}{MaxMin}.
+}
+\details{
+CDSh binary-searches the achieved
 distinct distances; at each trial radius it runs a fixed-\code{k} farthest-point
 construction in which every centre is the highest-degree neighbour (within the
 trial radius) of the currently worst-covered vertex, and accepts the radius
@@ -45,8 +48,7 @@ of \insertCite{GarciaDiaz2019;textual}{MaxMin} it reaches roughly 1-3.5\% of the
 optimum at \eqn{O(N^2 \log N)}, far tighter than the Gonzalez 2-approximation
 that \code{\link[=FarFirst]{FarFirst()}} gives for this objective (typically tens of per cent above
 optimum).
-}
-\details{
+
 The achieved covering radius is not monotone in the trial radius, so the binary
 search can occasionally miss the best candidate. Two safeguards keep the result
 robust: for a small candidate grid (\code{n} up to ~150) every radius is scanned

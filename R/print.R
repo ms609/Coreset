@@ -219,7 +219,7 @@ print.MaxMinExact <- function(x, ...) {
 
 #' Multi-line summaries of MaxMin solver results
 #'
-#' A fuller counterpart to [print.MaxMinSelection]: the one-line headline,
+#' A fuller counterpart to [print.MaxMinSelection()]: the one-line headline,
 #' followed by the achieved objective(s), search effort, and -- for a
 #' [FarFirst()] ensemble -- the per-strategy \eqn{T_k} table.
 #' @param object A `MaxMinSelection` or `MaxMinExact` object.

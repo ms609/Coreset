@@ -163,7 +163,7 @@
 
 # ----- main -----------------------------------------------------------------
 
-#' Exact Max-Min Diversity (MMDP) optimum on small instances
+#' Exact Max-Min Diversity Problem optimum on small instances
 #'
 #' Solves the Max-Min Diversity Problem (discrete p-dispersion) to proven
 #' optimality by iterated node-packing \insertCite{Sayyady2016;textual}{MaxMin}: the optimum is

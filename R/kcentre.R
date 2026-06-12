@@ -129,12 +129,14 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 
 # ----- CDSh heuristic -------------------------------------------------------
 
-#' Near-optimal discrete k-centre by CDSh
+#' Near-optimal discrete k-centre solver
 #'
-#' Chooses `k` centres minimising the covering radius (the largest distance from
-#' any point to its nearest centre) with the CDSh heuristic of
-#' \insertCite{GarciaDiaz2019;textual}{MaxMin} (see also
-#' \insertCite{GarciaDiaz2017}{MaxMin}). CDSh binary-searches the achieved
+#' `KCentre()` selects `k` elements (centres) so as to minimize the largest
+#' distance from any point to its nearest centre (the covering radius),
+#' using the CDSh heuristic
+#' \insertCite{GarciaDiaz2017,GarciaDiaz2019}{MaxMin}.
+#'
+#' CDSh binary-searches the achieved
 #' distinct distances; at each trial radius it runs a fixed-`k` farthest-point
 #' construction in which every centre is the highest-degree neighbour (within the
 #' trial radius) of the currently worst-covered vertex, and accepts the radius

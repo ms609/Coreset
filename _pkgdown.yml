@@ -16,7 +16,7 @@ reference:
     contents:
       - FarFirst
       - MaxMinSeed
-  - title: MaxMin solvers
+  - title: Max-Min diversity problem solvers
     contents:
       - DropAdd
       - Grasp

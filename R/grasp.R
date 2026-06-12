@@ -305,7 +305,7 @@
 #'     \item{pr_calls}{Number of path-relinking pair-applications run.}
 #'   }
 #'   The vector has class `"MaxMinSelection"` and prints as a one-line summary
-#'   (see [print.MaxMinSelection]); it is otherwise an ordinary integer vector.
+#'   (see [print.MaxMinSelection()]); it is otherwise an ordinary integer vector.
 #' @references \insertAllCited{}
 #'
 #' @seealso [DropAdd()] for scalable refinement;

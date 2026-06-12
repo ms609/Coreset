@@ -2,7 +2,7 @@
 % Please edit documentation in R/exact.R
 \name{ExactMaxMin}
 \alias{ExactMaxMin}
-\title{Exact Max-Min Diversity (MMDP) optimum on small instances}
+\title{Exact Max-Min Diversity Problem optimum on small instances}
 \usage{
 ExactMaxMin(
   d,
@@ -42,7 +42,7 @@ bare integer vector carrying a \code{score} attribute), \code{ExactMaxMin()}
 deliberately returns a list, since it reports both the optimum and a proof
 status. The fields are
 \describe{
-\item{indices}{Integer vector of length \code{m}, sorted ascending: the
+\item{indices}{Integer vector of length \code{k}, sorted ascending: the
 selected points.}
 \item{objective}{The achieved \code{T_k} -- the minimum pairwise distance
 within \code{indices}. When \code{proven} is \code{TRUE} this equals the threshold
@@ -65,7 +65,7 @@ Solves the Max-Min Diversity Problem (discrete p-dispersion) to proven
 optimality by iterated node-packing \insertCite{Sayyady2016;textual}{MaxMin}: the optimum is
 the largest threshold \code{lambda}, over the achieved distinct pairwise
 distances, for which the threshold graph \code{G(lambda)} (edges join pairs
-closer than \code{lambda}) contains an independent set of size at least \code{m}.
+closer than \code{lambda}) contains an independent set of size at least \code{k}.
 Each probe solves a maximum-independent-set integer program with the \code{highs}
 MILP backend, the packing constraints held as a sparse matrix.
 }
@@ -73,7 +73,7 @@ MILP backend, the packing constraints held as a sparse matrix.
 The search is warm-started from a heuristic lower bound (the best of several
 \code{\link[=Grasp]{Grasp()}} restarts and a \code{\link[=DropAdd]{DropAdd()}} pass), then gallops upward from that
 bound to the first infeasible threshold and bisects the resulting bracket.
-When a heuristic already attains the optimum -- common at the small \code{m} for
+When a heuristic already attains the optimum -- common at the small \code{k} for
 which an exact reference is wanted -- a single infeasibility solve certifies
 it. The warm start only sets the starting lower bound: the returned optimum
 is proven regardless of heuristic quality (a loose seed merely costs extra
