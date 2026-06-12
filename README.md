@@ -6,8 +6,8 @@
 [![Project Status: WIP](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
 <!-- badges: end -->
 
-`MaxMin` provides solvers to select a dispersed subsample of points in order to
-maxmize coverage.
+`MaxMin` implements algorithms that select a dispersed subsample of points that
+maxmizes coverage of a larger set, under one of two objectives:
 
 The **Max-Min Diversity Problem** (MMDP, the discrete *p*-dispersion objective)
 maximises separation. It selects $k$ elements such that the minimum distance
@@ -21,13 +21,16 @@ possible. This rewards selections that reach the whole set, such that each point
 has a nearby representative; it can pull centres inward and collapse
 well-separated modes onto a central compromise.
 
-Both problems can be quickly approximated within a factor of two by the greedy
-farthest-first heuristic `FarFirst()`.
-
-
 ## Solvers
 
-MMDP (max-min dispersion):
+The greedy farthest-first heuristic `FarFirst()` serves as a quick approximate
+solver to both problems, providing a solution that is guaranteed to be within a
+factor of two of the optimum (and typically much closer).
+
+Better approximations can be accomplished, at the cost of longer runs, by
+specialized solvers.
+
+### MMDP (max-min dispersion)
 
 | Function | Method | Use |
 |---|---|---|
@@ -35,7 +38,7 @@ MMDP (max-min dispersion):
 | `Grasp()` |  GRASP with path-relinking metaheuristic (Resende et al. 2010) | Slower but powerful heuristic |
 | `ExactMaxMin()` | Node-packing integer program (Sayyady & Fathi 2016) | Proven optimum, small `k` (needs `highs`) |
 
-*k*-centre (min-max covering):
+### *k*-centre (min-max covering)
 
 | Function | Method | Use |
 |---|---|---|
