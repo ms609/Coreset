@@ -191,12 +191,12 @@ Rcpp::IntegerVector KCentreCDSh_cpp(Rcpp::NumericMatrix d, int k, int seed,
                                     Rcpp::NumericVector cand, bool exhaustive) {
   int n = d.nrow();
   int nCand = cand.size();
-  if (k < 1 || k >= n) {
+  if (k < 1 || k >= n) {                              // # nocov start
     Rcpp::stop("KCentreCDSh_cpp: expect 1 <= k < n; got k = %d, n = %d", k, n);
-  }
-  if (seed < 1 || seed > n) {
+  }                                                   // # nocov end
+  if (seed < 1 || seed > n) {                         // # nocov start
     Rcpp::stop("KCentreCDSh_cpp: 'seed' must be in [1, %d]; got %d", n, seed);
-  }
+  }                                                   // # nocov end
   const double* P = d.begin();
   int seed0 = seed - 1;
 

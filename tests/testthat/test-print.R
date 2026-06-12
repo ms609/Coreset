@@ -45,7 +45,7 @@ test_that("a single element drops the distance clause (NA score)", {
 
 test_that("DropAdd and Grasp report their own algorithm names", {
   dat <- MakeData(N = 30)
-  da <- DropAdd(dat$d, 6L)
+  da <- DropAdd(dat$d, k = 6L)
   expect_s3_class(da, "MaxMinSelection")
   expect_match(format(da), "selected by DropAdd tabu search, each at distance >= ")
   set.seed(1)

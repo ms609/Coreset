@@ -1,0 +1,13 @@
+# New or changed lines must be 100% covered — the house coverage gate, enforced
+# on every PR via the `patch` status. The project total is reported but does not
+# fail CI on minor fluctuations. CI already uploads coverage (covr::codecov() in
+# R-CMD-check.yml); this file only sets the targets.
+coverage:
+  status:
+    patch:
+      default:
+        target: 100%
+    project:
+      default:
+        target: auto
+        threshold: 0.5%

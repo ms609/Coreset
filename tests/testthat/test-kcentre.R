@@ -258,3 +258,68 @@ test_that("effort controls the Gonzalez floor", {
   expect_lte(attr(multi, "radius"), gonz + 1e-9)
   expect_error(KCentre(d, 8L, effort = -1L), "non-negative")
 })
+
+test_that("the Gonzalez floor strictly improves a sub-Gonzalez CDSh result (KC-001)", {
+  # In the non-exhaustive (binary-search) regime the CDSh covering radius can
+  # land just above the Gonzalez 2-approximation; the floor then replaces it.
+  # This instance is one such case (raw CDSh > FarFirst peripheral), so the
+  # default effort = 1 floor branch fires and lowers the radius.
+  set.seed(459)
+  d <- as.matrix(stats::dist(matrix(rnorm(400L), ncol = 2L)))   # n = 200
+  k <- 12L
+  raw     <- attr(KCentre(d, k, effort = 0L), "radius")          # floor disabled
+  floored <- attr(KCentre(d, k, effort = 1L), "radius")          # floor applied
+  expect_lt(floored, raw)                                        # floor helped
+  expect_equal(floored,
+               KCentreRadius(d, as.integer(FarFirst(d, k, method = "peripheral"))))
+})
+
+test_that("KCentre accepts user-supplied seeds and rejects out-of-range ones", {
+  set.seed(81)
+  d <- as.matrix(stats::dist(matrix(rnorm(80L), ncol = 2L)))     # n = 40
+  res <- KCentre(d, 4L, seeds = c(1L, 10L, 40L))
+  expect_s3_class(res, "KCentreSelection")
+  expect_equal(attr(res, "radius"), KCentreRadius(d, as.integer(res)))
+  expect_error(KCentre(d, 4L, seeds = c(0L, 5L)), "indices in")
+  expect_error(KCentre(d, 4L, seeds = c(1L, nrow(d) + 1L)), "indices in")
+  expect_error(KCentre(d, 4L, seeds = c(1L, NA_integer_)), "indices in")
+})
+
+# ----- ExactKCentre argument validation -------------------------------------
+
+test_that("ExactKCentre rejects an unsupported solver and bad k", {
+  skip_if_not_installed("highs")
+  skip_if_not_installed("Matrix")
+  d <- as.matrix(stats::dist(matrix(rnorm(20L), ncol = 2L)))     # n = 10
+  expect_error(ExactKCentre(d, 3L, solver = "glpk"), "Unsupported")
+  expect_error(ExactKCentre(d, c(1L, 2L), progress = FALSE), "single positive")
+  expect_error(ExactKCentre(d, 0L, progress = FALSE), "single positive")
+  expect_error(ExactKCentre(d, nrow(d) + 1L, progress = FALSE), "1 <= k")
+})
+
+# ----- S3 display -----------------------------------------------------------
+
+test_that("KCentreSelection format and print summarise the selection", {
+  set.seed(91)
+  d <- as.matrix(stats::dist(matrix(rnorm(60L), ncol = 2L)))
+  multi <- KCentre(d, 4L)
+  expect_match(format(multi), "centres .*by CDSh, covering radius <=")
+  expect_output(print(multi), "CDSh")
+  one <- KCentre(d, 1L)
+  expect_match(format(one), "^1 centre ")        # singular: no trailing 's'
+})
+
+test_that("KCentreExact format and print cover proven and unproven states", {
+  proven <- structure(
+    list(indices = c(2L, 5L), radius = 0.5, proven = TRUE, time_s = 0.1,
+         solver = "highs", n = 10L, k = 2L, n_centres = 2L),
+    class = "KCentreExact")
+  unproven <- structure(
+    list(indices = 3L, radius = 1.2, proven = FALSE, time_s = 0.1,
+         solver = "highs", n = 10L, k = 1L, n_centres = 1L),
+    class = "KCentreExact")
+  expect_match(format(proven), "proven optimal, covering radius = ")
+  expect_match(format(unproven), "unproven incumbent, covering radius <= ")
+  expect_match(format(unproven), "^1 centre ")   # singular
+  expect_output(print(proven), "highs")
+})

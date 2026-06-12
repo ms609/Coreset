@@ -34,11 +34,11 @@
 # ---------------------------------------------------------------------------
 # 1. Smoke test
 # ---------------------------------------------------------------------------
-test_that("DropAdd smoke: 20 pts in 5-D, m=5", {
+test_that("DropAdd smoke: 20 pts in 5-D, k=5", {
   set.seed(7)
   pts <- matrix(rnorm(20 * 5), ncol = 5)
   d <- dist(pts)
-  res <- DropAdd(d, m = 5L, maxSeconds = 1)
+  res <- DropAdd(d, k = 5L, maxSeconds = 1)
   expect_length(res, 5L)
   expect_equal(length(unique(res)), 5L)
   expect_true(all(res %in% seq_len(20L)))
@@ -54,7 +54,7 @@ test_that("DropAdd construction-only result matches its MaxMin score", {
   set.seed(11)
   pts <- matrix(rnorm(30 * 4), ncol = 4)
   dmat <- as.matrix(dist(pts))
-  res <- DropAdd(dmat, m = 6L, maxIter = 0L)
+  res <- DropAdd(dmat, k = 6L, maxIter = 0L)
   expect_length(res, 6L)
   expect_equal(attr(res, "iters"), 0L)
   # Objective stored equals the actual MaxMin over the returned indices.
@@ -72,8 +72,8 @@ test_that("DropAdd never worsens the constructive solution", {
   geo <- geoEnv$read_mdplib_geo(path)
   dmat <- geoEnv$mdplib_geo_dist(geo)
 
-  cons <- DropAdd(dmat, m = 10L, maxIter = 0L)
-  full <- DropAdd(dmat, m = 10L, plateau = 2000L)
+  cons <- DropAdd(dmat, k = 10L, maxIter = 0L)
+  full <- DropAdd(dmat, k = 10L, plateau = 2000L)
   expect_gte(attr(full, "score"), attr(cons, "score") - 1e-9)
 })
 
@@ -99,7 +99,7 @@ test_that("DropAdd reaches the Geo 100 1 m=10 optimum (89.37)", {
   # Time-budgeted oracle: run the full 10 s, as before, to confirm the search
   # reaches the proven optimum (this is a correctness oracle, not a frozen
   # result, so a wall-clock budget is appropriate here).
-  res <- DropAdd(dmat, m = 10L, maxSeconds = 10, plateau = 100000000L)
+  res <- DropAdd(dmat, k = 10L, maxSeconds = 10, plateau = 100000000L)
   bestKnown <- 89.37
   expect_gte(attr(res, "score"), 0.999 * bestKnown)
   # Returned indices truly achieve the reported objective.
@@ -118,44 +118,44 @@ test_that("DropAdd .verify=TRUE passes silently on a real instance", {
   geo <- geoEnv$read_mdplib_geo(path)
   dmat <- geoEnv$mdplib_geo_dist(geo)
 
-  # Cap iters to keep verification cheap; the inner check is O(n*m) per iter.
+  # Cap iters to keep verification cheap; the inner check is O(n*k) per iter.
   expect_silent(
-    DropAdd(dmat, m = 10L, maxSeconds = 30, maxIter = 100L,
+    DropAdd(dmat, k = 10L, maxSeconds = 30, maxIter = 100L,
               .verify = TRUE)
   )
 })
 
 # ---------------------------------------------------------------------------
-# 5. FIFO invariant: across the first m main-loop iterations, every initially
+# 5. FIFO invariant: across the first k main-loop iterations, every initially
 # selected point is dropped exactly once.
 # ---------------------------------------------------------------------------
-test_that("DropAdd FIFO drops each initial point once in first m iterations", {
+test_that("DropAdd FIFO drops each initial point once in first k iterations", {
   set.seed(2026)
   pts <- matrix(rnorm(10 * 3), ncol = 3)
   dmat <- as.matrix(dist(pts))
-  m <- 4L
+  k <- 4L
 
   # Capture the constructive S via the internal helper.
-  cons <- MaxMin:::.DropAddConstruct(dmat, m)
+  cons <- MaxMin:::.DropAddConstruct(dmat, k)
   sInit <- cons$S
-  expect_length(sInit, m)
-  expect_equal(length(unique(sInit)), m)
+  expect_length(sInit, k)
+  expect_equal(length(unique(sInit)), k)
 
-  # Drive the PRODUCTION loop via the .trace hook for exactly 2*m iterations.
+  # Drive the PRODUCTION loop via the .trace hook for exactly 2*k iterations.
   traceEnv <- new.env()
-  res <- DropAdd(dmat, m = m, maxSeconds = 60, maxIter = 2L * m,
+  res <- DropAdd(dmat, k = k, maxSeconds = 60, maxIter = 2L * k,
                    .trace = traceEnv)
-  expect_equal(attr(res, "iters"), 2L * m)
-  expect_length(traceEnv$drops, 2L * m)
-  # First m drops are exactly the constructive members, in some order
-  # (FIFO order is determined by iter_stamp, which was 1..m in construction
+  expect_equal(attr(res, "iters"), 2L * k)
+  expect_length(traceEnv$drops, 2L * k)
+  # First k drops are exactly the constructive members, in some order
+  # (FIFO order is determined by iter_stamp, which was 1..k in construction
   # so drop order is the construction order).
-  expect_setequal(traceEnv$drops[seq_len(m)], sInit)
-  expect_equal(traceEnv$drops[seq_len(m)], sInit)  # actually in order
+  expect_setequal(traceEnv$drops[seq_len(k)], sInit)
+  expect_equal(traceEnv$drops[seq_len(k)], sInit)  # actually in order
 
-  # Across 2*m iterations, every dropped point was previously in S.
-  # No index can be dropped twice in the first m iterations.
-  expect_equal(anyDuplicated(traceEnv$drops[seq_len(m)]), 0L)
+  # Across 2*k iterations, every dropped point was previously in S.
+  # No index can be dropped twice in the first k iterations.
+  expect_equal(anyDuplicated(traceEnv$drops[seq_len(k)]), 0L)
 
   # Porumbel p.281: the just-dropped point is excluded from the add candidates
   # for that iteration, so the added point is never the one just dropped. This
@@ -172,7 +172,7 @@ test_that("DropAdd respects maxSeconds within reasonable slack", {
   dmat <- as.matrix(dist(pts))
   t0 <- Sys.time()
   # Disable stagnation so the wall-clock ceiling is the binding criterion.
-  res <- DropAdd(dmat, m = 20L, maxSeconds = 1, plateau = 100000000L)
+  res <- DropAdd(dmat, k = 20L, maxSeconds = 1, plateau = 100000000L)
   elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
   expect_lte(attr(res, "time_s"), 1.5)
   expect_lte(elapsed, 2.0)
@@ -189,34 +189,34 @@ test_that("DropAdd is deterministic and validates inputs", {
   # The search is RNG-free, so repeated calls are identical. (The old `seed`
   # argument was a documented no-op and has been removed from the API.)
   set.seed(1)
-  r1 <- DropAdd(dmat, m = 4L, maxIter = 0L)
+  r1 <- DropAdd(dmat, k = 4L, maxIter = 0L)
   set.seed(999)
-  r2 <- DropAdd(dmat, m = 4L, maxIter = 0L)
+  r2 <- DropAdd(dmat, k = 4L, maxIter = 0L)
   attr(r1, "time_s") <- attr(r2, "time_s") <- NULL
   expect_identical(r1, r2, label = "DropAdd is RNG-independent: different seeds give identical result")
 
-  # m validation
-  expect_error(DropAdd(dmat, m = 1L),   "2 <= m")
-  expect_error(DropAdd(dmat, m = 25L),  "2 <= m")
+  # k validation
+  expect_error(DropAdd(dmat, k = 1L),   "2 <= k")
+  expect_error(DropAdd(dmat, k = 25L),  "2 <= k")
   # plateau validation
-  expect_error(DropAdd(dmat, m = 4L, plateau = 0L),  "plateau")
+  expect_error(DropAdd(dmat, k = 4L, plateau = 0L),  "plateau")
   # maxIter validation
-  expect_error(DropAdd(dmat, m = 4L, maxIter = -1L),  "maxIter")
+  expect_error(DropAdd(dmat, k = 4L, maxIter = -1L),  "maxIter")
   # maxSeconds validation
-  expect_error(DropAdd(dmat, m = 4L, maxSeconds = 0),   "maxSeconds")
-  expect_error(DropAdd(dmat, m = 4L, maxSeconds = NA_real_), "maxSeconds")
+  expect_error(DropAdd(dmat, k = 4L, maxSeconds = 0),   "maxSeconds")
+  expect_error(DropAdd(dmat, k = 4L, maxSeconds = NA_real_), "maxSeconds")
 })
 
 test_that("DropAdd progress = TRUE fires the cli hooks", {
   dmat <- as.matrix(dist(matrix(rnorm(15 * 2), ncol = 2)))
-  expect_no_error(DropAdd(dmat, m = 3L, maxIter = 2L, progress = TRUE))
+  expect_no_error(DropAdd(dmat, k = 3L, maxIter = 2L, progress = TRUE))
 })
 
 test_that("DropAdd rejects an NA distance matrix (FF-001 / T7-08)", {
   # The matrix path coerces via .AsDistMatrix, which now guards against NA so
   # the search cannot silently accept a corrupt matrix.
   naMat <- matrix(c(0, 5, NA, 5, 0, NA, NA, NA, 0), 3L, 3L)
-  expect_error(DropAdd(naMat, m = 3L), "NA")
+  expect_error(DropAdd(naMat, k = 3L), "NA")
 })
 
 # ---------------------------------------------------------------------------
@@ -224,38 +224,38 @@ test_that("DropAdd rejects an NA distance matrix (FF-001 / T7-08)", {
 # ---------------------------------------------------------------------------
 test_that("DropAdd construction tie-breaking and caseA update (.verify)", {
   # Unit square: all sides=1, diagonals=sqrt(2).
-  # Construction for m=3: seed=P1, add diagonal P3 (caseA fires for P2 and P4),
+  # Construction for k=3: seed=P1, add diagonal P3 (caseA fires for P2 and P4),
   # then P2 and P4 are tied (lines 51-53 of .DropAddConstruct).
   ptsSq <- rbind(c(0,0), c(1,0), c(1,1), c(0,1))
   dmat   <- as.matrix(dist(ptsSq))
   # .verify=TRUE routes through R path with brute-force record checks
-  res <- DropAdd(dmat, m = 3L, maxIter = 4L, .verify = TRUE)
+  res <- DropAdd(dmat, k = 3L, maxIter = 4L, .verify = TRUE)
   expect_length(res, 3L)
 })
 
-test_that("DropAdd m=2 else-branch and ADD tie-breaking (.verify)", {
+test_that("DropAdd k=2 else-branch and ADD tie-breaking (.verify)", {
   # Rhombus: all edges=sqrt(2), diagonals=2.
-  # m=2: after drop of seed, two candidates are equidistant from remaining
+  # k=2: after drop of seed, two candidates are equidistant from remaining
   # selected point (lines 360-366 else branch + lines 391-393 ADD tie).
   ptsRh <- rbind(c(0,0), c(1,1), c(2,0), c(1,-1))
   dmat   <- as.matrix(dist(ptsRh))
-  res <- DropAdd(dmat, m = 2L, maxIter = 4L, .verify = TRUE)
+  res <- DropAdd(dmat, k = 2L, maxIter = 4L, .verify = TRUE)
   expect_length(res, 2L)
 })
 
 test_that("DropAdd caseA ADD update fires in main loop (.verify)", {
-  # Unit square m=3: first main-loop ADD of P4 has d[P4,P1]=1 = minDist[P1]=1
+  # Unit square k=3: first main-loop ADD of P4 has d[P4,P1]=1 = minDist[P1]=1
   # (caseA, line 409).
   ptsSq <- rbind(c(0,0), c(1,0), c(1,1), c(0,1))
   dmat   <- as.matrix(dist(ptsSq))
   expect_no_error(
-    DropAdd(dmat, m = 3L, maxIter = 3L, .verify = TRUE)
+    DropAdd(dmat, k = 3L, maxIter = 3L, .verify = TRUE)
   )
 })
 
-test_that("DropAdd effectiveMax = 0 when m == n (.verify)", {
+test_that("DropAdd effectiveMax = 0 when k == n (.verify)", {
   dmat <- as.matrix(dist(matrix(rnorm(5 * 2), ncol = 2)))
-  res  <- DropAdd(dmat, m = 5L, .verify = TRUE)
+  res  <- DropAdd(dmat, k = 5L, .verify = TRUE)
   # All 5 points selected, no loop iterations.
   expect_length(res, 5L)
   expect_equal(attr(res, "iters"), 0L)
@@ -265,7 +265,7 @@ test_that("DropAdd .trace + .verify together cover init and loop writes", {
   set.seed(2026)
   dmat <- as.matrix(dist(matrix(rnorm(12 * 2), ncol = 2)))
   te   <- new.env()
-  res  <- DropAdd(dmat, m = 4L, maxIter = 5L, .verify = TRUE, .trace = te)
+  res  <- DropAdd(dmat, k = 4L, maxIter = 5L, .verify = TRUE, .trace = te)
   expect_equal(length(te$drops), attr(res, "iters"))
   expect_equal(length(te$adds),  attr(res, "iters"))
 })
@@ -276,7 +276,7 @@ test_that("DropAdd R-path time budget halts execution (dropadd.R line 352)", {
   # .Machine$integer.max disables both other stopping criteria; only the
   # budget can end the loop.
   res <- expect_returns_within(
-    DropAdd(dmat, m = 5L,
+    DropAdd(dmat, k = 5L,
             maxIter = .Machine$integer.max, plateau = .Machine$integer.max,
             .verify = TRUE, maxSeconds = 0.001),
     limit = 5)
@@ -308,12 +308,12 @@ test_that("DropAdd C++ construction covers sumDist tie-break (lines 82-85)", {
   # When A is added, d(P,A)=sqrt(2)==minDist[P] -> line 103 fires too.
   pts <- rbind(c(0,0), c(3,0), c(0,2), c(1,1), c(2,1))
   d   <- as.matrix(dist(pts))
-  res <- DropAdd(d, m = 4L, maxIter = 0L)
+  res <- DropAdd(d, k = 4L, maxIter = 0L)
   expect_length(res, 4L)
   expect_equal(attr(res, "iters"), 0L)
 })
 
-test_that("DropAdd C++ m=2 covers DROP else-branch (lines 214-215)", {
+test_that("DropAdd C++ k=2 covers DROP else-branch (lines 214-215)", {
   # Rhombus: (0,0),(1,1),(2,0),(1,-1).  All edges=sqrt(2), diagonals=2.
   # Construction: {(0,0),(2,0)} (endpoints of the longer diagonal).
   # Drop (0,0): the remaining selected (2,0) had (0,0) as its only peer,
@@ -321,7 +321,7 @@ test_that("DropAdd C++ m=2 covers DROP else-branch (lines 214-215)", {
   # skips the only surviving S member, leaving mns=Inf -> else branch fires.
   ptsRh <- rbind(c(0,0), c(1,1), c(2,0), c(1,-1))
   dRh   <- as.matrix(dist(ptsRh))
-  res <- DropAdd(dRh, m = 2L, maxIter = 4L)
+  res <- DropAdd(dRh, k = 2L, maxIter = 4L)
   expect_length(res, 2L)
 })
 
@@ -335,7 +335,7 @@ test_that("DropAdd C++ main-loop ADD covers tie-break (255-258) and equality (27
   # Construction: ANC -> P -> Q -> R  (ANC has max row-sum).
   pts7 <- rbind(c(0,0), c(4,0), c(0,4), c(10,10), c(1,0), c(3,0), c(3.5,0))
   d7   <- as.matrix(dist(pts7))
-  res <- DropAdd(d7, m = 4L, maxIter = 1L)
+  res <- DropAdd(d7, k = 4L, maxIter = 1L)
   expect_length(res, 4L)
   expect_equal(attr(res, "iters"), 1L)
 })
@@ -353,7 +353,7 @@ test_that("DropAdd secondary attribute equals upper-triangle distance sum", {
   set.seed(2026)
   pts <- matrix(rnorm(20 * 3), ncol = 3)
   dmat <- as.matrix(dist(pts))
-  res <- DropAdd(dmat, m = 5L, maxIter = 20L)
+  res <- DropAdd(dmat, k = 5L, maxIter = 20L)
   # Brute-force the secondary: upper-triangle sum of distances within selection.
   sub <- dmat[res, res]
   expected_secondary <- sum(sub[upper.tri(sub)])
@@ -366,8 +366,8 @@ test_that("DropAdd R reference loop and C++ port are bit-identical", {
   dmat <- as.matrix(dist(pts))
 
   for (maxIter in c(0L, 1L, 5L, 50L, 200L)) {
-    outR <- DropAdd(dmat, m = 8L, maxIter = maxIter, .verify = TRUE)
-    outC <- DropAdd(dmat, m = 8L, maxIter = maxIter)
+    outR <- DropAdd(dmat, k = 8L, maxIter = maxIter, .verify = TRUE)
+    outC <- DropAdd(dmat, k = 8L, maxIter = maxIter)
     # Drop wall-clock `time_s`: nondeterministic, never expected to match.
     attr(outR, "time_s") <- attr(outC, "time_s") <- NULL
     expect_identical(outR,                        outC)
@@ -380,8 +380,8 @@ test_that("DropAdd R reference loop and C++ port are bit-identical", {
   # iteration cap): the run-length is itself an output, so identical iters
   # confirms both paths take the deterministic criterion identically.
   for (mni in c(5L, 25L, 100L)) {
-    outR <- DropAdd(dmat, m = 8L, plateau = mni, .verify = TRUE)
-    outC <- DropAdd(dmat, m = 8L, plateau = mni)
+    outR <- DropAdd(dmat, k = 8L, plateau = mni, .verify = TRUE)
+    outC <- DropAdd(dmat, k = 8L, plateau = mni)
     attr(outR, "time_s") <- attr(outC, "time_s") <- NULL
     expect_identical(outR,                        outC)
     expect_equal(attr(outR, "score"),     attr(outC, "score"),     tolerance = 1e-12)

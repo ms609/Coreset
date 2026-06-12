@@ -34,7 +34,7 @@
 test_that("DropAdd points path: objective equals recomputed min-pairwise distance", {
   set.seed(7)
   pts <- matrix(rnorm(80 * 5), ncol = 5)
-  res <- DropAdd(points = pts, m = 8L, plateau = 500L)
+  res <- DropAdd(points = pts, k = 8L, plateau = 500L)
   expect_length(res, 8L)
   expect_equal(length(unique(res)), 8L)
   expect_true(all(res %in% seq_len(80L)))

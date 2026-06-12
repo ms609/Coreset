@@ -18,8 +18,8 @@ test_that("matrix and coordinate paths agree for every seed strategy", {
       # Seed the RNG identically so the random_furthest pivot matches on both
       # paths; deterministic strategies are unaffected by it.
       set.seed(1); mat <- FarFirst(dat$d, n, method = s)
-      set.seed(1); pt  <- FarFirst(m = n, points = dat$pts, method = s)
-      expect_identical(mat, pt, info = paste("method", s, "m", n))
+      set.seed(1); pt  <- FarFirst(k = n, points = dat$pts, method = s)
+      expect_identical(mat, pt, info = paste("method", s, "k", n))
     }
   }
   # A centroid-free ensemble agrees across paths. Explicit pivots index points
@@ -28,14 +28,14 @@ test_that("matrix and coordinate paths agree for every seed strategy", {
   for (n in c(2L, 6L, 12L)) {
     mat <- FarFirst(dat$d, n, method = c("peripheral", "random_furthest"),
                     pivots = c(3L, 17L, 28L))
-    pt  <- FarFirst(m = n, points = dat$pts,
+    pt  <- FarFirst(k = n, points = dat$pts,
                     method = c("peripheral", "random_furthest"),
                     pivots = c(3L, 17L, 28L))
-    expect_identical(as.integer(mat), as.integer(pt), info = paste("ensemble m", n))
+    expect_identical(as.integer(mat), as.integer(pt), info = paste("ensemble k", n))
     expect_equal(attr(mat, "score"), attr(pt, "score"), tolerance = 1e-12,
-                 info = paste("ensemble score m", n))
+                 info = paste("ensemble score k", n))
     expect_equal(attr(mat, "winning_strategy"), attr(pt, "winning_strategy"),
-                 info = paste("ensemble winning_strategy m", n))
+                 info = paste("ensemble winning_strategy k", n))
   }
 })
 
@@ -119,19 +119,19 @@ test_that("pivots vector controls the random-furthest starts", {
 test_that("trivial cardinalities are handled", {
   dat <- MakeData(N = 10)
   expect_identical(FarFirst(dat$d, 0L), integer(0))
-  # m > N: all N indices returned in Gonzalez order (a permutation of 1:N).
+  # k > N: all N indices returned in Gonzalez order (a permutation of 1:N).
   over <- FarFirst(dat$d, 20L, method = 1L)
   expect_length(over, 10L)
   expect_setequal(over, seq_len(10L))
   expect_length(FarFirst(dat$d, 1L, method = "medoid"), 1L)
-  # m == 1 under ensemble: all t_k are NA, first anchor wins.
+  # k == 1 under ensemble: all t_k are NA, first anchor wins.
   expect_length(FarFirst(dat$d, 1L), 1L)
 })
 
-test_that("FarFirst m > nPts returns all points (m capped at nPts)", {
+test_that("FarFirst k > nPts returns all points (k capped at nPts)", {
   dat <- MakeData(N = 10)   # 10-point dataset
   # Request more points than available
-  res <- FarFirst(dat$d, m = 50L, method = "peripheral")
+  res <- FarFirst(dat$d, k = 50L, method = "peripheral")
   expect_length(res, 10L)
   expect_setequal(res, seq_len(10L))
   # Score is finite (not NA) — it is the min pairwise distance of all 10 points
@@ -151,7 +151,7 @@ test_that("input validation", {
   # A misspelled ensemble anchor is rejected, not silently dropped (F-601).
   expect_error(FarFirst(dat$d, 3L, method = c("peripheral", "anti-medoid")),
                "unknown seed/method")
-  # m = Inf is rejected without a spurious base-R coercion warning (FF-004).
+  # k = Inf is rejected without a spurious base-R coercion warning (FF-004).
   expect_silent(expect_error(FarFirst(dat$d, Inf), "non-negative"))
 })
 
@@ -249,19 +249,19 @@ test_that("column-oracle warns on an unreachable named method but not the defaul
 
 test_that(".AsPointsMatrix coerces non-matrix, converts integer, and rejects bad input", {
   # Non-matrix coerced via as.matrix() (line 40): a plain vector becomes Nx1.
-  r <- FarFirst(m = 3L, points = 1:20, method = 1L)
+  r <- FarFirst(k = 3L, points = 1:20, method = 1L)
   expect_length(r, 3L)
   # Non-numeric matrix errors (line 43).
   expect_error(
-    FarFirst(m = 2L, points = matrix(c("a", "b", "c", "d"), 2L, 2L)),
+    FarFirst(k = 2L, points = matrix(c("a", "b", "c", "d"), 2L, 2L)),
     "numeric"
   )
   # Integer storage mode is silently coerced to double (line 46).
-  rInt <- FarFirst(m = 3L, points = matrix(1L:20L, ncol = 4L), method = 1L)
+  rInt <- FarFirst(k = 3L, points = matrix(1L:20L, ncol = 4L), method = 1L)
   expect_length(rInt, 3L)
   # NA entries error (lines 49-50).
   expect_error(
-    FarFirst(m = 2L, points = matrix(c(1, 2, NA, 4), 2L, 2L)),
+    FarFirst(k = 2L, points = matrix(c(1, 2, NA, 4), 2L, 2L)),
     "NA"
   )
 })
@@ -276,15 +276,15 @@ test_that(".MaximinFromColumn progress = TRUE fires the cli hooks", {
   )
 })
 
-# ---- .GonzalezColumn N/m/first validation (lines 311, 314, 323) ------------
+# ---- .GonzalezColumn N/k/first validation (lines 311, 314, 323) ------------
 
-test_that(".GonzalezColumn validates N < 1, m < 0, and first out of bounds", {
+test_that(".GonzalezColumn validates N < 1, k < 0, and first out of bounds", {
   dat <- MakeData(N = 12)
   colFn <- function(i) dat$d[, i]
   # N < 1: line 311
   expect_error(FarFirst(colFn, 3L, N = 0L),           "N")
-  # m < 0: line 314
-  expect_error(FarFirst(colFn, -1L, N = 12L, method = 1L), "m")
+  # k < 0: line 314
+  expect_error(FarFirst(colFn, -1L, N = 12L, method = 1L), "k")
   # first out of bounds (> N): line 323
   expect_error(FarFirst(colFn, 3L, N = 12L, method = 15L), "first")
 })
@@ -319,13 +319,13 @@ test_that(".SubsetScore mean_pairwise returns mean of lower-triangle entries", {
 # ---- .GonzalezColumn non-function guard -------------------------------------
 
 test_that(".GonzalezColumn rejects a non-function colFn", {
-  expect_error(MaxMin:::.GonzalezColumn("not_a_function", N = 10L, m = 3L),
+  expect_error(MaxMin:::.GonzalezColumn("not_a_function", N = 10L, k = 3L),
                "function")
 })
 
 # ---- downsample consistency -------------------------------------------------
 
-test_that("FarFirst(m = N)[1:5] equals FarFirst(m = 5) on all paths", {
+test_that("FarFirst(k = N)[1:5] equals FarFirst(k = 5) on all paths", {
   dat <- MakeData()
   N <- nrow(dat$d)
 
@@ -339,8 +339,8 @@ test_that("FarFirst(m = N)[1:5] equals FarFirst(m = 5) on all paths", {
   expect_identical(bare(full_mat[1:5]), bare(five_mat))
 
   # Points path, same method.
-  full_pts <- FarFirst(m = N, points = dat$pts, method = 1L)
-  five_pts <- FarFirst(m = 5L, points = dat$pts, method = 1L)
+  full_pts <- FarFirst(k = N, points = dat$pts, method = 1L)
+  five_pts <- FarFirst(k = 5L, points = dat$pts, method = 1L)
   expect_identical(bare(full_pts[1:5]), bare(five_pts))
 
   # Oracle path, integer method.
@@ -349,7 +349,7 @@ test_that("FarFirst(m = N)[1:5] equals FarFirst(m = 5) on all paths", {
   five_col <- FarFirst(colFn, 5L, N = N, method = 1L)
   expect_identical(bare(full_col[1:5]), bare(five_col))
 
-  # m > N also satisfies the same prefix property.
+  # k > N also satisfies the same prefix property.
   over_mat <- FarFirst(dat$d, N + 10L, method = 1L)
   expect_identical(bare(over_mat[1:5]), bare(five_mat))
 })
@@ -377,8 +377,8 @@ test_that("nseeds: matrix and coordinate paths agree (same RNG)", {
   dat <- MakeData()
   for (n in c(2L, 6L, 12L)) {
     set.seed(7); mat <- FarFirst(dat$d, n, nseeds = 5L)
-    set.seed(7); pt  <- FarFirst(m = n, points = dat$pts, nseeds = 5L)
-    expect_identical(mat, pt, info = paste("nseeds m", n))
+    set.seed(7); pt  <- FarFirst(k = n, points = dat$pts, nseeds = 5L)
+    expect_identical(mat, pt, info = paste("nseeds k", n))
   }
 })
 

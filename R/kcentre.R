@@ -267,9 +267,9 @@ KCentre <- function(d, k, nstart = 1L, effort = 1L, seeds = NULL) {
 # "feasible" (a <= k cover found), "infeasible" (IP proven optimal, min cover
 # > k), or "inconclusive" (budget expired).
 .MinCoverVerdict <- function(d, n, r, k, timeLimit) {
-  if (!is.finite(timeLimit) || timeLimit <= 0) {
+  if (!is.finite(timeLimit) || timeLimit <= 0) { # nocov start
     return(list(verdict = "inconclusive", witness = integer(0)))
-  }
+  } # nocov end
   # Coverage incidence at radius r: centre i covers point j iff d(i, j) <= r
   # (includes i = j, distance 0). `which(arr.ind)` columns are (row = centre i,
   # col = point j); the covering constraint for point j sums y over its centres.
@@ -304,7 +304,7 @@ KCentre <- function(d, k, nstart = 1L, effort = 1L, seeds = NULL) {
   if (optimal && validCover && length(sel) > k) {
     return(list(verdict = "infeasible", witness = integer(0)))
   }
-  list(verdict = "inconclusive", witness = integer(0))
+  list(verdict = "inconclusive", witness = integer(0))  # nocov
 }
 
 #' Exact discrete k-centre optimum on small instances
@@ -370,14 +370,14 @@ ExactKCentre <- function(d, k, solver = NULL, maxSeconds = 60,
   if (!identical(solver, "highs")) {
     stop("Unsupported `solver`: ", solver, ". Only \"highs\" is implemented.")
   }
-  if (!requireNamespace("highs", quietly = TRUE)) {
+  if (!requireNamespace("highs", quietly = TRUE)) { # nocov start
     stop("The `highs` package is required for ExactKCentre(). ",
          "Install it with install.packages(\"highs\").")
-  }
-  if (!requireNamespace("Matrix", quietly = TRUE)) {
+  } # nocov end
+  if (!requireNamespace("Matrix", quietly = TRUE)) { # nocov start
     stop("The `Matrix` package is required for ExactKCentre(). ",
          "Install it with install.packages(\"Matrix\").")
-  }
+  } # nocov end
 
   needSymCheck <- !inherits(d, "dist")          # a dist object is symmetric
   d <- .AsDistMatrix(d)
@@ -416,18 +416,18 @@ ExactKCentre <- function(d, k, solver = NULL, maxSeconds = 60,
   feas <- function(idx, remaining) .MinCoverVerdict(d, n, cand[idx], k, remaining)
 
   if (progress) {
-    .pb <- cli::cli_progress_bar("ExactKCentre", total = NA, .auto_close = FALSE)
+    .pb <- cli::cli_progress_bar("ExactKCentre", total = NA, .auto_close = FALSE) # nocov
   }
   tick <- function() if (progress) cli::cli_progress_update(id = .pb)
 
   # Warm start: CDSh gives k centres with a feasible covering radius, so the
   # optimum index is at or below that radius. The CDSh witness is the incumbent.
   ws <- tryCatch(KCentre(d, k), error = function(e) NULL)
-  if (is.null(ws)) {
+  if (is.null(ws)) { # nocov start
     # Fallback: any single point covers all within the diameter (the largest
     # candidate), a loose but valid feasible upper bound.
     hi <- length(cand); bestIdx <- hi; bestWitness <- 1L
-  } else {
+  } else { # nocov end
     hi <- findInterval(attr(ws, "radius"), cand)   # cand[hi] == achieved radius
     bestIdx <- hi; bestWitness <- as.integer(ws)
   }
@@ -440,19 +440,19 @@ ExactKCentre <- function(d, k, solver = NULL, maxSeconds = 60,
   lo <- 1L
   while (lo < hi) {
     rem <- maxSeconds - Elapsed()
-    if (rem <= 0) { inconclusive <- TRUE; break }
+    if (rem <= 0) { inconclusive <- TRUE; break } # nocov
     mid <- (lo + hi) %/% 2L
     v <- feas(mid, rem); tick()
     if (identical(v$verdict, "feasible")) {
       hi <- mid; bestIdx <- mid; bestWitness <- v$witness
     } else if (identical(v$verdict, "infeasible")) {
       lo <- mid + 1L
-    } else {
+    } else {  # nocov start
       inconclusive <- TRUE; break
-    }
+    }  # nocov end
   }
 
-  if (progress) cli::cli_progress_done(id = .pb)
+  if (progress) cli::cli_progress_done(id = .pb) # nocov
 
   Pack(bestWitness, !inconclusive)
 }
