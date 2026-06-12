@@ -11,7 +11,7 @@ already a matrix.}
 \item{d}{A \code{dist} object or a square numeric matrix.}
 }
 \value{
-A square numeric matrix.
+\code{.AsDistMatrix()} returns a square numeric matrix.
 }
 \description{
 Coerce distance input to a square matrix, skipping the round-trip when

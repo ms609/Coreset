@@ -22,7 +22,7 @@
 \item{...}{Ignored; present for S3 compatibility.}
 }
 \value{
-\code{x}, invisibly (\code{print}); a length-1 character string (\code{format}).
+\code{print.KCentre()} returns \code{x}, invisibly (\code{print}); a length-1 character string (\code{format}).
 }
 \description{
 One-line summaries of the objects returned by \code{\link[=KCentre]{KCentre()}}

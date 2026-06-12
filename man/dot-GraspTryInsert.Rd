@@ -7,7 +7,7 @@
 .GraspTryInsert(d, ES, esZ, sel, selZ, dth)
 }
 \value{
-Updated ES (list of selections, sorted best-to-worst by z).
+\code{.GraspTryInsert()} returns the updated ES (list of selections, sorted best-to-worst by z).
 }
 \description{
 Try to insert sel into the elite set ES.

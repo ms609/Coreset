@@ -14,7 +14,7 @@
 \item{alpha}{RCL threshold parameter (alpha=1 -> greedy, alpha=0 -> random).}
 }
 \value{
-Integer vector of length k.
+\code{.GraspConstruct()} returns an integer vector of length k.
 }
 \description{
 One randomised greedy construction.

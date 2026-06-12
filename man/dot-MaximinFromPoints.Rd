@@ -17,7 +17,7 @@
 (\code{0L} = none); used by the anti-medoid path to exclude the medoid.}
 }
 \value{
-Integer vector of selected indices.
+\code{.MaximinFromPoints()} returns an integer vector of selected indices.
 }
 \description{
 Coordinate counterpart of \code{\link[=.MaximinFrom]{.MaximinFrom()}}: greedy furthest-point selection

@@ -14,7 +14,7 @@
 \item{N}{Integer element count.}
 }
 \value{
-Numeric vector of length \code{N}, masked to \code{-Inf} at position \code{i}.
+\code{.DistColumn()} returns a numeric vector of length \code{N}, masked to \code{-Inf} at position \code{i}.
 }
 \description{
 The user's \code{colFn(i)} may either report the self-distance (a length-\code{N}

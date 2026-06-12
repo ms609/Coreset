@@ -18,7 +18,7 @@ sub-coordinates only (\verb{k x k}), never the full \verb{N x N} matrix (\code{d
 unused). For Euclidean data the result is identical to the matrix path.}
 }
 \value{
-Numeric scalar; \code{NA_real_} if \code{length(idx) < 2}.
+\code{MinDist()} returns a numeric scalar; \code{NA_real_} if \code{length(idx) < 2}.
 }
 \description{
 Returns the minimum pairwise distance among selected points \eqn{T_k}.

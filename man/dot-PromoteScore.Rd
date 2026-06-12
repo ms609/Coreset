@@ -10,7 +10,7 @@
 \item{idx}{Integer vector returned by a maximin kernel.}
 }
 \value{
-\code{idx} with its \code{t_k} attribute renamed to \code{score}.
+\code{.PromoteScore()} returns \code{idx} with its \code{t_k} attribute renamed to \code{score}.
 }
 \description{
 The maximin kernels attach the selection's minimum pairwise distance as a

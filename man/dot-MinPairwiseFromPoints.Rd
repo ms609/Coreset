@@ -12,7 +12,7 @@
 \item{idx}{Integer indices of the selection.}
 }
 \value{
-Numeric scalar; \code{NA_real_} if \code{length(idx) < 2}.
+\code{.MinPairwiseFromPoints()} returns a numeric scalar; \code{NA_real_} if \code{length(idx) < 2}.
 }
 \description{
 Coordinate counterpart of \code{.SubsetScore(d, idx, "min_pairwise")}. Computes

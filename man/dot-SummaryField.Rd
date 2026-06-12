@@ -12,7 +12,7 @@
 \item{width}{Integer column width the labels are padded to.}
 }
 \value{
-Invisibly \code{NULL}; called for the side effect.
+\code{.SummaryField()} returns invisibly \code{NULL}; called for the side effect.
 }
 \description{
 Print a \code{label: value} detail line under a summary headline

@@ -21,7 +21,7 @@ elements selected).}
 \code{\link[=.FormatIndexList]{.FormatIndexList()}}.}
 }
 \value{
-Length-1 character string.
+\code{.MaxMinSummaryLine()} returns a length-1 character string.
 }
 \description{
 Compose the one-line selection summary shared by both print methods

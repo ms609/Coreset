@@ -22,7 +22,7 @@
 \item{...}{Ignored; present for S3 compatibility.}
 }
 \value{
-\code{x}, invisibly (\code{print}); a length-1 character string (\code{format}).
+\code{print.MaxMin()} returns \code{x}, invisibly (\code{print}); a length-1 character string (\code{format}).
 }
 \description{
 One-line, human-readable summaries of the objects returned by the MaxMin

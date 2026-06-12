@@ -17,7 +17,7 @@
 \code{"random_furthest"} is in \code{anchors}.}
 }
 \value{
-Integer vector of selected indices with attributes.
+\code{.GonzEnsemble()} returns an integer vector of selected indices with attributes.
 }
 \description{
 Runs Gonzalez from each requested peripheral anchor and returns the subset

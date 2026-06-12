@@ -10,7 +10,7 @@
 \item{object}{A \code{MaxMinSelection} from an ensemble \code{\link[=FarFirst]{FarFirst()}} call.}
 }
 \value{
-Invisibly \code{NULL}; called for the side effect.
+\code{.SummariseStrategies()} returns invisibly \code{NULL}; called for the side effect.
 }
 \description{
 One row per strategy tried, ordered best (largest \eqn{T_k}) first, with each

@@ -37,7 +37,7 @@ uniform random. Default 0.8.}
 the result machine-dependent.}
 }
 \value{
-An integer vector of length \code{k} (1-based) \strong{sorted ascending}
+\code{Grasp()} returns an integer vector of length \code{k} (1-based) \strong{sorted ascending}
 (unlike \code{\link[=FarFirst]{FarFirst()}}, which returns farthest-first order)
 with attributes:
 \describe{

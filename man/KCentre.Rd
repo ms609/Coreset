@@ -27,7 +27,7 @@ floor that draws on the session RNG -- call \code{\link[=set.seed]{set.seed()}} 
 construction's first critical vertex (overrides \code{nstart}).}
 }
 \value{
-Integer vector of length \verb{<= k} (ascending): the chosen centres. The
+\code{KCentre()} returns an integer vector of length \verb{<= k} (ascending): the chosen centres. The
 achieved covering radius is attached as attribute \code{radius}. The vector has
 class \code{"KCentreSelection"} and prints as a one-line summary; it is otherwise
 an ordinary integer vector and indexes a matrix or coordinate set directly.

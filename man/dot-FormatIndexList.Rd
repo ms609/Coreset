@@ -12,8 +12,8 @@
 \item{maxShow}{Integer: show at most this many before eliding the tail.}
 }
 \value{
-Length-1 character string such as \code{"6 5 4 3 1 2"}, or
-\code{"1 2 ... (+15 more)"} when \code{idx} is longer than \code{maxShow}.
+\code{.FormatIndexList()} returns a length-1 character string such as
+\code{"6 5 4 3 1 2"}, or \code{"1 2 ... (+15 more)"} when \code{idx} is longer than \code{maxShow}.
 }
 \description{
 Format a selected-index list, optionally truncated

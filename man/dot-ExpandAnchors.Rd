@@ -16,7 +16,7 @@ for the \code{"random_furthest"} token.}
 seed index.}
 }
 \value{
-List of \code{list(label, s1)} specs.
+\code{.ExpandAnchors()} returns a list of \code{list(label, s1)} specs.
 }
 \description{
 Maps each anchor name to a \code{list(label, s1)} spec. The \code{"random_furthest"}

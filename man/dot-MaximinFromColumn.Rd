@@ -16,7 +16,7 @@
 \item{first}{Integer seed index.}
 }
 \value{
-Integer vector of selected indices.
+\code{.MaximinFromColumn()} returns an integer vector of selected indices.
 }
 \description{
 Mirrors \code{MaximinFrom_cpp()}, substituting an on-demand \code{colFn(i)} call for

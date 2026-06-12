@@ -16,7 +16,7 @@
 \item{...}{Ignored; present for S3 compatibility.}
 }
 \value{
-\code{object}, invisibly.
+\code{summary.MaxMin()} returns \code{object}, invisibly.
 }
 \description{
 A fuller counterpart to \code{\link[=print.MaxMinSelection]{print.MaxMinSelection()}}: the one-line headline,

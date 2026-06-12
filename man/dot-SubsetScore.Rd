@@ -15,7 +15,7 @@
 \code{"mean_pairwise"}.}
 }
 \value{
-Numeric scalar; \code{NA} if \code{length(idx) < 2}.
+\code{.SubsetScore()} returns a numeric scalar; \code{NA} if \code{length(idx) < 2}.
 }
 \description{
 Score a Gonzalez subset by its minimum (or mean) pairwise distance

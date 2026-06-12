@@ -12,7 +12,7 @@
 \item{N}{Integer element count.}
 }
 \value{
-Integer index of the seed.
+\code{.PeripheralSeedColumn()} returns an integer index of the seed.
 }
 \description{
 Two oracle sweeps, no RNG: the element furthest from element 1, then the

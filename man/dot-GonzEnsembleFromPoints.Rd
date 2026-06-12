@@ -22,7 +22,7 @@
 \code{"random_furthest"} is in \code{anchors}.}
 }
 \value{
-Integer vector of selected indices with attributes.
+\code{.GonzEnsembleFromPoints()} returns an integer vector of selected indices with attributes.
 }
 \description{
 Coordinate counterpart of \code{\link[=.GonzEnsemble]{.GonzEnsemble()}}; each anchor seed and the greedy

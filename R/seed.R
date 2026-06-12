@@ -263,7 +263,8 @@
 #'    counterpart of `"rowsum"`.}
 #' }
 #'
-#' @return `MaxMinSeed()` returns an integer seed index in `[1, N]`.
+#' @return `MaxMinSeed()` returns an integer that identifies the index of a
+#' proposed seed in `d` or `points`.
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)

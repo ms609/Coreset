@@ -40,7 +40,8 @@ counterpart of \code{"rowsum"}.}
 }}
 }
 \value{
-Integer seed index in \verb{[1, N]}.
+\code{MaxMinSeed()} returns an integer that identifies the index of a
+proposed seed in \code{d} or \code{points}.
 }
 \description{
 \code{MaxMinSeed()} implements a range of strategies to select a seed for greedy

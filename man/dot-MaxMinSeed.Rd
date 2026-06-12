@@ -12,7 +12,7 @@
 \item{strategy}{Anchor name; see \code{\link[=MaxMinSeed]{MaxMinSeed()}}. Also accepts \code{"first"} (1).}
 }
 \value{
-Integer seed index.
+\code{.MaxMinSeed()} returns an integer seed index.
 }
 \description{
 Peripheral seed index for Gonzalez selection (distance matrix)

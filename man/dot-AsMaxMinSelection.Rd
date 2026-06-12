@@ -13,8 +13,8 @@
 \code{"Grasp"}).}
 }
 \value{
-\code{x} with \code{producer} attribute and \code{"MaxMinSelection"} class, or \code{x}
-unchanged if it is empty.
+\code{.AsMaxMinSelection()} returns \code{x} with \code{producer} attribute and
+\code{"MaxMinSelection"} class, or \code{x} unchanged if it is empty.
 }
 \description{
 The selection-returning solvers each already attach their score (and any

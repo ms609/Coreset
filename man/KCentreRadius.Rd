@@ -22,8 +22,8 @@ unused), so the score scales to large \code{N}. For Euclidean data the result is
 identical to the matrix path.}
 }
 \value{
-Numeric scalar: the covering radius (\code{0} when the centres include
-every point).
+\code{KCentreRadius()} returns a numeric scalar: the covering radius (\code{0}
+when the centres include every point).
 }
 \description{
 Returns the covering radius of a set of centres: the largest distance from

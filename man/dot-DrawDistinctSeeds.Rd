@@ -18,7 +18,7 @@
 \item{missLimit}{Integer consecutive-miss limit. Default \code{max(8 * nseeds, 30)}.}
 }
 \value{
-Integer vector of distinct seed indices (length in \verb{[1, nseeds]}).
+\code{.DrawDistinctSeeds()} returns an integer vector of distinct seed indices (length in \verb{[1, nseeds]}).
 }
 \description{
 Used by \code{\link[=.GonzEnsemble]{.GonzEnsemble()}} and \code{\link[=.GonzEnsembleFromPoints]{.GonzEnsembleFromPoints()}} to expand the

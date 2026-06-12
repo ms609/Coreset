@@ -10,7 +10,7 @@
 \item{points}{A numeric matrix (or coercible) of point coordinates.}
 }
 \value{
-A \code{double} numeric matrix.
+\code{.AsPointsMatrix()} returns a \code{double} numeric matrix.
 }
 \description{
 The coordinate paths require a complete numeric \verb{N x dim} matrix with

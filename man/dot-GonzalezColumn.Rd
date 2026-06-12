@@ -30,7 +30,7 @@ from that (a diameter-endpoint approximation).}
 \item{progress}{Logical; show a progress bar during greedy selection.}
 }
 \value{
-Integer vector of length \code{min(k, N)} of selected indices.
+\code{.GonzalezColumn()} returns an integer vector of length \code{min(k, N)} of selected indices.
 }
 \description{
 Implements the distance-column oracle path of \code{\link[=FarFirst]{FarFirst()}} (dispatched there

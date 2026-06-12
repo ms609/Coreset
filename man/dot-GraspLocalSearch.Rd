@@ -12,7 +12,7 @@
 \item{sel}{Integer vector of size k.}
 }
 \value{
-Improved integer vector of size k.
+\code{.GraspLocalSearch()} returns an improved integer vector of size k.
 }
 \description{
 Iterates 1-swap moves on critical elements (those participating in a

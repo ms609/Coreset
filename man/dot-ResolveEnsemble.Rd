@@ -14,7 +14,7 @@
 \item{RunGonz}{Closure mapping a seed \code{s1} to \code{list(idx, tK)}.}
 }
 \value{
-Integer vector of selected indices with attributes.
+\code{.ResolveEnsemble()} returns an integer vector of selected indices with attributes.
 }
 \description{
 Shared tail of the two ensemble drivers: solves each expanded spec via the

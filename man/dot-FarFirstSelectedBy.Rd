@@ -10,7 +10,7 @@
 \item{x}{A \code{MaxMinSelection} from \code{\link[=FarFirst]{FarFirst()}}.}
 }
 \value{
-Length-1 character phrase.
+\code{.FarFirstSelectedBy()} returns a length-1 character phrase.
 }
 \description{
 A bare single pass is just "Gonzalez farthest-first"; an ensemble pass

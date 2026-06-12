@@ -12,8 +12,7 @@
 \item{x, y}{Integer selections of equal length.}
 }
 \value{
-list(best = best selection on path, intermediates = number of
-intermediate states visited including endpoints).
+\code{.GraspPathRelink()} returns \verb{list(best = best selection on path, intermediates = number of intermediate states visited including endpoints)}.
 }
 \description{
 Greedy path relinking from x toward y.

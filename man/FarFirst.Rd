@@ -18,7 +18,8 @@ FarFirst(
 
 \item{d}{A \code{dist} object, a square numeric matrix of pairwise distances, or
 a distance function that takes an index \code{i} and returns the distance from
-\code{i} to each other element (see §Distance function). Ignored when \code{points} is supplied.}
+\code{i} to each other element (optionally including the self-distance).
+Ignored when \code{points} is supplied.}
 
 \item{points}{Optional \verb{N x dim} numeric coordinate matrix. When supplied,
 the selection is computed directly from coordinates in
@@ -38,7 +39,7 @@ to run each strategy and return the best solution.}
 \code{"random_furthest"} strategy.}
 }
 \value{
-\code{MaxMin()} returns an integer vector with class \code{MaxMinSelection},
+\code{FarFirst()} returns an integer vector with class \code{MaxMinSelection},
 listing the selected indices in the order they were selected.
 Attributes detail:
 \itemize{
@@ -53,15 +54,6 @@ Greedy \emph{k}-centre selection \insertCite{Gonzalez1985,Hochbaum1985}{MaxMin}
 iteratively selects the point furthest from the current selection, a
 2-approximation to the \emph{k}-centre problem.
 }
-\section{Distance function}{
-
-When \code{d} is a function, it will be passed a single 1-based index \code{i}, and
-should return the distances from element \code{i} to every element in turn,
-optionally omitting entry \code{i}, the self-distance.
-The function will be called once per selected element, to avoid building a
-complete \eqn{N x N} matrix.
-}
-
 \section{Progress bar}{
 
 The distance-column oracle path shows a progress bar controlled by

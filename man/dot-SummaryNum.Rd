@@ -10,7 +10,7 @@
 \item{v}{Numeric scalar.}
 }
 \value{
-Length-1 character: \code{"NA"}, or four significant figures.
+\code{.SummaryNum()} returns a length-1 character: \code{"NA"}, or four significant figures.
 }
 \description{
 Format a numeric field for a summary, tolerating \code{NA}

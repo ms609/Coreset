@@ -12,7 +12,7 @@
 \item{strategy}{Anchor name; see \code{\link[=MaxMinSeed]{MaxMinSeed()}}. Also accepts \code{"first"} (1).}
 }
 \value{
-Integer seed index.
+\code{.MaxMinSeedPoints()} returns an integer seed index.
 }
 \description{
 Coordinate counterpart of \code{\link[=.MaxMinSeed]{.MaxMinSeed()}}; each anchor is computed from the

@@ -42,7 +42,7 @@ centre set. The internal CDSh warm start runs regardless.}
 interactive sessions (\code{getOption("MaxMin.progress", interactive())}).}
 }
 \value{
-A list of class \code{"KCentreExact"} with fields
+\code{ExactKCentre()} returns a list of class \code{"KCentreExact"} with fields
 \describe{
 \item{indices}{Integer vector (ascending), length \verb{<= k}: the centres.}
 \item{radius}{The covering radius they achieve; the proven optimum when

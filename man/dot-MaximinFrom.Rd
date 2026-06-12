@@ -14,7 +14,7 @@
 \item{first}{Integer: index of the first selected point.}
 }
 \value{
-Integer vector of length \code{k} of selected row/col indices.
+\code{.MaximinFrom()} returns an integer vector of length \code{k} of selected row/col indices.
 }
 \description{
 Internal helper: greedy furthest-point selection starting from a specified

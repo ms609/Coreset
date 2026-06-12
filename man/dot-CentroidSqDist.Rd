@@ -10,7 +10,7 @@
 \item{points}{A \code{double} \verb{N x dim} coordinate matrix.}
 }
 \value{
-Numeric vector of length \code{N} of squared distances to the mean.
+\code{.CentroidSqDist()} returns a numeric vector of length \code{N} of squared distances to the mean.
 }
 \description{
 The \code{O(N * dim)} basis of the \code{"anti_centroid"} seed: its argmax is the point

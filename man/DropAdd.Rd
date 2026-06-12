@@ -57,7 +57,7 @@ Default \code{FALSE} (the C++ fast path). Only applies to the \code{d} path.}
 and added index sequences are written into it as \code{drops} and \code{adds}.}
 }
 \value{
-An integer vector of length \code{k} containing the 1-based selected
+\code{DropAdd()} returns an integer vector of length \code{k} containing the 1-based selected
 indices \strong{sorted ascending} (unlike \code{\link[=FarFirst]{FarFirst()}}, which returns
 farthest-first order), with attributes:
 \describe{
