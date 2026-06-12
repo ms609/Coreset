@@ -19,20 +19,23 @@ across the internal IP solves). If it expires before the optimum is proven,
 the smallest radius proven feasible so far is returned with \code{proven = FALSE}.}
 }
 \value{
-\code{ExactKCentre()} returns a list of class \code{"KCentreExact"} with fields
+\code{ExactKCentre()} returns an integer vector of length \verb{<= k}
+(ascending): the chosen centres. It has class
+\code{c("KCentreExact", "KCentreSelection")} and the following attributes:
 \describe{
-\item{indices}{Integer vector (ascending), length \verb{<= k}: the centres.}
 \item{radius}{The covering radius they achieve; the proven optimum when
 \code{proven} is \code{TRUE}, otherwise a valid upper bound.}
 \item{proven}{Logical: \code{TRUE} if optimality was certified within budget.}
 \item{time_s}{Wall-clock seconds elapsed.}
 \item{n, k}{Instance size and centre budget.}
-\item{n_centres}{\code{length(indices)}.}
+\item{n_centres}{\code{length(result)}.}
 }
-It prints as a one-line summary and is otherwise an ordinary list.
+It prints as a one-line summary and indexes a matrix or data frame directly.
+The \code{"KCentreSelection"} superclass means \code{\link[=KCentreRadius]{KCentreRadius()}} and any generic
+written for that class work here too.
 
 The covering optimum may be attained by fewer than \code{k} centres (extra centres
-never help once coverage is achieved); \code{indices} then has length \verb{< k} and the
+never help once coverage is achieved); the result then has length \verb{< k} and the
 reported \code{radius} is still the proven \emph{k}-centre optimum. The problem is
 NP-hard, so this is an external ground-truth reference for small instances,
 not a scalable method.

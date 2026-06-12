@@ -327,20 +327,23 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L, seeds = NULL) {
 #' Shows a progress indicator controlled by
 #' `getOption("MaxMin.progress", interactive())` — `TRUE` by default in
 #' interactive sessions, `FALSE` otherwise.
-#' @return `ExactKCentre()` returns a list of class `"KCentreExact"` with fields
+#' @return `ExactKCentre()` returns an integer vector of length `<= k`
+#'   (ascending): the chosen centres. It has class
+#'   `c("KCentreExact", "KCentreSelection")` and the following attributes:
 #'   \describe{
-#'     \item{indices}{Integer vector (ascending), length `<= k`: the centres.}
 #'     \item{radius}{The covering radius they achieve; the proven optimum when
 #'       `proven` is `TRUE`, otherwise a valid upper bound.}
 #'     \item{proven}{Logical: `TRUE` if optimality was certified within budget.}
 #'     \item{time_s}{Wall-clock seconds elapsed.}
 #'     \item{n, k}{Instance size and centre budget.}
-#'     \item{n_centres}{`length(indices)`.}
+#'     \item{n_centres}{`length(result)`.}
 #'   }
-#'   It prints as a one-line summary and is otherwise an ordinary list.
+#'   It prints as a one-line summary and indexes a matrix or data frame directly.
+#'   The `"KCentreSelection"` superclass means [KCentreRadius()] and any generic
+#'   written for that class work here too.
 #'
 #' The covering optimum may be attained by fewer than `k` centres (extra centres
-#' never help once coverage is achieved); `indices` then has length `< k` and the
+#' never help once coverage is achieved); the result then has length `< k` and the
 #' reported `radius` is still the proven \emph{k}-centre optimum. The problem is
 #' NP-hard, so this is an external ground-truth reference for small instances,
 #' not a scalable method.
@@ -387,15 +390,20 @@ ExactKCentre <- function(k, d, maxSeconds = 60) {
   # `radius` is always the true covering radius of the returned centres, computed
   # from the witness rather than the search threshold (KC-004): for a proven
   # optimum it equals the smallest feasible candidate, and for an unproven /
-  # fallback witness it is the tight achieved radius, so `res$radius` and
-  # `KCentreRadius(d, res$indices)` never disagree.
+  # fallback witness it is the tight achieved radius, so `attr(res, "radius")`
+  # and `KCentreRadius(d, as.integer(res))` never disagree.
   Pack <- function(indices, proven) {
     indices <- sort(as.integer(indices))
     structure(
-      list(indices = indices, radius = KCentreRadius(d, indices), proven = proven,
-           time_s = Elapsed(), n = n, k = k,
-           n_centres = length(indices)),
-      class = "KCentreExact"
+      indices,
+      radius    = KCentreRadius(d, indices),
+      proven    = proven,
+      time_s    = Elapsed(),
+      solver    = "highs",
+      n         = n,
+      k         = as.integer(k),
+      n_centres = length(indices),
+      class     = c("KCentreExact", "KCentreSelection")
     )
   }
 
