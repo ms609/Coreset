@@ -17,8 +17,8 @@
 #' @param x Integer index vector carrying the solver's score attributes.
 #' @param producer Character tag naming the solver (`"FarFirst"`, `"DropAdd"`,
 #'   `"Grasp"`).
-#' @return `x` with `producer` attribute and `"MaxMinSelection"` class, or `x`
-#'   unchanged if it is empty.
+#' @return `.AsMaxMinSelection()` returns `x` with `producer` attribute and
+#'   `"MaxMinSelection"` class, or `x` unchanged if it is empty.
 #' @keywords internal
 .AsMaxMinSelection <- function(x, producer) {
   if (length(x) == 0L) {
@@ -36,8 +36,8 @@
 #'
 #' @param idx Integer indices in their stored order.
 #' @param maxShow Integer: show at most this many before eliding the tail.
-#' @return Length-1 character string such as `"6 5 4 3 1 2"`, or
-#'   `"1 2 ... (+15 more)"` when `idx` is longer than `maxShow`.
+#' @return `.FormatIndexList()` returns a length-1 character string such as
+#'   `"6 5 4 3 1 2"`, or `"1 2 ... (+15 more)"` when `idx` is longer than `maxShow`.
 #' @keywords internal
 .FormatIndexList <- function(idx, maxShow = 20L) {
   if (length(idx) > maxShow) {
@@ -60,7 +60,7 @@
 #'   elements selected).
 #' @param maxShow Integer index-list truncation threshold; see
 #'   [.FormatIndexList()].
-#' @return Length-1 character string.
+#' @return `.MaxMinSummaryLine()` returns a length-1 character string.
 #' @keywords internal
 .MaxMinSummaryLine <- function(n, idx, by, tk, maxShow = 20L) {
   elements <- sprintf("%d element%s", n, if (n == 1L) "" else "s")
@@ -80,7 +80,7 @@
 #' (which carries `winning_strategy` / `strategy_results`) additionally names
 #' the winning strategy and how many were tried.
 #' @param x A `MaxMinSelection` from [FarFirst()].
-#' @return Length-1 character phrase.
+#' @return `.FarFirstSelectedBy()` returns a length-1 character phrase.
 #' @keywords internal
 .FarFirstSelectedBy <- function(x) {
   winners <- attr(x, "winning_strategy")
@@ -126,7 +126,7 @@
 #' affect display.
 #' @param x A `MaxMinSelection` or `MaxMinExact` object.
 #' @param ... Ignored; present for S3 compatibility.
-#' @return `x`, invisibly (`print`); a length-1 character string (`format`).
+#' @return `print.MaxMin()` returns `x`, invisibly (`print`); a length-1 character string (`format`).
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
@@ -170,7 +170,7 @@ print.MaxMinExact <- function(x, ...) {
 
 #' Format a numeric field for a summary, tolerating `NA`
 #' @param v Numeric scalar.
-#' @return Length-1 character: `"NA"`, or four significant figures.
+#' @return `.SummaryNum()` returns a length-1 character: `"NA"`, or four significant figures.
 #' @keywords internal
 .SummaryNum <- function(v) {
   if (length(v) == 0L || is.na(v)) "NA" else format(signif(v, 4L))
@@ -179,7 +179,7 @@ print.MaxMinExact <- function(x, ...) {
 #' Print a `label: value` detail line under a summary headline
 #' @param label,value Character (or coercible) field label and value.
 #' @param width Integer column width the labels are padded to.
-#' @return Invisibly `NULL`; called for the side effect.
+#' @return `.SummaryField()` returns invisibly `NULL`; called for the side effect.
 #' @keywords internal
 .SummaryField <- function(label, value, width) {
   cat(sprintf("  %-*s %s\n", width, paste0(label, ":"), value))
@@ -191,7 +191,7 @@ print.MaxMinExact <- function(x, ...) {
 #' tied-best strategy marked `*`. A bare single pass (no `strategy_results`)
 #' produces nothing.
 #' @param object A `MaxMinSelection` from an ensemble [FarFirst()] call.
-#' @return Invisibly `NULL`; called for the side effect.
+#' @return `.SummariseStrategies()` returns invisibly `NULL`; called for the side effect.
 #' @keywords internal
 .SummariseStrategies <- function(object) {
   sr <- attr(object, "strategy_results")
@@ -224,7 +224,7 @@ print.MaxMinExact <- function(x, ...) {
 #' [FarFirst()] ensemble -- the per-strategy \eqn{T_k} table.
 #' @param object A `MaxMinSelection` or `MaxMinExact` object.
 #' @param ... Ignored; present for S3 compatibility.
-#' @return `object`, invisibly.
+#' @return `summary.MaxMin()` returns `object`, invisibly.
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)

@@ -53,7 +53,7 @@
 #' @param d Square distance matrix.
 #' @param k Target subset size.
 #' @param alpha RCL threshold parameter (alpha=1 -> greedy, alpha=0 -> random).
-#' @return Integer vector of length k.
+#' @return `.GraspConstruct()` returns an integer vector of length k.
 #' @keywords internal
 .GraspConstruct <- function(d, k, alpha) {
   n <- nrow(d)
@@ -106,7 +106,7 @@
 #'
 #' @param d Square distance matrix.
 #' @param sel Integer vector of size k.
-#' @return Improved integer vector of size k.
+#' @return `.GraspLocalSearch()` returns an improved integer vector of size k.
 #' @keywords internal
 .GraspLocalSearch <- function(d, sel) {
   n <- nrow(d)
@@ -158,8 +158,8 @@
 #'
 #' @param d Square distance matrix.
 #' @param x,y Integer selections of equal length.
-#' @return list(best = best selection on path, intermediates = number of
-#'   intermediate states visited including endpoints).
+#' @return `.GraspPathRelink()` returns `list(best = best selection on path,
+#'   intermediates = number of intermediate states visited including endpoints)`.
 #' @keywords internal
 .GraspPathRelink <- function(d, x, y) {
   x <- sort(x); y <- sort(y)
@@ -216,7 +216,7 @@
 
 #' Try to insert sel into the elite set ES.
 #'
-#' @return Updated ES (list of selections, sorted best-to-worst by z).
+#' @return `.GraspTryInsert()` returns the updated ES (list of selections, sorted best-to-worst by z).
 #' @keywords internal
 .GraspTryInsert <- function(d, ES, esZ, sel, selZ, dth) {
   z1 <- esZ[1L]
@@ -295,7 +295,7 @@
 #' @param maxSeconds Optional wall-clock ceiling in seconds. Default `Inf`
 #'   (no ceiling, fully reproducible). A finite value caps runtime but makes
 #'   the result machine-dependent.
-#' @return An integer vector of length `k` (1-based) **sorted ascending**
+#' @return `Grasp()` returns an integer vector of length `k` (1-based) **sorted ascending**
 #'   (unlike [FarFirst()], which returns farthest-first order)
 #'   with attributes:
 #'   \describe{

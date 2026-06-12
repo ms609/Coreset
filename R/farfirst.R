@@ -3,7 +3,7 @@
 #' Coerce distance input to a square matrix, skipping the round-trip when
 #' already a matrix.
 #' @param d A `dist` object or a square numeric matrix.
-#' @return A square numeric matrix.
+#' @return `.AsDistMatrix()` returns a square numeric matrix.
 #' @details
 #' Symmetry is not checked; an `O(N^2)` check is intentionally omitted.
 #' Asymmetric matrices are silently accepted, and the algorithm treats
@@ -32,7 +32,7 @@
 #' @param d Square pairwise distance matrix.
 #' @param k Integer: target subsample size (`>= 1`).
 #' @param first Integer: index of the first selected point.
-#' @return Integer vector of length `k` of selected row/col indices.
+#' @return `.MaximinFrom()` returns an integer vector of length `k` of selected row/col indices.
 #' @keywords internal
 .MaximinFrom <- function(d, k, first) {
   MaximinFrom_cpp(d, as.integer(k), as.integer(first))
@@ -44,7 +44,7 @@
 #' `double` storage; the C++ kernels reproduce `stats::dist()`'s exact
 #' Euclidean bits, which is only defined for complete data.
 #' @param points A numeric matrix (or coercible) of point coordinates.
-#' @return A `double` numeric matrix.
+#' @return `.AsPointsMatrix()` returns a `double` numeric matrix.
 #' @keywords internal
 .AsPointsMatrix <- function(points) {
   if (!is.matrix(points)) {
@@ -74,7 +74,7 @@
 #' @inheritParams .MaximinFrom
 #' @param mask Integer 1-based index of a point to forbid from selection
 #'   (`0L` = none); used by the anti-medoid path to exclude the medoid.
-#' @return Integer vector of selected indices.
+#' @return `.MaximinFromPoints()` returns an integer vector of selected indices.
 #' @keywords internal
 .MaximinFromPoints <- function(points, k, first, mask = 0L) {
   MaximinFromPoints_cpp(points, as.integer(k), as.integer(first),
@@ -89,7 +89,7 @@
 #' single pass exposes it directly as the `score` attribute, matching
 #' [DropAdd()] and [Grasp()].
 #' @param idx Integer vector returned by a maximin kernel.
-#' @return `idx` with its `t_k` attribute renamed to `score`.
+#' @return `.PromoteScore()` returns `idx` with its `t_k` attribute renamed to `score`.
 #' @keywords internal
 .PromoteScore <- function(idx) {
   attr(idx, "score") <- attr(idx, "t_k")
@@ -105,7 +105,7 @@
 #' of the full distance matrix, so the returned scalar matches the matrix path.
 #' @param points A `double` `N x dim` coordinate matrix.
 #' @param idx Integer indices of the selection.
-#' @return Numeric scalar; `NA_real_` if `length(idx) < 2`.
+#' @return `.MinPairwiseFromPoints()` returns a numeric scalar; `NA_real_` if `length(idx) < 2`.
 #' @keywords internal
 .MinPairwiseFromPoints <- function(points, idx) {
   if (length(idx) < 2L) {
@@ -120,7 +120,7 @@
 #' @param idx Integer indices of selected rows/cols.
 #' @param objective `"min_pairwise"` (default; canonical Gonzalez T_k) or
 #'   `"mean_pairwise"`.
-#' @return Numeric scalar; `NA` if `length(idx) < 2`.
+#' @return `.SubsetScore()` returns a numeric scalar; `NA` if `length(idx) < 2`.
 #' @keywords internal
 .SubsetScore <- function(d, idx, objective = c("min_pairwise", "mean_pairwise")) {
   objective <- match.arg(objective)
@@ -138,21 +138,9 @@
 
 #' Deterministic Gonzalez furthest-point selection
 #'
-#' Greedy _k_-centre selection \insertCite{Gonzalez1985,Hochbaum1985}{MaxMin}.
-#' Iteratively selects the point furthest from the current selection, a
+#' Greedy _k_-centre selection \insertCite{Gonzalez1985,Hochbaum1985}{MaxMin}
+#' iteratively selects the point furthest from the current selection, a
 #' 2-approximation to the _k_-centre problem.
-#' The quality of the result depends on the first (seed) point; by default
-#' `FarFirst()` runs three starts from randomly selected peripheral seeds.
-#' The deterministic \eqn{O(N)} anchors (`"anti_centroid"`, `"peripheral"`) and the
-#' costlier \eqn{O(N^2)} anchors (`"diameter"`, `"anti_medoid"`,
-#' `"rowsum"`, `"rownorm"`) are alternative `seed` strategies.
-#'
-#' @section Distance function:
-#' When `d` is a function, it will be passed a single 1-based index `i`, and
-#' should return the distances from element `i` to every element in turn,
-#' optionally omitting entry `i`, the self-distance.
-#' The function will be called once per selected element, to avoid building a
-#' complete \eqn{N x N} matrix.
 #'
 #' @section Progress bar:
 #' The distance-column oracle path shows a progress bar controlled by
@@ -162,7 +150,8 @@
 #' @param k Integer: number of points to select.
 #' @param d A `dist` object, a square numeric matrix of pairwise distances, or
 #' a distance function that takes an index `i` and returns the distance from
-#' `i` to each other element (see §Distance function). Ignored when `points` is supplied.
+#' `i` to each other element (optionally including the self-distance).
+#' Ignored when `points` is supplied.
 #' @param points Optional `N x dim` numeric coordinate matrix. When supplied,
 #'   the selection is computed directly from coordinates in
 #'   \eqn{O(N \cdot k \cdot dim)} time and \eqn{O(N)} memory, which avoids
@@ -176,7 +165,7 @@
 #' to run each strategy and return the best solution.
 #' @param nseeds Integer: number of distinct seeds to draw under the
 #' `"random_furthest"` strategy.
-#' @return `MaxMin()` returns an integer vector with class `MaxMinSelection`,
+#' @return `FarFirst()` returns an integer vector with class `MaxMinSelection`,
 #' listing the selected indices in the order they were selected.
 #' Attributes detail:
 #' - `score`: the selection's minimum pairwise distance (\eqn{T_k})
@@ -347,7 +336,7 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
 #' @param colFn Column oracle; see [FarFirst()].
 #' @param i Integer 1-based index whose distance column is requested.
 #' @param N Integer element count.
-#' @return Numeric vector of length `N`, masked to `-Inf` at position `i`.
+#' @return `.DistColumn()` returns a numeric vector of length `N`, masked to `-Inf` at position `i`.
 #' @keywords internal
 .DistColumn <- function(colFn, i, N) {
   col <- as.numeric(colFn(i))
@@ -391,7 +380,7 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
 #'   sweeps: the element furthest from element 1, then the element furthest
 #'   from that (a diameter-endpoint approximation).
 #' @param progress Logical; show a progress bar during greedy selection.
-#' @return Integer vector of length `min(k, N)` of selected indices.
+#' @return `.GonzalezColumn()` returns an integer vector of length `min(k, N)` of selected indices.
 #' @keywords internal
 .GonzalezColumn <- function(colFn, N, k, first = NULL,
                             progress = getOption("MaxMin.progress", interactive())) {
@@ -435,7 +424,7 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
 #' @param N Integer element count.
 #' @param k Integer subset size (`>= 2`).
 #' @param first Integer seed index.
-#' @return Integer vector of selected indices.
+#' @return `.MaximinFromColumn()` returns an integer vector of selected indices.
 #' @keywords internal
 .MaximinFromColumn <- function(colFn, N, k, first, progress = FALSE) {
   selected <- integer(k)
@@ -470,7 +459,7 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
 #' anti-medoid) need `O(N^2)` work and are unreachable from a column oracle.
 #' @param colFn Column oracle; see [FarFirst()].
 #' @param N Integer element count.
-#' @return Integer index of the seed.
+#' @return `.PeripheralSeedColumn()` returns an integer index of the seed.
 #' @keywords internal
 .PeripheralSeedColumn <- function(colFn, N) {
   s1 <- which.max(.DistColumn(colFn, 1L, N))

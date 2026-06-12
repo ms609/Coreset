@@ -7,8 +7,8 @@
 MaxMinSeed(
   d = NULL,
   points = NULL,
-  strategy = c("peripheral", "centroid", "random_furthest", "diameter", "anti_medoid",
-    "medoid", "rowsum", "rownorm")
+  strategy = c("peripheral", "anti_centroid", "random_furthest", "diameter",
+    "anti_medoid", "medoid", "rowsum", "rownorm")
 )
 }
 \arguments{
@@ -17,7 +17,7 @@ MaxMinSeed(
 
 \item{points}{Optional \verb{N x dim} numeric coordinate matrix; when supplied the
 seed is computed from coordinates in \code{O(N)} memory. Required for the
-\code{"centroid"} anchor, which has no distance-matrix form.}
+\code{"anti_centroid"} anchor, which has no distance-matrix form.}
 
 \item{strategy}{Character specifying method to employ:
 
@@ -25,12 +25,13 @@ seed is computed from coordinates in \code{O(N)} memory. Required for the
 \item{\code{"peripheral"}(default)}{Two sweeps: the point furthest from point 1,
 then the point furthest from that (a diameter-endpoint approximation).
 \eqn{O(N)}.}
-\item{\code{"centroid"}}{The point farthest from the coordinate mean
+\item{\code{"anti_centroid"}}{The point farthest from the coordinate mean
 (\eqn{\argmax ||x - x_bar||}). \eqn{O(N * dim)}. Requires \code{points}.}
 \item{\code{"random_furthest"}}{The point furthest from a random pivot.
 \eqn{O(N)}.}
 \item{\code{"diameter"}}{A row endpoint of the diameter pair (the maximum
 pairwise distance).}
+\item{\code{"medoid"}}{The point furthest from the 1-median (medoid).}
 \item{\code{"anti_medoid"}}{The point furthest from the 1-median (medoid).}
 \item{\code{"rowsum"}}{The point maximising the sum of distances to all others
 (the 1-anti-median).}

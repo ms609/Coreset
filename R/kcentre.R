@@ -79,8 +79,8 @@
 #'   centre column at a time, never materialising the `N x N` matrix (`d` is then
 #'   unused), so the score scales to large `N`. For Euclidean data the result is
 #'   identical to the matrix path.
-#' @return Numeric scalar: the covering radius (`0` when the centres include
-#'   every point).
+#' @return `KCentreRadius()` returns a numeric scalar: the covering radius (`0`
+#'   when the centres include every point).
 #' @seealso [KCentre()] and [ExactKCentre()] (which minimise this); [MinDist()]
 #'   for the complementary MMDP objective.
 #' @references \insertAllCited{}
@@ -171,7 +171,7 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #'   floor that draws on the session RNG -- call [set.seed()] to reproduce).
 #' @param seeds Optional integer vector of explicit 1-based seed vertices for the
 #'   construction's first critical vertex (overrides `nstart`).
-#' @return Integer vector of length `<= k` (ascending): the chosen centres. The
+#' @return `KCentre()` returns an integer vector of length `<= k` (ascending): the chosen centres. The
 #'   achieved covering radius is attached as attribute `radius`. The vector has
 #'   class `"KCentreSelection"` and prints as a one-line summary; it is otherwise
 #'   an ordinary integer vector and indexes a matrix or coordinate set directly.
@@ -338,7 +338,7 @@ KCentre <- function(d, k, nstart = 1L, effort = 1L, seeds = NULL) {
 #'   centre set. The internal CDSh warm start runs regardless.
 #' @param progress Logical; show a progress indicator. Default: `TRUE` in
 #'   interactive sessions (`getOption("MaxMin.progress", interactive())`).
-#' @return A list of class `"KCentreExact"` with fields
+#' @return `ExactKCentre()` returns a list of class `"KCentreExact"` with fields
 #'   \describe{
 #'     \item{indices}{Integer vector (ascending), length `<= k`: the centres.}
 #'     \item{radius}{The covering radius they achieve; the proven optimum when
@@ -469,7 +469,7 @@ ExactKCentre <- function(d, k, solver = NULL, maxSeconds = 60,
 #' proof status for the exact solver). Both objects are otherwise unchanged.
 #' @param x A `"KCentreSelection"` or `"KCentreExact"` object.
 #' @param ... Ignored; present for S3 compatibility.
-#' @return `x`, invisibly (`print`); a length-1 character string (`format`).
+#' @return `print.KCentre()` returns `x`, invisibly (`print`); a length-1 character string (`format`).
 #' @name print.KCentre
 #' @family reporting functions
 #' @examples

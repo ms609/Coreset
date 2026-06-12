@@ -37,7 +37,7 @@
 #' @param nseeds Integer target number of distinct seeds (`>= 1`).
 #' @param maxDraws Integer absolute draw budget. Default `max(40 * nseeds, 100)`.
 #' @param missLimit Integer consecutive-miss limit. Default `max(8 * nseeds, 30)`.
-#' @return Integer vector of distinct seed indices (length in `[1, nseeds]`).
+#' @return `.DrawDistinctSeeds()` returns an integer vector of distinct seed indices (length in `[1, nseeds]`).
 #' @keywords internal
 .DrawDistinctSeeds <- function(seedFn, nPts, nseeds, maxDraws = NULL,
                                missLimit = NULL) {
@@ -65,7 +65,7 @@
 #' The `O(N * dim)` basis of the `"anti_centroid"` seed: its argmax is the point
 #' farthest from the coordinate mean, an approximate diameter endpoint.
 #' @param points A `double` `N x dim` coordinate matrix.
-#' @return Numeric vector of length `N` of squared distances to the mean.
+#' @return `.CentroidSqDist()` returns a numeric vector of length `N` of squared distances to the mean.
 #' @keywords internal
 .CentroidSqDist <- function(points) {
   mu  <- colMeans(points)
@@ -84,7 +84,7 @@
 #'   for the `"random_furthest"` token.
 #' @param anchorSeed Function mapping a deterministic anchor name to an integer
 #'   seed index.
-#' @return List of `list(label, s1)` specs.
+#' @return `.ExpandAnchors()` returns a list of `list(label, s1)` specs.
 #' @keywords internal
 .ExpandAnchors <- function(anchors, rfSeeds, anchorSeed) {
   specs <- list()
@@ -117,7 +117,7 @@
 #' @param expanded List of `list(label, s1)` specs from [.ExpandAnchors()].
 #' @param labels Character vector of labels (one per spec).
 #' @param RunGonz Closure mapping a seed `s1` to `list(idx, tK)`.
-#' @return Integer vector of selected indices with attributes.
+#' @return `.ResolveEnsemble()` returns an integer vector of selected indices with attributes.
 #' @keywords internal
 .ResolveEnsemble <- function(expanded, labels, RunGonz) {
   strategyResults <- lapply(expanded, function(e) {
@@ -152,7 +152,7 @@
 #'
 #' @param d Square numeric distance matrix.
 #' @param strategy Anchor name; see [MaxMinSeed()]. Also accepts `"first"` (1).
-#' @return Integer seed index.
+#' @return `.MaxMinSeed()` returns an integer seed index.
 #' @keywords internal
 .MaxMinSeed <- function(d, strategy) {
   switch(strategy,
@@ -197,7 +197,7 @@
 #' data.
 #' @param points A `double` `N x dim` coordinate matrix.
 #' @param strategy Anchor name; see [MaxMinSeed()]. Also accepts `"first"` (1).
-#' @return Integer seed index.
+#' @return `.MaxMinSeedPoints()` returns an integer seed index.
 #' @keywords internal
 .MaxMinSeedPoints <- function(points, strategy) {
   switch(strategy,
@@ -263,7 +263,7 @@
 #'    counterpart of `"rowsum"`.}
 #' }
 #'
-#' @return Integer seed index in `[1, N]`.
+#' @return `MaxMinSeed()` returns an integer seed index in `[1, N]`.
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
@@ -301,7 +301,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
 #' @param anchors Character vector of anchor names.
 #' @param nseeds Integer number of distinct random-furthest seeds to draw when
 #'   `"random_furthest"` is in `anchors`.
-#' @return Integer vector of selected indices with attributes.
+#' @return `.GonzEnsemble()` returns an integer vector of selected indices with attributes.
 #' @keywords internal
 .GonzEnsemble <- function(d, m, anchors = "peripheral",
                           nseeds = .kDefaultNSeeds) {
@@ -400,7 +400,7 @@ MaxMinSeed <- function(d = NULL, points = NULL,
 #' @param points A `double` `N x dim` coordinate matrix.
 #' @param m Integer subset size.
 #' @inheritParams .GonzEnsemble
-#' @return Integer vector of selected indices with attributes.
+#' @return `.GonzEnsembleFromPoints()` returns an integer vector of selected indices with attributes.
 #' @keywords internal
 .GonzEnsembleFromPoints <- function(points, m, anchors = .kDefaultEnsemble,
                                     nseeds = .kDefaultNSeeds) {

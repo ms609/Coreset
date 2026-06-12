@@ -12,7 +12,7 @@
 #'   the score is computed from `stats::dist()` on the selected
 #'   sub-coordinates only (`k x k`), never the full `N x N` matrix (`d` is then
 #'   unused). For Euclidean data the result is identical to the matrix path.
-#' @return Numeric scalar; `NA_real_` if `length(idx) < 2`.
+#' @return `MinDist()` returns a numeric scalar; `NA_real_` if `length(idx) < 2`.
 #' @details The solvers in this package ([FarFirst()], [DropAdd()], [Grasp()])
 #'   already attach the achieved \eqn{T_k} as a `score` attribute, so
 #'   `MinDist()` is mainly for scoring a selection produced elsewhere -- a

@@ -2,7 +2,7 @@
 % Please edit documentation in R/seed.R
 \name{.CentroidSqDist}
 \alias{.CentroidSqDist}
-\title{Squared distance of every point to the coordinate centroid}
+\title{Squared distance of every point to the coordinate anti_centroid}
 \usage{
 .CentroidSqDist(points)
 }
@@ -13,7 +13,7 @@
 Numeric vector of length \code{N} of squared distances to the mean.
 }
 \description{
-The \code{O(N * dim)} basis of the \code{"centroid"} seed: its argmax is the point
+The \code{O(N * dim)} basis of the \code{"anti_centroid"} seed: its argmax is the point
 farthest from the coordinate mean, an approximate diameter endpoint.
 }
 \keyword{internal}

@@ -49,14 +49,9 @@ optimal score..
 }
 }
 \description{
-Greedy \emph{k}-centre selection \insertCite{Gonzalez1985,Hochbaum1985}{MaxMin}.
-Iteratively selects the point furthest from the current selection, a
+Greedy \emph{k}-centre selection \insertCite{Gonzalez1985,Hochbaum1985}{MaxMin}
+iteratively selects the point furthest from the current selection, a
 2-approximation to the \emph{k}-centre problem.
-The quality of the result depends on the first (seed) point; by default
-\code{FarFirst()} runs three starts from randomly selected peripheral seeds.
-The deterministic \eqn{O(N)} anchors (\code{"centroid"}, \code{"peripheral"}) and the
-costlier \eqn{O(N^2)} anchors (\code{"diameter"}, \code{"anti_medoid"},
-\code{"rowsum"}, \code{"rownorm"}) are alternative \code{seed} strategies.
 }
 \section{Distance function}{
 

@@ -181,7 +181,7 @@
 #' @param .trace Optional environment (testing only); if supplied, the dropped
 #'   and added index sequences are written into it as `drops` and `adds`.
 #'
-#' @return An integer vector of length \code{k} containing the 1-based selected
+#' @return `DropAdd()` returns an integer vector of length \code{k} containing the 1-based selected
 #'   indices **sorted ascending** (unlike [FarFirst()], which returns
 #'   farthest-first order), with attributes:
 #'   \describe{
