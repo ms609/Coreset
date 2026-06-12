@@ -54,24 +54,27 @@ interactive sessions (\code{getOption("MaxMin.progress", interactive())}).}
 \item{n_centres}{\code{length(indices)}.}
 }
 It prints as a one-line summary and is otherwise an ordinary list.
+
+The covering optimum may be attained by fewer than \code{k} centres (extra centres
+never help once coverage is achieved); \code{indices} then has length \verb{< k} and the
+reported \code{radius} is still the proven \emph{k}-centre optimum. The problem is
+NP-hard, so this is an external ground-truth reference for small instances,
+not a scalable method.
 }
 \description{
-Solves the discrete (vertex) \emph{k}-centre problem to proven optimality: the
-optimum covering radius is the smallest threshold \code{r}, over the achieved
+\code{ExactKCentre()} finds an optimal solution to the discrete \emph{k}-centre
+problem.
+}
+\details{
+The optimum covering radius is the smallest threshold \code{r}, over the achieved
 distinct distances, for which \code{k} centres can cover every point within \code{r}.
+
 Each probe solves a minimum-cardinality \emph{set-cover} integer program with
 the \code{highs} MILP backend, the covering constraints held as a sparse matrix --
 the covering dual of \code{\link[=ExactMaxMin]{ExactMaxMin()}}'s node-packing program. The search is
 warm-started from the \code{\link[=KCentre]{KCentre()}} (CDSh) radius, a proven feasible upper bound
 that caps the binary search, then bisects downward to the smallest feasible
 radius.
-}
-\details{
-The covering optimum may be attained by fewer than \code{k} centres (extra centres
-never help once coverage is achieved); \code{indices} then has length \verb{< k} and the
-reported \code{radius} is still the proven \emph{k}-centre optimum. The problem is
-NP-hard, so this is an external ground-truth reference for small instances,
-not a scalable method.
 }
 \examples{
 \donttest{

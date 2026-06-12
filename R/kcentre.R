@@ -305,21 +305,18 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L, seeds = NULL) {
 
 #' Exact discrete k-centre optimum on small instances
 #'
-#' Solves the discrete (vertex) \emph{k}-centre problem to proven optimality: the
-#' optimum covering radius is the smallest threshold `r`, over the achieved
+#' `ExactKCentre()` finds an optimal solution to the discrete \emph{k}-centre
+#' problem.
+#'
+#' The optimum covering radius is the smallest threshold `r`, over the achieved
 #' distinct distances, for which `k` centres can cover every point within `r`.
+#'
 #' Each probe solves a minimum-cardinality \emph{set-cover} integer program with
 #' the `highs` MILP backend, the covering constraints held as a sparse matrix --
 #' the covering dual of [ExactMaxMin()]'s node-packing program. The search is
 #' warm-started from the [KCentre()] (CDSh) radius, a proven feasible upper bound
 #' that caps the binary search, then bisects downward to the smallest feasible
 #' radius.
-#'
-#' The covering optimum may be attained by fewer than `k` centres (extra centres
-#' never help once coverage is achieved); `indices` then has length `< k` and the
-#' reported `radius` is still the proven \emph{k}-centre optimum. The problem is
-#' NP-hard, so this is an external ground-truth reference for small instances,
-#' not a scalable method.
 #'
 #' @param k Integer centre budget, `1 <= k <= nrow(d)`.
 #' @param d A `dist` object or a square symmetric numeric distance matrix.
@@ -344,6 +341,13 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L, seeds = NULL) {
 #'     \item{n_centres}{`length(indices)`.}
 #'   }
 #'   It prints as a one-line summary and is otherwise an ordinary list.
+#'
+#' The covering optimum may be attained by fewer than `k` centres (extra centres
+#' never help once coverage is achieved); `indices` then has length `< k` and the
+#' reported `radius` is still the proven \emph{k}-centre optimum. The problem is
+#' NP-hard, so this is an external ground-truth reference for small instances,
+#' not a scalable method.
+#'
 #' @seealso [KCentre()] for the fast near-optimal heuristic; [ExactMaxMin()] for
 #'   the dual MMDP optimum.
 #' @references \insertAllCited{}
