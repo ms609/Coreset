@@ -57,22 +57,25 @@ install.packages("MaxMin")
 
 ## Quick start
 
-`eurodist` is a built-in R `dist` object containing road distances (km)
-between 21 European cities.
+Our examples employ a built-in R `dist` object that contains road distances
+(in km) between 21 European cities.
 
 ```{r}
 #| label: quickstart
-data(eurodist)
+# Load the `eurodist` dist object
+data("eurodist")
 
 # Set a seed for a reproducible selection
 set.seed(1)
 
 # Select 4 maximally dispersed cities
-idx <- FarFirst(eurodist, k = 4L)
-MinDist(eurodist, idx)
+ffPick <- FarFirst(eurodist, k = 4L)
 
-# View distances between chosen cities
-as.matrix(eurodist)[idx, idx]
+# View distances between selected cities
+as.matrix(eurodist)[ffPick, ffPick]
+
+# Quickly extract the minimum distance for a given selection
+MinDist(eurodist, ffPick)
 ```
 
 `FarFirst()` returned the indices of the four cities whose nearest-neighbour
@@ -81,20 +84,20 @@ distance within the selection is largest.
 
 ## Methods at a glance
 
-MaxMin provides solvers and a scorer for each objective:
+MaxMin provides solvers for each objective:
 
 | Function | Objective | Quality | Speed | Stochastic? |
 |---|---|---|---|---|
-| `FarFirst()` | dispersion (MMDP) | Good (2-approximation) | Very fast | No |
-| `DropAdd()` | dispersion (MMDP) | High (≈ 99 % optimal) | Fast | No |
-| `Grasp()` | dispersion (MMDP) | Highest | Moderate | Yes (`set.seed()`) |
-| `ExactMaxMin()` | dispersion (MMDP) | Optimal (NP-hard) | Slow | No |
-| `MinDist()` | dispersion (MMDP) | Scoring only | Instant | No |
-| `KCentre()` | covering (k-centre) | Near-optimal (CDSh) | Fast | No |
-| `ExactKCentre()` | covering (k-centre) | Optimal (NP-hard) | Slow | No |
-| `KCentreRadius()` | covering (k-centre) | Scoring only | Instant | No |
+| `FarFirst()` | both | Good (2-approximation) | Very fast | No |
+| `DropAdd()` | MMDP | High (≈ 99 % optimal) | Fast | No |
+| `Grasp()` | MMDP | Highest | Moderate | Yes (`set.seed()`) |
+| `ExactMaxMin()` | MMDP | Optimal (NP-hard) | Slow | No |
+| `KCentre()` | k-centre | Near-optimal (CDSh) | Fast | No |
+| `ExactKCentre()` | k-centre | Optimal (NP-hard) | Slow | No |
 
-We walk through the dispersion methods first, then the k-centre methods.
+
+To compute the score for an arbitrary selection of points under each objective,
+use `MinDist()` (MMDP) and `KCentreRadius()` (k-centre objective).
 
 
 ## Gonzalez: fast greedy selection
