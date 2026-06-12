@@ -58,5 +58,5 @@ Other reporting functions:
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 FarFirst(dist(pts), 5L)
-#> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first (best of 5 strategies, 3 tied: random_furthest2, random_furthest4, random_furthest5), each at distance >= 1.765
+#> Error in .AsDistMatrix(d): `d` must be a `dist` object or a square numeric matrix
 ```

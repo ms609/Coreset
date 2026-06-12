@@ -8,7 +8,7 @@ bit-identical to the matrix path on Euclidean data.
 ## Usage
 
 ``` r
-.MaxMinSeedPoints(points, method)
+.MaxMinSeedPoints(points, strategy)
 ```
 
 ## Arguments
@@ -17,7 +17,7 @@ bit-identical to the matrix path on Euclidean data.
 
   A `double` `N x dim` coordinate matrix.
 
-- method:
+- strategy:
 
   Anchor name; see
   [`MaxMinSeed()`](https://ms609.github.io/MaxMin/reference/MaxMinSeed.md).

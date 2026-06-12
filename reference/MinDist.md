@@ -57,6 +57,6 @@ whose results already carry the objective.
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
-MinDist(d, FarFirst(d, 5L))
+MinDist(d, FarFirst(5L, d))
 #> [1] 1.765223
 ```

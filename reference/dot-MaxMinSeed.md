@@ -5,7 +5,7 @@ Peripheral seed index for Gonzalez selection (distance matrix)
 ## Usage
 
 ``` r
-.MaxMinSeed(d, method)
+.MaxMinSeed(d, strategy)
 ```
 
 ## Arguments
@@ -14,7 +14,7 @@ Peripheral seed index for Gonzalez selection (distance matrix)
 
   Square numeric distance matrix.
 
-- method:
+- strategy:
 
   Anchor name; see
   [`MaxMinSeed()`](https://ms609.github.io/MaxMin/reference/MaxMinSeed.md).

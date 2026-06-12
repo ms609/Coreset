@@ -5,14 +5,14 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Introduction to MaxMin • MaxMin</title>
+<title>maxmin • MaxMin</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><script src="MaxMin_files/libs/quarto-html/popper.min.js"></script><script src="MaxMin_files/libs/quarto-html/tippy.umd.min.js"></script><link href="MaxMin_files/libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="MaxMin_files/libs/quarto-html/light-border.css" rel="stylesheet">
-<!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Introduction to MaxMin">
+<!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="maxmin">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -49,10 +49,10 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
-      <h1>Introduction to MaxMin</h1>
+      <h1></h1>
 
-      <p class="author">Martin R. Smith</p>
-      <p class="date">2026-06-12</p>
+
+
 
       <small class="dont-index">Source: <a href="https://github.com/ms609/MaxMin/blob/main/vignettes/MaxMin.qmd" class="external-link"><code>vignettes/MaxMin.qmd</code></a></small>
       <div class="d-none name"><code></code></div>
@@ -63,12 +63,44 @@
 
 
 
-    <p>The MaxMin package selects a subset that represents a fixed pool of <em>N</em> items, based on one of two complementary objectives:</p>
+    <table class="table caption-top"><tbody>
+<tr class="odd">
+<td>title: “Introduction to MaxMin”</td>
+</tr>
+<tr class="even">
+<td>author: “Martin R. Smith”</td>
+</tr>
+<tr class="odd">
+<td>date: today</td>
+</tr>
+<tr class="even">
+<td>format: html</td>
+</tr>
+<tr class="odd">
+<td>bibliography: ../inst/REFERENCES.bib</td>
+</tr>
+<tr class="even">
+<td>csl: ../inst/apa.csl</td>
+</tr>
+<tr class="odd">
+<td>vignette: &gt;</td>
+</tr>
+<tr class="even">
+<td>%</td>
+</tr>
+<tr class="odd">
+<td>%</td>
+</tr>
+<tr class="even">
+<td>%</td>
+</tr>
+</tbody></table>
+<p>The MaxMin package selects a subset that represents a fixed pool of <em>N</em> items, based on one of two complementary objectives:</p>
 <p>The <strong>Max-Min Diversity Problem</strong> (MMDP, the discrete <em>p</em>-dispersion objective) selects <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> elements such that the minimum distance between any pair of selected elements is as large as possible; the chosen elements are maximally separated. This can reward selections that leave the interior of the set unrepresented.</p>
 <p>This objective is suited to defining a representative sample from a fixed pool: picking biological specimens for sequencing that span available diversity, or choosing a representative subset of protein structures from a database.</p>
 <p>The <strong>discrete <em>k</em>-centre problem</strong> selects <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> elements such that the maximum distance from any element in the original set to a selected element is as small as possible. In ensuring that each point has a nearby representative, this objective can select points that reflect a central compromise, rather than selections that are closer to more local points.</p>
 <p>This objective is useful when selecting centres that represent each point in a dataset: for example, siting fire stations to guarantee that all buildings can be reached within a given response time.</p>
-<p>An approximate selection that satisfies both objectives within a factor of two of their respective optima can be attained by a greedy farthest-first algorithm <span class="citation" data-cites="Gonzalez1985">(<a href="#ref-Gonzalez1985" role="doc-biblioref">González, 1985</a>)</span>, though the exact optima typically differ; dispersion spreads to the extremes, whereas covering reaches into the interior. MaxMin provides approximate and exact solvers for each objective.</p>
+<p>An approximate selection that satisfies both objectives within a factor of two of their respective optima can be attained by a greedy farthest-first algorithm <span class="citation" data-cites="Gonzalez1985">[@Gonzalez1985]</span>, though the exact optima typically differ; dispersion spreads to the extremes, whereas covering reaches into the interior. MaxMin provides approximate and exact solvers for each objective.</p>
 <section class="level2"><h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <div class="cell">
@@ -87,7 +119,7 @@
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Select 4 maximally dispersed cities</span></span>
-<span><span class="va">ffPick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">eurodist</span>, k <span class="op">=</span> <span class="fl">4L</span><span class="op">)</span></span>
+<span><span class="va">ffPick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="fl">4L</span>, <span class="va">eurodist</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># View distances between selected cities</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span><span class="op">[</span><span class="va">ffPick</span>, <span class="va">ffPick</span><span class="op">]</span></span>
@@ -161,23 +193,23 @@
 <p>To compute the score for an arbitrary selection of points under each objective, use <code><a href="../reference/MinDist.html">MinDist()</a></code> (MMDP) and <code><a href="../reference/KCentreRadius.html">KCentreRadius()</a></code> (k-centre).</p>
 </section><section class="level2"><h2 id="fast-greedy-selection">Fast greedy selection<a class="anchor" aria-label="anchor" href="#fast-greedy-selection"></a>
 </h2>
-<p>The <span class="citation" data-cites="Gonzalez1985">González (<a href="#ref-Gonzalez1985" role="doc-biblioref">1985</a>)</span> algorithm builds the selection greedily: start from a seed point, then repeatedly add whichever unselected point is farthest from the current selection. This greedy rule guarantees a 2-approximation to the optimal T<sub>k</sub> and runs in O(<em>N</em> · <em>m</em>) time.</p>
+<p>The <span class="citation" data-cites="Gonzalez1985">@Gonzalez1985</span> algorithm builds the selection greedily: start from a seed point, then repeatedly add whichever unselected point is farthest from the current selection. This greedy rule guarantees a 2-approximation to the optimal T<sub>k</sub> and runs in O(<em>N</em> · <em>m</em>) time.</p>
 <p>By default <code><a href="../reference/FarFirst.html">FarFirst()</a></code> runs three <code>"random_furthest"</code> starts, each beginning from the point furthest from a randomly selected ‘pivot’ point, and returns whichever pass produced the highest T<sub>k</sub>.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
-<span><span class="va">picks</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">eurodist</span>, k <span class="op">=</span> <span class="fl">6L</span><span class="op">)</span>   <span class="co"># default: best of eight random starts</span></span></code></pre></div>
+<span><span class="va">picks</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="fl">6L</span>, <span class="va">eurodist</span><span class="op">)</span>   <span class="co"># default: best of eight random starts</span></span></code></pre></div>
 </div>
 <p>More random starts can be requested via the <code>nseeds</code> argument.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
-<span><span class="va">picks</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">eurodist</span>, k <span class="op">=</span> <span class="fl">6L</span>, nseeds <span class="op">=</span> <span class="fl">12L</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">picks</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="fl">6L</span>, <span class="va">eurodist</span>, nseeds <span class="op">=</span> <span class="fl">12L</span><span class="op">)</span></span></code></pre></div>
 </div>
 <p>Peripheral seeds may also be selected by deterministic strategies: one or more such strategies can be selected via the <code>strategy</code> argument. The best solution found will be returned.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">picks</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">eurodist</span>, k <span class="op">=</span> <span class="fl">6L</span>, strategy <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"diameter"</span>, <span class="st">"anti_medoid"</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">picks</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="fl">6L</span>, <span class="va">eurodist</span>, strategy <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"diameter"</span>, <span class="st">"anti_medoid"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/MinDist.html">MinDist</a></span><span class="op">(</span><span class="va">eurodist</span>, <span class="va">picks</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 1014</span></span>
 <span></span>
@@ -193,7 +225,7 @@
 <span>  <span class="va">diffs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sweep.html" class="external-link">sweep</a></span><span class="op">(</span><span class="va">arrestTypes</span>, <span class="fl">2</span>, <span class="fu"><a href="https://rdrr.io/r/base/unlist.html" class="external-link">unlist</a></span><span class="op">(</span><span class="va">arrestTypes</span><span class="op">[</span><span class="va">i</span>, <span class="op">]</span><span class="op">)</span>, <span class="st">"-"</span><span class="op">)</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowSums</a></span><span class="op">(</span><span class="va">diffs</span> <span class="op">^</span> <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
-<span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">StateDist</span>, k <span class="op">=</span> <span class="fl">4L</span>, N <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">arrestTypes</span><span class="op">)</span>, strategy <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
+<span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="fl">4L</span>, <span class="va">StateDist</span>, N <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">arrestTypes</span><span class="op">)</span>, strategy <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
 <span><span class="va">arrestTypes</span><span class="op">[</span><span class="va">idx</span>, <span class="op">]</span></span>
 <span><span class="co">#&gt;                Murder Assault Rape</span></span>
 <span><span class="co">#&gt; Alabama          13.2     236 21.2</span></span>
@@ -203,7 +235,7 @@
 </div>
 </section><section class="level2"><h2 id="dropadd-tabu-search">DropAdd tabu search<a class="anchor" aria-label="anchor" href="#dropadd-tabu-search"></a>
 </h2>
-<p>The <strong>DropAdd</strong> heuristic <span class="citation" data-cites="Porumbel2011">(<a href="#ref-Porumbel2011" role="doc-biblioref">Porumbel et al., 2011</a>)</span> refines an initial selection by alternately dropping and adding points from the selection; it typically reaches ≈ 99 % of the optimal T<sub>k</sub>.</p>
+<p>The <strong>DropAdd</strong> heuristic <span class="citation" data-cites="Porumbel2011">[@Porumbel2011]</span> refines an initial selection by alternately dropping and adding points from the selection; it typically reaches ≈ 99 % of the optimal T<sub>k</sub>.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">picksDA</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/DropAdd.html">DropAdd</a></span><span class="op">(</span><span class="va">eurodist</span>, k <span class="op">=</span> <span class="fl">6L</span>, plateau <span class="op">=</span> <span class="fl">500L</span><span class="op">)</span></span>
@@ -216,7 +248,7 @@
 <p>The algorithm terminates after <code>plateau</code> iterations do not improve T<sub>k</sub>. Where <em>N</em> is too large for a distance matrix to fit in memory (roughly N &gt; 46 000), pass a coordinate matrix via <code>DropAdd(points = ...)</code>.</p>
 </section><section class="level2"><h2 id="grasp-with-path-relinking">GRASP with path relinking<a class="anchor" aria-label="anchor" href="#grasp-with-path-relinking"></a>
 </h2>
-<p><strong>GRASP + path relinking</strong> <span class="citation" data-cites="Resende2010">(<a href="#ref-Resende2010" role="doc-biblioref">Resende et al., 2010</a>)</span> combines a <em>randomised</em> greedy construction phase with extended local search and then refines an elite set of good solutions by interpolating between elite-pair trajectories (<em>path relinking</em>). It achieves the highest T<sub>k</sub> of the three heuristics, at a proportionally higher cost. Because the construction phase is stochastic, call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> before <code><a href="../reference/Grasp.html">Grasp()</a></code> for a reproducible run:</p>
+<p><strong>GRASP + path relinking</strong> <span class="citation" data-cites="Resende2010">[@Resende2010]</span> combines a <em>randomised</em> greedy construction phase with extended local search and then refines an elite set of good solutions by interpolating between elite-pair trajectories (<em>path relinking</em>). It achieves the highest T<sub>k</sub> of the three heuristics, at a proportionally higher cost. Because the construction phase is stochastic, call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> before <code><a href="../reference/Grasp.html">Grasp()</a></code> for a reproducible run:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
@@ -241,7 +273,7 @@
 </div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">idx_ff</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">d50</span>, <span class="va">k</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">idx_ff</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">k</span>, <span class="va">d50</span><span class="op">)</span></span>
 <span><span class="va">res_da50</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/DropAdd.html">DropAdd</a></span><span class="op">(</span><span class="va">d50</span>, k <span class="op">=</span> <span class="va">k</span>, plateau <span class="op">=</span> <span class="fl">500L</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
 <span><span class="va">res_gr50</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Grasp.html">Grasp</a></span><span class="op">(</span><span class="va">d50</span>, k <span class="op">=</span> <span class="va">k</span>, plateau <span class="op">=</span> <span class="fl">50L</span><span class="op">)</span></span></code></pre></div>
@@ -297,7 +329,7 @@
 </div>
 </section><section class="level2"><h2 id="exact-solution">Exact solution<a class="anchor" aria-label="anchor" href="#exact-solution"></a>
 </h2>
-<p>For small instances (roughly N ≤ 25–30), <code><a href="../reference/ExactMaxMin.html">ExactMaxMin()</a></code> solves the problem to proven optimality via a node-packing integer programme <span class="citation" data-cites="Sayyady2016">(<a href="#ref-Sayyady2016" role="doc-biblioref">Sayyady &amp; Fathi, 2016</a>)</span>, using the <strong>highs</strong> solver.</p>
+<p>For small instances (roughly N ≤ 25–30), <code><a href="../reference/ExactMaxMin.html">ExactMaxMin()</a></code> solves the problem to proven optimality via a node-packing integer programme <span class="citation" data-cites="Sayyady2016">[@Sayyady2016]</span>, using the <strong>highs</strong> solver.</p>
 <p>First we must install <strong>highs</strong>:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb13"><pre class="downlit sourceCode r">
@@ -319,7 +351,7 @@
 <span><span class="co">#&gt; [1] 1.616311</span></span>
 <span></span>
 <span><span class="co"># Compare to the greedy heuristic on the same instance</span></span>
-<span><span class="va">res_ff30</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">d30</span>, k <span class="op">=</span> <span class="fl">6L</span><span class="op">)</span></span>
+<span><span class="va">res_ff30</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="fl">6L</span>, <span class="va">d30</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>exact    <span class="op">=</span> <span class="va">res_ex</span><span class="op">$</span><span class="va">objective</span>,</span>
 <span>  Gonzalez <span class="op">=</span> <span class="fu"><a href="../reference/MinDist.html">MinDist</a></span><span class="op">(</span><span class="va">d30</span>, <span class="va">res_ff30</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    exact Gonzalez </span></span>
@@ -343,11 +375,11 @@
 </div>
 </section></section><section class="level2"><h2 id="covering-the-k-centre-problem">Covering: the k-centre problem<a class="anchor" aria-label="anchor" href="#covering-the-k-centre-problem"></a>
 </h2>
-<p>Every method above pursues <em>dispersion</em> — it spreads the selection so its members are mutually far apart. The <strong>k-centre</strong> problem instead pursues <em>coverage</em>: it minimises the covering radius <em>R</em>, the largest distance from any point to its nearest chosen centre, so that no point of the pool is left far from a representative <span class="citation" data-cites="Gonzalez1985 Hochbaum1985">(<a href="#ref-Gonzalez1985" role="doc-biblioref">González, 1985</a>; <a href="#ref-Hochbaum1985" role="doc-biblioref">Hochbaum &amp; Shmoys, 1985</a>)</span>. Where dispersion reaches for the extremes, covering reaches into the interior, so on the same data the two optima are generally different selections.</p>
+<p>Every method above pursues <em>dispersion</em> — it spreads the selection so its members are mutually far apart. The <strong>k-centre</strong> problem instead pursues <em>coverage</em>: it minimises the covering radius <em>R</em>, the largest distance from any point to its nearest chosen centre, so that no point of the pool is left far from a representative <span class="citation" data-cites="Gonzalez1985 Hochbaum1985">[@Gonzalez1985; @Hochbaum1985]</span>. Where dispersion reaches for the extremes, covering reaches into the interior, so on the same data the two optima are generally different selections.</p>
 <section class="level3"><h3 id="kcentre-near-optimal-covering">
 <code>KCentre()</code>: near-optimal covering<a class="anchor" aria-label="anchor" href="#kcentre-near-optimal-covering"></a>
 </h3>
-<p><code><a href="../reference/KCentre.html">KCentre()</a></code> chooses centres with the deterministic CDSh heuristic <span class="citation" data-cites="GarciaDiaz2019 GarciaDiaz2017">(<a href="#ref-GarciaDiaz2017" role="doc-biblioref">García-Díaz et al., 2017</a>; <a href="#ref-GarciaDiaz2019" role="doc-biblioref">García-Díaz et al., 2019</a>)</span>, which typically lands within 1–3.5 % of the optimum — an order of magnitude tighter than the Gonzalez 2-approximation that <code><a href="../reference/FarFirst.html">FarFirst()</a></code> gives for this objective.</p>
+<p><code><a href="../reference/KCentre.html">KCentre()</a></code> chooses centres with the deterministic CDSh heuristic <span class="citation" data-cites="GarciaDiaz2019 GarciaDiaz2017">[@GarciaDiaz2019; @GarciaDiaz2017]</span>, which typically lands within 1–3.5 % of the optimum — an order of magnitude tighter than the Gonzalez 2-approximation that <code><a href="../reference/FarFirst.html">FarFirst()</a></code> gives for this objective.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">centres</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/KCentre.html">KCentre</a></span><span class="op">(</span><span class="va">eurodist</span>, k <span class="op">=</span> <span class="fl">4L</span><span class="op">)</span></span>
@@ -359,7 +391,7 @@
 <p><code><a href="../reference/KCentreRadius.html">KCentreRadius()</a></code> scores any centre set by its covering radius (lower is better). CDSh covers at least as tightly as the Gonzalez 2-approximation baseline:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ff</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="va">eurodist</span>, k <span class="op">=</span> <span class="fl">4L</span>, strategy <span class="op">=</span> <span class="st">"peripheral"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">ff</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="fl">4L</span>, <span class="va">eurodist</span>, strategy <span class="op">=</span> <span class="st">"peripheral"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>KCentre  <span class="op">=</span> <span class="fu"><a href="../reference/KCentreRadius.html">KCentreRadius</a></span><span class="op">(</span><span class="va">eurodist</span>, <span class="va">centres</span><span class="op">)</span>,</span>
 <span>  FarFirst <span class="op">=</span> <span class="fu"><a href="../reference/KCentreRadius.html">KCentreRadius</a></span><span class="op">(</span><span class="va">eurodist</span>, <span class="va">ff</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  KCentre FarFirst </span></span>
@@ -469,31 +501,8 @@
 </section><section class="level2"><h2 id="related-packages">Related packages<a class="anchor" aria-label="anchor" href="#related-packages"></a>
 </h2>
 <p>The CRAN package <a href="https://CRAN.R-project.org/package=maximin" class="external-link"><strong>maximin</strong></a> constructs continuous space-filling designs by generating new points.</p>
-</section><section class="level2 unnumbered"><h2 class="unnumbered" id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</section><section class="level2"><h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
-<div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" data-line-spacing="2" role="list">
-<div id="ref-GarciaDiaz2019" class="csl-entry" role="listitem">
-García-Díaz, J., Menchaca-Méndez, R., Menchaca-Méndez, R., Pomares Hernández, S., Pérez-Sansalvador, J. C., &amp; Lakouari, N. (2019). Approximation algorithms for the vertex <span class="nocase"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>-center</span> problem: Survey and experimental evaluation. <em>IEEE Access</em>, <em>7</em>, 109228–109245. <a href="https://doi.org/10.1109/ACCESS.2019.2933875" class="external-link">https://doi.org/10.1109/ACCESS.2019.2933875</a>
-</div>
-<div id="ref-GarciaDiaz2017" class="csl-entry" role="listitem">
-García-Díaz, J., Sánchez-Hernández, J., Menchaca-Méndez, R., &amp; Menchaca-Méndez, R. (2017). When a worse approximation factor gives better performance: A <span>3</span>-approximation algorithm for the vertex <span class="nocase"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>-center</span> problem. <em>Journal of Heuristics</em>, <em>23</em>(5), 349–366. <a href="https://doi.org/10.1007/s10732-017-9345-x" class="external-link">https://doi.org/10.1007/s10732-017-9345-x</a>
-</div>
-<div id="ref-Gonzalez1985" class="csl-entry" role="listitem">
-González, T. F. (1985). Clustering to minimize the maximum intercluster distance. <em>Theoretical Computer Science</em>, <em>38</em>, 293–306. <a href="https://doi.org/10.1016/0304-3975(85)90224-5" class="external-link">https://doi.org/10.1016/0304-3975(85)90224-5</a>
-</div>
-<div id="ref-Hochbaum1985" class="csl-entry" role="listitem">
-Hochbaum, D. S., &amp; Shmoys, D. B. (1985). A best possible heuristic for the <span class="nocase"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>-center</span> problem. <em>Mathematics of Operations Research</em>, <em>10</em>(2), 180–184. <a href="https://doi.org/10.1287/moor.10.2.180" class="external-link">https://doi.org/10.1287/moor.10.2.180</a>
-</div>
-<div id="ref-Porumbel2011" class="csl-entry" role="listitem">
-Porumbel, D., Hao, J.-K., &amp; Glover, F. (2011). A simple and effective algorithm for the <span>MaxMin</span> diversity problem. <em>Annals of Operations Research</em>, <em>186</em>, 275–293. <a href="https://doi.org/10.1007/s10479-011-0898-z" class="external-link">https://doi.org/10.1007/s10479-011-0898-z</a>
-</div>
-<div id="ref-Resende2010" class="csl-entry" role="listitem">
-Resende, M. G. C., Martí, R., Gallego, M., &amp; Duarte, A. (2010). <span>GRASP</span> and path relinking for the max-min diversity problem. <em>Computers &amp; Operations Research</em>, <em>37</em>(3), 498–508. <a href="https://doi.org/10.1016/j.cor.2008.05.011" class="external-link">https://doi.org/10.1016/j.cor.2008.05.011</a>
-</div>
-<div id="ref-Sayyady2016" class="csl-entry" role="listitem">
-Sayyady, F., &amp; Fathi, Y. (2016). An integer programming approach for solving the p-dispersion problem. <em>European Journal of Operational Research</em>, <em>253</em>(1), 216–225. <a href="https://doi.org/10.1016/j.ejor.2016.02.026" class="external-link">https://doi.org/10.1016/j.ejor.2016.02.026</a>
-</div>
-</div>
 </section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);

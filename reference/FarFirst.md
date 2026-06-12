@@ -13,28 +13,40 @@ starts from randomly selected peripheral seeds. The deterministic
 
 ``` r
 FarFirst(
-  d = NULL,
   k,
-  strategy = .kDefaultEnsemble,
-  nseeds = .kDefaultNSeeds,
+  d = NULL,
   points = NULL,
   N = NULL,
-  progress = getOption("MaxMin.progress", interactive())
+  strategy = .kDefaultEnsemble,
+  nseeds = .kDefaultNSeeds
 )
 ```
 
 ## Arguments
 
-- d:
-
-  A `dist` object, a square numeric matrix of pairwise distances, or a
-  distance function (see §Details). Asymmetric matrices are accepted;
-  the algorithm treats \\d\_{ij}\\ and \\d\_{ji}\\ as independent.
-  Ignored when `points` is supplied.
-
 - k:
 
   Integer: number of points to select.
+
+- d:
+
+  A `dist` object, a square numeric matrix of pairwise distances, or a
+  distance function that takes an index `i` and returns the distance
+  from `i` to each other element (see §Distance function). Ignored when
+  `points` is supplied.
+
+- points:
+
+  Optional `N x dim` numeric coordinate matrix. When supplied, the
+  selection is computed directly from coordinates in \\O(N \cdot k \cdot
+  dim)\\ time and \\O(N)\\ memory, which avoids creating an \\O(N^2)\\
+  distance matrix. Missing entries (`NA`) are not supported.
+
+- N:
+
+  Integer: the total number of elements. Required (and used) only on the
+  distance-column oracle path, where it cannot be inferred from the
+  closure; ignored for the matrix and coordinate paths.
 
 - strategy:
 
@@ -47,28 +59,6 @@ FarFirst(
 
   Integer: number of distinct seeds to draw under the
   `"random_furthest"` strategy.
-
-- points:
-
-  Optional `N x dim` numeric coordinate matrix. When supplied, the
-  selection is computed directly from coordinates in \\O(N \* k \*
-  dim)\\ time and \\O(N)\\ memory, never materialising the `N x N`
-  distance matrix (`d` is then unused). For Euclidean data the returned
-  indices are identical to the matrix path. Only complete (non-`NA`)
-  data is supported.
-
-- N:
-
-  Integer: the total number of elements. Required (and used) only on the
-  distance-column oracle path, where it cannot be inferred from the
-  closure; ignored for the matrix and coordinate paths.
-
-- progress:
-
-  Logical; show a progress bar during greedy selection on the
-  distance-column oracle path (the only path slow enough to warrant
-  one). Default: `TRUE` in interactive sessions, `FALSE` otherwise
-  (`getOption("MaxMin.progress", interactive())`).
 
 ## Value
 
@@ -90,6 +80,12 @@ and should return the distances from element `i` to every element in
 turn, optionally omitting entry `i`, the self-distance. The function
 will be called once per selected element, to avoid building a complete
 \\N x N\\ matrix.
+
+## Progress bar
+
+The distance-column oracle path shows a progress bar controlled by
+`getOption("MaxMin.progress", interactive())` — `TRUE` by default in
+interactive sessions, `FALSE` otherwise.
 
 ## References
 
@@ -118,22 +114,22 @@ set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
 # Default: best of eight random-furthest starts (set.seed for reproducibility):
-FarFirst(d, 5L)
+FarFirst(5L, d)
 #> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first (best of 5 strategies, 3 tied: random_furthest2, random_furthest4, random_furthest5), each at distance >= 1.765
 # More random-furthest starts:
-FarFirst(d, 5L, nseeds = 15L)
+FarFirst(5L, d, nseeds = 15L)
 #> 5 elements (4 14 26 5 28) selected by Gonzalez farthest-first (best of 5 strategies, 3 tied: random_furthest1, random_furthest3, random_furthest5), each at distance >= 1.765
 # Custom two-anchor ensemble:
-FarFirst(d, 5L, strategy = c("diameter", "anti_medoid"))
+FarFirst(5L, d, strategy = c("diameter", "anti_medoid"))
 #> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first (best of 2 strategies, 2 tied: diameter, anti_medoid), each at distance >= 1.765
 # A single strategy:
-FarFirst(d, 5L, strategy = "diameter")
+FarFirst(5L, d, strategy = "diameter")
 #> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first, each at distance >= 1.765
 # An explicit start index (integer strategy):
-FarFirst(d, 5L, strategy = 1L)
+FarFirst(5L, d, strategy = 1L)
 #> 5 elements (1 5 24 4 14) selected by Gonzalez farthest-first, each at distance >= 1.701
 # Matrix-free coordinate path (identical result, O(N) memory):
-FarFirst(k = 5L, points = pts, strategy = 1L)
+FarFirst(5L, points = pts, strategy = 1L)
 #> 5 elements (1 5 24 4 14) selected by Gonzalez farthest-first, each at distance >= 1.701
 
 # Distance-column oracle: supply one column at a time, never the full matrix.
@@ -143,7 +139,7 @@ StateDist <- function(i) {
   diffs <- sweep(arrestTypes, 2, unlist(arrestTypes[i, ]), "-")
   sqrt(rowSums(diffs ^ 2))
 }
-idx <- FarFirst(StateDist, k = 4L, N = nrow(arrestTypes), strategy = 1L)
+idx <- FarFirst(4L, StateDist, N = nrow(arrestTypes), strategy = 1L)
 arrestTypes[idx, ]
 #>                Murder Assault Rape
 #> Alabama          13.2     236 21.2

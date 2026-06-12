@@ -138,8 +138,8 @@
   RNG; set a seed for a reproducible selection, or supply them via the
   `pivots` argument) and keeps the best by
   [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md).
-  The deterministic O(*N*) anchors (`"centroid"`, `"peripheral"`) and
-  the costlier O(*N*²) anchors (`"diameter"`, `"anti_medoid"`,
+  The deterministic O(*N*) anchors (`"anti_centroid"`, `"peripheral"`)
+  and the costlier O(*N*²) anchors (`"diameter"`, `"anti_medoid"`,
   `"medoid"`, `"rowsum"`, `"rownorm"`) are available as opt-in
   strategies.
 - [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md):
