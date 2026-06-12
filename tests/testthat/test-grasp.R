@@ -175,7 +175,7 @@ test_that("Grasp validates alpha", {
 
 test_that(".Grasp_R stops exactly at maxIter", {
   set.seed(1)
-  ref <- MaxMin:::.Grasp_R(d30m, m = 5L, plateau = 1000L,
+  ref <- MaxMin:::.Grasp_R(d30m, k = 5L, plateau = 1000L,
                               maxIter = 3L, eliteSize = 4L)
   expect_lte(attr(ref, "iters"), 3L)
 })
@@ -231,7 +231,7 @@ test_that(".GraspTryInsert line 217 (second condition) and lines 233-234 (tail i
 # Phase C is deterministic, so any gain must have fired those lines.
 
 test_that(".Grasp_R phase-C path relinking fires lines 422-423", {
-  m     <- 4L
+  k     <- 4L
   es    <- 6L
   alpha <- 0.8
   found <- FALSE
@@ -244,14 +244,14 @@ test_that(".Grasp_R phase-C path relinking fires lines 422-423", {
     set.seed(s)
     phaseABest <- -Inf
     for (b in seq_len(es)) {
-      x  <- MaxMin:::.GraspConstruct(d, m, alpha)
+      x  <- MaxMin:::.GraspConstruct(d, k, alpha)
       xp <- MaxMin:::.GraspLocalSearch(d, x)
       phaseABest <- max(phaseABest, MaxMin:::.GraspObjective(d, xp))
     }
 
     # Full run (Phase A + C, no Phase B).
     set.seed(s)
-    res <- MaxMin:::.Grasp_R(d, m = m, plateau = 1000L,
+    res <- MaxMin:::.Grasp_R(d, k = k, plateau = 1000L,
                                 maxIter = 0L, eliteSize = es, alpha = alpha)
 
     if (attr(res, "score") > phaseABest + 1e-9) {
@@ -266,7 +266,7 @@ test_that(".Grasp_R phase-C path relinking fires lines 422-423", {
 
 test_that("Grasp eliteSize=1 skips path relinking", {
   set.seed(1)
-  res <- Grasp(d30, m = 4L, eliteSize = 1L, plateau = 20L)
+  res <- Grasp(d30, k = 4L, eliteSize = 1L, plateau = 20L)
   expect_length(res, 4L)
   expect_equal(attr(res, "pr_calls"), 0L)
   expect_true(attr(res, "score") > 0)

@@ -75,7 +75,7 @@ test_that("the default ensemble is three random-furthest starts", {
   mat <- FarFirst(dat$d, n)
   expect_identical(names(attr(mat, "strategy_results")),
                    c("random_furthest1", "random_furthest2", "random_furthest3"))
-  pt <- FarFirst(m = n, points = dat$pts)
+  pt <- FarFirst(k = n, points = dat$pts)
   expect_identical(names(attr(pt, "strategy_results")),
                    c("random_furthest1", "random_furthest2", "random_furthest3"))
   # Neither path includes the deterministic anchors by default.
@@ -222,7 +222,7 @@ test_that("column-oracle guards and contract", {
   dat <- MakeData(N = 12)
   colFn <- function(i) dat$d[, i]
   expect_identical(FarFirst(colFn, 0L, N = 12L), integer(0))
-  # m > N: all N indices returned in Gonzalez order (a permutation of 1:N).
+  # k > N: all N indices returned in Gonzalez order (a permutation of 1:N).
   over <- FarFirst(colFn, 20L, N = 12L, method = 1L)
   expect_length(over, 12L)
   expect_setequal(over, seq_len(12L))
@@ -302,7 +302,7 @@ test_that("MaximinFrom_cpp stops when seed index is out of range", {
 test_that("MaximinFromPoints_cpp stops when seed index is out of range", {
   dat <- MakeData(N = 10)
   # method = 0L -> first = 0 < 1 -> Rcpp::stop in maximin_points.cpp line 57
-  expect_error(FarFirst(m = 3L, points = dat$pts, method = 0L), "first")
+  expect_error(FarFirst(k = 3L, points = dat$pts, method = 0L), "first")
 })
 
 # ---- .SubsetScore mean_pairwise branch --------------------------------------
