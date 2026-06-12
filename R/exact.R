@@ -74,8 +74,10 @@
     tryCatch(Grasp(k, d, plateau = 50L), error = function(e) NULL))
   raw <- c(if (is.null(warmStart)) list() else list(warmStart),
            grasps,
-           list(tryCatch(DropAdd(d = d, k = k, plateau = 512L),
-                         error = function(e) NULL)))
+           list(tryCatch(local({
+             op <- options(MaxMin.progress = FALSE); on.exit(options(op))
+             DropAdd(d = d, k = k, plateau = 512L)
+           }), error = function(e) NULL)))
   pool <- Filter(Negate(is.null), lapply(raw, valid))
   if (!length(pool)) {
     return(NULL)
