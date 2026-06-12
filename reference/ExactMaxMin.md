@@ -1,11 +1,11 @@
-# Exact Max-Min Diversity (MMDP) optimum on small instances
+# Exact Max-Min Diversity Problem optimum on small instances
 
 Solves the Max-Min Diversity Problem (discrete p-dispersion) to proven
 optimality by iterated node-packing Sayyady and Fathi (2016) : the
 optimum is the largest threshold `lambda`, over the achieved distinct
 pairwise distances, for which the threshold graph `G(lambda)` (edges
 join pairs closer than `lambda`) contains an independent set of size at
-least `m`. Each probe solves a maximum-independent-set integer program
+least `k`. Each probe solves a maximum-independent-set integer program
 with the `highs` MILP backend, the packing constraints held as a sparse
 matrix.
 
@@ -70,7 +70,7 @@ optimum and a proof status. The fields are
 
 - indices:
 
-  Integer vector of length `m`, sorted ascending: the selected points.
+  Integer vector of length `k`, sorted ascending: the selected points.
 
 - objective:
 
@@ -111,7 +111,7 @@ restarts and a
 [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md)
 pass), then gallops upward from that bound to the first infeasible
 threshold and bisects the resulting bracket. When a heuristic already
-attains the optimum – common at the small `m` for which an exact
+attains the optimum – common at the small `k` for which an exact
 reference is wanted – a single infeasibility solve certifies it. The
 warm start only sets the starting lower bound: the returned optimum is
 proven regardless of heuristic quality (a loose seed merely costs extra

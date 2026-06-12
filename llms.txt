@@ -5,16 +5,13 @@ points that maxmizes coverage of a larger set, under one of two
 objectives:
 
 The **Max-Min Diversity Problem** (MMDP, the discrete *p*-dispersion
-objective) maximises separation. It selects $`k`$ elements such that the
-minimum distance between any pair of selected elements is as large as
-possible; the chosen elements are maximally distinct. This can reward
-selections that leave the interior of the set unrepresented.
+objective) selects $`k`$ elements such that the minimum distance between
+any pair of selected elements is as large as possible; the chosen
+elements are maximally separated.
 
 The **discrete *k*-centre problem** selects $`k`$ elements such that the
-largest distance from *any* element to its nearest selected element is
-as small as possible. This rewards selections that reach the whole set,
-such that each point has a nearby representative; it can pull centres
-inward and collapse well-separated modes onto a central compromise.
+maximum distance from any element in the original set to a selected
+element is as small as possible.
 
 ## Solvers
 
@@ -104,20 +101,20 @@ Farthest-first (Gonzalez) selection and its seeding strategies.
 - [`MaxMinSeed()`](https://ms609.github.io/MaxMin/reference/MaxMinSeed.md)
   : Peripheral seed index for Gonzalez farthest-first selection
 
-## MaxMin solvers
+## Max-Min diversity problem solvers
 
 - [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) :
   DropAdd Tabu Search for the Max-Min Diversity Problem
 - [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) : GRASP
   with Path Relinking for the Max-Min Diversity Problem
 - [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
-  : Exact Max-Min Diversity (MMDP) optimum on small instances
+  : Exact Max-Min Diversity Problem optimum on small instances
 
 ## k-centre solvers
 
 - [`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md)
   [`KCenter()`](https://ms609.github.io/MaxMin/reference/KCentre.md) :
-  Near-optimal discrete k-centre by CDSh
+  Near-optimal discrete k-centre solver
 - [`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md)
   [`ExactKCenter()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md)
   : Exact discrete k-centre optimum on small instances
@@ -128,7 +125,7 @@ Farthest-first (Gonzalez) selection and its seeding strategies.
   Minimum pairwise distance within a selection
 - [`KCentreRadius()`](https://ms609.github.io/MaxMin/reference/KCentreRadius.md)
   [`KCenterRadius()`](https://ms609.github.io/MaxMin/reference/KCentreRadius.md)
-  : Covering radius of a centre set (k-centre objective)
+  : Covering radius of a set of selected centres
 
 ## Reporting
 
@@ -144,7 +141,7 @@ Farthest-first (Gonzalez) selection and its seeding strategies.
   : Format and print MaxMin solver results
 - [`summary(`*`<MaxMinSelection>`*`)`](https://ms609.github.io/MaxMin/reference/summary.MaxMin.md)
   [`summary(`*`<MaxMinExact>`*`)`](https://ms609.github.io/MaxMin/reference/summary.MaxMin.md)
-  : Multi-line summaries of MaxMin solver results
+  : Detailed summaries of MaxMin solver results
 
 # Articles
 

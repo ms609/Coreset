@@ -53,8 +53,8 @@
 <!-- badges: start -->
 
 <p><code>MaxMin</code> implements algorithms that select a dispersed subsample of points that maxmizes coverage of a larger set, under one of two objectives:</p>
-<p>The <strong>Max-Min Diversity Problem</strong> (MMDP, the discrete <em>p</em>-dispersion objective) maximises separation. It selects <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> elements such that the minimum distance between any pair of selected elements is as large as possible; the chosen elements are maximally distinct. This can reward selections that leave the interior of the set unrepresented.</p>
-<p>The <strong>discrete <em>k</em>-centre problem</strong> selects <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> elements such that the largest distance from <em>any</em> element to its nearest selected element is as small as possible. This rewards selections that reach the whole set, such that each point has a nearby representative; it can pull centres inward and collapse well-separated modes onto a central compromise.</p>
+<p>The <strong>Max-Min Diversity Problem</strong> (MMDP, the discrete <em>p</em>-dispersion objective) selects <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> elements such that the minimum distance between any pair of selected elements is as large as possible; the chosen elements are maximally separated.</p>
+<p>The <strong>discrete <em>k</em>-centre problem</strong> selects <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> elements such that the maximum distance from any element in the original set to a selected element is as small as possible.</p>
 <div class="section level2">
 <h2 id="solvers">Solvers<a class="anchor" aria-label="anchor" href="#solvers"></a>
 </h2>

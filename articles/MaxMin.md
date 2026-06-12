@@ -1,34 +1,36 @@
 # Introduction to MaxMin
 
-MaxMin selects a representative subset from a fixed pool of *N* items,
-given a distance between every pair. It addresses two complementary —
-and often conflated — facility-location objectives.
+The MaxMin package selects a subset that represents a fixed pool of *N*
+items, based on one of two complementary objectives:
 
-The **Max-Min Diversity Problem** (MMDP, or *p*-dispersion) asks: choose
-*m* items so that the closest pair in the selection is as far apart as
-possible. The objective — often written T_(k) — is the minimum pairwise
-distance within the chosen subset; a larger T_(k) means a more
-spread-out selection. This is a *packing* objective: it depends only on
-the chosen items, and rewards picks that push out to the extremes.
+The **Max-Min Diversity Problem** (MMDP, the discrete *p*-dispersion
+objective) selects $`k`$ elements such that the minimum distance between
+any pair of selected elements is as large as possible; the chosen
+elements are maximally separated. This can reward selections that leave
+the interior of the set unrepresented.
 
-The **k-centre problem** (*p*-centre) asks the dual, *covering*
-question: choose *k* items so that every item in the pool lies as close
-as possible to its nearest chosen item. Its objective is the covering
-radius *R* — the largest distance from any point to its nearest centre —
-and a smaller *R* means tighter coverage. This depends on *all N* items,
-and pulls the selection inward so that no region is left unrepresented.
+This objective is suited to defining a representative sample from a
+fixed pool: picking biological specimens for sequencing that span
+available diversity, or choosing a representative subset of protein
+structures from a database.
 
-Greedy farthest-point selection ([González, 1985](#ref-Gonzalez1985)) is
-a 2-approximation to *both* objectives, which is why they are so often
-conflated; but their exact optima differ — dispersion spreads to the
-extremes, covering reaches into the interior. MaxMin provides dedicated
-near-optimal and exact solvers for each.
+The **discrete *k*-centre problem** selects $`k`$ elements such that the
+maximum distance from any element in the original set to a selected
+element is as small as possible. In ensuring that each point has a
+nearby representative, this objective can select points that reflect a
+central compromise, rather than selections that are closer to more local
+points.
 
-These objectives arise wherever you want a representative sample from a
-fixed pool: selecting field-survey sites to cover a landscape, picking
-biological specimens for sequencing that span the available genetic
-diversity, or choosing a representative subset of protein structures
-from a database.
+This objective is useful when selecting centres that represent each
+point in a dataset: for example, siting fire stations to guarantee that
+all buildings can be reached within a given response time.
+
+An approximate selection that satisfies both objectives within a factor
+of two of their respective optima can be attained by a greedy
+farthest-first algorithm ([González, 1985](#ref-Gonzalez1985)), though
+the exact optima typically differ; dispersion spreads to the extremes,
+whereas covering reaches into the interior. MaxMin provides approximate
+and exact solvers for each objective.
 
 ## Installation
 

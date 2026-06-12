@@ -1,17 +1,9 @@
-# Near-optimal discrete k-centre by CDSh
+# Near-optimal discrete k-centre solver
 
-Chooses `k` centres minimising the covering radius (the largest distance
-from any point to its nearest centre) with the CDSh heuristic of
-García-Díaz et al. (2019) (see also (García-Díaz et al. 2017) ). CDSh
-binary-searches the achieved distinct distances; at each trial radius it
-runs a fixed-`k` farthest-point construction in which every centre is
-the highest-degree neighbour (within the trial radius) of the currently
-worst-covered vertex, and accepts the radius when the construction
-covers all points within it. On the benchmark instances of García-Díaz
-et al. (2019) it reaches roughly 1-3.5% of the optimum at \\O(N^2 \log
-N)\\, far tighter than the Gonzalez 2-approximation that
-[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
-gives for this objective (typically tens of per cent above optimum).
+`KCentre()` selects `k` elements (centres) so as to minimize the largest
+distance from any point to its nearest centre (the covering radius),
+using the CDSh heuristic (García-Díaz et al. 2017; García-Díaz et al.
+2019) .
 
 ## Usage
 
@@ -59,6 +51,16 @@ otherwise an ordinary integer vector and indexes a matrix or coordinate
 set directly.
 
 ## Details
+
+CDSh binary-searches the achieved distinct distances; at each trial
+radius it runs a fixed-`k` farthest-point construction in which every
+centre is the highest-degree neighbour (within the trial radius) of the
+currently worst-covered vertex, and accepts the radius when the
+construction covers all points within it. On the benchmark instances of
+García-Díaz et al. (2019) it reaches roughly 1-3.5% of the optimum at
+\\O(N^2 \log N)\\, far tighter than the Gonzalez 2-approximation that
+[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
+gives for this objective (typically tens of per cent above optimum).
 
 The achieved covering radius is not monotone in the trial radius, so the
 binary search can occasionally miss the best candidate. Two safeguards

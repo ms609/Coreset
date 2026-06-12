@@ -5,16 +5,13 @@ points that maxmizes coverage of a larger set, under one of two
 objectives:
 
 The **Max-Min Diversity Problem** (MMDP, the discrete *p*-dispersion
-objective) maximises separation. It selects $`k`$ elements such that the
-minimum distance between any pair of selected elements is as large as
-possible; the chosen elements are maximally distinct. This can reward
-selections that leave the interior of the set unrepresented.
+objective) selects $`k`$ elements such that the minimum distance between
+any pair of selected elements is as large as possible; the chosen
+elements are maximally separated.
 
 The **discrete *k*-centre problem** selects $`k`$ elements such that the
-largest distance from *any* element to its nearest selected element is
-as small as possible. This rewards selections that reach the whole set,
-such that each point has a nearby representative; it can pull centres
-inward and collapse well-separated modes onto a central compromise.
+maximum distance from any element in the original set to a selected
+element is as small as possible.
 
 ## Solvers
 

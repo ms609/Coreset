@@ -1,7 +1,7 @@
-# Multi-line summaries of MaxMin solver results
+# Detailed summaries of MaxMin solver results
 
 A fuller counterpart to
-[print.MaxMinSelection](https://ms609.github.io/MaxMin/reference/print.MaxMin.md):
+[`print.MaxMinSelection()`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md):
 the one-line headline, followed by the achieved objective(s), search
 effort, and – for a
 [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)

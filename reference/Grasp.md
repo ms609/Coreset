@@ -83,7 +83,7 @@ which returns farthest-first order) with attributes:
 
 The vector has class `"MaxMinSelection"` and prints as a one-line
 summary (see
-[print.MaxMinSelection](https://ms609.github.io/MaxMin/reference/print.MaxMin.md));
+[`print.MaxMinSelection()`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md));
 it is otherwise an ordinary integer vector.
 
 ## Details
