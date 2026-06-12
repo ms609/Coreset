@@ -16,9 +16,8 @@ FarFirst(
 }
 \arguments{
 \item{d}{A \code{dist} object, a square numeric matrix of pairwise distances, or
-a distance function (see §Details). Asymmetric matrices are
-accepted; the algorithm treats \eqn{d_{ij}} and \eqn{d_{ji}} as
-independent. Ignored when \code{points} is supplied.}
+a distance function that takes an index \code{i} and returns the distance from
+\code{i} to each other element (see §Details). Ignored when \code{points} is supplied.}
 
 \item{k}{Integer: number of points to select.}
 
@@ -30,10 +29,10 @@ to run each strategy and return the best solution.}
 \code{"random_furthest"} strategy.}
 
 \item{points}{Optional \verb{N x dim} numeric coordinate matrix. When supplied,
-the selection is computed directly from coordinates in \eqn{O(N * k * dim)}
-time and \eqn{O(N)} memory, never materialising the \verb{N x N} distance matrix
-(\code{d} is then unused). For Euclidean data the returned indices are
-identical to the matrix path. Only complete (non-\code{NA}) data is supported.}
+the selection is computed directly from coordinates in
+\eqn{O(N \cdot k \cdot dim)} time and \eqn{O(N)} memory, which avoids
+creating an \eqn{O(N^2)} distance matrix. Missing entries (\code{NA}) are not
+supported.}
 
 \item{N}{Integer: the total number of elements. Required (and used) only on
 the distance-column oracle path, where it cannot be inferred from the

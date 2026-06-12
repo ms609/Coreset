@@ -159,13 +159,11 @@
 #' `i` to each other element (see §Details). Ignored when `points` is supplied.
 #' @param k Integer: number of points to select.
 #' @param points Optional `N x dim` numeric coordinate matrix. When supplied,
-#'   the selection is computed directly from coordinates in \eqn{O(N * k * dim)}
-#'   time and \eqn{O(N)} memory, never materialising the `N x N` distance matrix
-#'   (`d` is then unused). For Euclidean data the returned indices are
-#'   identical to the matrix path. Only complete (non-`NA`) data is supported.
-#' @param N Integer: the total number of elements. Required (and used) only on
-#'   the distance-column oracle path, where it cannot be inferred from the
-#'   closure; ignored for the matrix and coordinate paths.
+#'   the selection is computed directly from coordinates in
+#'   \eqn{O(N \cdot k \cdot dim)} time and \eqn{O(N)} memory, which avoids
+#'   creating an \eqn{O(N^2)} distance matrix. Missing entries (`NA`) are not
+#'   supported.
+#' @param N Integer: the total number of elements in `points`, if provided.
 #' @param progress Logical; show a progress bar during greedy selection on the
 #'   distance-column oracle path (the only path slow enough to warrant one).
 #'   Default: `TRUE` in interactive sessions, `FALSE` otherwise
