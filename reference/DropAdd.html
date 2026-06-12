@@ -59,7 +59,6 @@ neighbour-evaluation tricks
 <span>  <span class="va">k</span>,</span>
 <span>  d <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  plateau <span class="op">=</span> <span class="fl">5000L</span>,</span>
-<span>  maxIter <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  maxSeconds <span class="op">=</span> <span class="cn">Inf</span>,</span>
 <span>  points <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -84,12 +83,6 @@ iterations that do not improve the best objective. The primary,
 deterministic stopping criterion. The search is RNG-free (ties broken by
 smallest index), so for a given instance the result is reproducible and
 machine-independent. Default 5000.</p></dd>
-
-
-<dt id="arg-maxiter">maxIter<a class="anchor" aria-label="anchor" href="#arg-maxiter"></a></dt>
-<dd><p>Optional integer hard cap on iterations (excluding
-construction). <code>NULL</code> (default) leaves <code>plateau</code> in sole
-control.</p></dd>
 
 
 <dt id="arg-maxseconds">maxSeconds<a class="anchor" aria-label="anchor" href="#arg-maxseconds"></a></dt>

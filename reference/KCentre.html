@@ -52,9 +52,9 @@ using the CDSh heuristic
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">KCentre</span><span class="op">(</span><span class="va">k</span>, <span class="va">d</span>, nstart <span class="op">=</span> <span class="fl">1L</span>, effort <span class="op">=</span> <span class="fl">1L</span>, seeds <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">KCentre</span><span class="op">(</span><span class="va">k</span>, <span class="va">d</span>, nstart <span class="op">=</span> <span class="fl">1L</span>, effort <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">KCenter</span><span class="op">(</span><span class="va">k</span>, <span class="va">d</span>, nstart <span class="op">=</span> <span class="fl">1L</span>, effort <span class="op">=</span> <span class="fl">1L</span>, seeds <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">KCenter</span><span class="op">(</span><span class="va">k</span>, <span class="va">d</span>, nstart <span class="op">=</span> <span class="fl">1L</span>, effort <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -71,7 +71,7 @@ using the CDSh heuristic
 
 <dt id="arg-nstart">nstart<a class="anchor" aria-label="anchor" href="#arg-nstart"></a></dt>
 <dd><p>Integer; how many deterministic peripheral seeds to try, keeping
-the lowest-radius result. Default <code>1</code>. Ignored if <code>seeds</code> is supplied.</p></dd>
+the lowest-radius result. Default <code>1</code>.</p></dd>
 
 
 <dt id="arg-effort">effort<a class="anchor" aria-label="anchor" href="#arg-effort"></a></dt>
@@ -80,11 +80,6 @@ worse than the 2-approximation. <code>0</code> disables it (raw CDSh, fastest, n
 guarantee); <code>1</code> (default) runs one deterministic peripheral Gonzalez pass;
 <code>&gt; 1</code> runs a distinct-seed Gonzalez restart with <code>nseeds = effort</code> (a tighter
 floor that draws on the session RNG – call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> to reproduce).</p></dd>
-
-
-<dt id="arg-seeds">seeds<a class="anchor" aria-label="anchor" href="#arg-seeds"></a></dt>
-<dd><p>Optional integer vector of explicit 1-based seed vertices for the
-construction's first critical vertex (overrides <code>nstart</code>).</p></dd>
 
 </dl></div>
     <div class="section level2">

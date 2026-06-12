@@ -30,11 +30,9 @@ ExactKCenter(k, d, maxSeconds = 60)
 
 ## Value
 
-`ExactKCentre()` returns a list of class `"KCentreExact"` with fields
-
-- indices:
-
-  Integer vector (ascending), length `<= k`: the centres.
+`ExactKCentre()` returns an integer vector of length `<= k` (ascending):
+the chosen centres. It has class `c("KCentreExact", "KCentreSelection")`
+and the following attributes:
 
 - radius:
 
@@ -55,15 +53,18 @@ ExactKCenter(k, d, maxSeconds = 60)
 
 - n_centres:
 
-  `length(indices)`.
+  `length(result)`.
 
-It prints as a one-line summary and is otherwise an ordinary list.
+It prints as a one-line summary and indexes a matrix or data frame
+directly. The `"KCentreSelection"` superclass means
+[`KCentreRadius()`](https://ms609.github.io/MaxMin/reference/KCentreRadius.md)
+and any generic written for that class work here too.
 
 The covering optimum may be attained by fewer than `k` centres (extra
-centres never help once coverage is achieved); `indices` then has length
-`< k` and the reported `radius` is still the proven *k*-centre optimum.
-The problem is NP-hard, so this is an external ground-truth reference
-for small instances, not a scalable method.
+centres never help once coverage is achieved); the result then has
+length `< k` and the reported `radius` is still the proven *k*-centre
+optimum. The problem is NP-hard, so this is an external ground-truth
+reference for small instances, not a scalable method.
 
 ## Details
 
@@ -109,6 +110,6 @@ if (requireNamespace("highs", quietly = TRUE) &&
   d <- dist(pts)
   ExactKCentre(3L, d)
 }
-#> 
+#> 3 centres (3 11 15) by exact MILP (highs), proven optimal, covering radius = 1.385
 # }
 ```

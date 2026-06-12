@@ -65,7 +65,6 @@ this package, at correspondingly higher cost.</p>
 <span>  <span class="va">k</span>,</span>
 <span>  <span class="va">d</span>,</span>
 <span>  plateau <span class="op">=</span> <span class="fl">100L</span>,</span>
-<span>  maxIter <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  eliteSize <span class="op">=</span> <span class="fl">10L</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.8</span>,</span>
 <span>  maxSeconds <span class="op">=</span> <span class="cn">Inf</span></span>
@@ -88,12 +87,6 @@ this package, at correspondingly higher cost.</p>
 <dd><p>Integer; stop after this many consecutive GRASP
 iterations without an improvement to the best elite objective. The
 primary, deterministic stopping criterion. Default 100.</p></dd>
-
-
-<dt id="arg-maxiter">maxIter<a class="anchor" aria-label="anchor" href="#arg-maxiter"></a></dt>
-<dd><p>Optional integer hard cap on GRASP refinement iterations
-(excluding the elite-set construction). <code>NULL</code> (default) leaves
-<code>plateau</code> in sole control.</p></dd>
 
 
 <dt id="arg-elitesize">eliteSize<a class="anchor" aria-label="anchor" href="#arg-elitesize"></a></dt>

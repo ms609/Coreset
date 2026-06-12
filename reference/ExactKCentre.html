@@ -68,10 +68,9 @@ the smallest radius proven feasible so far is returned with <code>proven = FALSE
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p><code>ExactKCentre()</code> returns a list of class <code>"KCentreExact"</code> with fields</p><dl><dt>indices</dt>
-<dd><p>Integer vector (ascending), length <code>&lt;= k</code>: the centres.</p></dd>
-
-<dt>radius</dt>
+    <p><code>ExactKCentre()</code> returns an integer vector of length <code>&lt;= k</code>
+(ascending): the chosen centres. It has class
+<code>c("KCentreExact", "KCentreSelection")</code> and the following attributes:</p><dl><dt>radius</dt>
 <dd><p>The covering radius they achieve; the proven optimum when
 <code>proven</code> is <code>TRUE</code>, otherwise a valid upper bound.</p></dd>
 
@@ -85,12 +84,14 @@ the smallest radius proven feasible so far is returned with <code>proven = FALSE
 <dd><p>Instance size and centre budget.</p></dd>
 
 <dt>n_centres</dt>
-<dd><p><code>length(indices)</code>.</p></dd>
+<dd><p><code>length(result)</code>.</p></dd>
 
 
-</dl><p>It prints as a one-line summary and is otherwise an ordinary list.</p>
+</dl><p>It prints as a one-line summary and indexes a matrix or data frame directly.
+The <code>"KCentreSelection"</code> superclass means <code><a href="KCentreRadius.html">KCentreRadius()</a></code> and any generic
+written for that class work here too.</p>
 <p>The covering optimum may be attained by fewer than <code>k</code> centres (extra centres
-never help once coverage is achieved); <code>indices</code> then has length <code>&lt; k</code> and the
+never help once coverage is achieved); the result then has length <code>&lt; k</code> and the
 reported <code>radius</code> is still the proven <em>k</em>-centre optimum. The problem is
 NP-hard, so this is an external ground-truth reference for small instances,
 not a scalable method.</p>
@@ -134,7 +135,7 @@ the dual MMDP optimum.</p></div>
 <span class="r-in"><span>  <span class="va">d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/dist.html" class="external-link">dist</a></span><span class="op">(</span><span class="va">pts</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="fu">ExactKCentre</span><span class="op">(</span><span class="fl">3L</span>, <span class="va">d</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 centres (3 11 15) by exact MILP (highs), proven optimal, covering radius = 1.385</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

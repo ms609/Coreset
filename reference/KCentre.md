@@ -8,9 +8,9 @@ using the CDSh heuristic (García-Díaz et al. 2017; García-Díaz et al.
 ## Usage
 
 ``` r
-KCentre(k, d, nstart = 1L, effort = 1L, seeds = NULL)
+KCentre(k, d, nstart = 1L, effort = 1L)
 
-KCenter(k, d, nstart = 1L, effort = 1L, seeds = NULL)
+KCenter(k, d, nstart = 1L, effort = 1L)
 ```
 
 ## Arguments
@@ -26,7 +26,7 @@ KCenter(k, d, nstart = 1L, effort = 1L, seeds = NULL)
 - nstart:
 
   Integer; how many deterministic peripheral seeds to try, keeping the
-  lowest-radius result. Default `1`. Ignored if `seeds` is supplied.
+  lowest-radius result. Default `1`.
 
 - effort:
 
@@ -36,11 +36,6 @@ KCenter(k, d, nstart = 1L, effort = 1L, seeds = NULL)
   pass; `> 1` runs a distinct-seed Gonzalez restart with
   `nseeds = effort` (a tighter floor that draws on the session RNG –
   call [`set.seed()`](https://rdrr.io/r/base/Random.html) to reproduce).
-
-- seeds:
-
-  Optional integer vector of explicit 1-based seed vertices for the
-  construction's first critical vertex (overrides `nstart`).
 
 ## Value
 

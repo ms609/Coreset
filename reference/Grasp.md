@@ -15,7 +15,6 @@ Grasp(
   k,
   d,
   plateau = 100L,
-  maxIter = NULL,
   eliteSize = 10L,
   alpha = 0.8,
   maxSeconds = Inf
@@ -37,12 +36,6 @@ Grasp(
   Integer; stop after this many consecutive GRASP iterations without an
   improvement to the best elite objective. The primary, deterministic
   stopping criterion. Default 100.
-
-- maxIter:
-
-  Optional integer hard cap on GRASP refinement iterations (excluding
-  the elite-set construction). `NULL` (default) leaves `plateau` in sole
-  control.
 
 - eliteSize:
 

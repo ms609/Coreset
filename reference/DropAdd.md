@@ -12,7 +12,6 @@ DropAdd(
   k,
   d = NULL,
   plateau = 5000L,
-  maxIter = NULL,
   maxSeconds = Inf,
   points = NULL
 )
@@ -36,11 +35,6 @@ DropAdd(
   criterion. The search is RNG-free (ties broken by smallest index), so
   for a given instance the result is reproducible and
   machine-independent. Default 5000.
-
-- maxIter:
-
-  Optional integer hard cap on iterations (excluding construction).
-  `NULL` (default) leaves `plateau` in sole control.
 
 - maxSeconds:
 

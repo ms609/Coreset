@@ -421,7 +421,8 @@ it uses the **highs** solver.
 
 kc <- ExactKCentre(4L, eurodist)
 kc
-kc$proven      # TRUE  ⟹  radius is the global covering optimum
+#> 4 centres (6 7 14 19) by exact MILP (highs), proven optimal, covering radius = 1011
+attr(kc, "proven")      # TRUE  ⟹  radius is the global covering optimum
 #> [1] TRUE
 ```
 
@@ -444,7 +445,7 @@ inward to keep every city near a centre.
 disp <- sort(ExactMaxMin(4L, eurodist)$indices)
 labels(eurodist)[disp]              # dispersion: pushed to the extremes
 #> [1] "Athens"    "Lisbon"    "Milan"     "Stockholm"
-labels(eurodist)[sort(kc$indices)]  # covering: pulled toward the interior
+labels(eurodist)[sort(as.integer(kc))]  # covering: pulled toward the interior
 #> [1] "Cologne"    "Copenhagen" "Madrid"     "Rome"
 ```
 
