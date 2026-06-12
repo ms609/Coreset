@@ -2,14 +2,14 @@
 #
 # Peripheral seeding strategies for Gonzalez farthest-first selection, and the
 # ensemble driver that runs several and keeps the best by MinDist(). The single
-# anchors are exposed through MaxMinSeed(); FarFirst(method = ) selects among them
+# anchors are exposed through MaxMinSeed(); FarFirst(strategy = ) selects among them
 # (or the ensemble) and runs the greedy pass.
 
 # The default seed ensemble: the `"random_furthest"` token alone, which draws
 # `nseeds` (default 8) distinct furthest-point seeds via the session RNG and
 # returns the best Gonzalez pass. Set a seed (`set.seed()`) for a reproducible
 # draw. The deterministic anchors (`"centroid"`, `"peripheral"`, ...) remain
-# available as opt-in `method=` strategies.
+# available as opt-in `strategy=` options.
 .kDefaultEnsemble <- "random_furthest"
 
 # Seeds available to the ensemble drivers. The matrix path lacks coordinates, so
@@ -273,7 +273,7 @@
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' d <- dist(pts)
 #' MaxMinSeed(d, method = "diameter")
-#' FarFirst(d, 5L, method = MaxMinSeed(d, method = "diameter"))
+#' FarFirst(d, 5L, strategy = MaxMinSeed(d, method = "diameter"))
 #' @seealso [FarFirst()], which seeds and runs the greedy pass in one call.
 #' @export
 MaxMinSeed <- function(d = NULL, points = NULL,

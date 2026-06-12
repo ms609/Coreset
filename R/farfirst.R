@@ -147,18 +147,6 @@
 #' costlier \eqn{O(N^2)} anchors (`"diameter"`, `"anti_medoid"`,
 #' `"rowsum"`, `"rownorm"`) are alternative `seed` strategies.
 #'
-#' Distances may be provided as:
-#' \describe{
-#'   \item{a **distance matrix** (`d`)}{a `dist` object or square matrix, held
-#'     in full;}
-#'   \item{a **coordinate matrix** (`points`)}{each needed distance is
-#'     recomputed from coordinates on the fly in `O(N)` memory
-#'     (Euclidean data only);}
-#'   \item{a distance function (function passed as `d`)}{for metrics
-#'     with neither a stored matrix nor a coordinate embedding, where distances
-#'     may be computed on demand.}
-#' }
-#'
 #' @section Distance function:
 #' When `d` is a function, it will be passed a single 1-based index `i`, and
 #' should return the distances from element `i` to every element in turn,
@@ -167,9 +155,8 @@
 #' complete \eqn{N x N} matrix.
 #'
 #' @param d A `dist` object, a square numeric matrix of pairwise distances, or
-#'   a distance function (see *§Distance function*). Asymmetric matrices are
-#'   accepted; the algorithm treats \eqn{d_{ij}} and \eqn{d_{ji}} as
-#'   independent. Ignored when `points` is supplied.
+#' a distance function that takes an index `i` and returns the distance from
+#' `i` to each other element (see §Details). Ignored when `points` is supplied.
 #' @param k Integer: number of points to select.
 #' @param points Optional `N x dim` numeric coordinate matrix. When supplied,
 #'   the selection is computed directly from coordinates in \eqn{O(N * k * dim)}
@@ -183,9 +170,9 @@
 #'   distance-column oracle path (the only path slow enough to warrant one).
 #'   Default: `TRUE` in interactive sessions, `FALSE` otherwise
 #'   (`getOption("MaxMin.progress", interactive())`).
-#' @param method Integer or character defining how to seed the greedy pass.
-#' Pass the name of one or more seeding methods described in [`MaxMinSeed()`]
-#' to run each method and return the best solution.
+#' @param strategy Integer or character defining how to seed the greedy pass.
+#' Pass the name of one or more seeding strategies described in [`MaxMinSeed()`]
+#' to run each strategy and return the best solution.
 #' @param nseeds Integer: number of distinct seeds to draw under the
 #' `"random_furthest"` strategy.
 #' @return `MaxMin()` returns an integer vector with class `MaxMinSelection`,
@@ -208,13 +195,13 @@
 #' # More random-furthest starts:
 #' FarFirst(d, 5L, nseeds = 15L)
 #' # Custom two-anchor ensemble:
-#' FarFirst(d, 5L, method = c("diameter", "anti_medoid"))
+#' FarFirst(d, 5L, strategy = c("diameter", "anti_medoid"))
 #' # A single strategy:
-#' FarFirst(d, 5L, method = "diameter")
-#' # An explicit start index (integer method):
-#' FarFirst(d, 5L, method = 1L)
+#' FarFirst(d, 5L, strategy = "diameter")
+#' # An explicit start index (integer strategy):
+#' FarFirst(d, 5L, strategy = 1L)
 #' # Matrix-free coordinate path (identical result, O(N) memory):
-#' FarFirst(k = 5L, points = pts, method = 1L)
+#' FarFirst(k = 5L, points = pts, strategy = 1L)
 #'
 #' # Distance-column oracle: supply one column at a time, never the full matrix.
 #' data("USArrests")
@@ -223,14 +210,14 @@
 #'   diffs <- sweep(arrestTypes, 2, unlist(arrestTypes[i, ]), "-")
 #'   sqrt(rowSums(diffs ^ 2))
 #' }
-#' idx <- FarFirst(StateDist, k = 4L, N = nrow(arrestTypes), method = 1L)
+#' idx <- FarFirst(StateDist, k = 4L, N = nrow(arrestTypes), strategy = 1L)
 #' arrestTypes[idx, ]
 #' @export
 FarFirst <- function(d = NULL, k,
-                     method = .kDefaultEnsemble, nseeds = .kDefaultNSeeds,
+                     strategy = .kDefaultEnsemble, nseeds = .kDefaultNSeeds,
                      points = NULL, N = NULL,
                      progress = getOption("MaxMin.progress", interactive())) {
-  methodMissing <- missing(method)
+  strategyMissing <- missing(strategy)
 
   # Every non-empty FarFirst result is a `MaxMinSelection` (a self-describing
   # integer index vector); see print.MaxMinSelection(). Stamping it at each
@@ -241,44 +228,44 @@ FarFirst <- function(d = NULL, k,
   # `"first"`); .kPointEnsembleSeeds is the ensemble-eligible subset.
   validMethods <- c(.kPointEnsembleSeeds, "first")
 
-  if (is.numeric(method)) {
-    # An integer `method` is the explicit 1-based first index (a single bare
+  if (is.numeric(strategy)) {
+    # An integer `strategy` is the explicit 1-based first index (a single bare
     # Gonzalez pass). Guard it here: NA/NaN would otherwise reach the C++
     # kernel as INT_MIN, and a zero-length or multi-element value as an opaque
     # Rcpp "Expecting a single value" error.
-    if (length(method) != 1L || !is.finite(method)) {
-      stop("an integer `method` (the first index) must be a single finite value")
+    if (length(strategy) != 1L || !is.finite(strategy)) {
+      stop("an integer `strategy` (the first index) must be a single finite value")
     }
-    first  <- as.integer(method)
-    method <- "first"
-  } else if (length(method) > 1L) {
-    # A multi-element `method` requests an ensemble. The downstream
+    first    <- as.integer(strategy)
+    strategy <- "first"
+  } else if (length(strategy) > 1L) {
+    # A multi-element `strategy` requests an ensemble. The downstream
     # match.arg(several.ok = TRUE) silently *drops* names that fail to match,
     # so validate explicitly here against the ensemble anchors (centroid
     # included -- the matrix path drops it later with a warning, not an error).
-    bad <- setdiff(method, .kPointEnsembleSeeds)
+    bad <- setdiff(strategy, .kPointEnsembleSeeds)
     if (length(bad)) {
-      stop("unknown seed/method strateg", if (length(bad) > 1L) "ies: " else "y: ",
+      stop("unknown strateg", if (length(bad) > 1L) "ies: " else "y: ",
            paste(bad, collapse = ", "))
     }
     first  <- NULL
   } else {
-    first  <- NULL
-    method <- match.arg(method, choices = validMethods)
+    first    <- NULL
+    strategy <- match.arg(strategy, choices = validMethods)
   }
 
   # Distance-column oracle path: `d` is a closure returning one matrix column
   # at a time, for metrics with neither a stored matrix nor a coordinate
   # embedding (e.g. on-demand tree-to-tree distances). The selection is
   # identical to the matrix path given the same `first`; only an integer
-  # `method` (a `first` index) or the deterministic peripheral seed is reachable
+  # `strategy` (a `first` index) or the deterministic peripheral seed is reachable
   # here, since the richer anchors need O(N^2) work (see Details).
   if (is.function(d)) {
-    # A named/character `method` is unreachable from an oracle (it would need
+    # A named/character `strategy` is unreachable from an oracle (it would need
     # the whole matrix); warn rather than silently substituting the peripheral
-    # seed. `first` is non-NULL only for an integer `method`, which *is* honoured.
-    if (!methodMissing && is.null(first)) {
-      warning("distance-column oracle path: only an integer `method` (a `first` ",
+    # seed. `first` is non-NULL only for an integer `strategy`, which *is* honoured.
+    if (!strategyMissing && is.null(first)) {
+      warning("distance-column oracle path: only an integer `strategy` (a `first` ",
               "index) is honoured; using the deterministic peripheral seed")
     }
     return(Classify(.GonzalezColumn(colFn = d, N = N, k = k, first = first,
@@ -315,23 +302,23 @@ FarFirst <- function(d = NULL, k,
     function(s) .PromoteScore(.MaximinFrom(d, k, first = as.integer(s)))
   }
 
-  # An explicit `first` is a single bare Gonzalez pass, overriding `method`.
+  # An explicit `first` is a single bare Gonzalez pass, overriding `strategy`.
   if (!is.null(first)) {
     return(Classify(Greedy(first)))
   }
 
   # The ensemble path runs each named anchor as a full Gonzalez pass and keeps
-  # the best by MinDist(). It is taken for a multi-anchor `method`, and also for
+  # the best by MinDist(). It is taken for a multi-anchor `strategy`, and also for
   # a lone `"random_furthest"` (the default): that token draws `nseeds` distinct
   # seeds, so it belongs here, not on the single-strategy path. (`MaxMinSeed(
   # method = "random_furthest")` still returns exactly one seed for callers who
   # want a single random start.)
-  if (length(method) > 1L || "random_furthest" %in% method) {
+  if (length(strategy) > 1L || "random_furthest" %in% strategy) {
     # Matrix path: `"centroid"` is coordinate-only, so drop it (the remaining
     # O(N) seeds cover that role here). Warn only if it was named explicitly,
     # not when filtering the default ensemble.
-    anchors <- if (usePoints) method else method[method != "centroid"]
-    if (!usePoints && !methodMissing && length(anchors) < length(method)) {
+    anchors <- if (usePoints) strategy else strategy[strategy != "centroid"]
+    if (!usePoints && !strategyMissing && length(anchors) < length(strategy)) {
       warning("`centroid` seed requires coordinates; it is dropped on the ",
               "distance-matrix path, where `peripheral` covers the same role")
     }
@@ -341,11 +328,11 @@ FarFirst <- function(d = NULL, k,
     return(Classify(.GonzEnsemble(d, k, anchors, nseeds = nseeds)))
   }
 
-  if (!usePoints && method == "centroid") {
+  if (!usePoints && strategy == "centroid") {
     stop("`centroid` seed requires coordinates; supply `points=` or use ",
          "`peripheral` on the distance-matrix path")
   }
-  s <- if (usePoints) .MaxMinSeedPoints(points, method) else .MaxMinSeed(d, method)
+  s <- if (usePoints) .MaxMinSeedPoints(points, strategy) else .MaxMinSeed(d, strategy)
   Classify(Greedy(s))
 }
 

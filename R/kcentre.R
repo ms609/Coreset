@@ -32,7 +32,7 @@
 # two-sweep peripheral seed.
 .KCentrePeripheralSeeds <- function(d, nstart) {
   nstart <- max(1L, as.integer(nstart))
-  as.integer(FarFirst(d, min(nstart, nrow(d)), method = "peripheral"))
+  as.integer(FarFirst(d, min(nstart, nrow(d)), strategy = "peripheral"))
 }
 
 # The k-centre solvers assume a symmetric metric: `KCentreCandidates_cpp` reads
@@ -185,7 +185,7 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' centres <- KCentre(d, 5L)
 #' KCentreRadius(d, centres)
 #' # CDSh covers at least as tightly as the Gonzalez 2-approximation:
-#' KCentreRadius(d, FarFirst(d, 5L, method = "peripheral"))
+#' KCentreRadius(d, FarFirst(d, 5L, strategy = "peripheral"))
 #' @export
 KCentre <- function(d, k, nstart = 1L, effort = 1L, seeds = NULL) {
   needSymCheck <- !inherits(d, "dist")          # a dist object is symmetric
@@ -241,7 +241,7 @@ KCentre <- function(d, k, nstart = 1L, effort = 1L, seeds = NULL) {
   # session RNG).
   if (effort >= 1L) {
     gonz <- if (effort == 1L) {
-      as.integer(FarFirst(d, k, method = "peripheral"))
+      as.integer(FarFirst(d, k, strategy = "peripheral"))
     } else {
       as.integer(FarFirst(d, k, nseeds = effort))
     }

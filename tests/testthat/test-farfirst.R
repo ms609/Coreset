@@ -1,4 +1,4 @@
-# Tests for FarFirst() seeding strategies and its distance-column oracle path.
+﻿# Tests for FarFirst() seeding strategies and its distance-column oracle path.
 
 MakeData <- function(seed = 42, N = 60, dim = 4) {
   set.seed(seed)
@@ -17,9 +17,9 @@ test_that("matrix and coordinate paths agree for every seed strategy", {
     for (n in c(2L, 6L, 12L)) {
       # Seed the RNG identically so the random_furthest pivot matches on both
       # paths; deterministic strategies are unaffected by it.
-      set.seed(1); mat <- FarFirst(dat$d, n, method = s)
-      set.seed(1); pt  <- FarFirst(k = n, points = dat$pts, method = s)
-      expect_identical(mat, pt, info = paste("method", s, "k", n))
+      set.seed(1); mat <- FarFirst(dat$d, n, strategy = s)
+      set.seed(1); pt  <- FarFirst(k = n, points = dat$pts, strategy = s)
+      expect_identical(mat, pt, info = paste("strategy", s, "k", n))
     }
   }
   # A centroid-free ensemble agrees across paths. With the same RNG seed the
@@ -27,10 +27,10 @@ test_that("matrix and coordinate paths agree for every seed strategy", {
   # Euclidean data).
   for (n in c(2L, 6L, 12L)) {
     set.seed(5)
-    mat <- FarFirst(dat$d, n, method = c("peripheral", "random_furthest"))
+    mat <- FarFirst(dat$d, n, strategy = c("peripheral", "random_furthest"))
     set.seed(5)
     pt  <- FarFirst(k = n, points = dat$pts,
-                    method = c("peripheral", "random_furthest"))
+                    strategy = c("peripheral", "random_furthest"))
     expect_identical(as.integer(mat), as.integer(pt), info = paste("ensemble k", n))
     expect_equal(attr(mat, "score"), attr(pt, "score"), tolerance = 1e-12,
                  info = paste("ensemble score k", n))
@@ -39,11 +39,11 @@ test_that("matrix and coordinate paths agree for every seed strategy", {
   }
 })
 
-test_that("integer method gives a bare pass from that index", {
+test_that("integer strategy gives a bare pass from that index", {
   dat <- MakeData()
-  # integer method selects the start index; any prior char strategy is irrelevant.
-  a <- FarFirst(dat$d, 8L, method = 3L)
-  b <- FarFirst(dat$d, 8L, method = 3L)
+  # integer strategy selects the start index; any prior char strategy is irrelevant.
+  a <- FarFirst(dat$d, 8L, strategy = 3L)
+  b <- FarFirst(dat$d, 8L, strategy = 3L)
   expect_identical(a, b)
   expect_identical(a[[1]], 3L)
   # A bare pass now carries the achieved T_k as a `score` attribute.
@@ -54,17 +54,17 @@ test_that("ensemble keeps the best anchor by T_k", {
   dat <- MakeData()
   n   <- 8L
   anchors <- c("diameter", "anti_medoid", "rowsum", "rownorm")
-  ens <- FarFirst(dat$d, n, method = anchors)
+  ens <- FarFirst(dat$d, n, strategy = anchors)
   ensTk <- MinDist(dat$d, ens)
   for (s in anchors) {
-    expect_gte(ensTk + 1e-9, MinDist(dat$d, FarFirst(dat$d, n, method = s)))
+    expect_gte(ensTk + 1e-9, MinDist(dat$d, FarFirst(dat$d, n, strategy = s)))
   }
   expect_true(all(attr(ens, "winning_strategy") %in% anchors))
   expect_length(attr(ens, "strategy_results"), 4L)
   # The ensemble also exposes the winning T_k as a `score` attribute.
   expect_equal(attr(ens, "score"), ensTk)
   # Two-anchor ensemble works and has only those two entries.
-  two <- FarFirst(dat$d, n, method = c("diameter", "rowsum"))
+  two <- FarFirst(dat$d, n, strategy = c("diameter", "rowsum"))
   expect_length(attr(two, "strategy_results"), 2L)
 })
 
@@ -104,10 +104,10 @@ test_that("trivial cardinalities are handled", {
   dat <- MakeData(N = 10)
   expect_identical(FarFirst(dat$d, 0L), integer(0))
   # k > N: all N indices returned in Gonzalez order (a permutation of 1:N).
-  over <- FarFirst(dat$d, 20L, method = 1L)
+  over <- FarFirst(dat$d, 20L, strategy = 1L)
   expect_length(over, 10L)
   expect_setequal(over, seq_len(10L))
-  expect_length(FarFirst(dat$d, 1L, method = "medoid"), 1L)
+  expect_length(FarFirst(dat$d, 1L, strategy = "medoid"), 1L)
   # k == 1 under ensemble: all t_k are NA, first anchor wins.
   expect_length(FarFirst(dat$d, 1L), 1L)
 })
@@ -115,10 +115,10 @@ test_that("trivial cardinalities are handled", {
 test_that("FarFirst k > nPts returns all points (k capped at nPts)", {
   dat <- MakeData(N = 10)   # 10-point dataset
   # Request more points than available
-  res <- FarFirst(dat$d, k = 50L, method = "peripheral")
+  res <- FarFirst(dat$d, k = 50L, strategy = "peripheral")
   expect_length(res, 10L)
   expect_setequal(res, seq_len(10L))
-  # Score is finite (not NA) — it is the min pairwise distance of all 10 points
+  # Score is finite (not NA) â€” it is the min pairwise distance of all 10 points
   expect_true(is.numeric(attr(res, "score")))
 })
 
@@ -126,15 +126,15 @@ test_that("input validation", {
   dat <- MakeData(N = 10)
   expect_error(FarFirst(dat$d, -1L), "non-negative")
   expect_error(FarFirst(dat$d, c(1L, 2L)), "single")
-  expect_error(FarFirst(dat$d, 3L, method = "nope"), "arg")
+  expect_error(FarFirst(dat$d, 3L, strategy = "nope"), "arg")
   expect_error(FarFirst("not a matrix", 3L), "dist|matrix")
-  # An integer `method` must be a single finite value (FF-002, FF-003).
-  expect_error(FarFirst(dat$d, 3L, method = NA_integer_), "single finite")
-  expect_error(FarFirst(dat$d, 3L, method = integer(0)),  "single finite")
-  expect_error(FarFirst(dat$d, 3L, method = c(1L, 2L)),   "single finite")
+  # An integer `strategy` must be a single finite value (FF-002, FF-003).
+  expect_error(FarFirst(dat$d, 3L, strategy = NA_integer_), "single finite")
+  expect_error(FarFirst(dat$d, 3L, strategy = integer(0)),  "single finite")
+  expect_error(FarFirst(dat$d, 3L, strategy = c(1L, 2L)),   "single finite")
   # A misspelled ensemble anchor is rejected, not silently dropped (F-601).
-  expect_error(FarFirst(dat$d, 3L, method = c("peripheral", "anti-medoid")),
-               "unknown seed/method")
+  expect_error(FarFirst(dat$d, 3L, strategy = c("peripheral", "anti-medoid")),
+               "unknown strateg")
   # k = Inf is rejected without a spurious base-R coercion warning (FF-004).
   expect_silent(expect_error(FarFirst(dat$d, Inf), "non-negative"))
 })
@@ -149,13 +149,13 @@ test_that("FarFirst rejects an NA/non-finite distance matrix (FF-001)", {
   # The distance-column oracle path rejects a non-self NA at a selected column.
   dat <- MakeData(N = 8)
   naCol <- function(i) { v <- dat$d[, i]; v[if (i == 1L) 2L else 1L] <- NA; v }
-  expect_error(FarFirst(naCol, 3L, N = 8L, method = 1L), "NA|NaN")
+  expect_error(FarFirst(naCol, 3L, N = 8L, strategy = 1L), "NA|NaN")
 })
 
 test_that("explicitly naming centroid in a matrix ensemble warns and drops it", {
   dat <- MakeData(N = 12)
   expect_warning(res <- FarFirst(dat$d, 4L,
-                                 method = c("centroid", "peripheral")),
+                                 strategy = c("centroid", "peripheral")),
                  "coordinates")
   # Dropped, leaving peripheral alone.
   expect_identical(names(attr(res, "strategy_results")), "peripheral")
@@ -163,13 +163,13 @@ test_that("explicitly naming centroid in a matrix ensemble warns and drops it", 
 
 # ---- distance-column oracle path ----------------------------------------
 
-test_that("the column-oracle path matches the matrix path given the same method", {
+test_that("the column-oracle path matches the matrix path given the same strategy", {
   dat <- MakeData()
   colFn <- function(i) dat$d[, i]
   for (n in c(2L, 5L, 15L)) {
     expect_identical(
-      FarFirst(colFn, n, N = nrow(dat$d), method = 1L),
-      FarFirst(dat$d, n, method = 1L)
+      FarFirst(colFn, n, N = nrow(dat$d), strategy = 1L),
+      FarFirst(dat$d, n, strategy = 1L)
     )
   }
 })
@@ -180,25 +180,25 @@ test_that("a self-distance-omitting (length N-1) colFn matches the matrix path",
   colN   <- function(i) dat$d[, i]      # self reported (length N)
   colNm1 <- function(i) dat$d[-i, i]    # self omitted  (length N-1), others in order
   for (n in c(2L, 5L, 15L)) {
-    ref <- FarFirst(dat$d, n, method = 1L)
-    expect_identical(FarFirst(colNm1, n, N = N, method = 1L), ref)
-    expect_identical(FarFirst(colN,   n, N = N, method = 1L), ref)
+    ref <- FarFirst(dat$d, n, strategy = 1L)
+    expect_identical(FarFirst(colNm1, n, N = N, strategy = 1L), ref)
+    expect_identical(FarFirst(colN,   n, N = N, strategy = 1L), ref)
   }
   # The deterministic peripheral seed must also splice correctly (it touches
   # both i = 1 and a downstream index).
-  expect_identical(FarFirst(colNm1, 7L, N = N), FarFirst(dat$d, 7L, method = "peripheral"))
+  expect_identical(FarFirst(colNm1, 7L, N = N), FarFirst(dat$d, 7L, strategy = "peripheral"))
 })
 
 test_that("column-oracle peripheral seed is deterministic and matrix-matched", {
   dat <- MakeData()
   colFn <- function(i) dat$d[, i]
-  # The default (ensemble) method is unreachable from an oracle, so the path
+  # The default (ensemble) strategy is unreachable from an oracle, so the path
   # falls back to the deterministic peripheral seed.
   s1 <- FarFirst(colFn, 7L, N = nrow(dat$d))
   s2 <- FarFirst(colFn, 7L, N = nrow(dat$d))
   expect_identical(s1, s2)
-  # peripheral matrix seed should match FarFirst(method = "peripheral").
-  expect_identical(s1, FarFirst(dat$d, 7L, method = "peripheral"))
+  # peripheral matrix seed should match FarFirst(strategy = "peripheral").
+  expect_identical(s1, FarFirst(dat$d, 7L, strategy = "peripheral"))
 })
 
 test_that("column-oracle guards and contract", {
@@ -206,33 +206,33 @@ test_that("column-oracle guards and contract", {
   colFn <- function(i) dat$d[, i]
   expect_identical(FarFirst(colFn, 0L, N = 12L), integer(0))
   # k > N: all N indices returned in Gonzalez order (a permutation of 1:N).
-  over <- FarFirst(colFn, 20L, N = 12L, method = 1L)
+  over <- FarFirst(colFn, 20L, N = 12L, strategy = 1L)
   expect_length(over, 12L)
   expect_setequal(over, seq_len(12L))
-  expect_length(FarFirst(colFn, 1L, N = 12L, method = 4L), 1L)
+  expect_length(FarFirst(colFn, 1L, N = 12L, strategy = 4L), 1L)
   # N is required on the oracle path: it cannot be inferred from the closure.
   expect_error(FarFirst(colFn, 3L), "N")
   bad <- function(i) 1:3
-  expect_error(FarFirst(bad, 3L, N = 12L, method = 1L), "length")
+  expect_error(FarFirst(bad, 3L, N = 12L, strategy = 1L), "length")
 })
 
-test_that("column-oracle warns on an unreachable named method but not the default", {
+test_that("column-oracle warns on an unreachable named strategy but not the default", {
   dat <- MakeData(N = 12)
   colFn <- function(i) dat$d[, i]
-  # A character/ensemble method cannot be honoured from an oracle -> warn.
-  expect_warning(FarFirst(colFn, 4L, N = 12L, method = "diameter"), "integer")
-  expect_warning(FarFirst(colFn, 4L, N = 12L, method = c("diameter", "rowsum")),
+  # A character/ensemble strategy cannot be honoured from an oracle -> warn.
+  expect_warning(FarFirst(colFn, 4L, N = 12L, strategy = "diameter"), "integer")
+  expect_warning(FarFirst(colFn, 4L, N = 12L, strategy = c("diameter", "rowsum")),
                  "integer")
-  # The default (unsupplied) method and an integer method are silent.
+  # The default (unsupplied) strategy and an integer strategy are silent.
   expect_silent(FarFirst(colFn, 4L, N = 12L))
-  expect_silent(FarFirst(colFn, 4L, N = 12L, method = 1L))
+  expect_silent(FarFirst(colFn, 4L, N = 12L, strategy = 1L))
 })
 
 # ---- .AsPointsMatrix validation (lines 40, 43, 46, 49-50) ------------------
 
 test_that(".AsPointsMatrix coerces non-matrix, converts integer, and rejects bad input", {
   # Non-matrix coerced via as.matrix() (line 40): a plain vector becomes Nx1.
-  r <- FarFirst(k = 3L, points = 1:20, method = 1L)
+  r <- FarFirst(k = 3L, points = 1:20, strategy = 1L)
   expect_length(r, 3L)
   # Non-numeric matrix errors (line 43).
   expect_error(
@@ -240,7 +240,7 @@ test_that(".AsPointsMatrix coerces non-matrix, converts integer, and rejects bad
     "numeric"
   )
   # Integer storage mode is silently coerced to double (line 46).
-  rInt <- FarFirst(k = 3L, points = matrix(1L:20L, ncol = 4L), method = 1L)
+  rInt <- FarFirst(k = 3L, points = matrix(1L:20L, ncol = 4L), strategy = 1L)
   expect_length(rInt, 3L)
   # NA entries error (lines 49-50).
   expect_error(
@@ -255,7 +255,7 @@ test_that(".MaximinFromColumn progress = TRUE fires the cli hooks", {
   dat <- MakeData()
   colFn <- function(i) dat$d[, i]
   expect_no_error(
-    FarFirst(colFn, 5L, N = nrow(dat$d), method = 1L, progress = TRUE)
+    FarFirst(colFn, 5L, N = nrow(dat$d), strategy = 1L, progress = TRUE)
   )
 })
 
@@ -267,25 +267,25 @@ test_that(".GonzalezColumn validates N < 1, k < 0, and first out of bounds", {
   # N < 1: line 311
   expect_error(FarFirst(colFn, 3L, N = 0L),           "N")
   # k < 0: line 314
-  expect_error(FarFirst(colFn, -1L, N = 12L, method = 1L), "k")
+  expect_error(FarFirst(colFn, -1L, N = 12L, strategy = 1L), "k")
   # first out of bounds (> N): line 323
-  expect_error(FarFirst(colFn, 3L, N = 12L, method = 15L), "first")
+  expect_error(FarFirst(colFn, 3L, N = 12L, strategy = 15L), "first")
 })
 
 # ---- MaximinFrom_cpp stop on out-of-range first (maximin.cpp:16) ------------
 
 test_that("MaximinFrom_cpp stops when seed index is out of range", {
   dat <- MakeData(N = 10)
-  # method = 0L -> first = 0 < 1 -> Rcpp::stop in maximin.cpp line 16
-  expect_error(FarFirst(dat$d, 3L, method = 0L), "first")
+  # strategy = 0L -> first = 0 < 1 -> Rcpp::stop in maximin.cpp line 16
+  expect_error(FarFirst(dat$d, 3L, strategy = 0L), "first")
 })
 
 # ---- MaximinFromPoints_cpp stop on out-of-range first (maximin_points.cpp:57) --
 
 test_that("MaximinFromPoints_cpp stops when seed index is out of range", {
   dat <- MakeData(N = 10)
-  # method = 0L -> first = 0 < 1 -> Rcpp::stop in maximin_points.cpp line 57
-  expect_error(FarFirst(k = 3L, points = dat$pts, method = 0L), "first")
+  # strategy = 0L -> first = 0 < 1 -> Rcpp::stop in maximin_points.cpp line 57
+  expect_error(FarFirst(k = 3L, points = dat$pts, strategy = 0L), "first")
 })
 
 # ---- .SubsetScore mean_pairwise branch --------------------------------------
@@ -317,23 +317,23 @@ test_that("FarFirst(k = N)[1:5] equals FarFirst(k = 5) on all paths", {
   bare <- function(x) as.integer(x)
 
   # Matrix path, single integer method (bare Gonzalez pass).
-  full_mat <- FarFirst(dat$d, N, method = 1L)
-  five_mat <- FarFirst(dat$d, 5L, method = 1L)
+  full_mat <- FarFirst(dat$d, N, strategy = 1L)
+  five_mat <- FarFirst(dat$d, 5L, strategy = 1L)
   expect_identical(bare(full_mat[1:5]), bare(five_mat))
 
   # Points path, same method.
-  full_pts <- FarFirst(k = N, points = dat$pts, method = 1L)
-  five_pts <- FarFirst(k = 5L, points = dat$pts, method = 1L)
+  full_pts <- FarFirst(k = N, points = dat$pts, strategy = 1L)
+  five_pts <- FarFirst(k = 5L, points = dat$pts, strategy = 1L)
   expect_identical(bare(full_pts[1:5]), bare(five_pts))
 
   # Oracle path, integer method.
   colFn <- function(i) dat$d[, i]
-  full_col <- FarFirst(colFn, N, N = N, method = 1L)
-  five_col <- FarFirst(colFn, 5L, N = N, method = 1L)
+  full_col <- FarFirst(colFn, N, N = N, strategy = 1L)
+  five_col <- FarFirst(colFn, 5L, N = N, strategy = 1L)
   expect_identical(bare(full_col[1:5]), bare(five_col))
 
   # k > N also satisfies the same prefix property.
-  over_mat <- FarFirst(dat$d, N + 10L, method = 1L)
+  over_mat <- FarFirst(dat$d, N + 10L, strategy = 1L)
   expect_identical(bare(over_mat[1:5]), bare(five_mat))
 })
 

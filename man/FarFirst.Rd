@@ -7,7 +7,7 @@
 FarFirst(
   d = NULL,
   k,
-  method = .kDefaultEnsemble,
+  strategy = .kDefaultEnsemble,
   nseeds = .kDefaultNSeeds,
   points = NULL,
   N = NULL,
@@ -16,15 +16,15 @@ FarFirst(
 }
 \arguments{
 \item{d}{A \code{dist} object, a square numeric matrix of pairwise distances, or
-a distance function (see \emph{§Distance function}). Asymmetric matrices are
+a distance function (see §Details). Asymmetric matrices are
 accepted; the algorithm treats \eqn{d_{ij}} and \eqn{d_{ji}} as
 independent. Ignored when \code{points} is supplied.}
 
 \item{k}{Integer: number of points to select.}
 
-\item{method}{Integer or character defining how to seed the greedy pass.
-Pass the name of one or more seeding methods described in \code{\link[=MaxMinSeed]{MaxMinSeed()}}
-to run each method and return the best solution.}
+\item{strategy}{Integer or character defining how to seed the greedy pass.
+Pass the name of one or more seeding strategies described in \code{\link[=MaxMinSeed]{MaxMinSeed()}}
+to run each strategy and return the best solution.}
 
 \item{nseeds}{Integer: number of distinct seeds to draw under the
 \code{"random_furthest"} strategy.}
@@ -65,19 +65,6 @@ The deterministic \eqn{O(N)} anchors (\code{"centroid"}, \code{"peripheral"}) an
 costlier \eqn{O(N^2)} anchors (\code{"diameter"}, \code{"anti_medoid"},
 \code{"rowsum"}, \code{"rownorm"}) are alternative \code{seed} strategies.
 }
-\details{
-Distances may be provided as:
-\describe{
-\item{a \strong{distance matrix} (\code{d})}{a \code{dist} object or square matrix, held
-in full;}
-\item{a \strong{coordinate matrix} (\code{points})}{each needed distance is
-recomputed from coordinates on the fly in \code{O(N)} memory
-(Euclidean data only);}
-\item{a distance function (function passed as \code{d})}{for metrics
-with neither a stored matrix nor a coordinate embedding, where distances
-may be computed on demand.}
-}
-}
 \section{Distance function}{
 
 When \code{d} is a function, it will be passed a single 1-based index \code{i}, and
@@ -96,13 +83,13 @@ FarFirst(d, 5L)
 # More random-furthest starts:
 FarFirst(d, 5L, nseeds = 15L)
 # Custom two-anchor ensemble:
-FarFirst(d, 5L, method = c("diameter", "anti_medoid"))
+FarFirst(d, 5L, strategy = c("diameter", "anti_medoid"))
 # A single strategy:
-FarFirst(d, 5L, method = "diameter")
-# An explicit start index (integer method):
-FarFirst(d, 5L, method = 1L)
+FarFirst(d, 5L, strategy = "diameter")
+# An explicit start index (integer strategy):
+FarFirst(d, 5L, strategy = 1L)
 # Matrix-free coordinate path (identical result, O(N) memory):
-FarFirst(k = 5L, points = pts, method = 1L)
+FarFirst(k = 5L, points = pts, strategy = 1L)
 
 # Distance-column oracle: supply one column at a time, never the full matrix.
 data("USArrests")
@@ -111,7 +98,7 @@ StateDist <- function(i) {
   diffs <- sweep(arrestTypes, 2, unlist(arrestTypes[i, ]), "-")
   sqrt(rowSums(diffs ^ 2))
 }
-idx <- FarFirst(StateDist, k = 4L, N = nrow(arrestTypes), method = 1L)
+idx <- FarFirst(StateDist, k = 4L, N = nrow(arrestTypes), strategy = 1L)
 arrestTypes[idx, ]
 }
 \references{

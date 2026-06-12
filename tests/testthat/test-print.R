@@ -1,4 +1,4 @@
-# Tests for the MaxMinSelection / MaxMinExact print + format S3 layer.
+﻿# Tests for the MaxMinSelection / MaxMinExact print + format S3 layer.
 
 MakeData <- function(seed = 42, N = 60, dim = 4) {
   set.seed(seed)
@@ -29,7 +29,7 @@ test_that("the ensemble summary names the winning strategy and count", {
 
 test_that("a single pass omits the ensemble clause", {
   dat <- MakeData(N = 30)
-  sel <- FarFirst(dat$d, 6L, method = "diameter")
+  sel <- FarFirst(dat$d, 6L, strategy = "diameter")
   line <- format(sel)
   expect_match(line, "selected by Gonzalez farthest-first, each at distance >= ")
   expect_false(grepl("best of", line))
@@ -37,7 +37,7 @@ test_that("a single pass omits the ensemble clause", {
 
 test_that("a single element drops the distance clause (NA score)", {
   dat <- MakeData(N = 30)
-  sel <- FarFirst(dat$d, 1L, method = "medoid")
+  sel <- FarFirst(dat$d, 1L, strategy = "medoid")
   line <- format(sel)
   expect_match(line, "^1 element \\([0-9]+\\) selected by Gonzalez farthest-first$")
   expect_false(grepl("distance", line))
@@ -56,16 +56,16 @@ test_that("DropAdd and Grasp report their own algorithm names", {
 
 test_that("the index list is truncated past the show limit", {
   dat <- MakeData(N = 60)
-  sel <- FarFirst(dat$d, 25L, method = 1L)   # 25 > the 20-index threshold
+  sel <- FarFirst(dat$d, 25L, strategy = 1L)   # 25 > the 20-index threshold
   line <- format(sel)
   expect_match(line, "\\.\\.\\. \\(\\+5 more\\)")
   # A short selection is shown in full, no ellipsis.
-  expect_false(grepl("more", format(FarFirst(dat$d, 5L, method = 1L))))
+  expect_false(grepl("more", format(FarFirst(dat$d, 5L, strategy = 1L))))
 })
 
 test_that("print returns its argument invisibly and emits the format line", {
   dat <- MakeData(N = 30)
-  sel <- FarFirst(dat$d, 4L, method = "peripheral")
+  sel <- FarFirst(dat$d, 4L, strategy = "peripheral")
   expect_output(ret <- withVisible(print(sel)), "selected by")
   expect_false(ret$visible)
   expect_identical(ret$value, sel)
@@ -138,7 +138,7 @@ test_that("summary of a FarFirst ensemble prints the per-strategy table", {
 
 test_that("summary of a single FarFirst pass is just the headline", {
   dat <- MakeData(N = 30)
-  out <- capture.output(summary(FarFirst(dat$d, 6L, method = "diameter")))
+  out <- capture.output(summary(FarFirst(dat$d, 6L, strategy = "diameter")))
   expect_length(out, 1L)
   expect_match(out, "Gonzalez farthest-first")
 })
