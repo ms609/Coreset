@@ -151,13 +151,13 @@
 #' Peripheral seed index for Gonzalez selection (distance matrix)
 #'
 #' @param d Square numeric distance matrix.
-#' @param method Anchor name; see [MaxMinSeed()]. Also accepts `"first"` (1).
+#' @param strategy Anchor name; see [MaxMinSeed()]. Also accepts `"first"` (1).
 #' @return Integer seed index.
 #' @keywords internal
-.MaxMinSeed <- function(d, method) {
-  switch(method,
+.MaxMinSeed <- function(d, strategy) {
+  switch(strategy,
     first   = 1L,
-    centroid = stop("`centroid` seed requires coordinates; supply `points=` ",
+    centroid = stop("`centroid` strategy requires coordinates; supply `points=` ",
                     "or use `peripheral` on the distance-matrix path"),
     medoid  = as.integer(which.min(rowSums(d))),
     rowsum  = as.integer(which.max(rowSums(d))),
@@ -186,7 +186,7 @@
       r <- sample.int(nrow(d), 1L)
       as.integer(which.max(d[, r]))
     },
-    stop("Unknown seed method: ", method)
+    stop("Unknown seed strategy: ", strategy)
   )
 }
 
@@ -196,11 +196,11 @@
 #' `…FromPoints_cpp` primitives, bit-identical to the matrix path on Euclidean
 #' data.
 #' @param points A `double` `N x dim` coordinate matrix.
-#' @param method Anchor name; see [MaxMinSeed()]. Also accepts `"first"` (1).
+#' @param strategy Anchor name; see [MaxMinSeed()]. Also accepts `"first"` (1).
 #' @return Integer seed index.
 #' @keywords internal
-.MaxMinSeedPoints <- function(points, method) {
-  switch(method,
+.MaxMinSeedPoints <- function(points, strategy) {
+  switch(strategy,
     first   = 1L,
     centroid = as.integer(which.max(.CentroidSqDist(points))),
     medoid  = as.integer(which.min(RowSumsFromPoints_cpp(points))),
@@ -228,7 +228,7 @@
       r <- sample.int(nrow(points), 1L)
       as.integer(which.max(EuclidColFromPoints_cpp(points, r)))
     },
-    stop("Unknown seed method: ", method)
+    stop("Unknown seed strategy: ", strategy)
   )
 }
 
@@ -264,34 +264,34 @@
 #' @param points Optional `N x dim` numeric coordinate matrix; when supplied the
 #'   seed is computed from coordinates in `O(N)` memory. Required for the
 #'   `"centroid"` anchor, which has no distance-matrix form.
-#' @param method Anchor name (see above). Default `"peripheral"`.
+#' @param strategy Anchor name (see above). Default `"peripheral"`.
 #' @return Integer seed index in `[1, N]`.
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' d <- dist(pts)
-#' MaxMinSeed(d, method = "diameter")
-#' FarFirst(d, 5L, strategy = MaxMinSeed(d, method = "diameter"))
+#' MaxMinSeed(d, strategy = "diameter")
+#' FarFirst(d, 5L, strategy = MaxMinSeed(d, strategy = "diameter"))
 #' @seealso [FarFirst()], which seeds and runs the greedy pass in one call.
 #' @export
 MaxMinSeed <- function(d = NULL, points = NULL,
-                       method = c("peripheral", "centroid", "random_furthest",
-                                  "diameter", "anti_medoid", "medoid", "rowsum",
-                                  "rownorm")) {
-  method <- match.arg(method)
+                       strategy = c("peripheral", "centroid", "random_furthest",
+                                    "diameter", "anti_medoid", "medoid", "rowsum",
+                                    "rownorm")) {
+  strategy <- match.arg(strategy)
   if (!is.null(points)) {
     points <- .AsPointsMatrix(points)
-    return(.MaxMinSeedPoints(points, method))
+    return(.MaxMinSeedPoints(points, strategy))
   }
   d <- .AsDistMatrix(d)
-  .MaxMinSeed(d, method)
+  .MaxMinSeed(d, strategy)
 }
 
 #' Ensemble Gonzalez over cheap peripheral-anchor strategies (distance matrix)
 #'
 #' Runs Gonzalez from each requested peripheral anchor and returns the subset
 #' maximising \eqn{T_k}. Internal driver for the ensemble path of [FarFirst()]
-#' (triggered when `method` is a character vector of length > 1 or
+#' (triggered when `strategy` is a character vector of length > 1 or
 #' `"random_furthest"`). The `"random_furthest"` token draws `nseeds` distinct
 #' furthest-point seeds via [.DrawDistinctSeeds()]. The returned vector carries
 #' `strategy_results` and `winning_strategy` (character vector of all tied-best

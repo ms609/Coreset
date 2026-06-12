@@ -1,4 +1,4 @@
-# Tests for MaxMinSeed() and MinDist().
+﻿# Tests for MaxMinSeed() and MinDist().
 
 MakeData <- function(seed = 7, N = 50, dim = 3) {
   set.seed(seed)
@@ -9,18 +9,18 @@ MakeData <- function(seed = 7, N = 50, dim = 3) {
 test_that("MaxMinSeed anchors match their definitions (matrix)", {
   dat <- MakeData()
   d <- dat$d
-  expect_identical(MaxMinSeed(d, method = "medoid"),
+  expect_identical(MaxMinSeed(d, strategy = "medoid"),
                    as.integer(which.min(rowSums(d))))
-  expect_identical(MaxMinSeed(d, method = "rowsum"),
+  expect_identical(MaxMinSeed(d, strategy = "rowsum"),
                    as.integer(which.max(rowSums(d))))
-  expect_identical(MaxMinSeed(d, method = "rownorm"),
+  expect_identical(MaxMinSeed(d, strategy = "rownorm"),
                    as.integer(which.max(rowSums(d ^ 2))))
   med <- which.min(rowSums(d))
   dd <- d[, med]; dd[med] <- -Inf
-  expect_identical(MaxMinSeed(d, method = "anti_medoid"),
+  expect_identical(MaxMinSeed(d, strategy = "anti_medoid"),
                    as.integer(which.max(dd)))
   dOff <- d; diag(dOff) <- -Inf
-  expect_identical(MaxMinSeed(d, method = "diameter"),
+  expect_identical(MaxMinSeed(d, strategy = "diameter"),
                    as.integer(arrayInd(which.max(dOff), dim(dOff))[1L, 1L]))
 })
 
@@ -29,8 +29,8 @@ test_that("MaxMinSeed coordinate path matches the matrix path", {
   for (k in c("peripheral", "random_furthest", "diameter", "anti_medoid",
               "medoid", "rowsum", "rownorm")) {
     # Seed identically so the random_furthest pivot matches across paths.
-    set.seed(1); pt  <- MaxMinSeed(points = dat$pts, method = k)
-    set.seed(1); mat <- MaxMinSeed(dat$d, method = k)
+    set.seed(1); pt  <- MaxMinSeed(points = dat$pts, strategy = k)
+    set.seed(1); mat <- MaxMinSeed(dat$d, strategy = k)
     expect_identical(pt, mat, info = k)
   }
 })
@@ -39,24 +39,24 @@ test_that("centroid seed is the farthest point from the coordinate mean", {
   dat <- MakeData()
   mu  <- colMeans(dat$pts)
   d2  <- rowSums((dat$pts - rep(mu, each = nrow(dat$pts))) ^ 2)
-  expect_identical(MaxMinSeed(points = dat$pts, method = "centroid"),
+  expect_identical(MaxMinSeed(points = dat$pts, strategy = "centroid"),
                    as.integer(which.max(d2)))
   # It has no distance-matrix form.
-  expect_error(MaxMinSeed(dat$d, method = "centroid"), "coordinates")
+  expect_error(MaxMinSeed(dat$d, strategy = "centroid"), "coordinates")
   expect_error(FarFirst(dat$d, 5L, strategy = "centroid"), "coordinates")
 })
 
 test_that("random_furthest is reproducible under set.seed", {
   dat <- MakeData()
-  set.seed(1); a <- MaxMinSeed(points = dat$pts, method = "random_furthest")
-  set.seed(1); b <- MaxMinSeed(points = dat$pts, method = "random_furthest")
+  set.seed(1); a <- MaxMinSeed(points = dat$pts, strategy = "random_furthest")
+  set.seed(1); b <- MaxMinSeed(points = dat$pts, strategy = "random_furthest")
   expect_identical(a, b)
 })
 
 test_that("MaxMinSeed validates method", {
   dat <- MakeData(N = 8)
-  expect_error(MaxMinSeed(dat$d, method = "ensemble"))
-  expect_error(MaxMinSeed(dat$d, method = "first"))
+  expect_error(MaxMinSeed(dat$d, strategy = "ensemble"))
+  expect_error(MaxMinSeed(dat$d, strategy = "first"))
 })
 
 # ---- MinDist ------------------------------------------------------------
@@ -104,8 +104,8 @@ test_that("diameter anchor returns 1 on zero-distance data", {
   # All points at the origin -> all pairwise distances are 0 -> dMax <= 0.
   ptsDegen <- matrix(0, nrow = 5L, ncol = 2L)
   dDegen   <- as.matrix(dist(ptsDegen))
-  expect_identical(MaxMinSeed(dDegen, method = "diameter"), 1L)
-  expect_identical(MaxMinSeed(points = ptsDegen, method = "diameter"), 1L)
+  expect_identical(MaxMinSeed(dDegen, strategy = "diameter"), 1L)
+  expect_identical(MaxMinSeed(points = ptsDegen, strategy = "diameter"), 1L)
   # Ensemble paths: AnchorSeed("diameter") hits the degenerate branch.
   ensM  <- FarFirst(dDegen, 2L, strategy = c("diameter", "rowsum"))
   ensPt <- FarFirst(k = 2L, points = ptsDegen, strategy = c("diameter", "rowsum"))
@@ -221,7 +221,7 @@ test_that(".GonzEnsembleFromPoints medoid/centroid/rownorm branches covered via 
   dat <- MakeData()
   # Three anchors only reachable through the points-path ensemble AnchorSeed
   res <- FarFirst(k = 5L, points = dat$pts,
-                  method = c("medoid", "centroid", "rownorm"))
+                  strategy = c("medoid", "centroid", "rownorm"))
   expect_length(res, 5L)
   expect_true(all(attr(res, "winning_strategy") %in%
                   c("medoid", "centroid", "rownorm")))

@@ -154,20 +154,23 @@
 #' The function will be called once per selected element, to avoid building a
 #' complete \eqn{N x N} matrix.
 #'
+#' @section Progress bar:
+#' The distance-column oracle path shows a progress bar controlled by
+#' `getOption("MaxMin.progress", interactive())` — `TRUE` by default in
+#' interactive sessions, `FALSE` otherwise.
+#'
+#' @param k Integer: number of points to select.
 #' @param d A `dist` object, a square numeric matrix of pairwise distances, or
 #' a distance function that takes an index `i` and returns the distance from
-#' `i` to each other element (see §Details). Ignored when `points` is supplied.
-#' @param k Integer: number of points to select.
+#' `i` to each other element (see §Distance function). Ignored when `points` is supplied.
 #' @param points Optional `N x dim` numeric coordinate matrix. When supplied,
 #'   the selection is computed directly from coordinates in
 #'   \eqn{O(N \cdot k \cdot dim)} time and \eqn{O(N)} memory, which avoids
 #'   creating an \eqn{O(N^2)} distance matrix. Missing entries (`NA`) are not
 #'   supported.
-#' @param N Integer: the total number of elements in `points`, if provided.
-#' @param progress Logical; show a progress bar during greedy selection on the
-#'   distance-column oracle path (the only path slow enough to warrant one).
-#'   Default: `TRUE` in interactive sessions, `FALSE` otherwise
-#'   (`getOption("MaxMin.progress", interactive())`).
+#' @param N Integer: the total number of elements. Required (and used) only on
+#'   the distance-column oracle path, where it cannot be inferred from the
+#'   closure; ignored for the matrix and coordinate paths.
 #' @param strategy Integer or character defining how to seed the greedy pass.
 #' Pass the name of one or more seeding strategies described in [`MaxMinSeed()`]
 #' to run each strategy and return the best solution.
@@ -189,17 +192,17 @@
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' d <- dist(pts)
 #' # Default: best of eight random-furthest starts (set.seed for reproducibility):
-#' FarFirst(d, 5L)
+#' FarFirst(5L, d)
 #' # More random-furthest starts:
-#' FarFirst(d, 5L, nseeds = 15L)
+#' FarFirst(5L, d, nseeds = 15L)
 #' # Custom two-anchor ensemble:
-#' FarFirst(d, 5L, strategy = c("diameter", "anti_medoid"))
+#' FarFirst(5L, d, strategy = c("diameter", "anti_medoid"))
 #' # A single strategy:
-#' FarFirst(d, 5L, strategy = "diameter")
+#' FarFirst(5L, d, strategy = "diameter")
 #' # An explicit start index (integer strategy):
-#' FarFirst(d, 5L, strategy = 1L)
+#' FarFirst(5L, d, strategy = 1L)
 #' # Matrix-free coordinate path (identical result, O(N) memory):
-#' FarFirst(k = 5L, points = pts, strategy = 1L)
+#' FarFirst(5L, points = pts, strategy = 1L)
 #'
 #' # Distance-column oracle: supply one column at a time, never the full matrix.
 #' data("USArrests")
@@ -208,13 +211,12 @@
 #'   diffs <- sweep(arrestTypes, 2, unlist(arrestTypes[i, ]), "-")
 #'   sqrt(rowSums(diffs ^ 2))
 #' }
-#' idx <- FarFirst(StateDist, k = 4L, N = nrow(arrestTypes), strategy = 1L)
+#' idx <- FarFirst(4L, StateDist, N = nrow(arrestTypes), strategy = 1L)
 #' arrestTypes[idx, ]
 #' @export
-FarFirst <- function(d = NULL, k,
-                     strategy = .kDefaultEnsemble, nseeds = .kDefaultNSeeds,
-                     points = NULL, N = NULL,
-                     progress = getOption("MaxMin.progress", interactive())) {
+FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
+                     strategy = .kDefaultEnsemble, nseeds = .kDefaultNSeeds) {
+  progress <- getOption("MaxMin.progress", interactive())
   strategyMissing <- missing(strategy)
 
   # Every non-empty FarFirst result is a `MaxMinSelection` (a self-describing
@@ -309,7 +311,7 @@ FarFirst <- function(d = NULL, k,
   # the best by MinDist(). It is taken for a multi-anchor `strategy`, and also for
   # a lone `"random_furthest"` (the default): that token draws `nseeds` distinct
   # seeds, so it belongs here, not on the single-strategy path. (`MaxMinSeed(
-  # method = "random_furthest")` still returns exactly one seed for callers who
+  # strategy = "random_furthest")` still returns exactly one seed for callers who
   # want a single random start.)
   if (length(strategy) > 1L || "random_furthest" %in% strategy) {
     # Matrix path: `"centroid"` is coordinate-only, so drop it (the remaining

@@ -7,7 +7,7 @@
 MaxMinSeed(
   d = NULL,
   points = NULL,
-  method = c("peripheral", "centroid", "random_furthest", "diameter", "anti_medoid",
+  strategy = c("peripheral", "centroid", "random_furthest", "diameter", "anti_medoid",
     "medoid", "rowsum", "rownorm")
 )
 }
@@ -19,7 +19,7 @@ MaxMinSeed(
 seed is computed from coordinates in \code{O(N)} memory. Required for the
 \code{"centroid"} anchor, which has no distance-matrix form.}
 
-\item{method}{Anchor name (see above). Default \code{"peripheral"}.}
+\item{strategy}{Anchor name (see above). Default \code{"peripheral"}.}
 }
 \value{
 Integer seed index in \verb{[1, N]}.
@@ -57,8 +57,8 @@ counterpart of \code{"rowsum"}.}
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
-MaxMinSeed(d, method = "diameter")
-FarFirst(d, 5L, strategy = MaxMinSeed(d, method = "diameter"))
+MaxMinSeed(d, strategy = "diameter")
+FarFirst(d, 5L, strategy = MaxMinSeed(d, strategy = "diameter"))
 }
 \seealso{
 \code{\link[=FarFirst]{FarFirst()}}, which seeds and runs the greedy pass in one call.

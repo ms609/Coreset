@@ -32,7 +32,7 @@
 # two-sweep peripheral seed.
 .KCentrePeripheralSeeds <- function(d, nstart) {
   nstart <- max(1L, as.integer(nstart))
-  as.integer(FarFirst(d, min(nstart, nrow(d)), strategy = "peripheral"))
+  as.integer(FarFirst(min(nstart, nrow(d)), d, strategy = "peripheral"))
 }
 
 # The k-centre solvers assume a symmetric metric: `KCentreCandidates_cpp` reads

@@ -5,13 +5,12 @@
 \title{Deterministic Gonzalez furthest-point selection}
 \usage{
 FarFirst(
-  d = NULL,
   k,
-  strategy = .kDefaultEnsemble,
-  nseeds = .kDefaultNSeeds,
+  d = NULL,
   points = NULL,
   N = NULL,
-  progress = getOption("MaxMin.progress", interactive())
+  strategy = .kDefaultEnsemble,
+  nseeds = .kDefaultNSeeds
 )
 }
 \arguments{
