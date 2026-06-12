@@ -9,8 +9,8 @@ FarFirst(
   d = NULL,
   points = NULL,
   N = NULL,
-  strategy = .kDefaultEnsemble,
-  nseeds = .kDefaultNSeeds
+  strategy = "random_furthest",
+  nseeds = 8L
 )
 }
 \arguments{
@@ -35,7 +35,7 @@ closure; ignored for the matrix and coordinate paths.}
 Pass the name of one or more seeding strategies described in \code{\link[=PickPoint]{PickPoint()}}
 to run each strategy and return the best solution.}
 
-\item{nseeds}{Integer: number of distinct seeds to draw under the
+\item{nseeds}{Integer: number of distinct seeds to draw under the (default)
 \code{"random_furthest"} strategy.}
 }
 \value{

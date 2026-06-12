@@ -210,7 +210,7 @@
 #' arrestTypes[idx, ]
 #' @export
 FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
-                     strategy = .kDefaultEnsemble, nseeds = .kDefaultNSeeds) {
+                     strategy = "random_furthest", nseeds = 8L) {
   progress <- getOption("MaxMin.progress", interactive())
   strategyMissing <- missing(strategy)
 

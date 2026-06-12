@@ -4,12 +4,7 @@
 \alias{.GonzEnsembleFromPoints}
 \title{Coordinate (matrix-free) multi-anchor Gonzalez ensemble}
 \usage{
-.GonzEnsembleFromPoints(
-  points,
-  m,
-  anchors = .kDefaultEnsemble,
-  nseeds = .kDefaultNSeeds
-)
+.GonzEnsembleFromPoints(points, m, anchors = "random_furthest", nseeds = 8L)
 }
 \arguments{
 \item{points}{A \code{double} \verb{N x dim} coordinate matrix.}

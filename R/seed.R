@@ -5,21 +5,11 @@
 # anchors are exposed through PickPoint(); FarFirst(strategy = ) selects among them
 # (or the ensemble) and runs the greedy pass.
 
-# The default seed ensemble: the `"random_furthest"` token alone, which draws
-# `nseeds` (default 8) distinct furthest-point seeds via the session RNG and
-# returns the best Gonzalez pass. Set a seed (`set.seed()`) for a reproducible
-# draw. The deterministic anchors (`"anti_centroid"`, `"peripheral"`, ...) remain
-# available as opt-in `strategy=` options.
-.kDefaultEnsemble <- "random_furthest"
-
 # Seeds available to the ensemble drivers. The matrix path lacks coordinates, so
 # `"anti_centroid"` is reachable only from the coordinate path.
 .kMatrixEnsembleSeeds <- c("peripheral", "random_furthest", "diameter",
                            "anti_medoid", "medoid", "rowsum", "rownorm")
 .kPointEnsembleSeeds  <- c("anti_centroid", .kMatrixEnsembleSeeds)
-
-# Default number of distinct random-furthest seeds.
-.kDefaultNSeeds <- 8L
 
 #' Draw distinct furthest-point seeds from random pivots
 #'
@@ -306,7 +296,7 @@ PickPoint <- function(d = NULL, points = NULL,
 #' @return `.GonzEnsemble()` returns an integer vector of selected indices with attributes.
 #' @keywords internal
 .GonzEnsemble <- function(d, m, anchors = "peripheral",
-                          nseeds = .kDefaultNSeeds) {
+                          nseeds = 8L) {
   d <- .AsDistMatrix(d)
   m <- as.integer(m)
   if (length(m) != 1L || is.na(m) || m < 0L) {
@@ -404,8 +394,8 @@ PickPoint <- function(d = NULL, points = NULL,
 #' @inheritParams .GonzEnsemble
 #' @return `.GonzEnsembleFromPoints()` returns an integer vector of selected indices with attributes.
 #' @keywords internal
-.GonzEnsembleFromPoints <- function(points, m, anchors = .kDefaultEnsemble,
-                                    nseeds = .kDefaultNSeeds) {
+.GonzEnsembleFromPoints <- function(points, m, anchors = "random_furthest",
+                                    nseeds = 8L) {
   points <- .AsPointsMatrix(points)
   m <- as.integer(m)
   if (length(m) != 1L || is.na(m) || m < 0L) {
