@@ -261,6 +261,10 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
                                     progress = progress)))
   }
 
+  if (!is.null(N)) {
+    warning("`N` is ignored on the matrix/coordinate path; ",
+            "it is only needed when `d` is a distance-column function")
+  }
   usePoints <- !is.null(points)
   if (usePoints) {
     points <- .AsPointsMatrix(points)

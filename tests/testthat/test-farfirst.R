@@ -152,6 +152,17 @@ test_that("FarFirst rejects an NA/non-finite distance matrix (FF-001)", {
   expect_error(FarFirst(3L, naCol, N = 8L, strategy = 1L), "NA|NaN")
 })
 
+test_that("N is warned on matrix/coordinate paths but not on the oracle path", {
+  dat <- MakeData(N = 12)
+  # Matrix path: N is ignored -> warn.
+  expect_warning(FarFirst(4L, dat$d, N = 12L, strategy = 1L), "ignored")
+  # Coordinate path: N is ignored -> warn.
+  expect_warning(FarFirst(4L, points = dat$pts, N = 12L, strategy = 1L), "ignored")
+  # Oracle path: N is required and used -> no warning.
+  colFn <- function(i) dat$d[, i]
+  expect_no_warning(FarFirst(4L, colFn, N = nrow(dat$d), strategy = 1L))
+})
+
 test_that("explicitly naming anti_centroid in a matrix ensemble warns and drops it", {
   dat <- MakeData(N = 12)
   expect_warning(res <- FarFirst(4L, dat$d,
