@@ -1,8 +1,8 @@
-# Deterministic Gonzalez furthest-point selection
+# Greedy farthest-first point selection
 
 Greedy *k*-centre selection (González 1985; Hochbaum and Shmoys 1985)
-iteratively selects the point furthest from the current selection, a
-2-approximation to the *k*-centre problem.
+iteratively selects the point furthest from the current selection to
+yield a 2-approximation to the *k*-centre problem.
 
 ## Usage
 
@@ -47,7 +47,7 @@ FarFirst(
 
   Integer or character defining how to seed the greedy pass. Pass the
   name of one or more seeding strategies described in
-  [`MaxMinSeed()`](https://ms609.github.io/MaxMin/reference/MaxMinSeed.md)
+  [`PickPoint()`](https://ms609.github.io/MaxMin/reference/PickPoint.md)
   to run each strategy and return the best solution.
 
 - nseeds:
@@ -88,7 +88,7 @@ Hochbaum DS, Shmoys DB (1985). “A best possible heuristic for the
 
 ## See also
 
-[`MaxMinSeed()`](https://ms609.github.io/MaxMin/reference/MaxMinSeed.md)
+[`PickPoint()`](https://ms609.github.io/MaxMin/reference/PickPoint.md)
 for the seed indices alone;
 [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) and
 [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
@@ -100,21 +100,27 @@ for higher-effort solvers.
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
+
 # Default: best of eight random-furthest starts (set.seed for reproducibility):
 FarFirst(5L, d)
-#> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first (best of 5 strategies, 3 tied: random_furthest2, random_furthest4, random_furthest5), each at distance >= 1.765
+#> 5 elements (14 4 26 5 28) selected by farthest-first (best of 5 strategies, 3 tied: random_furthest2, random_furthest4, random_furthest5), each at distance >= 1.765
+
 # More random-furthest starts:
 FarFirst(5L, d, nseeds = 15L)
-#> 5 elements (4 14 26 5 28) selected by Gonzalez farthest-first (best of 5 strategies, 3 tied: random_furthest1, random_furthest3, random_furthest5), each at distance >= 1.765
+#> 5 elements (4 14 26 5 28) selected by farthest-first (best of 5 strategies, 3 tied: random_furthest1, random_furthest3, random_furthest5), each at distance >= 1.765
+
 # Custom two-anchor ensemble:
 FarFirst(5L, d, strategy = c("diameter", "anti_medoid"))
-#> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first (best of 2 strategies, 2 tied: diameter, anti_medoid), each at distance >= 1.765
+#> 5 elements (14 4 26 5 28) selected by farthest-first (best of 2 strategies, 2 tied: diameter, anti_medoid), each at distance >= 1.765
+
 # A single strategy:
 FarFirst(5L, d, strategy = "diameter")
 #> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first, each at distance >= 1.765
+
 # An explicit start index (integer strategy):
 FarFirst(5L, d, strategy = 1L)
 #> 5 elements (1 5 24 4 14) selected by Gonzalez farthest-first, each at distance >= 1.701
+
 # Matrix-free coordinate path (identical result, O(N) memory):
 FarFirst(5L, points = pts, strategy = 1L)
 #> 5 elements (1 5 24 4 14) selected by Gonzalez farthest-first, each at distance >= 1.701

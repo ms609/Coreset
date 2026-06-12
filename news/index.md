@@ -95,7 +95,7 @@
 - [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md):
   the subset-size argument is renamed `n` -\> `m`, matching the other
   solvers; and the `seed` argument is renamed `method` (matching
-  `MaxMinSeed(method =)`), since it selects a seeding *strategy*, not an
+  `PickPoint(method =)`), since it selects a seeding *strategy*, not an
   RNG seed.
 - [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) and
   [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md): the
@@ -154,5 +154,5 @@
   package’s methods on small to medium instances.
 - [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md):
   the k-centre objective (minimum pairwise distance).
-- [`MaxMinSeed()`](https://ms609.github.io/MaxMin/reference/MaxMinSeed.md):
+- [`PickPoint()`](https://ms609.github.io/MaxMin/reference/PickPoint.md):
   exposes the peripheral seed indices directly.

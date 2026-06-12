@@ -1,17 +1,4 @@
-# 
-
-|                                      |
-|--------------------------------------|
-| title: “Introduction to MaxMin”      |
-| author: “Martin R. Smith”            |
-| date: today                          |
-| format: html                         |
-| bibliography: ../inst/REFERENCES.bib |
-| csl: ../inst/apa.csl                 |
-| vignette: \>                         |
-| %                                    |
-| %                                    |
-| %                                    |
+# Introduction to MaxMin
 
 The MaxMin package selects a subset that represents a fixed pool of *N*
 items, based on one of two complementary objectives:
@@ -40,10 +27,10 @@ all buildings can be reached within a given response time.
 
 An approximate selection that satisfies both objectives within a factor
 of two of their respective optima can be attained by a greedy
-farthest-first algorithm \[@Gonzalez1985\], though the exact optima
-typically differ; dispersion spreads to the extremes, whereas covering
-reaches into the interior. MaxMin provides approximate and exact solvers
-for each objective.
+farthest-first algorithm ([González, 1985](#ref-Gonzalez1985)), though
+the exact optima typically differ; dispersion spreads to the extremes,
+whereas covering reaches into the interior. MaxMin provides approximate
+and exact solvers for each objective.
 
 ## Installation
 
@@ -109,10 +96,11 @@ objective, use
 
 ## Fast greedy selection
 
-The @Gonzalez1985 algorithm builds the selection greedily: start from a
-seed point, then repeatedly add whichever unselected point is farthest
-from the current selection. This greedy rule guarantees a
-2-approximation to the optimal T_(k) and runs in O(*N* · *m*) time.
+The González ([1985](#ref-Gonzalez1985)) algorithm builds the selection
+greedily: start from a seed point, then repeatedly add whichever
+unselected point is farthest from the current selection. This greedy
+rule guarantees a 2-approximation to the optimal T_(k) and runs in O(*N*
+· *m*) time.
 
 By default
 [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
@@ -123,7 +111,7 @@ pass produced the highest T_(k).
 ``` r
 
 set.seed(1)
-picks <- FarFirst(6L, eurodist)   # default: best of eight random starts
+ffPick <- FarFirst(6L, eurodist)   # default: best of eight random starts
 ```
 
 More random starts can be requested via the `nseeds` argument.
@@ -131,7 +119,7 @@ More random starts can be requested via the `nseeds` argument.
 ``` r
 
 set.seed(1)
-picks <- FarFirst(6L, eurodist, nseeds = 12L)
+ffPick <- FarFirst(6L, eurodist, nseeds = 12L)
 ```
 
 Peripheral seeds may also be selected by deterministic strategies: one
@@ -140,11 +128,11 @@ best solution found will be returned.
 
 ``` r
 
-picks <- FarFirst(6L, eurodist, strategy = c("diameter", "anti_medoid"))
-MinDist(eurodist, picks)
+ffPick <- FarFirst(6L, eurodist, strategy = c("diameter", "anti_medoid"))
+MinDist(eurodist, ffPick)
 #> [1] 1014
 
-attr(picks, "winning_strategy")
+attr(ffPick, "winning_strategy")
 #> [1] "diameter"    "anti_medoid"
 ```
 
@@ -177,17 +165,17 @@ arrestTypes[idx, ]
 
 ## DropAdd tabu search
 
-The **DropAdd** heuristic \[@Porumbel2011\] refines an initial selection
-by alternately dropping and adding points from the selection; it
-typically reaches ≈ 99 % of the optimal T_(k).
+The **DropAdd** heuristic ([Porumbel et al., 2011](#ref-Porumbel2011))
+refines an initial selection by alternately dropping and adding points
+from the selection; it typically reaches ≈ 99 % of the optimal T_(k).
 
 ``` r
 
-picksDA <- DropAdd(eurodist, k = 6L, plateau = 500L)
+daPick <- DropAdd(eurodist, k = 6L, plateau = 500L)
 
-picksDA
+daPick
 #> 6 elements (1 2 5 12 20 21) selected by DropAdd tabu search, each at distance >= 1294
-labels(eurodist)[picksDA]
+labels(eurodist)[daPick]
 #> [1] "Athens"    "Barcelona" "Cherbourg" "Lisbon"    "Stockholm" "Vienna"
 ```
 
@@ -198,12 +186,12 @@ T_(k). Where *N* is too large for a distance matrix to fit in memory
 
 ## GRASP with path relinking
 
-**GRASP + path relinking** \[@Resende2010\] combines a *randomised*
-greedy construction phase with extended local search and then refines an
-elite set of good solutions by interpolating between elite-pair
-trajectories (*path relinking*). It achieves the highest T_(k) of the
-three heuristics, at a proportionally higher cost. Because the
-construction phase is stochastic, call
+**GRASP + path relinking** ([Resende et al., 2010](#ref-Resende2010))
+combines a *randomised* greedy construction phase with extended local
+search and then refines an elite set of good solutions by interpolating
+between elite-pair trajectories (*path relinking*). It achieves the
+highest T_(k) of the three heuristics, at a proportionally higher cost.
+Because the construction phase is stochastic, call
 [`set.seed()`](https://rdrr.io/r/base/Random.html) before
 [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) for a
 reproducible run:
@@ -211,12 +199,12 @@ reproducible run:
 ``` r
 
 set.seed(42)
-res_gr <- Grasp(eurodist, k = 6L, plateau = 50L)
-res_gr
+grPick <- Grasp(eurodist, k = 6L, plateau = 50L)
+grPick
 #> 6 elements (1 2 4 12 20 21) selected by GRASP with path-relinking, each at distance >= 1305
-labels(eurodist)[res_gr]
+labels(eurodist)[grPick]
 #> [1] "Athens"    "Barcelona" "Calais"    "Lisbon"    "Stockholm" "Vienna"
-attr(res_gr, "pr_calls")   # path-relinking calls performed
+attr(grPick, "pr_calls")   # path-relinking calls performed
 #> [1] 90
 ```
 
@@ -239,10 +227,10 @@ k   <- 8L
 
 ``` r
 
-idx_ff <- FarFirst(k, d50)
-res_da50 <- DropAdd(d50, k = k, plateau = 500L)
+ffPick <- FarFirst(k, d50)
+da50Pick <- DropAdd(d50, k = k, plateau = 500L)
 set.seed(42)
-res_gr50 <- Grasp(d50, k = k, plateau = 50L)
+gr50Pick <- Grasp(d50, k = k, plateau = 50L)
 ```
 
 Even a small difference in T_(k) can correspond to a meaningfully more
@@ -251,9 +239,9 @@ dispersed selection.
 ``` r
 
 scores <- c(
-  FarFirst  = MinDist(d50, idx_ff),
-  DropAdd = attr(res_da50, "score"),
-  Grasp   = attr(res_gr50, "score")
+  FarFirst  = MinDist(d50, ffPick),
+  DropAdd = attr(da50Pick, "score"),
+  Grasp   = attr(gr50Pick, "score")
 )
 round(scores, 3)
 #> FarFirst  DropAdd    Grasp 
@@ -268,9 +256,9 @@ visual overlap is high.
 ``` r
 
 methods <- list(
-  FarFirst  = idx_ff,
-  DropAdd = res_da50,
-  Grasp   = res_gr50
+  FarFirst  = ffPick,
+  DropAdd = da50Pick,
+  Grasp   = gr50Pick
 )
 cols <- c(FarFirst = "#E41A1C", DropAdd = "#377EB8", Grasp = "#4DAF4A")
 pchs <- c(FarFirst = 24L, DropAdd = 21L, Grasp = 22L)
@@ -307,7 +295,8 @@ candidate set. A small jitter separates symbols at shared indices.
 For small instances (roughly N ≤ 25–30),
 [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
 solves the problem to proven optimality via a node-packing integer
-programme \[@Sayyady2016\], using the **highs** solver.
+programme ([Sayyady & Fathi, 2016](#ref-Sayyady2016)), using the
+**highs** solver.
 
 First we must install **highs**:
 
@@ -325,18 +314,18 @@ d30   <- dist(pts30)
 
 ``` r
 
-res_ex <- ExactMaxMin(d30, k = 6L, maxSeconds = 30L)
+exPick <- ExactMaxMin(d30, k = 6L, maxSeconds = 30L)
 
-res_ex$proven      # TRUE  ⟹  objective is the global optimum
+exPick$proven      # TRUE  ⟹  objective is the global optimum
 #> [1] TRUE
-res_ex$objective
+exPick$objective
 #> [1] 1.616311
 
 # Compare to the greedy heuristic on the same instance
-res_ff30 <- FarFirst(6L, d30)
-c(exact    = res_ex$objective,
-  Gonzalez = MinDist(d30, res_ff30))
-#>    exact Gonzalez 
+ff30Pick <- FarFirst(6L, d30)
+c(exact    = exPick$objective,
+  farFirst = MinDist(d30, ff30Pick))
+#>    exact farFirst 
 #> 1.616311 1.616311
 ```
 
@@ -356,11 +345,11 @@ object, a square distance matrix, or a coordinate matrix via the
 
 ``` r
 
-MinDist(d50, idx_ff)                               # from dist
+MinDist(d50, ffPick)                               # from dist
 #> [1] 1.416314
-MinDist(as.matrix(d50), idx_ff)                    # from square matrix
+MinDist(as.matrix(d50), ffPick)                    # from square matrix
 #> [1] 1.416314
-MinDist(points = pts, idx = idx_ff)                # from coordinates
+MinDist(points = pts, idx = ffPick)                # from coordinates
 #> [1] 1.416314
 ```
 
@@ -370,17 +359,20 @@ Every method above pursues *dispersion* — it spreads the selection so
 its members are mutually far apart. The **k-centre** problem instead
 pursues *coverage*: it minimises the covering radius *R*, the largest
 distance from any point to its nearest chosen centre, so that no point
-of the pool is left far from a representative \[@Gonzalez1985;
-@Hochbaum1985\]. Where dispersion reaches for the extremes, covering
-reaches into the interior, so on the same data the two optima are
-generally different selections.
+of the pool is left far from a representative ([González,
+1985](#ref-Gonzalez1985); [Hochbaum & Shmoys, 1985](#ref-Hochbaum1985)).
+Where dispersion reaches for the extremes, covering reaches into the
+interior, so on the same data the two optima are generally different
+selections.
 
 ### `KCentre()`: near-optimal covering
 
 [`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md)
-chooses centres with the deterministic CDSh heuristic \[@GarciaDiaz2019;
-@GarciaDiaz2017\], which typically lands within 1–3.5 % of the optimum —
-an order of magnitude tighter than the Gonzalez 2-approximation that
+chooses centres with the deterministic CDSh heuristic ([García-Díaz et
+al., 2017](#ref-GarciaDiaz2017); [García-Díaz et al.,
+2019](#ref-GarciaDiaz2019)), which typically lands within 1–3.5 % of the
+optimum — an order of magnitude tighter than the Gonzalez
+2-approximation that
 [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
 gives for this objective.
 
@@ -427,10 +419,10 @@ it uses the **highs** solver.
 
 ``` r
 
-res_kc <- ExactKCentre(eurodist, k = 4L, progress = FALSE)
-res_kc
+kc <- ExactKCentre(eurodist, k = 4L, progress = FALSE)
+kc
 #> 4 centres (6 7 14 19) by exact MILP (highs), proven optimal, covering radius = 1011
-res_kc$proven      # TRUE  ⟹  radius is the global covering optimum
+kc$proven      # TRUE  ⟹  radius is the global covering optimum
 #> [1] TRUE
 ```
 
@@ -451,9 +443,9 @@ inward to keep every city near a centre.
 ``` r
 
 disp <- sort(ExactMaxMin(eurodist, k = 4L)$indices)
-labels(eurodist)[disp]            # dispersion: pushed to the extremes
+labels(eurodist)[disp]              # dispersion: pushed to the extremes
 #> [1] "Athens"    "Lisbon"    "Milan"     "Stockholm"
-labels(eurodist)[sort(res_kc$indices)]  # covering: pulled toward the interior
+labels(eurodist)[sort(kc$indices)]  # covering: pulled toward the interior
 #> [1] "Cologne"    "Copenhagen" "Madrid"     "Rome"
 ```
 
@@ -500,3 +492,37 @@ The CRAN package
 continuous space-filling designs by generating new points.
 
 ## References
+
+García-Díaz, J., Menchaca-Méndez, R., Menchaca-Méndez, R., Pomares
+Hernández, S., Pérez-Sansalvador, J. C., & Lakouari, N. (2019).
+Approximation algorithms for the vertex $`k`$-center problem: Survey and
+experimental evaluation. *IEEE Access*, *7*, 109228–109245.
+<https://doi.org/10.1109/ACCESS.2019.2933875>
+
+García-Díaz, J., Sánchez-Hernández, J., Menchaca-Méndez, R., &
+Menchaca-Méndez, R. (2017). When a worse approximation factor gives
+better performance: A 3-approximation algorithm for the vertex
+$`k`$-center problem. *Journal of Heuristics*, *23*(5), 349–366.
+<https://doi.org/10.1007/s10732-017-9345-x>
+
+González, T. F. (1985). Clustering to minimize the maximum intercluster
+distance. *Theoretical Computer Science*, *38*, 293–306.
+<https://doi.org/10.1016/0304-3975(85)90224-5>
+
+Hochbaum, D. S., & Shmoys, D. B. (1985). A best possible heuristic for
+the $`k`$-center problem. *Mathematics of Operations Research*, *10*(2),
+180–184. <https://doi.org/10.1287/moor.10.2.180>
+
+Porumbel, D., Hao, J.-K., & Glover, F. (2011). A simple and effective
+algorithm for the MaxMin diversity problem. *Annals of Operations
+Research*, *186*, 275–293. <https://doi.org/10.1007/s10479-011-0898-z>
+
+Resende, M. G. C., Martí, R., Gallego, M., & Duarte, A. (2010). GRASP
+and path relinking for the max-min diversity problem. *Computers &
+Operations Research*, *37*(3), 498–508.
+<https://doi.org/10.1016/j.cor.2008.05.011>
+
+Sayyady, F., & Fathi, Y. (2016). An integer programming approach for
+solving the p-dispersion problem. *European Journal of Operational
+Research*, *253*(1), 216–225.
+<https://doi.org/10.1016/j.ejor.2016.02.026>

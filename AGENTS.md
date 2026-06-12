@@ -11,7 +11,7 @@ p-dispersion). **Keep it CRAN-clean and dependency-light** — `highs`
 The MMDP algorithms — Gonzalez farthest-first (matrix / coordinate /
 column-oracle paths) and its seeding strategies, DropAdd tabu search,
 the exact node-packing solver, the polish local search, and the
-`MinDist` objective.
+`MinDist` objective; and the k-center algorithms.
 
 ## Conventions (ms609 house style)
 

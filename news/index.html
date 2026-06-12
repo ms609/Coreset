@@ -69,7 +69,7 @@
 <div class="section level3">
 <h3 id="breaking-api-changes-0-0-0-9001">Breaking API changes<a class="anchor" aria-label="anchor" href="#breaking-api-changes-0-0-0-9001"></a></h3>
 <ul><li>
-<code><a href="../reference/FarFirst.html">FarFirst()</a></code>: the subset-size argument is renamed <code>n</code> -&gt; <code>m</code>, matching the other solvers; and the <code>seed</code> argument is renamed <code>method</code> (matching <code>MaxMinSeed(method =)</code>), since it selects a seeding <em>strategy</em>, not an RNG seed.</li>
+<code><a href="../reference/FarFirst.html">FarFirst()</a></code>: the subset-size argument is renamed <code>n</code> -&gt; <code>m</code>, matching the other solvers; and the <code>seed</code> argument is renamed <code>method</code> (matching <code>PickPoint(method =)</code>), since it selects a seeding <em>strategy</em>, not an RNG seed.</li>
 <li>
 <code><a href="../reference/DropAdd.html">DropAdd()</a></code> and <code><a href="../reference/Grasp.html">Grasp()</a></code>: the <code>seed</code> argument is removed. <code><a href="../reference/DropAdd.html">DropAdd()</a></code>’s was a documented no-op (the search is RNG-free); for a reproducible <code><a href="../reference/Grasp.html">Grasp()</a></code> run, call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> before <code><a href="../reference/Grasp.html">Grasp()</a></code>.</li>
 <li>
@@ -91,7 +91,7 @@
 <li>
 <code><a href="../reference/MinDist.html">MinDist()</a></code>: the k-centre objective (minimum pairwise distance).</li>
 <li>
-<code><a href="../reference/MaxMinSeed.html">MaxMinSeed()</a></code>: exposes the peripheral seed indices directly.</li>
+<code><a href="../reference/PickPoint.html">PickPoint()</a></code>: exposes the peripheral seed indices directly.</li>
 </ul></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

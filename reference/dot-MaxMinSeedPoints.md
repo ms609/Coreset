@@ -1,7 +1,7 @@
 # Peripheral seed index for Gonzalez selection (coordinates)
 
 Coordinate counterpart of
-[`.MaxMinSeed()`](https://ms609.github.io/MaxMin/reference/dot-MaxMinSeed.md);
+[`.PickPoint()`](https://ms609.github.io/MaxMin/reference/dot-PickPoint.md);
 each anchor is computed from the `…FromPoints_cpp` primitives,
 bit-identical to the matrix path on Euclidean data.
 
@@ -20,7 +20,7 @@ bit-identical to the matrix path on Euclidean data.
 - strategy:
 
   Anchor name; see
-  [`MaxMinSeed()`](https://ms609.github.io/MaxMin/reference/MaxMinSeed.md).
+  [`PickPoint()`](https://ms609.github.io/MaxMin/reference/PickPoint.md).
   Also accepts `"first"` (1).
 
 ## Value

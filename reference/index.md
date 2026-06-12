@@ -5,8 +5,8 @@
 Farthest-first (Gonzalez) selection and its seeding strategies.
 
 - [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) :
-  Deterministic Gonzalez furthest-point selection
-- [`MaxMinSeed()`](https://ms609.github.io/MaxMin/reference/MaxMinSeed.md)
+  Greedy farthest-first point selection
+- [`PickPoint()`](https://ms609.github.io/MaxMin/reference/PickPoint.md)
   : Seed to initialize farthest-first selection
 
 ## Max-Min diversity problem solvers
