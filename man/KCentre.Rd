@@ -5,9 +5,9 @@
 \alias{KCenter}
 \title{Near-optimal discrete k-centre solver}
 \usage{
-KCentre(k, d, nstart = 1L, effort = 1L, seeds = NULL)
+KCentre(k, d, nstart = 1L, effort = 1L)
 
-KCenter(k, d, nstart = 1L, effort = 1L, seeds = NULL)
+KCenter(k, d, nstart = 1L, effort = 1L)
 }
 \arguments{
 \item{k}{Integer number of centres, \verb{1 <= k <= nrow(d)}.}
@@ -15,16 +15,13 @@ KCenter(k, d, nstart = 1L, effort = 1L, seeds = NULL)
 \item{d}{A \code{dist} object or a square symmetric numeric distance matrix.}
 
 \item{nstart}{Integer; how many deterministic peripheral seeds to try, keeping
-the lowest-radius result. Default \code{1}. Ignored if \code{seeds} is supplied.}
+the lowest-radius result. Default \code{1}.}
 
 \item{effort}{Integer; controls the Gonzalez floor that keeps the result no
 worse than the 2-approximation. \code{0} disables it (raw CDSh, fastest, no
 guarantee); \code{1} (default) runs one deterministic peripheral Gonzalez pass;
 \verb{> 1} runs a distinct-seed Gonzalez restart with \code{nseeds = effort} (a tighter
 floor that draws on the session RNG -- call \code{\link[=set.seed]{set.seed()}} to reproduce).}
-
-\item{seeds}{Optional integer vector of explicit 1-based seed vertices for the
-construction's first critical vertex (overrides \code{nstart}).}
 }
 \value{
 \code{KCentre()} returns an integer vector of length \verb{<= k} (ascending): the chosen centres. The

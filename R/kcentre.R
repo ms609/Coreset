@@ -158,14 +158,12 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' `1 <= k <= nrow(d)`.
 #' @param d `dist` object or a square symmetric numeric distance matrix.
 #' @param nstart Integer; how many deterministic peripheral seeds to try, keeping
-#'   the lowest-radius result. Default `1`. Ignored if `seeds` is supplied.
+#'   the lowest-radius result. Default `1`.
 #' @param effort Integer; controls the Gonzalez floor that keeps the result no
 #'   worse than the 2-approximation. `0` disables it (raw CDSh, fastest, no
 #'   guarantee); `1` (default) runs one deterministic peripheral Gonzalez pass;
 #'   `> 1` runs a distinct-seed Gonzalez restart with `nseeds = effort` (a tighter
 #'   floor that draws on the session RNG -- call [set.seed()] to reproduce).
-#' @param seeds Optional integer vector of explicit 1-based seed vertices for the
-#'   construction's first critical vertex (overrides `nstart`).
 #' @return `KCentre()` returns an integer vector of length `<= k` (ascending): the chosen centres. The
 #'   achieved covering radius is attached as attribute `radius`. The vector has
 #'   class `"KCentreSelection"` and prints as a one-line summary; it is otherwise
@@ -182,7 +180,7 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' # CDSh covers at least as tightly as the Gonzalez 2-approximation:
 #' KCentreRadius(d, FarFirst(5L, d, strategy = "peripheral"))
 #' @export
-KCentre <- function(k, d, nstart = 1L, effort = 1L, seeds = NULL) {
+KCentre <- function(k, d, nstart = 1L, effort = 1L) {
   needSymCheck <- !inherits(d, "dist")          # a dist object is symmetric
   d <- .AsDistMatrix(d)
   if (needSymCheck) .KCentreRequireSymmetric(d)
@@ -204,14 +202,7 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L, seeds = NULL) {
                      class = "KCentreSelection"))
   }
   cand <- .KCentreCandidates(d)
-  if (is.null(seeds)) {
-    seeds <- .KCentrePeripheralSeeds(d, nstart)
-  } else {
-    seeds <- as.integer(seeds)
-    if (anyNA(seeds) || any(seeds < 1L | seeds > n)) {
-      stop("`seeds` must be indices in [1, nrow(d)]")
-    }
-  }
+  seeds <- .KCentrePeripheralSeeds(d, nstart)
   # The per-radius achieved covering radius is non-monotone in r, so the O(log n)
   # binary search can skip the best candidate. When the candidate grid is small
   # enough, scan it exhaustively instead (KC-001).

@@ -274,17 +274,6 @@ test_that("the Gonzalez floor strictly improves a sub-Gonzalez CDSh result (KC-0
                KCentreRadius(d = d, as.integer(FarFirst(k, d, strategy = "peripheral"))))
 })
 
-test_that("KCentre accepts user-supplied seeds and rejects out-of-range ones", {
-  set.seed(81)
-  d <- as.matrix(stats::dist(matrix(rnorm(80L), ncol = 2L)))     # n = 40
-  res <- KCentre(d = d, 4L, seeds = c(1L, 10L, 40L))
-  expect_s3_class(res, "KCentreSelection")
-  expect_equal(attr(res, "radius"), KCentreRadius(d = d, as.integer(res)))
-  expect_error(KCentre(d = d, 4L, seeds = c(0L, 5L)), "indices in")
-  expect_error(KCentre(d = d, 4L, seeds = c(1L, nrow(d) + 1L)), "indices in")
-  expect_error(KCentre(d = d, 4L, seeds = c(1L, NA_integer_)), "indices in")
-})
-
 # ----- ExactKCentre argument validation -------------------------------------
 
 test_that("ExactKCentre rejects an unsupported solver and bad k", {
