@@ -35,4 +35,4 @@ Compose the one-line selection summary shared by both print methods
 
 ## Value
 
-Length-1 character string.
+`.MaxMinSummaryLine()` returns a length-1 character string.

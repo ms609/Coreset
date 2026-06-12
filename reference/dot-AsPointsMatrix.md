@@ -19,4 +19,4 @@ bits, which is only defined for complete data.
 
 ## Value
 
-A `double` numeric matrix.
+`.AsPointsMatrix()` returns a `double` numeric matrix.

@@ -19,4 +19,4 @@ names the winning strategy and how many were tried.
 
 ## Value
 
-Length-1 character phrase.
+`.FarFirstSelectedBy()` returns a length-1 character phrase.

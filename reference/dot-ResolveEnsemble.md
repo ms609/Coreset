@@ -29,4 +29,5 @@ and `winning_strategy` (all tied-best labels) attributes.
 
 ## Value
 
-Integer vector of selected indices with attributes.
+`.ResolveEnsemble()` returns an integer vector of selected indices with
+attributes.

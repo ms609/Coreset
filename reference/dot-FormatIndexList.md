@@ -20,5 +20,6 @@ Format a selected-index list, optionally truncated
 
 ## Value
 
-Length-1 character string such as `"6 5 4 3 1 2"`, or
-`"1 2 ... (+15 more)"` when `idx` is longer than `maxShow`.
+`.FormatIndexList()` returns a length-1 character string such as
+`"6 5 4 3 1 2"`, or `"1 2 ... (+15 more)"` when `idx` is longer than
+`maxShow`.

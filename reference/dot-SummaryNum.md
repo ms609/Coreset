@@ -16,4 +16,5 @@ Format a numeric field for a summary, tolerating `NA`
 
 ## Value
 
-Length-1 character: `"NA"`, or four significant figures.
+`.SummaryNum()` returns a length-1 character: `"NA"`, or four
+significant figures.

@@ -10,4 +10,5 @@ Try to insert sel into the elite set ES.
 
 ## Value
 
-Updated ES (list of selections, sorted best-to-worst by z).
+`.GraspTryInsert()` returns the updated ES (list of selections, sorted
+best-to-worst by z).

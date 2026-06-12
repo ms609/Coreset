@@ -22,4 +22,4 @@ Peripheral seed index for Gonzalez selection (distance matrix)
 
 ## Value
 
-Integer seed index.
+`.MaxMinSeed()` returns an integer seed index.

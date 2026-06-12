@@ -30,7 +30,7 @@ MinDist(d = NULL, idx, points = NULL)
 
 ## Value
 
-Numeric scalar; `NA_real_` if `length(idx) < 2`.
+`MinDist()` returns a numeric scalar; `NA_real_` if `length(idx) < 2`.
 
 ## Details
 

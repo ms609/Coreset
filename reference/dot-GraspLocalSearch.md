@@ -22,4 +22,4 @@ if it preserves d\* while reducing the count of pairs at d\*.
 
 ## Value
 
-Improved integer vector of size k.
+`.GraspLocalSearch()` returns an improved integer vector of size k.

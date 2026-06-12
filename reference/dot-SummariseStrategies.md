@@ -20,4 +20,5 @@ each tied-best strategy marked `*`. A bare single pass (no
 
 ## Value
 
-Invisibly `NULL`; called for the side effect.
+`.SummariseStrategies()` returns invisibly `NULL`; called for the side
+effect.

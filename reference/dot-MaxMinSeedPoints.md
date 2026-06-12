@@ -25,4 +25,4 @@ bit-identical to the matrix path on Euclidean data.
 
 ## Value
 
-Integer seed index.
+`.MaxMinSeedPoints()` returns an integer seed index.

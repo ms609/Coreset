@@ -23,4 +23,5 @@ The ensemble drivers read it via
 
 ## Value
 
-`idx` with its `t_k` attribute renamed to `score`.
+`.PromoteScore()` returns `idx` with its `t_k` attribute renamed to
+`score`.

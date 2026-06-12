@@ -24,4 +24,4 @@ One randomised greedy construction.
 
 ## Value
 
-Integer vector of length k.
+`.GraspConstruct()` returns an integer vector of length k.

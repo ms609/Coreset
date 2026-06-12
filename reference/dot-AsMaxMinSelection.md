@@ -26,5 +26,5 @@ nothing to describe.
 
 ## Value
 
-`x` with `producer` attribute and `"MaxMinSelection"` class, or `x`
-unchanged if it is empty.
+`.AsMaxMinSelection()` returns `x` with `producer` attribute and
+`"MaxMinSelection"` class, or `x` unchanged if it is empty.

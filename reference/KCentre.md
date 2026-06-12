@@ -44,11 +44,11 @@ KCenter(d, k, nstart = 1L, effort = 1L, seeds = NULL)
 
 ## Value
 
-Integer vector of length `<= k` (ascending): the chosen centres. The
-achieved covering radius is attached as attribute `radius`. The vector
-has class `"KCentreSelection"` and prints as a one-line summary; it is
-otherwise an ordinary integer vector and indexes a matrix or coordinate
-set directly.
+`KCentre()` returns an integer vector of length `<= k` (ascending): the
+chosen centres. The achieved covering radius is attached as attribute
+`radius`. The vector has class `"KCentreSelection"` and prints as a
+one-line summary; it is otherwise an ordinary integer vector and indexes
+a matrix or coordinate set directly.
 
 ## Details
 

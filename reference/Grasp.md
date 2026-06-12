@@ -61,7 +61,8 @@ Grasp(
 
 ## Value
 
-An integer vector of length `k` (1-based) **sorted ascending** (unlike
+`Grasp()` returns an integer vector of length `k` (1-based) **sorted
+ascending** (unlike
 [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md),
 which returns farthest-first order) with attributes:
 

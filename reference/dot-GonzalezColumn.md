@@ -52,4 +52,5 @@ materialised: `O(N * k)` oracle calls and `O(N)` memory.
 
 ## Value
 
-Integer vector of length `min(k, N)` of selected indices.
+`.GonzalezColumn()` returns an integer vector of length `min(k, N)` of
+selected indices.

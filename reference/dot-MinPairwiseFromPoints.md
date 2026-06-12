@@ -24,4 +24,5 @@ distance matrix, so the returned scalar matches the matrix path.
 
 ## Value
 
-Numeric scalar; `NA_real_` if `length(idx) < 2`.
+`.MinPairwiseFromPoints()` returns a numeric scalar; `NA_real_` if
+`length(idx) < 2`.

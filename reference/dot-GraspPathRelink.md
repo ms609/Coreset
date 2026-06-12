@@ -20,5 +20,5 @@ Greedy path relinking from x toward y.
 
 ## Value
 
-list(best = best selection on path, intermediates = number of
-intermediate states visited including endpoints).
+`.GraspPathRelink()` returns
+`list(best = best selection on path, intermediates = number of intermediate states visited including endpoints)`.

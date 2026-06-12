@@ -82,8 +82,8 @@ DropAdd(
 
 ## Value
 
-An integer vector of length `k` containing the 1-based selected indices
-**sorted ascending** (unlike
+`DropAdd()` returns an integer vector of length `k` containing the
+1-based selected indices **sorted ascending** (unlike
 [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md),
 which returns farthest-first order), with attributes:
 

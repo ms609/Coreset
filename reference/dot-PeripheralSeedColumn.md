@@ -26,4 +26,4 @@ unreachable from a column oracle.
 
 ## Value
 
-Integer index of the seed.
+`.PeripheralSeedColumn()` returns an integer index of the seed.

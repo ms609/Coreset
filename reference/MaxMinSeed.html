@@ -46,8 +46,8 @@ farthest-first selection. Propitious seeds yield better solutions.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">MaxMinSeed</span><span class="op">(</span></span>
 <span>  d <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  points <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  strategy <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"peripheral"</span>, <span class="st">"centroid"</span>, <span class="st">"random_furthest"</span>, <span class="st">"diameter"</span>, <span class="st">"anti_medoid"</span>,</span>
-<span>    <span class="st">"medoid"</span>, <span class="st">"rowsum"</span>, <span class="st">"rownorm"</span><span class="op">)</span></span>
+<span>  strategy <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"peripheral"</span>, <span class="st">"anti_centroid"</span>, <span class="st">"random_furthest"</span>, <span class="st">"diameter"</span>,</span>
+<span>    <span class="st">"anti_medoid"</span>, <span class="st">"medoid"</span>, <span class="st">"rowsum"</span>, <span class="st">"rownorm"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -63,7 +63,7 @@ farthest-first selection. Propitious seeds yield better solutions.</p>
 <dt id="arg-points">points<a class="anchor" aria-label="anchor" href="#arg-points"></a></dt>
 <dd><p>Optional <code>N x dim</code> numeric coordinate matrix; when supplied the
 seed is computed from coordinates in <code>O(N)</code> memory. Required for the
-<code>"centroid"</code> anchor, which has no distance-matrix form.</p></dd>
+<code>"anti_centroid"</code> anchor, which has no distance-matrix form.</p></dd>
 
 
 <dt id="arg-strategy">strategy<a class="anchor" aria-label="anchor" href="#arg-strategy"></a></dt>
@@ -73,7 +73,7 @@ seed is computed from coordinates in <code>O(N)</code> memory. Required for the
 then the point furthest from that (a diameter-endpoint approximation).
 \(O(N)\).</p></dd>
 
-<dt><code>"centroid"</code></dt>
+<dt><code>"anti_centroid"</code></dt>
 <dd><p>The point farthest from the coordinate mean
 (\(\argmax ||x - x_bar||\)). \(O(N * dim)\). Requires <code>points</code>.</p></dd>
 
@@ -84,6 +84,9 @@ then the point furthest from that (a diameter-endpoint approximation).
 <dt><code>"diameter"</code></dt>
 <dd><p>A row endpoint of the diameter pair (the maximum
 pairwise distance).</p></dd>
+
+<dt><code>"medoid"</code></dt>
+<dd><p>The point furthest from the 1-median (medoid).</p></dd>
 
 <dt><code>"anti_medoid"</code></dt>
 <dd><p>The point furthest from the 1-median (medoid).</p></dd>
@@ -102,7 +105,8 @@ counterpart of <code>"rowsum"</code>.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Integer seed index in <code>[1, N]</code>.</p>
+    <p><code>MaxMinSeed()</code> returns an integer that identifies the index of a
+proposed seed in <code>d</code> or <code>points</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

@@ -29,7 +29,7 @@ summary(object, ...)
 
 ## Value
 
-`object`, invisibly.
+`summary.MaxMin()` returns `object`, invisibly.
 
 ## See also
 

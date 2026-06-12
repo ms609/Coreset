@@ -1,13 +1,8 @@
 # Deterministic Gonzalez furthest-point selection
 
-Greedy *k*-centre selection (González 1985; Hochbaum and Shmoys 1985) .
-Iteratively selects the point furthest from the current selection, a
-2-approximation to the *k*-centre problem. The quality of the result
-depends on the first (seed) point; by default `FarFirst()` runs three
-starts from randomly selected peripheral seeds. The deterministic
-\\O(N)\\ anchors (`"centroid"`, `"peripheral"`) and the costlier
-\\O(N^2)\\ anchors (`"diameter"`, `"anti_medoid"`, `"rowsum"`,
-`"rownorm"`) are alternative `seed` strategies.
+Greedy *k*-centre selection (González 1985; Hochbaum and Shmoys 1985)
+iteratively selects the point furthest from the current selection, a
+2-approximation to the *k*-centre problem.
 
 ## Usage
 
@@ -32,8 +27,8 @@ FarFirst(
 
   A `dist` object, a square numeric matrix of pairwise distances, or a
   distance function that takes an index `i` and returns the distance
-  from `i` to each other element (see §Distance function). Ignored when
-  `points` is supplied.
+  from `i` to each other element (optionally including the
+  self-distance). Ignored when `points` is supplied.
 
 - points:
 
@@ -62,9 +57,9 @@ FarFirst(
 
 ## Value
 
-[`MaxMin()`](https://ms609.github.io/MaxMin/reference/MaxMin-package.md)
-returns an integer vector with class `MaxMinSelection`, listing the
-selected indices in the order they were selected. Attributes detail:
+`FarFirst()` returns an integer vector with class `MaxMinSelection`,
+listing the selected indices in the order they were selected. Attributes
+detail:
 
 - `score`: the selection's minimum pairwise distance (\\T_k\\)
 
@@ -72,14 +67,6 @@ selected indices in the order they were selected. Attributes detail:
   the optimal score..
 
 - `strategy_results`: results for each strategy
-
-## Distance function
-
-When `d` is a function, it will be passed a single 1-based index `i`,
-and should return the distances from element `i` to every element in
-turn, optionally omitting entry `i`, the self-distance. The function
-will be called once per selected element, to avoid building a complete
-\\N x N\\ matrix.
 
 ## Progress bar
 

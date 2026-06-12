@@ -20,4 +20,4 @@ Print a `label: value` detail line under a summary headline
 
 ## Value
 
-Invisibly `NULL`; called for the side effect.
+`.SummaryField()` returns invisibly `NULL`; called for the side effect.

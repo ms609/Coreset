@@ -32,4 +32,5 @@ callers.
 
 ## Value
 
-Numeric vector of length `N`, masked to `-Inf` at position `i`.
+`.DistColumn()` returns a numeric vector of length `N`, masked to `-Inf`
+at position `i`.

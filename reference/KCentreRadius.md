@@ -37,8 +37,8 @@ KCenterRadius(d = NULL, idx, points = NULL)
 
 ## Value
 
-Numeric scalar: the covering radius (`0` when the centres include every
-point).
+`KCentreRadius()` returns a numeric scalar: the covering radius (`0`
+when the centres include every point).
 
 ## Details
 

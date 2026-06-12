@@ -68,7 +68,7 @@ ExactKCenter(
 
 ## Value
 
-A list of class `"KCentreExact"` with fields
+`ExactKCentre()` returns a list of class `"KCentreExact"` with fields
 
 - indices:
 

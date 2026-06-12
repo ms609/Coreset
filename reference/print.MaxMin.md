@@ -44,7 +44,8 @@ print(x, ...)
 
 ## Value
 
-`x`, invisibly (`print`); a length-1 character string (`format`).
+`print.MaxMin()` returns `x`, invisibly (`print`); a length-1 character
+string (`format`).
 
 ## See also
 

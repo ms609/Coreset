@@ -33,4 +33,4 @@ the selection is identical to the matrix path on symmetric input.
 
 ## Value
 
-Integer vector of selected indices.
+`.MaximinFromColumn()` returns an integer vector of selected indices.

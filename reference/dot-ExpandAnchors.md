@@ -28,4 +28,4 @@ empty vector contributes none.
 
 ## Value
 
-List of `list(label, s1)` specs.
+`.ExpandAnchors()` returns a list of `list(label, s1)` specs.

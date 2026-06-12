@@ -38,4 +38,5 @@ the matrix path on Euclidean data.
 
 ## Value
 
-Integer vector of selected indices with attributes.
+`.GonzEnsembleFromPoints()` returns an integer vector of selected
+indices with attributes.

@@ -25,4 +25,5 @@ specified index.
 
 ## Value
 
-Integer vector of length `k` of selected row/col indices.
+`.MaximinFrom()` returns an integer vector of length `k` of selected
+row/col indices.

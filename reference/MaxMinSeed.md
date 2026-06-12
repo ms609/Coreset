@@ -10,8 +10,8 @@ solutions.
 MaxMinSeed(
   d = NULL,
   points = NULL,
-  strategy = c("peripheral", "centroid", "random_furthest", "diameter", "anti_medoid",
-    "medoid", "rowsum", "rownorm")
+  strategy = c("peripheral", "anti_centroid", "random_furthest", "diameter",
+    "anti_medoid", "medoid", "rowsum", "rownorm")
 )
 ```
 
@@ -26,7 +26,7 @@ MaxMinSeed(
 
   Optional `N x dim` numeric coordinate matrix; when supplied the seed
   is computed from coordinates in `O(N)` memory. Required for the
-  `"centroid"` anchor, which has no distance-matrix form.
+  `"anti_centroid"` anchor, which has no distance-matrix form.
 
 - strategy:
 
@@ -37,7 +37,7 @@ MaxMinSeed(
   :   Two sweeps: the point furthest from point 1, then the point
       furthest from that (a diameter-endpoint approximation). \\O(N)\\.
 
-  `"centroid"`
+  `"anti_centroid"`
 
   :   The point farthest from the coordinate mean (\\\argmax \|\|x -
       x_bar\|\|\\). \\O(N \* dim)\\. Requires `points`.
@@ -50,6 +50,10 @@ MaxMinSeed(
 
   :   A row endpoint of the diameter pair (the maximum pairwise
       distance).
+
+  `"medoid"`
+
+  :   The point furthest from the 1-median (medoid).
 
   `"anti_medoid"`
 
@@ -67,7 +71,8 @@ MaxMinSeed(
 
 ## Value
 
-Integer seed index in `[1, N]`.
+`MaxMinSeed()` returns an integer that identifies the index of a
+proposed seed in `d` or `points`.
 
 ## See also
 

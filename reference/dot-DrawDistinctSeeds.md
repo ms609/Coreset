@@ -46,4 +46,5 @@ set.
 
 ## Value
 
-Integer vector of distinct seed indices (length in `[1, nseeds]`).
+`.DrawDistinctSeeds()` returns an integer vector of distinct seed
+indices (length in `[1, nseeds]`).

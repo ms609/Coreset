@@ -33,4 +33,4 @@ Bit-identical selection to the matrix path on Euclidean data.
 
 ## Value
 
-Integer vector of selected indices.
+`.MaximinFromPoints()` returns an integer vector of selected indices.

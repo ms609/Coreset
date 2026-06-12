@@ -38,4 +38,5 @@ labelled `random_furthest1`, `random_furthest2`, ...) attributes.
 
 ## Value
 
-Integer vector of selected indices with attributes.
+`.GonzEnsemble()` returns an integer vector of selected indices with
+attributes.

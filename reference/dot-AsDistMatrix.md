@@ -17,7 +17,7 @@ already a matrix.
 
 ## Value
 
-A square numeric matrix.
+`.AsDistMatrix()` returns a square numeric matrix.
 
 ## Details
 

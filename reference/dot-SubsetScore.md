@@ -25,4 +25,4 @@ Score a Gonzalez subset by its minimum (or mean) pairwise distance
 
 ## Value
 
-Numeric scalar; `NA` if `length(idx) < 2`.
+`.SubsetScore()` returns a numeric scalar; `NA` if `length(idx) < 2`.
