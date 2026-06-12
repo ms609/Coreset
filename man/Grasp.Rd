@@ -4,14 +4,7 @@
 \alias{Grasp}
 \title{GRASP with Path Relinking for the Max-Min Diversity Problem}
 \usage{
-Grasp(
-  k,
-  d,
-  plateau = 100L,
-  eliteSize = 10L,
-  alpha = 0.8,
-  maxSeconds = Inf
-)
+Grasp(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8, maxSeconds = Inf)
 }
 \arguments{
 \item{k}{Integer subset size, \verb{2 <= k <= nrow(d)}.}
@@ -45,15 +38,18 @@ The vector has class \code{"MaxMinSelection"} and prints as a one-line summary
 (see \code{\link[=print.MaxMinSelection]{print.MaxMinSelection()}}); it is otherwise an ordinary integer vector.
 }
 \description{
-Solves the Max-Min Diversity Problem (discrete p-dispersion) with the
-GRASP / path-relinking metaheuristic of \insertCite{Resende2010;textual}{MaxMin},
-static variant (their Fig. 4): a randomised-greedy construction
-with extended-improvement local search builds and maintains an elite set,
-followed by a single pass of path relinking over all elite pairs. On the
-application benchmark this attains the highest \eqn{T_k} of the methods in
-this package, at correspondingly higher cost.
+\code{Grasp()} solves the Max-Min Diversity Problem (discrete p-dispersion) with
+the static variant of the GRASP / path-relinking metaheuristic
+\insertCite{Resende2010, @fig. 4}{MaxMin}. This is the most expensive
+heuristic in this package, and attains correspondingly high-quality
+selections.
 }
 \details{
+The GRASP with path-relinking algorithm conducts a randomised-greedy
+construction with extended-improvement local search builds; it identifies an
+elite set, then conducts a single pass of path relinking over all elite
+pairs \insertCite{Resende2010}{MaxMin}.
+
 \strong{Deterministic termination.} The refinement loop stops after
 \code{plateau} consecutive GRASP iterations that fail to improve the best
 elite objective (rather than after a wall-clock budget). Call \code{set.seed()}

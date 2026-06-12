@@ -10,9 +10,10 @@ KCentre(k, d, nstart = 1L, effort = 1L)
 KCenter(k, d, nstart = 1L, effort = 1L)
 }
 \arguments{
-\item{k}{Integer number of centres, \verb{1 <= k <= nrow(d)}.}
+\item{k}{Integer specifying maximum number of centres to identify,
+\verb{1 <= k <= nrow(d)}.}
 
-\item{d}{A \code{dist} object or a square symmetric numeric distance matrix.}
+\item{d}{\code{dist} object or a square symmetric numeric distance matrix.}
 
 \item{nstart}{Integer; how many deterministic peripheral seeds to try, keeping
 the lowest-radius result. Default \code{1}.}

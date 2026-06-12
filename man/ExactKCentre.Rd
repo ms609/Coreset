@@ -14,9 +14,9 @@ ExactKCenter(k, d, maxSeconds = 60)
 
 \item{d}{A \code{dist} object or a square symmetric numeric distance matrix.}
 
-\item{maxSeconds}{Wall-clock budget in seconds for the whole search (shared
-across the internal IP solves). If it expires before the optimum is proven,
-the smallest radius proven feasible so far is returned with \code{proven = FALSE}.}
+\item{maxSeconds}{Wall-clock budget in seconds for the whole search.
+If it expires before the optimum is proven, the smallest radius proven
+feasible so far is returned, with the attribute \code{proven = FALSE}.}
 }
 \value{
 \code{ExactKCentre()} returns an integer vector of length \verb{<= k}

@@ -4,13 +4,7 @@
 \alias{DropAdd}
 \title{DropAdd Tabu Search for the Max-Min Diversity Problem}
 \usage{
-DropAdd(
-  k,
-  d = NULL,
-  plateau = 5000L,
-  maxSeconds = Inf,
-  points = NULL
-)
+DropAdd(k, d = NULL, plateau = 5000L, maxSeconds = Inf, points = NULL)
 }
 \arguments{
 \item{k}{Integer; subset size, \eqn{2 \le k \le n}.}
