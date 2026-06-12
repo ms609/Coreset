@@ -108,9 +108,9 @@ farthest from the current selection.
 This greedy rule guarantees a 2-approximation to the optimal T~k~ and runs
 in O(*N* · *m*) time.
 
-By default `FarFirst()` runs three `"random_furthest"` starts, each beginning
-from the point furthest from a randomly selected 'pivot' point, and returns
-whichever pass produced the highest T~k~.
+By default `FarFirst()` runs eight `"random_furthest"` starts, each beginning
+from a distinct point that is furthest from a randomly selected 'pivot' point,
+and returns whichever pass produced the highest T~k~.
 
 ```{r}
 #| label: gonzalez-random
@@ -118,12 +118,13 @@ set.seed(1)
 ffPick <- FarFirst(6L, eurodist)   # default: best of eight random starts
 ```
 
-More random starts can be requested via the `nseeds` argument.
+The number of random starts can be configured via the `nseeds` argument.
 
 ```{r}
 #| label: gonzalez-ensemble
 set.seed(1)
-ffPick <- FarFirst(6L, eurodist, nseeds = 12L)
+# Fewer starts provides a faster run, but the solution found may be inferior
+ffPick <- FarFirst(6L, eurodist, nseeds = 2L)
 ```
 
 
