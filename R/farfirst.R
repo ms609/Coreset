@@ -186,21 +186,16 @@
 #' @param method Integer or character defining how to seed the greedy pass.
 #' Pass the name of one or more seeding methods described in [`MaxMinSeed()`]
 #' to run each method and return the best solution.
-#' @param nseeds Integer: number of distinct random-furthest seeds to draw when
-#'   `"random_furthest"` is among the ensemble anchors. Random pivots are drawn
-#'   with the session RNG and each one's furthest-point seed is collected,
-#'   de-duplicated, until `nseeds` distinct seeds are found (or the reachable
-#'   pool is exhausted); Gonzalez runs from each and the best \eqn{T_k} is kept.
-#'   Set `set.seed()` for a reproducible selection. Ignored on the
-#'   distance-column oracle path. Default `8L`.
-#' @return Integer vector of length `min(k, N)` of selected indices, in
-#'   the order they were selected.
-#'   The achieved \eqn{T_k} (the selection's minimum pairwise
-#'   distance) is attached as attribute `score`. An ensemble `method`
-#'   additionally carries `strategy_results` and `winning_strategy` attributes.
-#'   The vector has class `"MaxMinSelection"` and prints as a one-line summary
-#'   (see [print.MaxMinSelection]); it is otherwise an ordinary integer vector
-#'   and indexes a matrix or coordinate set directly.
+#' @param nseeds Integer: number of distinct seeds to draw under the
+#' `"random_furthest"` strategy.
+#' @return `MaxMin()` returns an integer vector with class `MaxMinSelection`,
+#' listing the selected indices in the order they were selected.
+#' Attributes detail:
+#' - `score`: the selection's minimum pairwise distance (\eqn{T_k})
+#' - `winning_strategy`: character vector listing strategies that attained the
+#' optimal score..
+#' - `strategy_results`: results for each strategy
+#'
 #' @references \insertAllCited{}
 #' @seealso [MaxMinSeed()] for the seed indices alone; [DropAdd()] and
 #'   [ExactMaxMin()] for higher-effort solvers.

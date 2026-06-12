@@ -22,35 +22,12 @@ independent. Ignored when \code{points} is supplied.}
 
 \item{k}{Integer: number of points to select.}
 
-\item{method}{Integer or character (scalar or vector); how to seed the
-greedy pass (matching the \code{method} argument of \code{\link[=MaxMinSeed]{MaxMinSeed()}}). An
-\strong{integer} gives the explicit 1-based index of the first selected point
-(a single bare Gonzalez pass). A \strong{length-1 character} names a single
-deterministic seeding strategy run as one bare pass: \code{"centroid"}
-(coordinates only), \code{"peripheral"} (two-sweep diameter-endpoint
-approximation), \code{"diameter"}, \code{"anti_medoid"}, \code{"rowsum"},
-\code{"rownorm"}, or \code{"first"} (index 1). A \strong{length > 1 character vector} --
-or the lone \code{"random_furthest"} token -- requests an ensemble: each named
-anchor runs a full Gonzalez pass and the best result by \code{\link[=MinDist]{MinDist()}} is
-returned with \code{strategy_results} and \code{winning_strategy} (character vector
-of all tied-best strategies) attributes. The \code{"random_furthest"} token
-draws \code{nseeds} distinct furthest-point seeds, labelled \code{random_furthest1},
-\code{random_furthest2}, ...; named on its own it still runs the ensemble, so a
-single random start is best obtained via \code{\link[=MaxMinSeed]{MaxMinSeed()}}. Valid ensemble
-anchors: any subset of \code{c("centroid", "peripheral", "random_furthest", "diameter", "anti_medoid", "rowsum", "rownorm")} (\code{"centroid"} requires
-\code{points}). Default: \code{"random_furthest"} (eight distinct random starts;
-see \code{nseeds}). See \code{\link[=MaxMinSeed]{MaxMinSeed()}} for anchor definitions. On the
-distance-column oracle path only an integer \code{method} is honoured; a named
-or ensemble \code{method} there warns and falls back to the peripheral seed (see
-\emph{Distance-column oracle}).}
+\item{method}{Integer or character defining how to seed the greedy pass.
+Pass the name of one or more seeding methods described in \code{\link[=MaxMinSeed]{MaxMinSeed()}}
+to run each method and return the best solution.}
 
-\item{nseeds}{Integer: number of distinct random-furthest seeds to draw when
-\code{"random_furthest"} is among the ensemble anchors. Random pivots are drawn
-with the session RNG and each one's furthest-point seed is collected,
-de-duplicated, until \code{nseeds} distinct seeds are found (or the reachable
-pool is exhausted); Gonzalez runs from each and the best \eqn{T_k} is kept.
-Set \code{set.seed()} for a reproducible selection. Ignored on the
-distance-column oracle path. Default \code{8L}.}
+\item{nseeds}{Integer: number of distinct seeds to draw under the
+\code{"random_furthest"} strategy.}
 
 \item{points}{Optional \verb{N x dim} numeric coordinate matrix. When supplied,
 the selection is computed directly from coordinates in \eqn{O(N * k * dim)}
@@ -68,14 +45,15 @@ Default: \code{TRUE} in interactive sessions, \code{FALSE} otherwise
 (\code{getOption("MaxMin.progress", interactive())}).}
 }
 \value{
-Integer vector of length \code{min(k, N)} of selected indices, in
-the order they were selected.
-The achieved \eqn{T_k} (the selection's minimum pairwise
-distance) is attached as attribute \code{score}. An ensemble \code{method}
-additionally carries \code{strategy_results} and \code{winning_strategy} attributes.
-The vector has class \code{"MaxMinSelection"} and prints as a one-line summary
-(see \link{print.MaxMinSelection}); it is otherwise an ordinary integer vector
-and indexes a matrix or coordinate set directly.
+\code{MaxMin()} returns an integer vector with class \code{MaxMinSelection},
+listing the selected indices in the order they were selected.
+Attributes detail:
+\itemize{
+\item \code{score}: the selection's minimum pairwise distance (\eqn{T_k})
+\item \code{winning_strategy}: character vector listing strategies that attained the
+optimal score..
+\item \code{strategy_results}: results for each strategy
+}
 }
 \description{
 Greedy \emph{k}-centre selection \insertCite{Gonzalez1985,Hochbaum1985}{MaxMin}.
