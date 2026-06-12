@@ -171,10 +171,8 @@ typically reaches ≈ 99 % of the optimal T~k~.
 #| label: dropadd
 picksDA <- DropAdd(eurodist, k = 6L, plateau = 500L)
 
+picksDA
 labels(eurodist)[picksDA]
-attr(picksDA, "score")  # T_k achieved
-attr(picksDA, "iters")      # iterations completed
-attr(picksDA, "time_s")     # wall-clock seconds
 ```
 
 The algorithm terminates after `plateau` iterations do not improve T~k~.
@@ -197,9 +195,8 @@ Because the construction phase is stochastic, call `set.seed()` before
 #| label: grasp
 set.seed(42)
 res_gr <- Grasp(eurodist, k = 6L, plateau = 50L)
-
+res_gr
 labels(eurodist)[res_gr]
-attr(res_gr, "score")
 attr(res_gr, "pr_calls")   # path-relinking calls performed
 ```
 
