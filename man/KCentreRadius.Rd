@@ -3,7 +3,7 @@
 \name{KCentreRadius}
 \alias{KCentreRadius}
 \alias{KCenterRadius}
-\title{Covering radius of a set of selected centres}
+\title{Covering radius of a set of centres}
 \usage{
 KCentreRadius(d = NULL, idx, points = NULL)
 
@@ -15,27 +15,20 @@ supplied.}
 
 \item{idx}{Integer vector of centre indices (\verb{>= 1}).}
 
-\item{points}{Optional \verb{N x dim} numeric coordinate matrix. When supplied the
-per-point nearest-centre distances are recomputed from coordinates one
-centre column at a time, never materialising the \verb{N x N} matrix (\code{d} is then
-unused), so the score scales to large \code{N}. For Euclidean data the result is
-identical to the matrix path.}
+\item{points}{\verb{N x dim} numeric coordinate matrix. When supplied, the
+per-point nearest-centre distances are computed from coordinates one
+column at a time. This supports sets with large \code{N}, in which the full
+\verb{N x N} matrix would overflow available memory.}
 }
 \value{
-\code{KCentreRadius()} returns a numeric scalar: the covering radius (\code{0}
-when the centres include every point).
+\code{KCentreRadius()} returns a numeric denoting the covering radius.
 }
 \description{
-Returns the covering radius of a set of centres: the largest distance from
-any of the \code{N} points to its nearest centre,
+\code{KCentreRadius()} computes the covering radius of a set of centres:
+the largest distance from any of the \code{N} points to its nearest centre,
 \eqn{R = \max_p \min_{c \in \mathrm{idx}} d(p, c)}. This is the min-max
-\emph{k}-centre objective \insertCite{Gonzalez1985}{MaxMin}, the quantity
-\code{\link[=KCentre]{KCentre()}} and \code{\link[=ExactKCentre]{ExactKCentre()}} minimise. Lower is better.
-}
-\details{
-Unlike \code{\link[=MinDist]{MinDist()}} -- the minimum \emph{pairwise} distance \emph{within} a
-selection (the MMDP objective) -- the covering radius is taken over
-\emph{all} \code{N} points and measures how well the centres cover the data.
+\emph{k}-centre objective \insertCite{Gonzalez1985}{MaxMin} minimized by
+\code{\link[=KCentre]{KCentre()}} and \code{\link[=ExactKCentre]{ExactKCentre()}}.
 }
 \examples{
 set.seed(1)

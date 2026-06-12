@@ -61,26 +61,20 @@
 
 #' Covering radius of a set of centres
 #'
-#' `KCentreRadius()` computes the covering radius of a set of centres: the largest distance from
-#' any of the `N` points to its nearest centre,
+#' `KCentreRadius()` computes the covering radius of a set of centres:
+#' the largest distance from any of the `N` points to its nearest centre,
 #' \eqn{R = \max_p \min_{c \in \mathrm{idx}} d(p, c)}. This is the min-max
-#' \emph{k}-centre objective \insertCite{Gonzalez1985}{MaxMin}, the quantity
-#' [KCentre()] and [ExactKCentre()] minimise. Lower is better.
-#'
-#' Unlike [MinDist()] -- the minimum \emph{pairwise} distance \emph{within} a
-#' selection (the MMDP objective) -- the covering radius is taken over
-#' \emph{all} `N` points and measures how well the centres cover the data.
+#' \emph{k}-centre objective \insertCite{Gonzalez1985}{MaxMin} minimized by
+#' [KCentre()] and [ExactKCentre()].
 #'
 #' @param d Pairwise distance matrix or `dist` object. Ignored when `points` is
 #'   supplied.
 #' @param idx Integer vector of centre indices (`>= 1`).
-#' @param points Optional `N x dim` numeric coordinate matrix. When supplied the
-#'   per-point nearest-centre distances are recomputed from coordinates one
-#'   centre column at a time, never materialising the `N x N` matrix (`d` is then
-#'   unused), so the score scales to large `N`. For Euclidean data the result is
-#'   identical to the matrix path.
-#' @return `KCentreRadius()` returns a numeric scalar: the covering radius (`0`
-#'   when the centres include every point).
+#' @param points `N x dim` numeric coordinate matrix. When supplied, the
+#'  per-point nearest-centre distances are computed from coordinates one
+#'  column at a time. This supports sets with large `N`, in which the full
+#'  `N x N` matrix would overflow available memory.
+#' @return `KCentreRadius()` returns a numeric denoting the covering radius.
 #' @seealso [KCentre()] and [ExactKCentre()] (which minimise this); [MinDist()]
 #'   for the complementary MMDP objective.
 #' @references \insertAllCited{}
