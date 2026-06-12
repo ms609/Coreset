@@ -122,13 +122,13 @@ set.seed(1)
 picks <- FarFirst(eurodist, k = 6L, nseeds = 12L)
 ```
 
-Peripheral seeds may also be selected by deterministic methods: one or
-more such methods can be selected via the `method` argument. The best
-solution found will be returned.
+Peripheral seeds may also be selected by deterministic strategies: one
+or more such strategies can be selected via the `strategy` argument. The
+best solution found will be returned.
 
 ``` r
 
-picks <- FarFirst(eurodist, k = 6L, method = c("diameter", "anti_medoid"))
+picks <- FarFirst(eurodist, k = 6L, strategy = c("diameter", "anti_medoid"))
 MinDist(eurodist, picks)
 #> [1] 1014
 
@@ -154,7 +154,7 @@ StateDist <- function(i) {
   diffs <- sweep(arrestTypes, 2, unlist(arrestTypes[i, ]), "-")
   sqrt(rowSums(diffs ^ 2))
 }
-idx <- FarFirst(StateDist, k = 4L, N = nrow(arrestTypes), method = 1L)
+idx <- FarFirst(StateDist, k = 4L, N = nrow(arrestTypes), strategy = 1L)
 arrestTypes[idx, ]
 #>                Murder Assault Rape
 #> Alabama          13.2     236 21.2
@@ -391,7 +391,7 @@ covers at least as tightly as the Gonzalez 2-approximation baseline:
 
 ``` r
 
-ff <- FarFirst(eurodist, k = 4L, method = "peripheral")
+ff <- FarFirst(eurodist, k = 4L, strategy = "peripheral")
 c(KCentre  = KCentreRadius(eurodist, centres),
   FarFirst = KCentreRadius(eurodist, ff))
 #>  KCentre FarFirst 
@@ -468,7 +468,7 @@ For **covering** (minimise the radius; no point far from a centre):
 | Scenario | Recommended |
 |----|----|
 | Near-optimal covering, fast and deterministic | [`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md) (CDSh) |
-| A quick 2-approximation baseline | `FarFirst(method = "peripheral")` |
+| A quick 2-approximation baseline | `FarFirst(strategy = "peripheral")` |
 | Proven optimum, small N, **highs** installed | [`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md) |
 | Score a centre set’s covering radius (matrix-free at large N) | `KCentreRadius(points = ...)` |
 

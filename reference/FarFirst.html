@@ -67,7 +67,7 @@ costlier \(O(N^2)\) anchors (<code>"diameter"</code>, <code>"anti_medoid"</code>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">FarFirst</span><span class="op">(</span></span>
 <span>  d <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">k</span>,</span>
-<span>  method <span class="op">=</span> <span class="va">.kDefaultEnsemble</span>,</span>
+<span>  strategy <span class="op">=</span> <span class="va">.kDefaultEnsemble</span>,</span>
 <span>  nseeds <span class="op">=</span> <span class="va">.kDefaultNSeeds</span>,</span>
 <span>  points <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  N <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -81,7 +81,7 @@ costlier \(O(N^2)\) anchors (<code>"diameter"</code>, <code>"anti_medoid"</code>
 
 <dl><dt id="arg-d">d<a class="anchor" aria-label="anchor" href="#arg-d"></a></dt>
 <dd><p>A <code>dist</code> object, a square numeric matrix of pairwise distances, or
-a distance function (see <em>§Distance function</em>). Asymmetric matrices are
+a distance function (see §Details). Asymmetric matrices are
 accepted; the algorithm treats \(d_{ij}\) and \(d_{ji}\) as
 independent. Ignored when <code>points</code> is supplied.</p></dd>
 
@@ -90,10 +90,10 @@ independent. Ignored when <code>points</code> is supplied.</p></dd>
 <dd><p>Integer: number of points to select.</p></dd>
 
 
-<dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
+<dt id="arg-strategy">strategy<a class="anchor" aria-label="anchor" href="#arg-strategy"></a></dt>
 <dd><p>Integer or character defining how to seed the greedy pass.
-Pass the name of one or more seeding methods described in <code><a href="MaxMinSeed.html">MaxMinSeed()</a></code>
-to run each method and return the best solution.</p></dd>
+Pass the name of one or more seeding strategies described in <code><a href="MaxMinSeed.html">MaxMinSeed()</a></code>
+to run each strategy and return the best solution.</p></dd>
 
 
 <dt id="arg-nseeds">nseeds<a class="anchor" aria-label="anchor" href="#arg-nseeds"></a></dt>
@@ -131,24 +131,6 @@ Attributes detail:</p><ul><li><p><code>score</code>: the selection's minimum pai
 optimal score..</p></li>
 <li><p><code>strategy_results</code>: results for each strategy</p></li>
 </ul></div>
-    <div class="section level2">
-    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Distances may be provided as:</p><dl><dt>a <strong>distance matrix</strong> (<code>d</code>)</dt>
-<dd><p>a <code>dist</code> object or square matrix, held
-in full;</p></dd>
-
-<dt>a <strong>coordinate matrix</strong> (<code>points</code>)</dt>
-<dd><p>each needed distance is
-recomputed from coordinates on the fly in <code>O(N)</code> memory
-(Euclidean data only);</p></dd>
-
-<dt>a distance function (function passed as <code>d</code>)</dt>
-<dd><p>for metrics
-with neither a stored matrix nor a coordinate embedding, where distances
-may be computed on demand.</p></dd>
-
-
-</dl></div>
     <div class="section level2">
     <h2 id="distance-function">Distance function<a class="anchor" aria-label="anchor" href="#distance-function"></a></h2>
 
@@ -189,16 +171,16 @@ complete \(N x N\) matrix.</p>
 <span class="r-in"><span><span class="fu">FarFirst</span><span class="op">(</span><span class="va">d</span>, <span class="fl">5L</span>, nseeds <span class="op">=</span> <span class="fl">15L</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (4 14 26 5 28) selected by Gonzalez farthest-first (best of 5 strategies, 3 tied: random_furthest1, random_furthest3, random_furthest5), each at distance &gt;= 1.765</span>
 <span class="r-in"><span><span class="co"># Custom two-anchor ensemble:</span></span></span>
-<span class="r-in"><span><span class="fu">FarFirst</span><span class="op">(</span><span class="va">d</span>, <span class="fl">5L</span>, method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"diameter"</span>, <span class="st">"anti_medoid"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">FarFirst</span><span class="op">(</span><span class="va">d</span>, <span class="fl">5L</span>, strategy <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"diameter"</span>, <span class="st">"anti_medoid"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first (best of 2 strategies, 2 tied: diameter, anti_medoid), each at distance &gt;= 1.765</span>
 <span class="r-in"><span><span class="co"># A single strategy:</span></span></span>
-<span class="r-in"><span><span class="fu">FarFirst</span><span class="op">(</span><span class="va">d</span>, <span class="fl">5L</span>, method <span class="op">=</span> <span class="st">"diameter"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">FarFirst</span><span class="op">(</span><span class="va">d</span>, <span class="fl">5L</span>, strategy <span class="op">=</span> <span class="st">"diameter"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first, each at distance &gt;= 1.765</span>
-<span class="r-in"><span><span class="co"># An explicit start index (integer method):</span></span></span>
-<span class="r-in"><span><span class="fu">FarFirst</span><span class="op">(</span><span class="va">d</span>, <span class="fl">5L</span>, method <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># An explicit start index (integer strategy):</span></span></span>
+<span class="r-in"><span><span class="fu">FarFirst</span><span class="op">(</span><span class="va">d</span>, <span class="fl">5L</span>, strategy <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (1 5 24 4 14) selected by Gonzalez farthest-first, each at distance &gt;= 1.701</span>
 <span class="r-in"><span><span class="co"># Matrix-free coordinate path (identical result, O(N) memory):</span></span></span>
-<span class="r-in"><span><span class="fu">FarFirst</span><span class="op">(</span>k <span class="op">=</span> <span class="fl">5L</span>, points <span class="op">=</span> <span class="va">pts</span>, method <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">FarFirst</span><span class="op">(</span>k <span class="op">=</span> <span class="fl">5L</span>, points <span class="op">=</span> <span class="va">pts</span>, strategy <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (1 5 24 4 14) selected by Gonzalez farthest-first, each at distance &gt;= 1.701</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Distance-column oracle: supply one column at a time, never the full matrix.</span></span></span>
@@ -208,7 +190,7 @@ complete \(N x N\) matrix.</p>
 <span class="r-in"><span>  <span class="va">diffs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sweep.html" class="external-link">sweep</a></span><span class="op">(</span><span class="va">arrestTypes</span>, <span class="fl">2</span>, <span class="fu"><a href="https://rdrr.io/r/base/unlist.html" class="external-link">unlist</a></span><span class="op">(</span><span class="va">arrestTypes</span><span class="op">[</span><span class="va">i</span>, <span class="op">]</span><span class="op">)</span>, <span class="st">"-"</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowSums</a></span><span class="op">(</span><span class="va">diffs</span> <span class="op">^</span> <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
-<span class="r-in"><span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu">FarFirst</span><span class="op">(</span><span class="va">StateDist</span>, k <span class="op">=</span> <span class="fl">4L</span>, N <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">arrestTypes</span><span class="op">)</span>, method <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu">FarFirst</span><span class="op">(</span><span class="va">StateDist</span>, k <span class="op">=</span> <span class="fl">4L</span>, N <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">arrestTypes</span><span class="op">)</span>, strategy <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">arrestTypes</span><span class="op">[</span><span class="va">idx</span>, <span class="op">]</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                Murder Assault Rape</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Alabama          13.2     236 21.2</span>

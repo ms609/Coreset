@@ -15,7 +15,7 @@ starts from randomly selected peripheral seeds. The deterministic
 FarFirst(
   d = NULL,
   k,
-  method = .kDefaultEnsemble,
+  strategy = .kDefaultEnsemble,
   nseeds = .kDefaultNSeeds,
   points = NULL,
   N = NULL,
@@ -28,20 +28,20 @@ FarFirst(
 - d:
 
   A `dist` object, a square numeric matrix of pairwise distances, or a
-  distance function (see *§Distance function*). Asymmetric matrices are
-  accepted; the algorithm treats \\d\_{ij}\\ and \\d\_{ji}\\ as
-  independent. Ignored when `points` is supplied.
+  distance function (see §Details). Asymmetric matrices are accepted;
+  the algorithm treats \\d\_{ij}\\ and \\d\_{ji}\\ as independent.
+  Ignored when `points` is supplied.
 
 - k:
 
   Integer: number of points to select.
 
-- method:
+- strategy:
 
   Integer or character defining how to seed the greedy pass. Pass the
-  name of one or more seeding methods described in
+  name of one or more seeding strategies described in
   [`MaxMinSeed()`](https://ms609.github.io/MaxMin/reference/MaxMinSeed.md)
-  to run each method and return the best solution.
+  to run each strategy and return the best solution.
 
 - nseeds:
 
@@ -82,24 +82,6 @@ selected indices in the order they were selected. Attributes detail:
   the optimal score..
 
 - `strategy_results`: results for each strategy
-
-## Details
-
-Distances may be provided as:
-
-- a **distance matrix** (`d`):
-
-  a `dist` object or square matrix, held in full;
-
-- a **coordinate matrix** (`points`):
-
-  each needed distance is recomputed from coordinates on the fly in
-  `O(N)` memory (Euclidean data only);
-
-- a distance function (function passed as `d`):
-
-  for metrics with neither a stored matrix nor a coordinate embedding,
-  where distances may be computed on demand.
 
 ## Distance function
 
@@ -142,16 +124,16 @@ FarFirst(d, 5L)
 FarFirst(d, 5L, nseeds = 15L)
 #> 5 elements (4 14 26 5 28) selected by Gonzalez farthest-first (best of 5 strategies, 3 tied: random_furthest1, random_furthest3, random_furthest5), each at distance >= 1.765
 # Custom two-anchor ensemble:
-FarFirst(d, 5L, method = c("diameter", "anti_medoid"))
+FarFirst(d, 5L, strategy = c("diameter", "anti_medoid"))
 #> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first (best of 2 strategies, 2 tied: diameter, anti_medoid), each at distance >= 1.765
 # A single strategy:
-FarFirst(d, 5L, method = "diameter")
+FarFirst(d, 5L, strategy = "diameter")
 #> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first, each at distance >= 1.765
-# An explicit start index (integer method):
-FarFirst(d, 5L, method = 1L)
+# An explicit start index (integer strategy):
+FarFirst(d, 5L, strategy = 1L)
 #> 5 elements (1 5 24 4 14) selected by Gonzalez farthest-first, each at distance >= 1.701
 # Matrix-free coordinate path (identical result, O(N) memory):
-FarFirst(k = 5L, points = pts, method = 1L)
+FarFirst(k = 5L, points = pts, strategy = 1L)
 #> 5 elements (1 5 24 4 14) selected by Gonzalez farthest-first, each at distance >= 1.701
 
 # Distance-column oracle: supply one column at a time, never the full matrix.
@@ -161,7 +143,7 @@ StateDist <- function(i) {
   diffs <- sweep(arrestTypes, 2, unlist(arrestTypes[i, ]), "-")
   sqrt(rowSums(diffs ^ 2))
 }
-idx <- FarFirst(StateDist, k = 4L, N = nrow(arrestTypes), method = 1L)
+idx <- FarFirst(StateDist, k = 4L, N = nrow(arrestTypes), strategy = 1L)
 arrestTypes[idx, ]
 #>                Murder Assault Rape
 #> Alabama          13.2     236 21.2

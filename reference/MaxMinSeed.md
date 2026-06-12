@@ -97,6 +97,6 @@ pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
 MaxMinSeed(d, method = "diameter")
 #> [1] 14
-FarFirst(d, 5L, method = MaxMinSeed(d, method = "diameter"))
+FarFirst(d, 5L, strategy = MaxMinSeed(d, method = "diameter"))
 #> 5 elements (14 4 26 5 28) selected by Gonzalez farthest-first, each at distance >= 1.765
 ```
