@@ -63,26 +63,28 @@ remotes::install_github("ms609/MaxMin")
 
 ## Related problems
 
-`MaxMin` selects a subset of existing elements.
+`MaxMin` selects a subset from a given set of elements.
 Several established packages solve neighbouring objectives:
 
-- **k-medoids / k-median** minimises the mean distance from each element to its
-  nearest centre. Implementations include
-  [`cluster::pam()`](https://cran.r-project.org/package=cluster), `clara()`
-  (PAM / FastPAM / FasterPAM),
-  [`ClusterR::Cluster_Medoids()`](https://cran.r-project.org/package=ClusterR),
-  and [`banditpam`](https://cran.r-project.org/package=banditpam). `pam()` holds
-  the full *O(N²)* dissimilarity matrix (and caps at *n* ≤ 65 536); `clara()`
-  samples to scale; `banditpam` is *O(N* log *N)* and matrix-free but accepts
-  only coordinate data.
+- **k-medoids / k-median** selects elements that minimize the mean distance from
+  each element to its nearest centre.
+  Implementations include:
+  * [`cluster::pam()`](https://cran.r-project.org/package=cluster): generates
+  the full *O(N²)* dissimilarity matrix, and hence caps at *n* ≤ 65 536;
+  * [`banditpam`](https://cran.r-project.org/package=banditpam), a matrix-free
+  $O(N \log N)$ implementation restricted to coordinate data;
+  * `cluster::clara()`  (PAM / FastPAM / FasterPAM);
+  * [`ClusterR::Cluster_Medoids()`](https://cran.r-project.org/package=ClusterR).
 
-- **k-means** ([`stats::kmeans()`](https://rdrr.io/r/stats/kmeans.html)) minimises
-  within-cluster sum of squares around centres that are coordinate means, not
-  data points, so it applies only to Euclidean coordinates.
-  [`TreeDist::KMeansPP()`](https://ms609.github.io/TreeDist/reference/KMeansPP.html)
-  shares that objective, differing in its initialisation via D²-weighted
-  seeding, a randomized relative of `FarFirst()`'s farthest-first traversal.
+- **k-means** ([`stats::kmeans()`](https://rdrr.io/r/stats/kmeans.html)) selects
+  elements so as to minimize the within-cluster sum of squares around centres
+  that are coordinate means, not data points; as such, it applies only to
+  Euclidean coordinates. k-means++ 
+  ([`TreeDist::KMeansPP()`](
+   https://ms609.github.io/TreeDist/reference/KMeansPP.html)) initializes its
+   selection using D²-weighted seeding, a randomized relative of `FarFirst()`'s
+   farthest-first traversal.
 
-- [`maximin`](https://cran.r-project.org/package=maximin) constructs continuous
-  space-filling designs by generating new points in a coordinate box to
-  maximise the minimum inter-point distance.
+- [`maximin`](https://cran.r-project.org/package=maximin) solves the related
+  design problem of adding *new* points at positions that maximize the minimum
+  inter-point distance.
