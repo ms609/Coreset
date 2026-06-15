@@ -3,15 +3,12 @@
 \name{summary.MaxMin}
 \alias{summary.MaxMin}
 \alias{summary.MaxMinSelection}
-\alias{summary.MaxMinExact}
 \title{Detailed summaries of MaxMin solver results}
 \usage{
 \method{summary}{MaxMinSelection}(object, ...)
-
-\method{summary}{MaxMinExact}(object, ...)
 }
 \arguments{
-\item{object}{A \code{MaxMinSelection} or \code{MaxMinExact} object.}
+\item{object}{A \code{MaxMinSelection} object (from any solver).}
 
 \item{...}{Ignored; present for S3 compatibility.}
 }

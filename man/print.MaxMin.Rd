@@ -4,31 +4,24 @@
 \alias{print.MaxMin}
 \alias{format.MaxMinSelection}
 \alias{print.MaxMinSelection}
-\alias{format.MaxMinExact}
-\alias{print.MaxMinExact}
 \title{Format and print MaxMin solver results}
 \usage{
 \method{format}{MaxMinSelection}(x, ...)
 
 \method{print}{MaxMinSelection}(x, ...)
-
-\method{format}{MaxMinExact}(x, ...)
-
-\method{print}{MaxMinExact}(x, ...)
 }
 \arguments{
-\item{x}{A \code{MaxMinSelection} or \code{MaxMinExact} object.}
+\item{x}{A \code{MaxMinSelection} object (from any solver, including
+\code{\link[=ExactMaxMin]{ExactMaxMin()}}).}
 
 \item{...}{Ignored; present for S3 compatibility.}
 }
 \value{
 \code{print.MaxMin()} returns \code{x}, invisibly. It is called for its side-effect
 of printing \code{format(x)} to the console.
-\code{format.MaxMin()} returns a character string describing a \code{MaxMinSelection}
-(from \code{\link[=FarFirst]{FarFirst()}}, \code{\link[=DropAdd]{DropAdd()}} and \code{\link[=Grasp]{Grasp()}}); it reports its size, the
-selected indices, the algorithm (and if applicable strategy),
-and the achieved \eqn{T_k}. A \code{MaxMinExact} (from \code{\link[=ExactMaxMin]{ExactMaxMin()}}) object
-additionally states whether optimality was proven.
+\code{format.MaxMin()} returns a character string reporting the selection size,
+the selected indices, the algorithm (and if applicable strategy or proof
+status), and the achieved \eqn{T_k}.
 }
 \description{
 Terse summaries of the objects returned by the MaxMin solvers.

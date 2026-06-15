@@ -70,8 +70,11 @@
   # Heuristic pool: optional caller warmStart, several Grasp restarts (drawing
   # on the session RNG -- this is where their diversity comes from), one
   # deterministic DropAdd. Like Grasp() itself, this advances the session RNG.
-  grasps <- lapply(seq_len(nStart), function(s)
-    tryCatch(Grasp(k, d, plateau = 50L), error = function(e) NULL))
+  grasps <- local({
+    op <- options(MaxMin.progress = FALSE); on.exit(options(op))
+    lapply(seq_len(nStart), function(s)
+      tryCatch(Grasp(k, d, plateau = 50L), error = function(e) NULL))
+  })
   raw <- c(if (is.null(warmStart)) list() else list(warmStart),
            grasps,
            list(tryCatch(local({
@@ -183,38 +186,29 @@
 #' start draws on the session RNG via [Grasp()] and, like `Grasp()`, advances it.
 #' Call [set.seed()] before `ExactMaxMin()` for a reproducible selection.
 #'
-#' @param k Integer target subset size, `2 <= k <= nrow(d)`.
-#' @param d A `dist` object or a square symmetric numeric distance matrix.
+#' @param k Integer: target subset size, between 2 and `nrow(d)`.
+#' @param d `dist` object or a square symmetric numeric distance matrix.
 #' @param maxSeconds Numeric: search terminates after this many seconds have
 #' elapsed; returning largest threshold proven feasible so far.
-#' @param warmStart Optional integer vector: a candidate `k`-subset (1-based
-#'   indices into `d`) to add to the heuristic warm-start pool, e.g. a selection
-#'   already computed by another solver. Ignored unless it is a valid `k`-subset.
-#'   The internal heuristics run regardless; a good `warmStart` can only reduce
-#'   the number of IP solves, never change the proven optimum.
+#' @param warmStart Integer vector giving indices of a candidate subset to add
+#'  to the heuristic warm-start pool, e.g. a selection computed by another
+#'  solver.
 #' @templateVar progress_shows a progress indicator is shown
 #' @template progress
-#' @return `ExactMaxMin()` returns a list (unlike [DropAdd()], [Grasp()] and
-#'   [FarFirst()], which each return a bare integer vector carrying a `score`
-#'   attribute), since it reports both the optimum and a proof status. The fields
-#'   are
+#' @return `ExactMaxMin()` returns an integer vector of length `k` (sorted
+#'   ascending) with class `"MaxMinSelection"`, carrying attributes:
 #'   \describe{
-#'     \item{indices}{Integer vector of length `k`, sorted ascending: the
-#'       selected points.}
-#'     \item{objective}{The achieved `T_k` -- the minimum pairwise distance
-#'       within `indices`. When `proven` is `TRUE` this is the true optimum;
-#'       otherwise it is a lower bound on the optimum.}
-#'     \item{proven}{Logical: `TRUE` if the search certified optimality
-#'       within the budget, `FALSE` if it returned an unproven incumbent.}
+#'     \item{score}{Achieved `T_k` -- the minimum pairwise distance within the
+#'       selection. When `proven` is `TRUE` this is the true optimum; otherwise
+#'       a lower bound.}
+#'     \item{proven}{Logical: `TRUE` if the search certified optimality within
+#'       the budget, `FALSE` if it returned an unproven incumbent.}
 #'     \item{time_s}{Wall-clock seconds elapsed.}
-#'     \item{solver}{The name of this solver: `"highs"`.}
+#'     \item{solver}{The name of the MILP backend: `"highs"`.}
 #'     \item{N, k}{Instance size and target subset size.}
 #'   }
-#'   The list has class `c("MaxMinExact", "MaxMinSelection")` and prints as a
-#'   one-line summary (size, indices, proof status and achieved `T_k`;
-#'   see [print.MaxMinSelection]); it is otherwise an ordinary list.
-#'   The `"MaxMinSelection"` superclass means `inherits(result, "MaxMinSelection")`
-#'   is `TRUE`, and any generic written against that class works here too.
+#'   Prints as a one-line summary via [print.MaxMinSelection()].
+#'   `inherits(result, "MaxMinSelection")` is `TRUE`.
 #' @references \insertAllCited{}
 #' @export
 ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
@@ -277,17 +271,17 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
       stop("Internal error: recovered min-distance ", obj,
            " != proven threshold ", lambda)
     } # nocov end
-    structure(
-      list(
-        indices   = idx,
-        objective = obj,
-        proven    = proven,
-        time_s    = Elapsed(),
-        solver    = "highs",
-        N         = n,
-        k         = as.integer(k)
+    .AsMaxMinSelection(
+      structure(
+        idx,
+        score  = obj,
+        proven = proven,
+        time_s = Elapsed(),
+        solver = "highs",
+        N      = n,
+        k      = as.integer(k)
       ),
-      class = c("MaxMinExact", "MaxMinSelection")
+      producer = "ExactMaxMin"
     )
   }
 

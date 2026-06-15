@@ -10,7 +10,7 @@
 \item{x}{Integer index vector carrying the solver's score attributes.}
 
 \item{producer}{Character tag naming the solver (\code{"FarFirst"}, \code{"DropAdd"},
-\code{"Grasp"}).}
+\code{"Grasp"}, \code{"ExactMaxMin"}).}
 }
 \value{
 \code{.AsMaxMinSelection()} returns \code{x} with \code{producer} attribute and

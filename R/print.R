@@ -1,12 +1,10 @@
 # print.R
 #
 # A light S3 layer that makes the solver outputs self-describing at the
-# console. The selection-returning solvers ([FarFirst()], [DropAdd()],
-# [Grasp()]) attach the `"MaxMinSelection"` class to their integer index
-# vector; [ExactMaxMin()] attaches `"MaxMinExact"` to its result list. Both
-# remain ordinary objects -- a `MaxMinSelection` still indexes a matrix or
-# coordinate set directly, and a `MaxMinExact` is still a plain list with
-# `$indices`, `$objective`, ... -- so the class only changes how they print.
+# console. All solvers ([FarFirst()], [DropAdd()], [Grasp()], [ExactMaxMin()])
+# attach the `"MaxMinSelection"` class to their integer index vector.
+# The class only changes how the vector prints; it is otherwise an ordinary
+# integer that indexes a matrix or coordinate set directly.
 
 #' Stamp the `MaxMinSelection` class onto a solver's index vector
 #'
@@ -16,7 +14,7 @@
 #' selection (`length 0`) is left bare: there is nothing to describe.
 #' @param x Integer index vector carrying the solver's score attributes.
 #' @param producer Character tag naming the solver (`"FarFirst"`, `"DropAdd"`,
-#'   `"Grasp"`).
+#'   `"Grasp"`, `"ExactMaxMin"`).
 #' @return `.AsMaxMinSelection()` returns `x` with `producer` attribute and
 #'   `"MaxMinSelection"` class, or `x` unchanged if it is empty.
 #' @keywords internal
@@ -104,9 +102,13 @@
 #' @keywords internal
 .MaxMinSelectedBy <- function(x) {
   switch(attr(x, "producer") %||% "",
-    FarFirst = .FarFirstSelectedBy(x),
-    DropAdd  = "DropAdd tabu search",
-    Grasp    = "GRASP with path-relinking",
+    FarFirst    = .FarFirstSelectedBy(x),
+    DropAdd     = "DropAdd tabu search",
+    Grasp       = "GRASP with path-relinking",
+    ExactMaxMin = sprintf("exact MILP (%s)%s",
+                          attr(x, "solver"),
+                          if (isTRUE(attr(x, "proven"))) ", proven optimal"
+                          else ", unproven incumbent"),
     "an unrecorded method"
   )
 }
@@ -115,16 +117,15 @@
 #'
 #' Terse summaries of the objects returned by the MaxMin solvers.
 #'
-#' @param x A `MaxMinSelection` or `MaxMinExact` object.
+#' @param x A `MaxMinSelection` object (from any solver, including
+#'   [ExactMaxMin()]).
 #' @param ... Ignored; present for S3 compatibility.
 #' @return
 #' `print.MaxMin()` returns `x`, invisibly. It is called for its side-effect
 #' of printing `format(x)` to the console.
-#' `format.MaxMin()` returns a character string describing a `MaxMinSelection`
-#' (from [FarFirst()], [DropAdd()] and [Grasp()]); it reports its size, the
-#' selected indices, the algorithm (and if applicable strategy),
-#' and the achieved \eqn{T_k}. A `MaxMinExact` (from [ExactMaxMin()]) object
-#' additionally states whether optimality was proven.
+#' `format.MaxMin()` returns a character string reporting the selection size,
+#' the selected indices, the algorithm (and if applicable strategy or proof
+#' status), and the achieved \eqn{T_k}.
 #'
 #' @examples
 #' set.seed(1)
@@ -147,25 +148,6 @@ print.MaxMinSelection <- function(x, ...) {
   invisible(x)
 }
 
-#' @rdname print.MaxMin
-#' @export
-format.MaxMinExact <- function(x, ...) {
-  proven <- if (isTRUE(x$proven)) {
-    sprintf("exact MILP (%s), proven optimal", x$solver)
-  } else {
-    sprintf("exact MILP (%s), unproven incumbent", x$solver)
-  }
-  # Return:
-  .MaxMinSummaryLine(length(x$indices), x$indices, proven, x$objective)
-}
-
-#' @rdname print.MaxMin
-#' @export
-print.MaxMinExact <- function(x, ...) {
-  cat(format(x, ...), "\n", sep = "")
-  # Return:
-  invisible(x)
-}
 
 #' Format a numeric field for a summary, tolerating `NA`
 #' @param v Numeric scalar.
@@ -221,7 +203,7 @@ print.MaxMinExact <- function(x, ...) {
 #' A fuller counterpart to [print.MaxMinSelection()]: the one-line headline,
 #' followed by the achieved objective(s), search effort, and -- for a
 #' [FarFirst()] ensemble -- the per-strategy \eqn{T_k} table.
-#' @param object A `MaxMinSelection` or `MaxMinExact` object.
+#' @param object A `MaxMinSelection` object (from any solver).
 #' @param ... Ignored; present for S3 compatibility.
 #' @return `summary.MaxMin()` returns `object`, invisibly.
 #' @examples
@@ -244,21 +226,18 @@ summary.MaxMinSelection <- function(object, ...) {
       .SummaryField("refinement iterations", attr(object, "iters"), 26L)
       .SummaryField("path-relinking calls", attr(object, "pr_calls"), 26L)
       .SummaryField("time", paste(.SummaryNum(attr(object, "time_s")), "s"), 26L)
+    },
+    ExactMaxMin = {
+      status <- if (isTRUE(attr(object, "proven"))) "proven optimal"
+                else "lower bound (unproven)"
+      .SummaryField("instance", sprintf("n = %d, k = %d",
+                                        attr(object, "N"), attr(object, "k")), 12L)
+      .SummaryField("objective", sprintf("%s (%s)",
+                                         .SummaryNum(attr(object, "score")), status), 12L)
+      .SummaryField("solver", attr(object, "solver"), 12L)
+      .SummaryField("time", paste(.SummaryNum(attr(object, "time_s")), "s"), 12L)
     }
   )
-  # Return:
-  invisible(object)
-}
-
-#' @rdname summary.MaxMin
-#' @export
-summary.MaxMinExact <- function(object, ...) {
-  cat(format(object), "\n", sep = "")
-  status <- if (isTRUE(object$proven)) "proven optimal" else "lower bound (unproven)"
-  .SummaryField("instance", sprintf("n = %d, k = %d", object$n, object$k), 12L)
-  .SummaryField("objective", sprintf("%s (%s)", .SummaryNum(object$objective), status), 12L)
-  .SummaryField("solver", object$solver, 12L)
-  .SummaryField("time", paste(.SummaryNum(object$time_s), "s"), 12L)
   # Return:
   invisible(object)
 }

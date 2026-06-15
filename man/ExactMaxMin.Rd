@@ -7,42 +7,32 @@
 ExactMaxMin(k, d, maxSeconds = 60, warmStart = NULL)
 }
 \arguments{
-\item{k}{Integer target subset size, \verb{2 <= k <= nrow(d)}.}
+\item{k}{Integer: target subset size, between 2 and \code{nrow(d)}.}
 
-\item{d}{A \code{dist} object or a square symmetric numeric distance matrix.}
+\item{d}{\code{dist} object or a square symmetric numeric distance matrix.}
 
 \item{maxSeconds}{Numeric: search terminates after this many seconds have
 elapsed; returning largest threshold proven feasible so far.}
 
-\item{warmStart}{Optional integer vector: a candidate \code{k}-subset (1-based
-indices into \code{d}) to add to the heuristic warm-start pool, e.g. a selection
-already computed by another solver. Ignored unless it is a valid \code{k}-subset.
-The internal heuristics run regardless; a good \code{warmStart} can only reduce
-the number of IP solves, never change the proven optimum.}
+\item{warmStart}{Integer vector giving indices of a candidate subset to add
+to the heuristic warm-start pool, e.g. a selection computed by another
+solver.}
 }
 \value{
-\code{ExactMaxMin()} returns a list (unlike \code{\link[=DropAdd]{DropAdd()}}, \code{\link[=Grasp]{Grasp()}} and
-\code{\link[=FarFirst]{FarFirst()}}, which each return a bare integer vector carrying a \code{score}
-attribute), since it reports both the optimum and a proof status. The fields
-are
+\code{ExactMaxMin()} returns an integer vector of length \code{k} (sorted
+ascending) with class \code{"MaxMinSelection"}, carrying attributes:
 \describe{
-\item{indices}{Integer vector of length \code{k}, sorted ascending: the
-selected points.}
-\item{objective}{The achieved \code{T_k} -- the minimum pairwise distance
-within \code{indices}. When \code{proven} is \code{TRUE} this equals the threshold
-\code{lambda} and is the true optimum; otherwise it is a valid lower
-bound on the optimum.}
-\item{proven}{Logical: \code{TRUE} if the search certified optimality
-within the budget, \code{FALSE} if it returned an unproven incumbent.}
+\item{score}{Achieved \code{T_k} -- the minimum pairwise distance within the
+selection. When \code{proven} is \code{TRUE} this is the true optimum; otherwise
+a lower bound.}
+\item{proven}{Logical: \code{TRUE} if the search certified optimality within
+the budget, \code{FALSE} if it returned an unproven incumbent.}
 \item{time_s}{Wall-clock seconds elapsed.}
-\item{solver}{Name of the MILP backend used.}
-\item{n, k}{Instance size and target subset size.}
+\item{solver}{The name of the MILP backend: \code{"highs"}.}
+\item{N, k}{Instance size and target subset size.}
 }
-The list has class \code{c("MaxMinExact", "MaxMinSelection")} and prints as a
-one-line summary (size, indices, proof status and achieved \code{T_k};
-see \link{print.MaxMinSelection}); it is otherwise an ordinary list.
-The \code{"MaxMinSelection"} superclass means \code{inherits(result, "MaxMinSelection")}
-is \code{TRUE}, and any generic written against that class works here too.
+Prints as a one-line summary via \code{\link[=print.MaxMinSelection]{print.MaxMinSelection()}}.
+\code{inherits(result, "MaxMinSelection")} is \code{TRUE}.
 }
 \description{
 \code{ExactMaxMin()} finds the optimal solution to the Max-Min Diversity Problem

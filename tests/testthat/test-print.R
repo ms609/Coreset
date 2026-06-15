@@ -1,4 +1,4 @@
-# Tests for the MaxMinSelection / MaxMinExact print + format S3 layer.
+# Tests for the MaxMinSelection print + format S3 layer.
 
 MakeData <- function(seed = 42, N = 60, dim = 4) {
   set.seed(seed)
@@ -95,23 +95,20 @@ test_that(".MaxMinSelectedBy falls back for an unrecorded producer", {
   expect_match(format(fake), "selected by an unrecorded method")
 })
 
-test_that("MaxMinExact prints proof status, indices and objective", {
+test_that("ExactMaxMin prints proof status, indices and objective", {
   # Built directly so the test does not require the `highs` solver.
-  proven <- structure(
-    list(indices = c(1L, 2L, 3L), objective = 0.5, proven = TRUE,
-         time_s = 0.1, solver = "highs", n = 10L, k = 3L),
-    class = c("MaxMinExact", "MaxMinSelection")
+  proven <- .AsMaxMinSelection(
+    structure(c(1L, 2L, 3L), score = 0.5, proven = TRUE,
+              time_s = 0.1, solver = "highs", N = 10L, k = 3L),
+    producer = "ExactMaxMin"
   )
-  # MaxMinExact IS-A MaxMinSelection: generic code written for any solver works.
-  expect_s3_class(proven, "MaxMinExact")
   expect_s3_class(proven, "MaxMinSelection")
   expect_true(inherits(proven, "MaxMinSelection"))
-  expect_s3_class(proven, "MaxMinExact")
   expect_match(format(proven),
                "^3 elements \\(1 2 3\\) selected by exact MILP \\(highs\\), proven optimal, each at distance >= 0.5$")
 
   incumbent <- proven
-  incumbent$proven <- FALSE
+  attr(incumbent, "proven") <- FALSE
   expect_match(format(incumbent), "unproven incumbent, each at distance >= 0.5")
 
   expect_output(ret <- withVisible(print(proven)), "proven optimal")
@@ -168,11 +165,11 @@ test_that("summary table tolerates NA T_k (all-NA ensemble)", {
   expect_true(any(grepl("\\bNA\\b", out)))
 })
 
-test_that("summary of MaxMinExact reports instance, objective and proof status", {
-  proven <- structure(
-    list(indices = c(1L, 2L, 3L), objective = 0.5, proven = TRUE,
-         time_s = 0.1, solver = "highs", n = 10L, k = 3L),
-    class = c("MaxMinExact", "MaxMinSelection")
+test_that("summary of ExactMaxMin reports instance, objective and proof status", {
+  proven <- .AsMaxMinSelection(
+    structure(c(1L, 2L, 3L), score = 0.5, proven = TRUE,
+              time_s = 0.1, solver = "highs", N = 10L, k = 3L),
+    producer = "ExactMaxMin"
   )
   out <- capture.output(ret <- withVisible(summary(proven)))
   expect_false(ret$visible)
@@ -181,7 +178,7 @@ test_that("summary of MaxMinExact reports instance, objective and proof status",
   expect_true(any(grepl("objective:\\s+0.5 \\(proven optimal\\)", out)))
   expect_true(any(grepl("solver:\\s+highs", out)))
 
-  incumbent <- proven; incumbent$proven <- FALSE
+  incumbent <- proven; attr(incumbent, "proven") <- FALSE
   out2 <- capture.output(summary(incumbent))
   expect_true(any(grepl("objective:\\s+0.5 \\(lower bound \\(unproven\\)\\)", out2)))
 })

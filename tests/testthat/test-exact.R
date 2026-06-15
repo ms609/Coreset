@@ -47,14 +47,15 @@ test_that("ExactMaxMin matches the brute-force optimum (random instances)", {
     oracle <- .BruteMaxmin(d, cs$k)
 
     # The optimum value matches the exhaustive optimum.
-    expect_true(res$proven, info = sprintf("n=%d k=%d", cs$n, cs$k))
-    expect_equal(res$objective, oracle$objective,
+    expect_true(isTRUE(attr(res, "proven")), info = sprintf("n=%d k=%d", cs$n, cs$k))
+    expect_equal(attr(res, "score"), oracle$objective,
                  info = sprintf("n=%d k=%d", cs$n, cs$k))
     # The returned subset actually achieves that optimum.
-    expect_length(res$indices, cs$k)
-    expect_equal(length(unique(res$indices)), cs$k)
-    expect_equal(.MaxminObj(res$indices, d), oracle$objective)
-    expect_false(is.unsorted(res$indices))
+    idx <- as.integer(res)
+    expect_length(idx, cs$k)
+    expect_equal(length(unique(idx)), cs$k)
+    expect_equal(.MaxminObj(idx, d), oracle$objective)
+    expect_false(is.unsorted(idx))
   }
 })
 
@@ -69,8 +70,8 @@ test_that("ExactMaxMin accepts a dist object", {
   dmat <- as.matrix(dobj)
   r_dist <- ExactMaxMin(4L, dobj)
   r_mat  <- ExactMaxMin(4L, dmat)
-  expect_equal(r_dist$objective, r_mat$objective)
-  expect_true(r_dist$proven)
+  expect_equal(attr(r_dist, "score"), attr(r_mat, "score"))
+  expect_true(isTRUE(attr(r_dist, "proven")))
 })
 
 # ---------------------------------------------------------------------------
@@ -83,13 +84,13 @@ test_that("ExactMaxMin handles k=2 (diameter) and k=n (all points)", {
   d <- as.matrix(stats::dist(pts))
 
   r2 <- ExactMaxMin(2L, d)
-  expect_equal(r2$objective, max(d[upper.tri(d)]))   # diameter
-  expect_true(r2$proven)
+  expect_equal(attr(r2, "score"), max(d[upper.tri(d)]))   # diameter
+  expect_true(isTRUE(attr(r2, "proven")))
 
   rn <- ExactMaxMin(8L, d)
-  expect_equal(rn$objective, min(d[upper.tri(d)]))   # forced global min
-  expect_equal(.MaxminObj(rn$indices, d), rn$objective)
-  expect_true(rn$proven)
+  expect_equal(attr(rn, "score"), min(d[upper.tri(d)]))   # forced global min
+  expect_equal(.MaxminObj(as.integer(rn), d), attr(rn, "score"))
+  expect_true(isTRUE(attr(rn, "proven")))
 })
 
 # ---------------------------------------------------------------------------
@@ -105,11 +106,11 @@ test_that("ExactMaxMin returns proven=FALSE on budget expiry", {
   # With a near-zero budget the solver may not certify, but must not error.
   # Note: proven could be TRUE if the solver is extremely fast; we just assert
   # the field exists and the return is valid.
-  expect_type(res$proven, "logical")
-  expect_length(res$indices, 5L)
+  expect_type(attr(res, "proven"), "logical")
+  expect_length(as.integer(res), 5L)
   # If proven = FALSE, the objective is still a valid lower bound (non-negative).
-  if (!res$proven) {
-    expect_gte(res$objective, 0)
+  if (!isTRUE(attr(res, "proven"))) {
+    expect_gte(attr(res, "score"), 0)
   }
 })
 
@@ -128,12 +129,12 @@ test_that("ExactMaxMin objective is RNG-independent; selection seed-reproducible
   # The proven optimum is a property of the problem: same value under any seed.
   set.seed(1); a <- ExactMaxMin(4L, d)
   set.seed(2); b <- ExactMaxMin(4L, d)
-  expect_true(a$proven && b$proven)
-  expect_equal(a$objective, b$objective)
+  expect_true(isTRUE(attr(a, "proven")) && isTRUE(attr(b, "proven")))
+  expect_equal(attr(a, "score"), attr(b, "score"))
 
   # The returned selection is reproducible when the seed is reset.
   set.seed(1); a2 <- ExactMaxMin(4L, d)
-  expect_equal(a$indices, a2$indices)
+  expect_equal(as.integer(a), as.integer(a2))
 })
 
 # ---------------------------------------------------------------------------
@@ -169,12 +170,13 @@ test_that("ExactMaxMin returns the documented fields", {
   set.seed(41)
   d <- as.matrix(stats::dist(matrix(stats::rnorm(40), ncol = 4)))   # n = 10
   res <- ExactMaxMin(3L, d)
-  expect_named(res, c("indices", "objective", "proven", "time_s",
-                      "solver", "N", "k"),
-               ignore.order = TRUE)
-  expect_type(res$indices, "integer")
-  expect_type(res$proven, "logical")
-  expect_identical(res$solver, "highs")
-  expect_identical(res$N, 10L)
-  expect_identical(res$k, 3L)
+  expect_s3_class(res, "MaxMinSelection")
+  expect_type(res, "integer")
+  expect_length(res, 3L)
+  expect_type(attr(res, "score"),  "double")
+  expect_type(attr(res, "proven"), "logical")
+  expect_identical(attr(res, "solver"), "highs")
+  expect_identical(attr(res, "N"), 10L)
+  expect_identical(attr(res, "k"), 3L)
+  expect_type(attr(res, "time_s"), "double")
 })
