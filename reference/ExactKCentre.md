@@ -15,11 +15,12 @@ ExactKCenter(k, d, maxSeconds = 60)
 
 - k:
 
-  Integer specifying maximum number of centres, `1 <= k <= nrow(d)`.
+  Integer specifying maximum number of centres to identify, from 1 to
+  `nrow(d)`.
 
 - d:
 
-  A `dist` object or a square symmetric numeric distance matrix.
+  `dist` object or a square symmetric numeric distance matrix.
 
 - maxSeconds:
 
