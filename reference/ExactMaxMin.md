@@ -52,10 +52,6 @@ ascending) with class `"MaxMinSelection"`, carrying attributes:
 
   Wall-clock seconds elapsed.
 
-- solver:
-
-  The name of the MILP backend: `"highs"`.
-
 - N, k:
 
   Instance size and target subset size.

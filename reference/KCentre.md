@@ -1,9 +1,9 @@
 # Near-optimal discrete k-centre solver
 
-`KCentre()` selects \$k\$ elements (centres) so as to minimize the
+`KCentre()` selects \\k\\ elements (centres) so as to minimize the
 largest distance from any point to its nearest centre (the covering
-radius), using the CDSh heuristic (García-Díaz et al. 2017; García-Díaz
-et al. 2019) .
+radius), using the Critical Dominating Set heuristic (CDSh) (García-Díaz
+et al. 2017; García-Díaz et al. 2019) .
 
 ## Usage
 
@@ -43,15 +43,17 @@ attached as attribute `radius`. The vector has class
 
 ## Details
 
-On the benchmark instances of García-Díaz et al. (2019) , CDSh reaches
-roughly 1-3.5% of the optimum at \\O(N^2 \log N)\\, far tighter than
+On the benchmark instances of García-Díaz et al. (2019) , the
+CDSCritical Dominating Set heuristic reaches roughly 1-3.5% of the
+optimum at \\O(N^2 \log N)\\, far tighter than
 [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
 (typically tens of per cent above optimum).
 
-The achieved covering radius is not monotone in the trial radius, so the
-CDSh binary search can occasionally miss the best candidate. As a
-safeguard, `KCentre()` runs by default an exhaustive search of a small
-candidate grid (for `n` up to ~150); and an additional
+Despite this good performance in practice, the CDShCritical Dominating
+Set heuristic is a 3-approximation. To guard against occasional cases
+where a better candidate is missed, `KCentre()` runs by default an
+exhaustive search of a small candidate grid (for `n` up to ~150); and an
+additional
 [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
 pass (controlled via the `effort` argument). These safeguards ensure
 that `KCentre()` always returns at least a 2-approximation.
