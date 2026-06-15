@@ -10,7 +10,7 @@
 # Three entry points:
 #   KCentreRadius()  -- score a centre set by its covering radius (matrix-free
 #                       capable, so it scales past the solvers' matrix bound).
-#   KCentre()        -- CDSh heuristic (Garcia-Diaz et al. 2017/2019): ~1-3.5%
+#   KCentre()        -- CDSh heuristic (Garcia-Diaz et al. 2017/2019): ~1--3.5%
 #                       of optimum at O(n^2 log n), an order of magnitude tighter
 #                       than the Gonzalez 2-approximation that FarFirst() gives.
 #   ExactKCentre()   -- proven optimum on small instances via a covering integer
@@ -151,7 +151,7 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' @param effort Integer: if `> 0`, run a parallel `FarFirst()` search
 #'  with `effort` random seeds, returning the best of all results.
 #'
-#' @return `KCentre()` returns an integer vector of length \eqn{\lte k} specifying
+#' @return `KCentre()` returns an integer vector of length \eqn{\le k} specifying
 #' the chosen centres in ascending order.
 #' The achieved covering radius is attached as attribute `radius`.
 #' The vector has class `"KCentreSelection"` and prints as a one-line summary.
@@ -305,7 +305,7 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L) {
 #' feasible so far is returned, with the attribute `proven = FALSE`.
 #' @templateVar progress_shows a progress indicator is shown
 #' @template progress
-#' @return `ExactKCentre()` returns an integer vector of length \eqn{\lte k}
+#' @return `ExactKCentre()` returns an integer vector of length \eqn{\le k}
 #' listing the chosen centres in ascending order.
 #' It has class `c("KCentreExact", "KCentreSelection")` and attributes:
 #'   \describe{
