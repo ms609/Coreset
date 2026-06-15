@@ -11,55 +11,39 @@ KCenter(k, d, nstart = 1L, effort = 1L)
 }
 \arguments{
 \item{k}{Integer specifying maximum number of centres to identify,
-\verb{1 <= k <= nrow(d)}.}
+from 1 to \code{nrow(d)}.}
 
 \item{d}{\code{dist} object or a square symmetric numeric distance matrix.}
 
-\item{nstart}{Integer; how many deterministic peripheral seeds to try, keeping
-the lowest-radius result. Default \code{1}.}
+\item{nstart}{Integer specifying how many deterministic peripheral seeds to
+try.}
 
-\item{effort}{Integer; controls the Gonzalez floor that keeps the result no
-worse than the 2-approximation. \code{0} disables it (raw CDSh, fastest, no
-guarantee); \code{1} (default) runs one deterministic peripheral Gonzalez pass;
-\verb{> 1} runs a distinct-seed Gonzalez restart with \code{nSeeds = effort} (a tighter
-floor that draws on the session RNG -- call \code{\link[=set.seed]{set.seed()}} to reproduce).}
+\item{effort}{Integer: if \verb{> 0}, run a parallel \code{FarFirst()} search
+with \code{effort} random seeds, returning the best of all results.}
 }
 \value{
-\code{KCentre()} returns an integer vector of length \verb{<= k} (ascending): the chosen centres. The
-achieved covering radius is attached as attribute \code{radius}. The vector has
-class \code{"KCentreSelection"} and prints as a one-line summary; it is otherwise
-an ordinary integer vector and indexes a matrix or coordinate set directly.
+\code{KCentre()} returns an integer vector of length \verb{<= k} specifying
+the chosen centres in ascending order.
+The achieved covering radius is attached as attribute \code{radius}.
+The vector has class \code{"KCentreSelection"} and prints as a one-line summary.
 }
 \description{
-\code{KCentre()} selects \code{k} elements (centres) so as to minimize the largest
+\code{KCentre()} selects $k$ elements (centres) so as to minimize the largest
 distance from any point to its nearest centre (the covering radius),
 using the CDSh heuristic
 \insertCite{GarciaDiaz2017,GarciaDiaz2019}{MaxMin}.
 }
 \details{
-CDSh binary-searches the achieved
-distinct distances; at each trial radius it runs a fixed-\code{k} farthest-point
-construction in which every centre is the highest-degree neighbour (within the
-trial radius) of the currently worst-covered vertex, and accepts the radius
-when the construction covers all points within it. On the benchmark instances
-of \insertCite{GarciaDiaz2019;textual}{MaxMin} it reaches roughly 1-3.5\% of the
-optimum at \eqn{O(N^2 \log N)}, far tighter than the Gonzalez 2-approximation
-that \code{\link[=FarFirst]{FarFirst()}} gives for this objective (typically tens of per cent above
-optimum).
+On the benchmark instances of \insertCite{GarciaDiaz2019;textual}{MaxMin},
+CDSh reaches roughly 1-3.5\% of the optimum at \eqn{O(N^2 \log N)},
+far tighter than \code{\link[=FarFirst]{FarFirst()}} (typically tens of per cent above optimum).
 
-The achieved covering radius is not monotone in the trial radius, so the binary
-search can occasionally miss the best candidate. Two safeguards keep the result
-robust: for a small candidate grid (\code{n} up to ~150) every radius is scanned
-exhaustively, and the result is floored against a Gonzalez pass (the \code{effort}
-argument, on by default), so \code{KCentre()} is \strong{never worse than the
-2-approximation}. For a tighter result at larger \code{n} raise \code{nstart} or
-\code{effort}; for the proven optimum on a small instance use \code{\link[=ExactKCentre]{ExactKCentre()}}.
-
-The construction is otherwise fully deterministic: where the reference seeds its
-first critical vertex at random, \code{KCentre()} uses deterministic peripheral
-anchors (\code{nstart} of them, the best kept). Like \code{\link[=ExactKCentre]{ExactKCentre()}} this is a
-distance-matrix method, \eqn{O(N^2)} in memory; for the covering radius of an
-existing selection at larger \code{N}, \code{\link[=KCentreRadius]{KCentreRadius()}} has a matrix-free path.
+The achieved covering radius is not monotone in the trial radius, so the CDSh
+binary search can occasionally miss the best candidate.
+As a safeguard, \code{KCentre()} runs by default an exhaustive search of
+a small candidate grid (for \code{n} up to ~150); and an additional \code{FarFirst()}
+pass (controlled via the \code{effort} argument). These safeguards ensure
+that \code{KCentre()} always returns at least a 2-approximation.
 }
 \examples{
 set.seed(1)
@@ -67,13 +51,15 @@ pts <- matrix(rnorm(120), ncol = 2)
 d <- dist(pts)
 centres <- KCentre(5L, d)
 KCentreRadius(d, centres)
-# CDSh covers at least as tightly as the Gonzalez 2-approximation:
-KCentreRadius(d, FarFirst(5L, d, strategy = "peripheral"))
+# Results will beat a Gonzalez 2-approximation:
+KCentreRadius(d, FarFirst(5L, d, nSeeds = 1))
 }
 \references{
 \insertAllCited{}
 }
 \seealso{
-\code{\link[=ExactKCentre]{ExactKCentre()}} for the proven optimum; \code{\link[=KCentreRadius]{KCentreRadius()}} to score a
-selection; \code{\link[=FarFirst]{FarFirst()}} for the Gonzalez 2-approximation baseline.
+\code{\link[=ExactKCentre]{ExactKCentre()}} for the proven optimum;
+\code{\link[=KCentreRadius]{KCentreRadius()}} for a selection's score;
+\code{\link[=FarFirst]{FarFirst()}} for the \insertCite{Gonzalez1985;textual}{MaxMin}
+2-approximation baseline.
 }

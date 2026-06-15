@@ -57,6 +57,12 @@ elapsed.
 This method will fail if the complete \eqn{N \times N} distance matrix, is
 too large to fit into memory.
 }
+\section{Progress bar}{
+
+In interactive sessions, a bar tracks how close the search is to its \code{plateau} stopping criterion, snapping back each time a better solution is found.
+To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
+}
+
 \examples{
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
