@@ -399,7 +399,7 @@ city near a centre.
 ```{r}
 #| label: dispersion-vs-covering
 #| eval: !expr requireNamespace("highs", quietly = TRUE)
-disp <- ExactMaxMin(4L, eurodist)$indices
+disp <- ExactMaxMin(4L, eurodist)
 labels(eurodist)[disp]  # dispersion: pushed to the extremes
 labels(eurodist)[kc]    # covering: pulled toward the interior
 ```
