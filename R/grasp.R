@@ -270,23 +270,23 @@
 #' fail to improve the best elite objective, or once `maxSeconds` have
 #' elapsed.
 #'
-#' This method will fail if the complete \eqn{N \times N} distance matrix, is
+#' This method will fail if the complete \eqn{N \times N} distance matrix is
 #' too large to fit into memory.
 #'
 #' @param k Integer subset size, `2 <= k <= nrow(d)`.
 #' @param d Either a `dist` object or a square symmetric numeric matrix.
 #' @param plateau Integer; stop after this many consecutive GRASP
 #'   iterations without an improvement to the best elite objective. The
-#'   primary, deterministic stopping criterion. Default 100.
-#' @param eliteSize Size of the elite set |ES|. Default 10.
-#' @param alpha RCL threshold; `alpha = 1` is pure greedy, `alpha = 0`
-#'   uniform random. Default 0.8.
-#' @param maxSeconds Optional wall-clock ceiling in seconds. Default `Inf`
-#'   (no ceiling, fully reproducible). A finite value caps runtime but makes
-#'   the result machine-dependent.
-#' @return `Grasp()` returns an integer vector of length `k` (1-based) **sorted ascending**
-#'   (unlike [FarFirst()], which returns farthest-first order)
-#'   with attributes:
+#'   primary, deterministic stopping criterion.
+#' @param eliteSize Size of the elite set |ES|.
+#' @param alpha Construction greediness in `[0, 1]`. Each step draws the next
+#'   point at random from a shortlist of the strongest candidates -- those
+#'   whose gain lies within a fraction `alpha` of the best-to-worst spread.
+#'   `alpha = 1` is pure greedy (best only); `alpha = 0` is uniform random
+#'   among candidates.
+#' @param maxSeconds Numeric specifying wall-clock ceiling, in seconds.
+#' @return `Grasp()` returns an integer vector of length `k` specifing the
+#' indices of the selected points, with attributes:
 #'   \describe{
 #'     \item{score}{Achieved MaxMin objective \eqn{T_k}.}
 #'     \item{time_s}{Wall-clock seconds spent.}
@@ -294,7 +294,7 @@
 #'     \item{pr_calls}{Number of path-relinking pair-applications run.}
 #'   }
 #'   The vector has class `"MaxMinSelection"` and prints as a one-line summary
-#'   (see [print.MaxMinSelection()]); it is otherwise an ordinary integer vector.
+#'   (see [print.MaxMinSelection()]).
 #' @templateVar progress_shows a bar tracks how close the search is to its `plateau` stopping criterion, snapping back each time a better solution is found
 #' @template progress
 #' @references \insertAllCited{}

@@ -13,21 +13,21 @@ Grasp(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8, maxSeconds = Inf)
 
 \item{plateau}{Integer; stop after this many consecutive GRASP
 iterations without an improvement to the best elite objective. The
-primary, deterministic stopping criterion. Default 100.}
+primary, deterministic stopping criterion.}
 
-\item{eliteSize}{Size of the elite set |ES|. Default 10.}
+\item{eliteSize}{Size of the elite set |ES|.}
 
-\item{alpha}{RCL threshold; \code{alpha = 1} is pure greedy, \code{alpha = 0}
-uniform random. Default 0.8.}
+\item{alpha}{Construction greediness in \verb{[0, 1]}. Each step draws the next
+point at random from a shortlist of the strongest candidates -- those
+whose gain lies within a fraction \code{alpha} of the best-to-worst spread.
+\code{alpha = 1} is pure greedy (best only); \code{alpha = 0} is uniform random
+among candidates.}
 
-\item{maxSeconds}{Optional wall-clock ceiling in seconds. Default \code{Inf}
-(no ceiling, fully reproducible). A finite value caps runtime but makes
-the result machine-dependent.}
+\item{maxSeconds}{Numeric specifying wall-clock ceiling, in seconds.}
 }
 \value{
-\code{Grasp()} returns an integer vector of length \code{k} (1-based) \strong{sorted ascending}
-(unlike \code{\link[=FarFirst]{FarFirst()}}, which returns farthest-first order)
-with attributes:
+\code{Grasp()} returns an integer vector of length \code{k} specifing the
+indices of the selected points, with attributes:
 \describe{
 \item{score}{Achieved MaxMin objective \eqn{T_k}.}
 \item{time_s}{Wall-clock seconds spent.}
@@ -35,7 +35,7 @@ with attributes:
 \item{pr_calls}{Number of path-relinking pair-applications run.}
 }
 The vector has class \code{"MaxMinSelection"} and prints as a one-line summary
-(see \code{\link[=print.MaxMinSelection]{print.MaxMinSelection()}}); it is otherwise an ordinary integer vector.
+(see \code{\link[=print.MaxMinSelection]{print.MaxMinSelection()}}).
 }
 \description{
 \code{Grasp()} solves the Max-Min Diversity Problem (discrete \emph{p}-dispersion) with
@@ -54,7 +54,7 @@ The refinement loop stops after \code{plateau} consecutive GRASP iterations
 fail to improve the best elite objective, or once \code{maxSeconds} have
 elapsed.
 
-This method will fail if the complete \eqn{N \times N} distance matrix, is
+This method will fail if the complete \eqn{N \times N} distance matrix is
 too large to fit into memory.
 }
 \section{Progress bar}{
