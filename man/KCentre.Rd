@@ -22,7 +22,7 @@ try.}
 with \code{effort} random seeds, returning the best of all results.}
 }
 \value{
-\code{KCentre()} returns an integer vector of length \eqn{\lte k} specifying
+\code{KCentre()} returns an integer vector of length \eqn{\le k} specifying
 the chosen centres in ascending order.
 The achieved covering radius is attached as attribute \code{radius}.
 The vector has class \code{"KCentreSelection"} and prints as a one-line summary.

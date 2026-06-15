@@ -30,8 +30,7 @@ the budget, \code{FALSE} if it returned an unproven incumbent.}
 \item{time_s}{Wall-clock seconds elapsed.}
 \item{N, k}{Instance size and target subset size.}
 }
-Prints as a one-line summary via \code{\link[=print.MaxMinSelection]{print.MaxMinSelection()}}.
-\code{inherits(result, "MaxMinSelection")} is \code{TRUE}.
+Prints as a terse summary via \code{\link[=print.MaxMinSelection]{print.MaxMinSelection()}}.
 }
 \description{
 \code{ExactMaxMin()} finds the optimal solution to the Max-Min Diversity Problem
@@ -44,12 +43,8 @@ The search is warm-started from a heuristic lower bound (the best of several
 \code{\link[=Grasp]{Grasp()}} restarts and a \code{\link[=DropAdd]{DropAdd()}} pass), then gallops upward from that
 bound to the first infeasible threshold and bisects the resulting bracket.
 When a heuristic already attains the optimum, a single infeasibility solve
-certifies it.
-
-The proven \code{objective} is exact and does not depend on the RNG. Only the
-returned \code{indices} can vary when several subsets attain the optimum: the warm
-start draws on the session RNG via \code{\link[=Grasp]{Grasp()}} and, like \code{Grasp()}, advances it.
-Call \code{\link[=set.seed]{set.seed()}} before \code{ExactMaxMin()} for a reproducible selection.
+certifies it. The indices chosen may vary based on the value of the random
+seed when several subsets attain the optimum.
 }
 \section{Progress bar}{
 

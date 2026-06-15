@@ -179,12 +179,8 @@
 #' [Grasp()] restarts and a [DropAdd()] pass), then gallops upward from that
 #' bound to the first infeasible threshold and bisects the resulting bracket.
 #' When a heuristic already attains the optimum, a single infeasibility solve
-#' certifies it.
-#'
-#' The proven `objective` is exact and does not depend on the RNG. Only the
-#' returned `indices` can vary when several subsets attain the optimum: the warm
-#' start draws on the session RNG via [Grasp()] and, like `Grasp()`, advances it.
-#' Call [set.seed()] before `ExactMaxMin()` for a reproducible selection.
+#' certifies it. The indices chosen may vary based on the value of the random
+#' seed when several subsets attain the optimum.
 #'
 #' @param k Integer: target subset size, between 2 and `nrow(d)`.
 #' @param d `dist` object or a square symmetric numeric distance matrix.
@@ -206,8 +202,7 @@
 #'     \item{time_s}{Wall-clock seconds elapsed.}
 #'     \item{N, k}{Instance size and target subset size.}
 #'   }
-#'   Prints as a one-line summary via [print.MaxMinSelection()].
-#'   `inherits(result, "MaxMinSelection")` is `TRUE`.
+#'   Prints as a terse summary via [print.MaxMinSelection()].
 #' @references \insertAllCited{}
 #' @examples
 #' set.seed(1)

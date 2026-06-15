@@ -7,7 +7,7 @@
 DropAdd(k, d = NULL, plateau = 5000L, maxSeconds = Inf, points = NULL)
 }
 \arguments{
-\item{k}{Integer; subset size, \eqn{2 \lte k \lte N}.}
+\item{k}{Integer; subset size, \eqn{2 \le k \le N}.}
 
 \item{d}{A \code{dist} object or square symmetric numeric matrix.}
 
