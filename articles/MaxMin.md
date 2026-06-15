@@ -4,7 +4,7 @@ The MaxMin package selects a subset that represents a fixed pool of *N*
 items, based on one of two complementary objectives:
 
 The **Max-Min Diversity Problem** (MMDP, the discrete *p*-dispersion
-objective) selects $`k`$ elements such that the minimum distance between
+objective) selects \\k\\ elements such that the minimum distance between
 any pair of selected elements is as large as possible; the chosen
 elements are maximally separated. This can reward selections that leave
 the interior of the set unrepresented.
@@ -14,7 +14,7 @@ fixed pool: picking biological specimens for sequencing that span
 available diversity, or choosing a representative subset of protein
 structures from a database.
 
-The **discrete *k*-centre problem** selects $`k`$ elements such that the
+The **discrete *k*-centre problem** selects \\k\\ elements such that the
 maximum distance from any element in the original set to a selected
 element is as small as possible. In ensuring that each point has a
 nearby representative, this objective can select points that reflect a
@@ -355,7 +355,7 @@ MinDist(points = pts, idx = ffPick)                # from coordinates
 
 The above methods seek to spread the selection such that its members are
 mutually far apart. The k-centre problem instead minimizes the covering
-radius $`R`$, the largest distance from any point to its nearest chosen
+radius \\R\\, the largest distance from any point to its nearest chosen
 centre, such that no point of the pool is left far from a representative
 ([González, 1985](#ref-Gonzalez1985); [Hochbaum & Shmoys,
 1985](#ref-Hochbaum1985)), typically resulting in selections that reach
@@ -476,7 +476,7 @@ established packages solve neighbouring objectives:
     generates the full *O(N²)* dissimilarity matrix, and hence caps at
     *n* ≤ 65 536;
   - [`banditpam`](https://cran.r-project.org/package=banditpam), a
-    matrix-free $`O(N \log N)`$ implementation restricted to coordinate
+    matrix-free \\O(N \log N)\\ implementation restricted to coordinate
     data;
   - [`cluster::clara()`](https://rdrr.io/pkg/cluster/man/clara.html)
     (PAM / FastPAM / FasterPAM);
@@ -500,14 +500,14 @@ established packages solve neighbouring objectives:
 
 García-Díaz, J., Menchaca-Méndez, R., Menchaca-Méndez, R., Pomares
 Hernández, S., Pérez-Sansalvador, J. C., & Lakouari, N. (2019).
-Approximation algorithms for the vertex $`k`$-center problem: Survey and
+Approximation algorithms for the vertex \\k\\-center problem: Survey and
 experimental evaluation. *IEEE Access*, *7*, 109228–109245.
 <https://doi.org/10.1109/ACCESS.2019.2933875>
 
 García-Díaz, J., Sánchez-Hernández, J., Menchaca-Méndez, R., &
 Menchaca-Méndez, R. (2017). When a worse approximation factor gives
 better performance: A 3-approximation algorithm for the vertex
-$`k`$-center problem. *Journal of Heuristics*, *23*(5), 349–366.
+\\k\\-center problem. *Journal of Heuristics*, *23*(5), 349–366.
 <https://doi.org/10.1007/s10732-017-9345-x>
 
 González, T. F. (1985). Clustering to minimize the maximum intercluster
@@ -515,7 +515,7 @@ distance. *Theoretical Computer Science*, *38*, 293–306.
 <https://doi.org/10.1016/0304-3975(85)90224-5>
 
 Hochbaum, D. S., & Shmoys, D. B. (1985). A best possible heuristic for
-the $`k`$-center problem. *Mathematics of Operations Research*, *10*(2),
+the \\k\\-center problem. *Mathematics of Operations Research*, *10*(2),
 180–184. <https://doi.org/10.1287/moor.10.2.180>
 
 Porumbel, D., Hao, J.-K., & Glover, F. (2011). A simple and effective

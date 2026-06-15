@@ -101,5 +101,5 @@ the p-dispersion problem.” *European Journal of Operational Research*,
 set.seed(1)
 pts <- matrix(rnorm(18), ncol = 2)
 ExactMaxMin(3L, dist(pts))
-#> 3 elements (3 4 5) selected by exact MILP (highs), proven optimal, each at distance >= 2.035
+#> 3 elements (3 4 5) selected by exact solver, proven optimal, each at distance >= 2.035
 ```

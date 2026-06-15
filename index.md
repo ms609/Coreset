@@ -5,11 +5,11 @@ points that maximizes coverage of a larger set, under one of two
 objectives:
 
 The **Max-Min Diversity Problem** (MMDP, the discrete *p*-dispersion
-objective) selects $`k`$ elements such that the minimum distance between
+objective) selects \\k\\ elements such that the minimum distance between
 any pair of selected elements is as large as possible; the chosen
 elements are maximally separated.
 
-The **discrete *k*-centre problem** selects $`k`$ elements such that the
+The **discrete *k*-centre problem** selects \\k\\ elements such that the
 maximum distance from any element in the original set to a selected
 element is as small as possible.
 
@@ -36,7 +36,7 @@ by specialized solvers.
 
 | Function | Method | Use |
 |----|----|----|
-| [`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md) | CDSh heuristic (García-Díaz et al. 2017, 2019) | ~1–3.5% of optimum at $`O(N^2 \log N)`$, typically far tighter than [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) |
+| [`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md) | CDSh heuristic (García-Díaz et al. 2017, 2019) | ~1–3.5% of optimum at \\O(N^2 \log N)\\, typically far tighter than [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) |
 | [`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md) | Min-cover integer program | Proven optimum, small `k` (needs `highs`) |
 
 Solvers support precomputed distance matrices (`dist` objects), matrices
@@ -70,7 +70,7 @@ established packages solve neighbouring objectives:
     generates the full *O(N²)* dissimilarity matrix, and hence caps at
     *n* ≤ 65 536;
   - [`banditpam`](https://cran.r-project.org/package=banditpam), a
-    matrix-free $`O(N \log N)`$ implementation restricted to coordinate
+    matrix-free \\O(N \log N)\\ implementation restricted to coordinate
     data;
   - [`cluster::clara()`](https://rdrr.io/pkg/cluster/man/clara.html)
     (PAM / FastPAM / FasterPAM);
