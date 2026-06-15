@@ -7,7 +7,7 @@
 <!-- badges: end -->
 
 `MaxMin` implements algorithms that select a dispersed subsample of points that
-maxmizes coverage of a larger set, under one of two objectives:
+maximizes coverage of a larger set, under one of two objectives:
 
 The **Max-Min Diversity Problem** (MMDP, the discrete *p*-dispersion objective)
 selects $k$ elements such that the minimum distance between any pair of selected elements is as large as possible; the chosen elements are maximally separated.
