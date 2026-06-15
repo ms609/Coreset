@@ -124,7 +124,7 @@
 #' neighbour-evaluation tricks
 #' \insertCite{@algorithms 1--4 in @Porumbel2011}{MaxMin}.
 #'
-#' @param k Integer; subset size, \eqn{2 \le k \le N}.
+#' @param k Integer; subset size, \eqn{2 \lte k \lte N}.
 #' @param d A \code{dist} object or square symmetric numeric matrix.
 #' @param points A numeric \eqn{N \times \mathrm{dim}} coordinate matrix (or an
 #'  object coercible to one via \code{as.matrix}).

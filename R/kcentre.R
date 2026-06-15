@@ -304,7 +304,7 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L) {
 #' feasible so far is returned, with the attribute `proven = FALSE`.
 #' @templateVar progress_shows a progress indicator is shown
 #' @template progress
-#' @return `ExactKCentre()` returns an integer vector of length $\le k$
+#' @return `ExactKCentre()` returns an integer vector of length $\lte k$
 #' listing the chosen centres in ascending order.
 #' It has class `c("KCentreExact", "KCentreSelection")` and attributes:
 #'   \describe{
