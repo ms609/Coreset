@@ -45,7 +45,7 @@ Grasp(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8, maxSeconds = Inf)
 
 ## Value
 
-`Grasp()` returns an integer vector of length `k` specifing the indices
+`Grasp()` returns an integer vector of length `k` specifying the indices
 of the selected points, with attributes:
 
 - score:
