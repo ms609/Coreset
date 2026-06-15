@@ -105,8 +105,7 @@
     FarFirst    = .FarFirstSelectedBy(x),
     DropAdd     = "DropAdd tabu search",
     Grasp       = "GRASP with path-relinking",
-    ExactMaxMin = sprintf("exact MILP (%s)%s",
-                          attr(x, "solver"),
+    ExactMaxMin = sprintf("exact solver%s",
                           if (isTRUE(attr(x, "proven"))) ", proven optimal"
                           else ", unproven incumbent"),
     "an unrecorded method"

@@ -105,7 +105,7 @@ test_that("ExactMaxMin prints proof status, indices and objective", {
   expect_s3_class(proven, "MaxMinSelection")
   expect_true(inherits(proven, "MaxMinSelection"))
   expect_match(format(proven),
-               "^3 elements \\(1 2 3\\) selected by exact MILP \\(highs\\), proven optimal, each at distance >= 0.5$")
+               "^3 elements \\(1 2 3\\) selected by exact solver, proven optimal, each at distance >= 0.5$")
 
   incumbent <- proven
   attr(incumbent, "proven") <- FALSE

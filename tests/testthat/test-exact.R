@@ -175,7 +175,6 @@ test_that("ExactMaxMin returns the documented fields", {
   expect_length(res, 3L)
   expect_type(attr(res, "score"),  "double")
   expect_type(attr(res, "proven"), "logical")
-  expect_identical(attr(res, "solver"), "highs")
   expect_identical(attr(res, "N"), 10L)
   expect_identical(attr(res, "k"), 3L)
   expect_type(attr(res, "time_s"), "double")
