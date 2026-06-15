@@ -343,7 +343,8 @@ static void grasp_try_insert(std::vector<std::vector<int>>& ES,
 
 // [[Rcpp::export]]
 List Grasp_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter,
-                 int elite_size, double alpha, double time_budget_s) {
+                 int elite_size, double alpha, double time_budget_s,
+                 Rcpp::Nullable<Rcpp::Function> progress_cb = R_NilValue) {
   Rcpp::RNGScope scope;                       // GetRNGstate / PutRNGstate
   int n = dmat.nrow();
   const double* d = dmat.begin();
@@ -385,6 +386,14 @@ List Grasp_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter,
   double best_z_B = ESz[0];
   const int check_every = 256;        // interrupt-poll cadence (RNG-neutral)
   int countdown = check_every;
+  // Optional progress callback: reports the stall counter no_improve (0 ..
+  // max_no_improve) so the caller can render a bar that fills as the search
+  // stagnates and snaps back to 0 whenever a better elite objective is found.
+  // Read-only -- it draws no random numbers, so the RNG stream and result are
+  // unaffected whether or not it is supplied.
+  const bool report = progress_cb.isNotNull();
+  Rcpp::Function cb = report ? Rcpp::Function(progress_cb.get())
+                             : Rcpp::Function("identity");
   for (;;) {
     if (no_improve >= max_no_improve) break;
     if (iters >= max_iter) break;
@@ -400,6 +409,7 @@ List Grasp_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter,
     ++iters;
     if (ESz[0] > best_z_B) { best_z_B = ESz[0]; no_improve = 0; }
     else ++no_improve;
+    if (report) cb((int) no_improve);
   }
 
   // Phase C: path relinking over all elite pairs (deterministic; no RNG).

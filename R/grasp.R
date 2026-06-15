@@ -295,6 +295,8 @@
 #'   }
 #'   The vector has class `"MaxMinSelection"` and prints as a one-line summary
 #'   (see [print.MaxMinSelection()]); it is otherwise an ordinary integer vector.
+#' @templateVar progress_shows a bar tracks how close the search is to its `plateau` stopping criterion, snapping back each time a better solution is found
+#' @template progress
 #' @references \insertAllCited{}
 #'
 #' @seealso [DropAdd()] for scalable refinement;
@@ -309,6 +311,7 @@
 #' @export
 Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
                   maxSeconds = Inf) {
+  progress <- getOption("MaxMin.progress", interactive())
   d <- .AsDistMatrix(d)
   n <- nrow(d)
   k <- as.integer(k)
@@ -329,8 +332,41 @@ Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
     stop("`alpha` must be a single number in [0, 1]")
   }
 
+  # The kernel reports its stall counter (consecutive non-improving GRASP
+  # iterations, 0..plateau) through `cb`; we render it as a bar that fills as the
+  # search stagnates toward the `plateau` stopping criterion and snaps back to 0
+  # each time a better solution is found. cb is read-only, so passing it cannot
+  # change the result. Errors in the bar must never abort a long search.
+  cb <- NULL
+  if (progress) {
+    pb <- cli::cli_progress_bar(
+      format = paste0(
+        "{cli::pb_spin} GRASP-PR (n = {n}, k = {k}) | ",
+        "stall {cli::pb_current}/{cli::pb_total} {cli::pb_bar} {cli::pb_percent}"
+      ),
+      total = plateau, clear = FALSE, .auto_close = FALSE
+    )
+    cb <- function(noImprove) {
+      tryCatch(
+        cli::cli_progress_update(set = noImprove, id = pb, force = TRUE),
+        error = function(e) NULL
+      )
+    }
+  }
+
   out <- Grasp_cpp(d, k, plateau, .Machine$integer.max, eliteSize,
-                     as.double(alpha), as.double(maxSeconds))
+                     as.double(alpha), as.double(maxSeconds), cb)
+
+  if (progress) {
+    cli::cli_progress_done(id = pb)
+    itersMsg <- as.integer(out$iters)
+    tkMsg    <- as.numeric(out$objective)
+    timeMsg  <- as.numeric(out$time_s)
+    cli::cli_alert_success(
+      "Grasp: {itersMsg} iters, T_k = {signif(tkMsg, 4)}, {round(timeMsg, 1)}s"
+    )
+  }
+
   # Return:
   .AsMaxMinSelection(structure(
     sort(as.integer(out$indices)),
