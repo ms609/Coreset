@@ -56,9 +56,8 @@ ascending) with class `"MaxMinSelection"`, carrying attributes:
 
   Instance size and target subset size.
 
-Prints as a one-line summary via
+Prints as a terse summary via
 [`print.MaxMinSelection()`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md).
-`inherits(result, "MaxMinSelection")` is `TRUE`.
 
 ## Details
 
@@ -68,15 +67,9 @@ restarts and a
 [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md)
 pass), then gallops upward from that bound to the first infeasible
 threshold and bisects the resulting bracket. When a heuristic already
-attains the optimum, a single infeasibility solve certifies it.
-
-The proven `objective` is exact and does not depend on the RNG. Only the
-returned `indices` can vary when several subsets attain the optimum: the
-warm start draws on the session RNG via
-[`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) and, like
-[`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md), advances
-it. Call [`set.seed()`](https://rdrr.io/r/base/Random.html) before
-`ExactMaxMin()` for a reproducible selection.
+attains the optimum, a single infeasibility solve certifies it. The
+indices chosen may vary based on the value of the random seed when
+several subsets attain the optimum.
 
 ## Progress bar
 

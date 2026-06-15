@@ -103,8 +103,7 @@ the budget, <code>FALSE</code> if it returned an unproven incumbent.</p></dd>
 <dd><p>Instance size and target subset size.</p></dd>
 
 
-</dl><p>Prints as a one-line summary via <code><a href="print.MaxMin.html">print.MaxMinSelection()</a></code>.
-<code>inherits(result, "MaxMinSelection")</code> is <code>TRUE</code>.</p>
+</dl><p>Prints as a terse summary via <code><a href="print.MaxMin.html">print.MaxMinSelection()</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -112,11 +111,8 @@ the budget, <code>FALSE</code> if it returned an unproven incumbent.</p></dd>
 <code><a href="Grasp.html">Grasp()</a></code> restarts and a <code><a href="DropAdd.html">DropAdd()</a></code> pass), then gallops upward from that
 bound to the first infeasible threshold and bisects the resulting bracket.
 When a heuristic already attains the optimum, a single infeasibility solve
-certifies it.</p>
-<p>The proven <code>objective</code> is exact and does not depend on the RNG. Only the
-returned <code>indices</code> can vary when several subsets attain the optimum: the warm
-start draws on the session RNG via <code><a href="Grasp.html">Grasp()</a></code> and, like <code><a href="Grasp.html">Grasp()</a></code>, advances it.
-Call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> before <code>ExactMaxMin()</code> for a reproducible selection.</p>
+certifies it. The indices chosen may vary based on the value of the random
+seed when several subsets attain the optimum.</p>
     </div>
     <div class="section level2">
     <h2 id="progress-bar">Progress bar<a class="anchor" aria-label="anchor" href="#progress-bar"></a></h2>

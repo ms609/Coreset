@@ -30,7 +30,7 @@ ExactKCenter(k, d, maxSeconds = 60)
 
 ## Value
 
-`ExactKCentre()` returns an integer vector of length \\\lte k\\ listing
+`ExactKCentre()` returns an integer vector of length \\\le k\\ listing
 the chosen centres in ascending order. It has class
 `c("KCentreExact", "KCentreSelection")` and attributes:
 
