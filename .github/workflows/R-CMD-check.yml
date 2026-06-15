@@ -37,18 +37,103 @@ on:
 
 name: R-CMD-check
 
+# A new push to the same ref supersedes any in-flight run: cancel it so we are
+# never paying for a stale commit's macOS legs while the next sense-check spins up.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Waved CI to get "green" cheaply:
+#   triage -> decides parallel (last arm run green/running) vs series (last arm run red)
+#   gate   -> arm sense-check, only instantiated in SERIES mode
+#   core   -> Windows (+codecov) / R 4.1 / R devel; arm folded in here in PARALLEL mode
+#   full   -> macOS x2 + ubuntu-24.04 (release) backstop, only once `core` is green
+#   revdepcheck -> reverse-dependency checks, also gated on `core` being green
 jobs:
-  check-release:
-    runs-on: ubuntu-24.04
-    name: ubuntu-24.04 (release)
+  # ---------------------------------------------------------------------------
+  # Decide this run's wave-1 strategy from the previous run's arm-leg outcome.
+  # Optimistic by design: SERIES only if the last (non-cancelled, non-current)
+  # run's arm leg has *already* concluded `failure`. Still-running / queued /
+  # success / no-signal all map to PARALLEL, so a lookup miss degrades to the
+  # fast path (you still see reds) rather than sticking in series forever.
+  # ---------------------------------------------------------------------------
+  triage:
+    runs-on: ubuntu-latest
+    name: triage (wave-1 strategy)
+    permissions:
+      actions: read
+    outputs:
+      series: ${{ steps.plan.outputs.series }}
+      config: ${{ steps.plan.outputs.config }}
+    steps:
+      - name: Decide parallel vs series
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          CURRENT: ${{ github.run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Core legs that always run in wave 2.
+          base_legs='[{"os":"windows-latest","r":"release"},{"os":"ubuntu-24.04","r":"4.1","rspm":"https://packagemanager.posit.co/cran/2026-06-05"},{"os":"ubuntu-24.04","r":"devel","rspm":"https://packagemanager.posit.co/cran/__linux__/noble/latest"}]'
+          # The arm sense-check leg, folded into the core matrix in parallel mode.
+          arm_leg='{"os":"ubuntu-24.04-arm","r":"release","rspm":"https://packagemanager.posit.co/cran/__linux__/noble/latest"}'
+
+          # Most recent run on this branch that is neither this run nor a
+          # cancelled one (cancelled != red; ignore it). In-progress runs have a
+          # null conclusion and are kept.
+          runs=$(gh api -X GET \
+            "/repos/${{ github.repository }}/actions/workflows/R-CMD-check.yml/runs" \
+            -f branch="$BRANCH" -f per_page=10 --jq '.workflow_runs' 2>/dev/null || echo '[]')
+          prev_id=$(jq -r --arg cur "$CURRENT" \
+            '[ .[] | select((.id|tostring) != $cur) | select(.conclusion != "cancelled") ][0].id // empty' \
+            <<<"$runs")
+
+          series=false
+          if [[ -n "$prev_id" ]]; then
+            # Conclusion of the arm leg (job name contains "arm" in both modes).
+            arm_concl=$(gh api -X GET \
+              "/repos/${{ github.repository }}/actions/runs/${prev_id}/jobs" \
+              -f per_page=50 \
+              --jq '[ .jobs[] | select(.name | test("arm"; "i")) | .conclusion ][0] // ""' \
+              2>/dev/null || echo "")
+            echo "Previous run $prev_id arm conclusion: '${arm_concl:-<none>}'"
+            [[ "$arm_concl" == "failure" ]] && series=true
+          else
+            echo "No prior run found; defaulting to parallel."
+          fi
+
+          if [[ "$series" == "true" ]]; then
+            config="$base_legs"
+            echo "Mode: SERIES (arm gates the core wave)."
+          else
+            config=$(jq -cn --argjson b "$base_legs" --argjson a "$arm_leg" '$b + [$a]')
+            echo "Mode: PARALLEL (arm runs inside the core wave)."
+          fi
+          echo "series=$series"  >> "$GITHUB_OUTPUT"
+          echo "config=$config" >> "$GITHUB_OUTPUT"
+
+  # ---------------------------------------------------------------------------
+  # Wave 1 (SERIES mode only): cheapest leg as a fail-fast gate.
+  # In PARALLEL mode this job is skipped and arm runs as a core matrix leg.
+  # ---------------------------------------------------------------------------
+  gate:
+    needs: triage
+    if: ${{ needs.triage.outputs.series == 'true' }}
+    runs-on: ubuntu-24.04-arm
+    name: sense-check (ubuntu-24.04-arm, release)
 
     env:
-      _R_CHECK_CRAN_INCOMING_: true # Seemingly not set by --as-cran
+      _R_CHECK_CRAN_INCOMING_: ${{ github.event_name == 'pull_request' }}
       _R_CHECK_FORCE_SUGGESTS_: false # CRAN settings
       R_COMPILE_AND_INSTALL_PACKAGES: 'never'
       _R_CHECK_THINGS_IN_CHECK_DIR_: false
       R_REMOTES_STANDALONE: true
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
+      R_REALLY_FORCE_SYMBOLS: true # Until R4.3
+      _R_CHECK_CRAN_INCOMING_USE_ASPELL_: false
       RSPM: "https://packagemanager.posit.co/cran/__linux__/noble/latest"
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
 
@@ -60,43 +145,64 @@ jobs:
         run: |
           old_version=$(grep "Version:" DESCRIPTION | awk '{print $2}')
           if [[ $(echo "$old_version" | tr -cd '.' | wc -c) -eq 2 ]]; then
-            new_version="${old_version}.8888"
-            if [[ "$RUNNER_OS" == "macOS" ]]; then
-              sed -i "" "s/Version: .*/Version: ${new_version}/" DESCRIPTION
-            else
-              sed -i "s/Version: .*/Version: ${new_version}/" DESCRIPTION
-            fi
+            new_version="${old_version}.9999"
+            sed -i "s/Version: .*/Version: ${new_version}/" DESCRIPTION
           fi
         shell: bash
 
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+
+      - name: Install apt packages
+        run: |
+          sudo apt-get install texlive-latex-base texlive-fonts-recommended
 
       - name: Set up R dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          cache-version: 2-${{ runner.arch }}
           needs: |
             check
 
       - name: Check package
         uses: r-lib/actions/check-r-package@v2
 
+      - name: Notify on failure
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: 170,
+              body: 'Scheduled workflow has failed: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+            });
 
-  check-all:
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: 170,
+              state: 'open'
+            });
+
+  # ---------------------------------------------------------------------------
+  # Wave 2: Windows (+codecov), R 4.1, R devel. In PARALLEL mode the arm leg is
+  # appended by triage and runs here too. A *skipped* gate (parallel) must not
+  # block this; a *failed* gate (series) must. The custom `if` does both.
+  # ---------------------------------------------------------------------------
+  core:
+    needs: [triage, gate]
+    if: ${{ !cancelled() && needs.triage.result == 'success' && needs.gate.result != 'failure' }}
     runs-on: ${{ matrix.config.os }}
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
 
     strategy:
       fail-fast: false
       matrix:
-        config:
-          - {os: windows-latest, r: "release"}
-          - {os: macos-15-intel, r: "release"} # Until Intel architecture retired 2027-11
-          - {os: macOS-latest, r: "release"}
-          - {os: ubuntu-24.04, r: "4.1", rspm: "https://packagemanager.posit.co/cran/2026-06-05"}
-          - {os: ubuntu-24.04-arm, r: "release", rspm: "https://packagemanager.posit.co/cran/__linux__/noble/latest"}
-          - {os: ubuntu-24.04, r: "devel", rspm: "https://packagemanager.posit.co/cran/__linux__/noble/latest"}
+        config: ${{ fromJSON(needs.triage.outputs.config) }}
 
     env:
       _R_CHECK_CRAN_INCOMING_: ${{ github.event_name == 'pull_request' }}
@@ -194,9 +300,101 @@ jobs:
               state: 'open'
             });
 
+  # ---------------------------------------------------------------------------
+  # Wave 3 (backstop): the expensive, mostly-duplicate-failure legs. Only runs
+  # once the core wave is green, which in practice is "about to merge".
+  # macOS is ~10x runner-minutes, so keeping it off every push is the big save.
+  # ---------------------------------------------------------------------------
+  full:
+    needs: [triage, gate, core]
+    if: ${{ !cancelled() && needs.core.result == 'success' && needs.gate.result != 'failure' }}
+    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {os: ubuntu-24.04, r: "release", rspm: "https://packagemanager.posit.co/cran/__linux__/noble/latest"}
+          - {os: macos-15-intel, r: "release"} # Until Intel architecture retired 2027-11
+          - {os: macOS-latest, r: "release"}
+
+    env:
+      _R_CHECK_CRAN_INCOMING_: ${{ github.event_name == 'pull_request' }}
+      _R_CHECK_FORCE_SUGGESTS_: false # CRAN settings
+      R_COMPILE_AND_INSTALL_PACKAGES: 'never'
+      _R_CHECK_THINGS_IN_CHECK_DIR_: false
+      R_REMOTES_STANDALONE: true
+      R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
+      R_REALLY_FORCE_SYMBOLS: true # Until R4.3
+      _R_CHECK_CRAN_INCOMING_USE_ASPELL_: false
+      RSPM: ${{ matrix.config.rspm }}
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout git repo
+        uses: actions/checkout@v6
+
+      - name: Temporarily bump package version
+        run: |
+          old_version=$(grep "Version:" DESCRIPTION | awk '{print $2}')
+          if [[ $(echo "$old_version" | tr -cd '.' | wc -c) -eq 2 ]]; then
+            new_version="${old_version}.9999"
+            if [[ "$RUNNER_OS" == "macOS" ]]; then
+              sed -i "" "s/Version: .*/Version: ${new_version}/" DESCRIPTION
+            else
+              sed -i "s/Version: .*/Version: ${new_version}/" DESCRIPTION
+            fi
+          fi
+          echo "Current package version is now: $(grep "Version:" DESCRIPTION | awk '{print $2}')"
+        shell: bash
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.config.r }}
+
+      - name: Install apt packages
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install texlive-latex-base texlive-fonts-recommended
+
+      - name: Set up R dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          needs: |
+            check
+
+      - name: Check package
+        uses: r-lib/actions/check-r-package@v2
+
+      - name: Notify on failure
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: 170,
+              body: 'Scheduled workflow has failed: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+            });
+
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: 170,
+              state: 'open'
+            });
+
+  # ---------------------------------------------------------------------------
+  # Reverse-dependency checks: also a wave-3 backstop, gated on core being green.
+  # ---------------------------------------------------------------------------
   rev-dep-check:
+    needs: [triage, core]
+    if: ${{ !cancelled() && needs.core.result == 'success' }}
     runs-on: ubuntu-latest
-    needs: check-release
 
     name: revdepcheck
 
@@ -223,3 +421,23 @@ jobs:
       - uses: ms609/actions/revdepcheck@main
         with:
           deps: ${{ matrix.config.deps }}
+
+      - name: Notify on failure
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: 170,
+              body: 'Scheduled workflow has failed: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+            });
+
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: 170,
+              state: 'open'
+            });
