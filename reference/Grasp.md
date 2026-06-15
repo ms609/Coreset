@@ -1,9 +1,9 @@
 # GRASP with Path Relinking for the Max-Min Diversity Problem
 
-`Grasp()` solves the Max-Min Diversity Problem (discrete p-dispersion)
+`Grasp()` solves the Max-Min Diversity Problem (discrete *p*-dispersion)
 with the static variant of the GRASP / path-relinking metaheuristic
-(Resende2010, fig. 4) . This is the most expensive heuristic in this
-package, and attains correspondingly high-quality selections.
+(Resende et al. 2010, fig. 4) . This is the most expensive heuristic in
+this package, and attains correspondingly high-quality selections.
 
 ## Usage
 
@@ -84,6 +84,13 @@ elapsed.
 This method will fail if the complete \\N \times N\\ distance matrix, is
 too large to fit into memory.
 
+## Progress bar
+
+In interactive sessions, a bar tracks how close the search is to its
+`plateau` stopping criterion, snapping back each time a better solution
+is found. To toggle, set `options("MaxMin.progress" = FALSE)` (or
+`TRUE`).
+
 ## References
 
 Resende MGC, Martí R, Gallego M, Duarte A (2010). “GRASP and path
@@ -104,9 +111,6 @@ for the proven optimum on small instances.
 ``` r
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
-# Call set.seed() before Grasp() for a reproducible run:
-set.seed(1)
-res <- Grasp(5L, dist(pts), plateau = 20L, eliteSize = 4L)
-res
+Grasp(5L, dist(pts), plateau = 20L, eliteSize = 4L)
 #> 5 elements (3 4 5 24 25) selected by GRASP with path-relinking, each at distance >= 1.778
 ```

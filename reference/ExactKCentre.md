@@ -29,30 +29,26 @@ ExactKCenter(k, d, maxSeconds = 60)
 
 ## Value
 
-`ExactKCentre()` returns an integer vector of length `<= k` (ascending):
-the chosen centres. It has class `c("KCentreExact", "KCentreSelection")`
-and the following attributes:
+`ExactKCentre()` returns an integer vector of length \\\lte k\\ listing
+the chosen centres in ascending order. It has class
+`c("KCentreExact", "KCentreSelection")` and attributes:
 
 - radius:
 
-  The covering radius they achieve; the proven optimum when `proven` is
-  `TRUE`, otherwise a valid upper bound.
+  The covering radius achieved; the proven optimum when `proven` is
+  `TRUE`, otherwise an upper bound.
 
 - proven:
 
-  Logical: `TRUE` if optimality was certified within budget.
+  Logical: `TRUE` if optimality is certified.
 
 - time_s:
 
   Wall-clock seconds elapsed.
 
-- n, k:
+- N, k:
 
   Instance size and centre budget.
-
-- n_centres:
-
-  `length(result)`.
 
 It prints as a one-line summary and indexes a matrix or data frame
 directly. The `"KCentreSelection"` superclass means

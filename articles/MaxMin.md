@@ -316,14 +316,14 @@ d30   <- dist(pts30)
 
 exPick <- ExactMaxMin(6L, d30, maxSeconds = 30L)
 
-exPick$proven      # TRUE  ⟹  objective is the global optimum
+attr(exPick, "proven")      # TRUE  ⟹  objective is the global optimum
 #> [1] TRUE
-exPick$objective
+attr(exPick, "score")
 #> [1] 1.616311
 
 # Compare to the greedy heuristic on the same instance
 ff30Pick <- FarFirst(6L, d30)
-c(exact    = exPick$objective,
+c(exact    = attr(exPick, "score"),
   farFirst = MinDist(d30, ff30Pick))
 #>    exact farFirst 
 #> 1.616311 1.616311
@@ -354,7 +354,7 @@ MinDist(points = pts, idx = ffPick)                # from coordinates
 ## Covering: the k-centre problem
 
 The above methods seek to spread the selection such that its members are
-mutually far apart. The k-centre problem instead minimises the covering
+mutually far apart. The k-centre problem instead minimizes the covering
 radius $`R`$, the largest distance from any point to its nearest chosen
 centre, such that no point of the pool is left far from a representative
 ([González, 1985](#ref-Gonzalez1985); [Hochbaum & Shmoys,
@@ -433,7 +433,7 @@ inward to keep every city near a centre.
 
 ``` r
 
-disp <- ExactMaxMin(4L, eurodist)$indices
+disp <- ExactMaxMin(4L, eurodist)
 labels(eurodist)[disp]  # dispersion: pushed to the extremes
 #> [1] "Athens"    "Lisbon"    "Milan"     "Stockholm"
 labels(eurodist)[kc]    # covering: pulled toward the interior

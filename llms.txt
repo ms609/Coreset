@@ -1,7 +1,7 @@
 # MaxMin
 
 `MaxMin` implements algorithms that select a dispersed subsample of
-points that maxmizes coverage of a larger set, under one of two
+points that maximizes coverage of a larger set, under one of two
 objectives:
 
 The **Max-Min Diversity Problem** (MMDP, the discrete *p*-dispersion
@@ -136,11 +136,8 @@ Farthest-first (Gonzalez) selection and its seeding strategies.
   : Format and print k-centre solver results
 - [`format(`*`<MaxMinSelection>`*`)`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md)
   [`print(`*`<MaxMinSelection>`*`)`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md)
-  [`format(`*`<MaxMinExact>`*`)`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md)
-  [`print(`*`<MaxMinExact>`*`)`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md)
   : Format and print MaxMin solver results
 - [`summary(`*`<MaxMinSelection>`*`)`](https://ms609.github.io/MaxMin/reference/summary.MaxMin.md)
-  [`summary(`*`<MaxMinExact>`*`)`](https://ms609.github.io/MaxMin/reference/summary.MaxMin.md)
   : Detailed summaries of MaxMin solver results
 
 # Articles

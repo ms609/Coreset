@@ -21,8 +21,8 @@ nothing to describe.
 
 - producer:
 
-  Character tag naming the solver (`"FarFirst"`, `"DropAdd"`,
-  `"Grasp"`).
+  Character tag naming the solver (`"FarFirst"`, `"DropAdd"`, `"Grasp"`,
+  `"ExactMaxMin"`).
 
 ## Value
 

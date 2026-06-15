@@ -68,23 +68,20 @@ feasible so far is returned, with the attribute <code>proven = FALSE</code>.</p>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p><code>ExactKCentre()</code> returns an integer vector of length <code>&lt;= k</code>
-(ascending): the chosen centres. It has class
-<code>c("KCentreExact", "KCentreSelection")</code> and the following attributes:</p><dl><dt>radius</dt>
-<dd><p>The covering radius they achieve; the proven optimum when
-<code>proven</code> is <code>TRUE</code>, otherwise a valid upper bound.</p></dd>
+    <p><code>ExactKCentre()</code> returns an integer vector of length \(\lte k\)
+listing the chosen centres in ascending order.
+It has class <code>c("KCentreExact", "KCentreSelection")</code> and attributes:</p><dl><dt>radius</dt>
+<dd><p>The covering radius achieved; the proven optimum when
+<code>proven</code> is <code>TRUE</code>, otherwise an upper bound.</p></dd>
 
 <dt>proven</dt>
-<dd><p>Logical: <code>TRUE</code> if optimality was certified within budget.</p></dd>
+<dd><p>Logical: <code>TRUE</code> if optimality is certified.</p></dd>
 
 <dt>time_s</dt>
 <dd><p>Wall-clock seconds elapsed.</p></dd>
 
-<dt>n, k</dt>
+<dt>N, k</dt>
 <dd><p>Instance size and centre budget.</p></dd>
-
-<dt>n_centres</dt>
-<dd><p><code>length(result)</code>.</p></dd>
 
 
 </dl><p>It prints as a one-line summary and indexes a matrix or data frame directly.

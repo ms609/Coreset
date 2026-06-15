@@ -12,16 +12,13 @@ ensemble – the per-strategy \\T_k\\ table.
 ``` r
 # S3 method for class 'MaxMinSelection'
 summary(object, ...)
-
-# S3 method for class 'MaxMinExact'
-summary(object, ...)
 ```
 
 ## Arguments
 
 - object:
 
-  A `MaxMinSelection` or `MaxMinExact` object.
+  A `MaxMinSelection` object (from any solver).
 
 - ...:
 

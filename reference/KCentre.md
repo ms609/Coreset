@@ -1,9 +1,9 @@
 # Near-optimal discrete k-centre solver
 
-`KCentre()` selects `k` elements (centres) so as to minimize the largest
-distance from any point to its nearest centre (the covering radius),
-using the CDSh heuristic (García-Díaz et al. 2017; García-Díaz et al.
-2019) .
+`KCentre()` selects \$k\$ elements (centres) so as to minimize the
+largest distance from any point to its nearest centre (the covering
+radius), using the CDSh heuristic (García-Díaz et al. 2017; García-Díaz
+et al. 2019) .
 
 ## Usage
 
@@ -17,8 +17,8 @@ KCenter(k, d, nstart = 1L, effort = 1L)
 
 - k:
 
-  Integer specifying maximum number of centres to identify,
-  `1 <= k <= nrow(d)`.
+  Integer specifying maximum number of centres to identify, from 1 to
+  `nrow(d)`.
 
 - d:
 
@@ -26,56 +26,35 @@ KCenter(k, d, nstart = 1L, effort = 1L)
 
 - nstart:
 
-  Integer; how many deterministic peripheral seeds to try, keeping the
-  lowest-radius result. Default `1`.
+  Integer specifying how many deterministic peripheral seeds to try.
 
 - effort:
 
-  Integer; controls the Gonzalez floor that keeps the result no worse
-  than the 2-approximation. `0` disables it (raw CDSh, fastest, no
-  guarantee); `1` (default) runs one deterministic peripheral Gonzalez
-  pass; `> 1` runs a distinct-seed Gonzalez restart with
-  `nSeeds = effort` (a tighter floor that draws on the session RNG –
-  call [`set.seed()`](https://rdrr.io/r/base/Random.html) to reproduce).
+  Integer: if `> 0`, run a parallel
+  [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
+  search with `effort` random seeds, returning the best of all results.
 
 ## Value
 
-`KCentre()` returns an integer vector of length `<= k` (ascending): the
-chosen centres. The achieved covering radius is attached as attribute
-`radius`. The vector has class `"KCentreSelection"` and prints as a
-one-line summary; it is otherwise an ordinary integer vector and indexes
-a matrix or coordinate set directly.
+`KCentre()` returns an integer vector of length `<= k` specifying the
+chosen centres in ascending order. The achieved covering radius is
+attached as attribute `radius`. The vector has class
+`"KCentreSelection"` and prints as a one-line summary.
 
 ## Details
 
-CDSh binary-searches the achieved distinct distances; at each trial
-radius it runs a fixed-`k` farthest-point construction in which every
-centre is the highest-degree neighbour (within the trial radius) of the
-currently worst-covered vertex, and accepts the radius when the
-construction covers all points within it. On the benchmark instances of
-García-Díaz et al. (2019) it reaches roughly 1-3.5% of the optimum at
-\\O(N^2 \log N)\\, far tighter than the Gonzalez 2-approximation that
+On the benchmark instances of García-Díaz et al. (2019) , CDSh reaches
+roughly 1-3.5% of the optimum at \\O(N^2 \log N)\\, far tighter than
 [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
-gives for this objective (typically tens of per cent above optimum).
+(typically tens of per cent above optimum).
 
 The achieved covering radius is not monotone in the trial radius, so the
-binary search can occasionally miss the best candidate. Two safeguards
-keep the result robust: for a small candidate grid (`n` up to ~150)
-every radius is scanned exhaustively, and the result is floored against
-a Gonzalez pass (the `effort` argument, on by default), so `KCentre()`
-is **never worse than the 2-approximation**. For a tighter result at
-larger `n` raise `nstart` or `effort`; for the proven optimum on a small
-instance use
-[`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md).
-
-The construction is otherwise fully deterministic: where the reference
-seeds its first critical vertex at random, `KCentre()` uses
-deterministic peripheral anchors (`nstart` of them, the best kept). Like
-[`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md)
-this is a distance-matrix method, \\O(N^2)\\ in memory; for the covering
-radius of an existing selection at larger `N`,
-[`KCentreRadius()`](https://ms609.github.io/MaxMin/reference/KCentreRadius.md)
-has a matrix-free path.
+CDSh binary search can occasionally miss the best candidate. As a
+safeguard, `KCentre()` runs by default an exhaustive search of a small
+candidate grid (for `n` up to ~150); and an additional
+[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
+pass (controlled via the `effort` argument). These safeguards ensure
+that `KCentre()` always returns at least a 2-approximation.
 
 ## References
 
@@ -98,9 +77,9 @@ of Heuristics*, **23**(5), 349–366.
 [`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md)
 for the proven optimum;
 [`KCentreRadius()`](https://ms609.github.io/MaxMin/reference/KCentreRadius.md)
-to score a selection;
+for a selection's score;
 [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) for
-the Gonzalez 2-approximation baseline.
+the González (1985) 2-approximation baseline.
 
 ## Examples
 
@@ -111,7 +90,7 @@ d <- dist(pts)
 centres <- KCentre(5L, d)
 KCentreRadius(d, centres)
 #> [1] 1.22535
-# CDSh covers at least as tightly as the Gonzalez 2-approximation:
-KCentreRadius(d, FarFirst(5L, d, strategy = "peripheral"))
+# Results will beat a Gonzalez 2-approximation:
+KCentreRadius(d, FarFirst(5L, d, nSeeds = 1))
 #> [1] 1.361541
 ```

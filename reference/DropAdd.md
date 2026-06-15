@@ -15,7 +15,7 @@ DropAdd(k, d = NULL, plateau = 5000L, maxSeconds = Inf, points = NULL)
 
 - k:
 
-  Integer; subset size, \\2 \le k \le N\\.
+  Integer; subset size, \\2 \lte k \lte N\\.
 
 - d:
 

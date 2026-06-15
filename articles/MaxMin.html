@@ -311,14 +311,14 @@
 <div class="sourceCode cell-code" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">exPick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ExactMaxMin.html">ExactMaxMin</a></span><span class="op">(</span><span class="fl">6L</span>, <span class="va">d30</span>, maxSeconds <span class="op">=</span> <span class="fl">30L</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">exPick</span><span class="op">$</span><span class="va">proven</span>      <span class="co"># TRUE  ⟹  objective is the global optimum</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">exPick</span>, <span class="st">"proven"</span><span class="op">)</span>      <span class="co"># TRUE  ⟹  objective is the global optimum</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span>
-<span><span class="va">exPick</span><span class="op">$</span><span class="va">objective</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">exPick</span>, <span class="st">"score"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 1.616311</span></span>
 <span></span>
 <span><span class="co"># Compare to the greedy heuristic on the same instance</span></span>
 <span><span class="va">ff30Pick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="fl">6L</span>, <span class="va">d30</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>exact    <span class="op">=</span> <span class="va">exPick</span><span class="op">$</span><span class="va">objective</span>,</span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>exact    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">exPick</span>, <span class="st">"score"</span><span class="op">)</span>,</span>
 <span>  farFirst <span class="op">=</span> <span class="fu"><a href="../reference/MinDist.html">MinDist</a></span><span class="op">(</span><span class="va">d30</span>, <span class="va">ff30Pick</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    exact farFirst </span></span>
 <span><span class="co">#&gt; 1.616311 1.616311</span></span></code></pre></div>
@@ -338,7 +338,7 @@
 </div>
 </section><section class="level2"><h2 id="covering-the-k-centre-problem">Covering: the k-centre problem<a class="anchor" aria-label="anchor" href="#covering-the-k-centre-problem"></a>
 </h2>
-<p>The above methods seek to spread the selection such that its members are mutually far apart. The k-centre problem instead minimises the covering radius <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>R</mi><annotation encoding="application/x-tex">R</annotation></semantics></math>, the largest distance from any point to its nearest chosen centre, such that no point of the pool is left far from a representative <span class="citation" data-cites="Gonzalez1985 Hochbaum1985">(<a href="#ref-Gonzalez1985" role="doc-biblioref">González, 1985</a>; <a href="#ref-Hochbaum1985" role="doc-biblioref">Hochbaum &amp; Shmoys, 1985</a>)</span>, typically resulting in selections that reach further into the interior of a sample.</p>
+<p>The above methods seek to spread the selection such that its members are mutually far apart. The k-centre problem instead minimizes the covering radius <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>R</mi><annotation encoding="application/x-tex">R</annotation></semantics></math>, the largest distance from any point to its nearest chosen centre, such that no point of the pool is left far from a representative <span class="citation" data-cites="Gonzalez1985 Hochbaum1985">(<a href="#ref-Gonzalez1985" role="doc-biblioref">González, 1985</a>; <a href="#ref-Hochbaum1985" role="doc-biblioref">Hochbaum &amp; Shmoys, 1985</a>)</span>, typically resulting in selections that reach further into the interior of a sample.</p>
 <section class="level3"><h3 id="heuristic-approach">Heuristic approach<a class="anchor" aria-label="anchor" href="#heuristic-approach"></a>
 </h3>
 <p><code><a href="../reference/FarFirst.html">FarFirst()</a></code> is the quickest approximation to the K-centres problem. The CDSh algorithm implemented in <code>KCentres()</code> gives a more sophisticated heuristic <span class="citation" data-cites="GarciaDiaz2019 GarciaDiaz2017">(<a href="#ref-GarciaDiaz2017" role="doc-biblioref">García-Díaz et al., 2017</a>; <a href="#ref-GarciaDiaz2019" role="doc-biblioref">García-Díaz et al., 2019</a>)</span>; its solutions are typically within 1–3.5 % of the optimum, compared to ~10% for <code><a href="../reference/FarFirst.html">FarFirst()</a></code>.</p>
@@ -375,7 +375,7 @@
 <p>The dispersion and covering optima differ even on this small example: dispersion selects cities at the rim of the map, while covering pulls inward to keep every city near a centre.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">disp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ExactMaxMin.html">ExactMaxMin</a></span><span class="op">(</span><span class="fl">4L</span>, <span class="va">eurodist</span><span class="op">)</span><span class="op">$</span><span class="va">indices</span></span>
+<code class="sourceCode R"><span><span class="va">disp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ExactMaxMin.html">ExactMaxMin</a></span><span class="op">(</span><span class="fl">4L</span>, <span class="va">eurodist</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/labels.html" class="external-link">labels</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span><span class="op">[</span><span class="va">disp</span><span class="op">]</span>  <span class="co"># dispersion: pushed to the extremes</span></span>
 <span><span class="co">#&gt; [1] "Athens"    "Lisbon"    "Milan"     "Stockholm"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/labels.html" class="external-link">labels</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span><span class="op">[</span><span class="va">kc</span><span class="op">]</span>    <span class="co"># covering: pulled toward the interior</span></span>

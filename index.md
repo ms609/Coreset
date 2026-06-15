@@ -1,7 +1,7 @@
 # MaxMin
 
 `MaxMin` implements algorithms that select a dispersed subsample of
-points that maxmizes coverage of a larger set, under one of two
+points that maximizes coverage of a larger set, under one of two
 objectives:
 
 The **Max-Min Diversity Problem** (MMDP, the discrete *p*-dispersion

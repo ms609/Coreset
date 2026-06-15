@@ -44,12 +44,6 @@
 <span><span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'MaxMinSelection'</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># S3 method for class 'MaxMinExact'</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># S3 method for class 'MaxMinExact'</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -58,7 +52,8 @@
 
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>A <code>MaxMinSelection</code> or <code>MaxMinExact</code> object.</p></dd>
+<dd><p>A <code>MaxMinSelection</code> object (from any solver, including
+<code><a href="ExactMaxMin.html">ExactMaxMin()</a></code>).</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -69,11 +64,9 @@
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code>print.MaxMin()</code> returns <code>x</code>, invisibly. It is called for its side-effect
 of printing <code>format(x)</code> to the console.
-<code>format.MaxMin()</code> returns a character string describing a <code>MaxMinSelection</code>
-(from <code><a href="FarFirst.html">FarFirst()</a></code>, <code><a href="DropAdd.html">DropAdd()</a></code> and <code><a href="Grasp.html">Grasp()</a></code>); it reports its size, the
-selected indices, the algorithm (and if applicable strategy),
-and the achieved \(T_k\). A <code>MaxMinExact</code> (from <code><a href="ExactMaxMin.html">ExactMaxMin()</a></code>) object
-additionally states whether optimality was proven.</p>
+<code>format.MaxMin()</code> returns a character string reporting the selection size,
+the selected indices, the algorithm (and if applicable strategy or proof
+status), and the achieved \(T_k\).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
