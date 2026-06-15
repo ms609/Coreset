@@ -137,9 +137,9 @@ FarFirst(6L, eurodist, nSeeds = 2L)
 ```
 
 
-Other, deterministic strategies to select peripheral seeds are available via
-the `strategy` argument; these are described at [`PickPoint()`].
-All named strategies are attempted, and the best solution is returned.
+Other strategies to select peripheral seeds are available via the `strategy`
+argument; these are described at `PickPoint()`.
+The best solution from the requested strategies is used.
 
 ```{r}
 #| label: gonzalez-seeds
@@ -149,11 +149,12 @@ MinDist(eurodist, ffPick)
 attr(ffPick, "winning_strategy")
 ```
 
-Where points are not associated with natural coordinates and computing or
-storing all N×N distances at once is infeasible, a function may be passed in
-place of the distance matrix.
-This function is passed one index `i`, and must return the distance from
-object `i` to each other object. `N`, the number of objects, must be supplied.
+With large datasets of points that are not associated with natural coordinates,
+it may not be feasible to compute and store all N×N distances.
+In such cases, a distance function may take the place of the distance matrix.
+This function is passed one index `i` at a time, and must return the distance
+from `i` to each other point.
+`N`, the number of objects, must also be specified.
 
 ```{r}
 #| label: gonzalez-oracle
@@ -189,18 +190,16 @@ Where *N* is too large for a distance matrix to fit in memory
 
 ## GRASP with path relinking
 
-**GRASP + path relinking** [@Resende2010] combines a *randomised*
-greedy construction phase with extended local search and then refines an elite
+**GRASP + path relinking** [@Resende2010] combines a randomised greedy
+construction phase with extended local search, and then refines an "elite"
 set of good solutions by interpolating between elite-pair trajectories
-(*path relinking*).
+(path relinking).
 It achieves the highest T~k~ of the three heuristics, at a proportionally
 higher cost.
-Because the construction phase is stochastic, call `set.seed()` before
-`Grasp()` for a reproducible run:
 
 ```{r}
 #| label: grasp
-set.seed(42)
+set.seed(0)
 grPick <- Grasp(6L, eurodist, plateau = 50L)
 grPick
 labels(eurodist)[grPick]
@@ -208,8 +207,7 @@ attr(grPick, "pr_calls")   # path-relinking calls performed
 ```
 
 `plateau` controls how many consecutive non-improving GRASP iterations
-trigger termination; `maxSeconds` is available as an absolute time cap for
-interactive or batch use.
+trigger termination; `maxSeconds` is available as an absolute time cap.
 
 
 ## Comparing methods on a simulated example
@@ -219,7 +217,7 @@ dimensions and select *k* = 8 from each.
 
 ```{r}
 #| label: sim-data
-set.seed(42)
+set.seed(1)
 pts <- matrix(rnorm(100), ncol = 2)   # 50 points, 2 dimensions
 d50 <- dist(pts)
 k   <- 8L
@@ -227,9 +225,9 @@ k   <- 8L
 
 ```{r}
 #| label: compare-run
+set.seed(1)
 ffPick <- FarFirst(k, d50)
 da50Pick <- DropAdd(k, d50, plateau = 500L)
-set.seed(42)
 gr50Pick <- Grasp(k, d50, plateau = 50L)
 ```
 
@@ -239,7 +237,7 @@ dispersed selection.
 ```{r}
 #| label: compare-scores
 scores <- c(
-  FarFirst  = MinDist(d50, ffPick),
+  FarFirst  = attr(ffPick, "score"),
   DropAdd = attr(da50Pick, "score"),
   Grasp   = attr(gr50Pick, "score")
 )
@@ -257,7 +255,7 @@ above captures the quality distinction even when the visual overlap is high.
 #| fig-height: 6
 #| fig-cap: "Selections returned by each method on 50 random 2-D points
 #|   (k = 8). Coloured symbols mark selected points; grey circles are the
-#|   full candidate set. A small jitter separates symbols at shared indices."
+#|   full candidate set."
 
 methods <- list(
   FarFirst  = ffPick,
@@ -265,26 +263,20 @@ methods <- list(
   Grasp   = gr50Pick
 )
 cols <- c(FarFirst = "#E41A1C", DropAdd = "#377EB8", Grasp = "#4DAF4A")
-pchs <- c(FarFirst = 24L, DropAdd = 21L, Grasp = 22L)
-# Small per-method shift so coincident selections remain distinguishable
-dx   <- c(FarFirst = 0, DropAdd =  0.04, Grasp = -0.04)
-dy   <- c(FarFirst = 0, DropAdd = -0.04, Grasp =  0.04)
+pchs <- c(FarFirst = 1L, DropAdd = 3L, Grasp = 4L)
 
 plot(pts, pch = 1L, col = "grey75", asp = 1L,
-     xlab = "x", ylab = "y",
+     xlab = "x", ylab = "y", frame.plot = FALSE,
      main = "MaxMin method comparison")
 
 for (nm in names(methods)) {
   sel <- methods[[nm]]
-  points(
-    pts[sel, 1L] + dx[nm],
-    pts[sel, 2L] + dy[nm],
-    pch = pchs[nm], col = cols[nm], bg = cols[nm], cex = 1.6
-  )
+  points(pts[sel, 1L], pts[sel, 2L], pch = pchs[nm], col = cols[nm],
+         cex = 1.6)
 }
 
-legend("topright",
-       legend = paste0(names(methods), "  (Tₖ = ", round(scores, 3), ")"),
+legend("topleft",
+       legend = paste0(names(methods), "  (T\U2096 = ", round(scores, 3), ")"),
        pch = pchs, col = cols, pt.bg = cols, pt.cex = 1.4, bty = "n")
 ```
 
