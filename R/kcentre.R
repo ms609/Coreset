@@ -151,7 +151,7 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' @param effort Integer: if `> 0`, run a parallel `FarFirst()` search
 #'  with `effort` random seeds, returning the best of all results.
 #'
-#' @return `KCentre()` returns an integer vector of length `<= k` specifying
+#' @return `KCentre()` returns an integer vector of length \eqn{\lte k}` specifying
 #' the chosen centres in ascending order.
 #' The achieved covering radius is attached as attribute `radius`.
 #' The vector has class `"KCentreSelection"` and prints as a one-line summary.
