@@ -25,29 +25,28 @@ Grasp(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8, maxSeconds = Inf)
 
   Integer; stop after this many consecutive GRASP iterations without an
   improvement to the best elite objective. The primary, deterministic
-  stopping criterion. Default 100.
+  stopping criterion.
 
 - eliteSize:
 
-  Size of the elite set \|ES\|. Default 10.
+  Size of the elite set \|ES\|.
 
 - alpha:
 
-  RCL threshold; `alpha = 1` is pure greedy, `alpha = 0` uniform random.
-  Default 0.8.
+  Construction greediness in `[0, 1]`. Each step draws the next point at
+  random from a shortlist of the strongest candidates – those whose gain
+  lies within a fraction `alpha` of the best-to-worst spread.
+  `alpha = 1` is pure greedy (best only); `alpha = 0` is uniform random
+  among candidates.
 
 - maxSeconds:
 
-  Optional wall-clock ceiling in seconds. Default `Inf` (no ceiling,
-  fully reproducible). A finite value caps runtime but makes the result
-  machine-dependent.
+  Numeric specifying wall-clock ceiling, in seconds.
 
 ## Value
 
-`Grasp()` returns an integer vector of length `k` (1-based) **sorted
-ascending** (unlike
-[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md),
-which returns farthest-first order) with attributes:
+`Grasp()` returns an integer vector of length `k` specifing the indices
+of the selected points, with attributes:
 
 - score:
 
@@ -67,8 +66,7 @@ which returns farthest-first order) with attributes:
 
 The vector has class `"MaxMinSelection"` and prints as a one-line
 summary (see
-[`print.MaxMinSelection()`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md));
-it is otherwise an ordinary integer vector.
+[`print.MaxMinSelection()`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md)).
 
 ## Details
 
@@ -81,7 +79,7 @@ The refinement loop stops after `plateau` consecutive GRASP iterations
 fail to improve the best elite objective, or once `maxSeconds` have
 elapsed.
 
-This method will fail if the complete \\N \times N\\ distance matrix, is
+This method will fail if the complete \\N \times N\\ distance matrix is
 too large to fit into memory.
 
 ## Progress bar

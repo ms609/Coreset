@@ -73,29 +73,29 @@ selections.</p>
 <dt id="arg-plateau">plateau<a class="anchor" aria-label="anchor" href="#arg-plateau"></a></dt>
 <dd><p>Integer; stop after this many consecutive GRASP
 iterations without an improvement to the best elite objective. The
-primary, deterministic stopping criterion. Default 100.</p></dd>
+primary, deterministic stopping criterion.</p></dd>
 
 
 <dt id="arg-elitesize">eliteSize<a class="anchor" aria-label="anchor" href="#arg-elitesize"></a></dt>
-<dd><p>Size of the elite set |ES|. Default 10.</p></dd>
+<dd><p>Size of the elite set |ES|.</p></dd>
 
 
 <dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>
-<dd><p>RCL threshold; <code>alpha = 1</code> is pure greedy, <code>alpha = 0</code>
-uniform random. Default 0.8.</p></dd>
+<dd><p>Construction greediness in <code>[0, 1]</code>. Each step draws the next
+point at random from a shortlist of the strongest candidates – those
+whose gain lies within a fraction <code>alpha</code> of the best-to-worst spread.
+<code>alpha = 1</code> is pure greedy (best only); <code>alpha = 0</code> is uniform random
+among candidates.</p></dd>
 
 
 <dt id="arg-maxseconds">maxSeconds<a class="anchor" aria-label="anchor" href="#arg-maxseconds"></a></dt>
-<dd><p>Optional wall-clock ceiling in seconds. Default <code>Inf</code>
-(no ceiling, fully reproducible). A finite value caps runtime but makes
-the result machine-dependent.</p></dd>
+<dd><p>Numeric specifying wall-clock ceiling, in seconds.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p><code>Grasp()</code> returns an integer vector of length <code>k</code> (1-based) <strong>sorted ascending</strong>
-(unlike <code><a href="FarFirst.html">FarFirst()</a></code>, which returns farthest-first order)
-with attributes:</p><dl><dt>score</dt>
+    <p><code>Grasp()</code> returns an integer vector of length <code>k</code> specifing the
+indices of the selected points, with attributes:</p><dl><dt>score</dt>
 <dd><p>Achieved MaxMin objective \(T_k\).</p></dd>
 
 <dt>time_s</dt>
@@ -109,7 +109,7 @@ with attributes:</p><dl><dt>score</dt>
 
 
 </dl><p>The vector has class <code>"MaxMinSelection"</code> and prints as a one-line summary
-(see <code><a href="print.MaxMin.html">print.MaxMinSelection()</a></code>); it is otherwise an ordinary integer vector.</p>
+(see <code><a href="print.MaxMin.html">print.MaxMinSelection()</a></code>).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -121,7 +121,7 @@ pairs (Resende et al. 2010)
 <p>The refinement loop stops after <code>plateau</code> consecutive GRASP iterations
 fail to improve the best elite objective, or once <code>maxSeconds</code> have
 elapsed.</p>
-<p>This method will fail if the complete \(N \times N\) distance matrix, is
+<p>This method will fail if the complete \(N \times N\) distance matrix is
 too large to fit into memory.</p>
     </div>
     <div class="section level2">
