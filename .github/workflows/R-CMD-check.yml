@@ -37,91 +37,24 @@ on:
 
 name: R-CMD-check
 
-# A new push to the same ref supersedes any in-flight run: cancel it so we are
-# never paying for a stale commit's macOS legs while the next sense-check spins up.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+# NB: there is deliberately NO workflow-level `concurrency`. Workflow-level
+# cancel-in-progress would kill the whole run (sense-check included) on every
+# new push. Instead, each EXPENSIVE job carries its own per-leg concurrency
+# group so superseded Windows/macOS work is cancelled, while the cheap
+# `sense-check` job has no concurrency and therefore always runs to completion
+# -- giving a per-commit "did this build?" signal even under rapid iteration.
 
-# Waved CI to get "green" cheaply:
-#   triage -> decides parallel (last arm run green/running) vs series (last arm run red)
-#   gate   -> arm sense-check, only instantiated in SERIES mode
-#   core   -> Windows (+codecov) / R 4.1 / R devel; arm folded in here in PARALLEL mode
-#   full   -> macOS x2 + ubuntu-24.04 (release) backstop, only once `core` is green
-#   revdepcheck -> reverse-dependency checks, also gated on `core` being green
+# Waves:
+#   sense-check -> arm (cheapest), always runs, never cancelled. Fast signal.
+#   core        -> Windows (+codecov) / R 4.1 / R devel; only if sense-check passed.
+#   full        -> macOS x2 + ubuntu-24.04 (release) backstop; only once core is green.
+#   revdepcheck -> reverse-dependency checks; also gated on core being green.
 jobs:
   # ---------------------------------------------------------------------------
-  # Decide this run's wave-1 strategy from the previous run's arm-leg outcome.
-  # Optimistic by design: SERIES only if the last (non-cancelled, non-current)
-  # run's arm leg has *already* concluded `failure`. Still-running / queued /
-  # success / no-signal all map to PARALLEL, so a lookup miss degrades to the
-  # fast path (you still see reds) rather than sticking in series forever.
+  # Wave 1: cheapest leg as a fail-fast sense-check. No concurrency group, so a
+  # rapid follow-up push does NOT cancel it -- each commit gets its own signal.
   # ---------------------------------------------------------------------------
-  triage:
-    runs-on: ubuntu-latest
-    name: triage (wave-1 strategy)
-    permissions:
-      actions: read
-    outputs:
-      series: ${{ steps.plan.outputs.series }}
-      config: ${{ steps.plan.outputs.config }}
-    steps:
-      - name: Decide parallel vs series
-        id: plan
-        env:
-          GH_TOKEN: ${{ github.token }}
-          BRANCH: ${{ github.head_ref || github.ref_name }}
-          CURRENT: ${{ github.run_id }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          # Core legs that always run in wave 2.
-          base_legs='[{"os":"windows-latest","r":"release"},{"os":"ubuntu-24.04","r":"4.1","rspm":"https://packagemanager.posit.co/cran/2026-06-05"},{"os":"ubuntu-24.04","r":"devel","rspm":"https://packagemanager.posit.co/cran/__linux__/noble/latest"}]'
-          # The arm sense-check leg, folded into the core matrix in parallel mode.
-          arm_leg='{"os":"ubuntu-24.04-arm","r":"release","rspm":"https://packagemanager.posit.co/cran/__linux__/noble/latest"}'
-
-          # Most recent run on this branch that is neither this run nor a
-          # cancelled one (cancelled != red; ignore it). In-progress runs have a
-          # null conclusion and are kept.
-          runs=$(gh api -X GET \
-            "/repos/${{ github.repository }}/actions/workflows/R-CMD-check.yml/runs" \
-            -f branch="$BRANCH" -f per_page=10 --jq '.workflow_runs' 2>/dev/null || echo '[]')
-          prev_id=$(jq -r --arg cur "$CURRENT" \
-            '[ .[] | select((.id|tostring) != $cur) | select(.conclusion != "cancelled") ][0].id // empty' \
-            <<<"$runs")
-
-          series=false
-          if [[ -n "$prev_id" ]]; then
-            # Conclusion of the arm leg (job name contains "arm" in both modes).
-            arm_concl=$(gh api -X GET \
-              "/repos/${{ github.repository }}/actions/runs/${prev_id}/jobs" \
-              -f per_page=50 \
-              --jq '[ .jobs[] | select(.name | test("arm"; "i")) | .conclusion ][0] // ""' \
-              2>/dev/null || echo "")
-            echo "Previous run $prev_id arm conclusion: '${arm_concl:-<none>}'"
-            [[ "$arm_concl" == "failure" ]] && series=true
-          else
-            echo "No prior run found; defaulting to parallel."
-          fi
-
-          if [[ "$series" == "true" ]]; then
-            config="$base_legs"
-            echo "Mode: SERIES (arm gates the core wave)."
-          else
-            config=$(jq -cn --argjson b "$base_legs" --argjson a "$arm_leg" '$b + [$a]')
-            echo "Mode: PARALLEL (arm runs inside the core wave)."
-          fi
-          echo "series=$series"  >> "$GITHUB_OUTPUT"
-          echo "config=$config" >> "$GITHUB_OUTPUT"
-
-  # ---------------------------------------------------------------------------
-  # Wave 1 (SERIES mode only): cheapest leg as a fail-fast gate.
-  # In PARALLEL mode this job is skipped and arm runs as a core matrix leg.
-  # ---------------------------------------------------------------------------
-  gate:
-    needs: triage
-    if: ${{ needs.triage.outputs.series == 'true' }}
+  sense-check:
     runs-on: ubuntu-24.04-arm
     name: sense-check (ubuntu-24.04-arm, release)
 
@@ -189,20 +122,25 @@ jobs:
             });
 
   # ---------------------------------------------------------------------------
-  # Wave 2: Windows (+codecov), R 4.1, R devel. In PARALLEL mode the arm leg is
-  # appended by triage and runs here too. A *skipped* gate (parallel) must not
-  # block this; a *failed* gate (series) must. The custom `if` does both.
+  # Wave 2: Windows (+codecov), R 4.1, R devel. Runs only if the sense-check
+  # passed. Per-leg concurrency so a superseding push cancels in-flight legs.
   # ---------------------------------------------------------------------------
   core:
-    needs: [triage, gate]
-    if: ${{ !cancelled() && needs.triage.result == 'success' && needs.gate.result != 'failure' }}
+    needs: sense-check
     runs-on: ${{ matrix.config.os }}
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+
+    concurrency:
+      group: ${{ github.workflow }}-core-${{ matrix.config.os }}-${{ matrix.config.r }}-${{ github.ref }}
+      cancel-in-progress: true
 
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON(needs.triage.outputs.config) }}
+        config:
+          - {os: windows-latest, r: "release"}
+          - {os: ubuntu-24.04, r: "4.1", rspm: "https://packagemanager.posit.co/cran/2026-06-05"}
+          - {os: ubuntu-24.04, r: "devel", rspm: "https://packagemanager.posit.co/cran/__linux__/noble/latest"}
 
     env:
       _R_CHECK_CRAN_INCOMING_: ${{ github.event_name == 'pull_request' }}
@@ -306,10 +244,13 @@ jobs:
   # macOS is ~10x runner-minutes, so keeping it off every push is the big save.
   # ---------------------------------------------------------------------------
   full:
-    needs: [triage, gate, core]
-    if: ${{ !cancelled() && needs.core.result == 'success' && needs.gate.result != 'failure' }}
+    needs: core
     runs-on: ${{ matrix.config.os }}
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+
+    concurrency:
+      group: ${{ github.workflow }}-full-${{ matrix.config.os }}-${{ matrix.config.r }}-${{ github.ref }}
+      cancel-in-progress: true
 
     strategy:
       fail-fast: false
@@ -392,11 +333,14 @@ jobs:
   # Reverse-dependency checks: also a wave-3 backstop, gated on core being green.
   # ---------------------------------------------------------------------------
   rev-dep-check:
-    needs: [triage, core]
-    if: ${{ !cancelled() && needs.core.result == 'success' }}
+    needs: core
     runs-on: ubuntu-latest
 
-    name: revdepcheck
+    name: revdepcheck (${{ matrix.config.deps }})
+
+    concurrency:
+      group: ${{ github.workflow }}-revdep-${{ matrix.config.deps }}-${{ github.ref }}
+      cancel-in-progress: true
 
     strategy:
       fail-fast: false
