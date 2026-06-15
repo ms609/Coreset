@@ -315,10 +315,8 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L) {
 #' @param maxSeconds Wall-clock budget in seconds for the whole search.
 #' If it expires before the optimum is proven, the smallest radius proven
 #' feasible so far is returned, with the attribute `proven = FALSE`.
-#' @section Progress bar:
-#' Shows a progress indicator controlled by
-#' `getOption("MaxMin.progress", interactive())` — `TRUE` by default in
-#' interactive sessions, `FALSE` otherwise.
+#' @templateVar progress_shows a progress indicator is shown
+#' @template progress
 #' @return `ExactKCentre()` returns an integer vector of length `<= k`
 #'   (ascending): the chosen centres. It has class
 #'   `c("KCentreExact", "KCentreSelection")` and the following attributes:

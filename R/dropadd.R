@@ -136,10 +136,8 @@
 #'  iterations do not improve the score.
 #' @param maxSeconds Numeric: terminate search after this many seconds have
 #' elapsed.
-#' @section Progress bar:
-#' Shows status messages controlled by
-#' `getOption("MaxMin.progress", interactive())` — `TRUE` by default in
-#' interactive sessions, `FALSE` otherwise.
+#' @templateVar progress_shows status messages are shown
+#' @template progress
 #'
 #' @return `DropAdd()` returns an integer vector of length \code{k} containing the 1-based selected
 #'   indices **sorted ascending** (unlike [FarFirst()], which returns

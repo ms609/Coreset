@@ -57,9 +57,8 @@ radius.
 }
 \section{Progress bar}{
 
-Shows a progress indicator controlled by
-\code{getOption("MaxMin.progress", interactive())} — \code{TRUE} by default in
-interactive sessions, \code{FALSE} otherwise.
+In interactive sessions, a progress indicator is shown.
+To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
 }
 
 \examples{

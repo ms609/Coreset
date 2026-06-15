@@ -142,10 +142,8 @@
 #' iteratively selects the point furthest from the current selection to yield a
 #' 2-approximation to the _k_-centre and Max Min Diversity problems.
 #'
-#' @section Progress bar:
-#' In interactive sessions, the distance-column path shows a progress bar.
-#' To toggle this progress bar, set `options("MaxMin.progress" = FALSE)`
-#' (or `TRUE`).
+#' @templateVar progress_shows the distance-column path shows a progress bar
+#' @template progress
 #'
 #' @param k Integer: number of points to select.
 #' @param d A `dist` object, a square numeric matrix of pairwise distances, or

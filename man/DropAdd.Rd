@@ -7,28 +7,22 @@
 DropAdd(k, d = NULL, plateau = 5000L, maxSeconds = Inf, points = NULL)
 }
 \arguments{
-\item{k}{Integer; subset size, \eqn{2 \le k \le n}.}
+\item{k}{Integer; subset size, \eqn{2 \le k \le N}.}
 
-\item{d}{A \code{dist} object or square symmetric numeric matrix.
-Mutually exclusive with \code{points}; supply exactly one.}
+\item{d}{A \code{dist} object or square symmetric numeric matrix.}
 
 \item{plateau}{Integer; stop after this many consecutive drop-add
-iterations that do not improve the best objective. The primary,
-deterministic stopping criterion. The search is RNG-free (ties broken by
-smallest index), so for a given instance the result is reproducible and
-machine-independent. Default 5000.}
+iterations do not improve the score.}
 
-\item{maxSeconds}{Optional wall-clock ceiling in seconds, checked at
-iteration boundaries. Default \code{Inf} (no ceiling, fully reproducible).
-A finite value caps runtime but makes the result machine-dependent.}
+\item{maxSeconds}{Numeric: terminate search after this many seconds have
+elapsed.}
 
-\item{points}{A numeric \eqn{n \times \mathrm{dim}} coordinate matrix (or an
-object coercible to one via \code{as.matrix}). Must be complete (no
-\code{NA}). Mutually exclusive with \code{d}; supply exactly one. When
-supplied, the algorithm never materialises the dense \eqn{n \times n}
-distance matrix, giving \eqn{O(n)} working memory and enabling use at
-\eqn{n} far exceeding the matrix path's ceiling (R's
-\code{as.matrix.dist} overflows at \eqn{n = 46340}).}
+\item{points}{A numeric \eqn{N \times \mathrm{dim}} coordinate matrix (or an
+object coercible to one via \code{as.matrix}).
+Must be complete (no \code{NA}).
+Ignored if \code{d} specified.
+Avoids creating an \eqn{N \times N} distance matrix, enabling use at
+\eqn{N \ge 46340}).}
 }
 \value{
 \code{DropAdd()} returns an integer vector of length \code{k} containing the 1-based selected
@@ -55,9 +49,8 @@ neighbour-evaluation tricks
 }
 \section{Progress bar}{
 
-Shows status messages controlled by
-\code{getOption("MaxMin.progress", interactive())} — \code{TRUE} by default in
-interactive sessions, \code{FALSE} otherwise.
+In interactive sessions, status messages are shown.
+To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
 }
 
 \references{

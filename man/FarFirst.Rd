@@ -57,8 +57,7 @@ iteratively selects the point furthest from the current selection to yield a
 \section{Progress bar}{
 
 In interactive sessions, the distance-column path shows a progress bar.
-To toggle this progress bar, set \code{options("MaxMin.progress" = FALSE)}
-(or \code{TRUE}).
+To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
 }
 
 \examples{

@@ -203,10 +203,8 @@
 #'   already computed by another solver. Ignored unless it is a valid `k`-subset.
 #'   The internal heuristics run regardless; a good `warmStart` can only reduce
 #'   the number of IP solves, never change the proven optimum.
-#' @section Progress bar:
-#' Shows a progress indicator controlled by
-#' `getOption("MaxMin.progress", interactive())` — `TRUE` by default in
-#' interactive sessions, `FALSE` otherwise.
+#' @templateVar progress_shows a progress indicator is shown
+#' @template progress
 #' @return `ExactMaxMin()` returns a list (unlike [DropAdd()], [Grasp()] and
 #'   [FarFirst()], which each return a bare integer vector carrying a `score`
 #'   attribute), since it reports both the optimum and a proof status. The fields
