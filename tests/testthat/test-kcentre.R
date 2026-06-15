@@ -112,7 +112,7 @@ test_that("ExactKCentre proves the brute-force optimum on small instances", {
       res <- ExactKCentre(d = d, k)
       expect_s3_class(res, "KCentreExact")
       expect_true(attr(res, "proven"))
-      expect_lte(attr(res, "n_centres"), k)
+      expect_lte(length(res), k)
       expect_equal(attr(res, "radius"), brute_kcentre(d, k))
       # Returned centres genuinely achieve the proven radius.
       expect_equal(KCentreRadius(d = d, as.integer(res)), attr(res, "radius"))
@@ -216,7 +216,7 @@ test_that("ExactKCentre returns a consistent unproven incumbent under a tiny bud
   d <- as.matrix(stats::dist(matrix(rnorm(60L), ncol = 2L)))     # n = 30
   res <- ExactKCentre(d = d, 4L, maxSeconds = 1e-6)
   expect_false(attr(res, "proven"))
-  expect_lte(attr(res, "n_centres"), 4L)
+  expect_lte(length(res), 4L)
   # The reported radius is the true covering radius of the returned centres,
   # proven or not (KC-004).
   expect_equal(attr(res, "radius"), KCentreRadius(d = d, as.integer(res)))
@@ -301,12 +301,12 @@ test_that("KCentreExact format and print cover proven and unproven states", {
   proven <- structure(
     c(2L, 5L),
     radius = 0.5, proven = TRUE, time_s = 0.1,
-    solver = "highs", n = 10L, k = 2L, n_centres = 2L,
+    solver = "highs", n = 10L, k = 2L,
     class = c("KCentreExact", "KCentreSelection"))
   unproven <- structure(
     3L,
     radius = 1.2, proven = FALSE, time_s = 0.1,
-    solver = "highs", n = 10L, k = 1L, n_centres = 1L,
+    solver = "highs", n = 10L, k = 1L,
     class = c("KCentreExact", "KCentreSelection"))
   expect_match(format(proven), "proven optimal, covering radius = ")
   expect_match(format(unproven), "unproven incumbent, covering radius <= ")

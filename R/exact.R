@@ -172,7 +172,7 @@
 #'
 #' `ExactMaxMin()` finds the optimal solution to the Max-Min Diversity Problem
 #' (discrete _p_-dispersion) by iterated node-packing
-#' \insertCite{Sayyady2016;textual}{MaxMin}.
+#' \insertCite{Sayyady2016}{MaxMin}.
 #' As this problem is NP-hard, it is feasible only for small sets.
 #'
 #' The search is warm-started from a heuristic lower bound (the best of several
@@ -189,7 +189,7 @@
 #' @param k Integer: target subset size, between 2 and `nrow(d)`.
 #' @param d `dist` object or a square symmetric numeric distance matrix.
 #' @param maxSeconds Numeric: search terminates after this many seconds have
-#' elapsed; returning largest threshold proven feasible so far.
+#' elapsed, returning largest threshold proven feasible.
 #' @param warmStart Integer vector giving indices of a candidate subset to add
 #'  to the heuristic warm-start pool, e.g. a selection computed by another
 #'  solver.

@@ -304,16 +304,15 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L) {
 #' feasible so far is returned, with the attribute `proven = FALSE`.
 #' @templateVar progress_shows a progress indicator is shown
 #' @template progress
-#' @return `ExactKCentre()` returns an integer vector of length `<= k`
-#'   (ascending): the chosen centres. It has class
-#'   `c("KCentreExact", "KCentreSelection")` and the following attributes:
+#' @return `ExactKCentre()` returns an integer vector of length $\le k$
+#' listing the chosen centres in ascending order.
+#' It has class `c("KCentreExact", "KCentreSelection")` and attributes:
 #'   \describe{
-#'     \item{radius}{The covering radius they achieve; the proven optimum when
-#'       `proven` is `TRUE`, otherwise a valid upper bound.}
-#'     \item{proven}{Logical: `TRUE` if optimality was certified within budget.}
+#'     \item{radius}{The covering radius achieved; the proven optimum when
+#'       `proven` is `TRUE`, otherwise an upper bound.}
+#'     \item{proven}{Logical: `TRUE` if optimality is certified.}
 #'     \item{time_s}{Wall-clock seconds elapsed.}
-#'     \item{n, k}{Instance size and centre budget.}
-#'     \item{n_centres}{`length(result)`.}
+#'     \item{N, k}{Instance size and centre budget.}
 #'   }
 #'   It prints as a one-line summary and indexes a matrix or data frame directly.
 #'   The `"KCentreSelection"` superclass means [KCentreRadius()] and any generic
@@ -377,9 +376,8 @@ ExactKCentre <- function(k, d, maxSeconds = 60) {
       proven    = proven,
       time_s    = Elapsed(),
       solver    = "highs",
-      n         = n,
+      N         = n,
       k         = as.integer(k),
-      n_centres = length(indices),
       class     = c("KCentreExact", "KCentreSelection")
     )
   }

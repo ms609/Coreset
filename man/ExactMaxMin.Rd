@@ -12,7 +12,7 @@ ExactMaxMin(k, d, maxSeconds = 60, warmStart = NULL)
 \item{d}{\code{dist} object or a square symmetric numeric distance matrix.}
 
 \item{maxSeconds}{Numeric: search terminates after this many seconds have
-elapsed; returning largest threshold proven feasible so far.}
+elapsed, returning largest threshold proven feasible.}
 
 \item{warmStart}{Integer vector giving indices of a candidate subset to add
 to the heuristic warm-start pool, e.g. a selection computed by another
@@ -37,7 +37,7 @@ Prints as a one-line summary via \code{\link[=print.MaxMinSelection]{print.MaxMi
 \description{
 \code{ExactMaxMin()} finds the optimal solution to the Max-Min Diversity Problem
 (discrete \emph{p}-dispersion) by iterated node-packing
-\insertCite{Sayyady2016;textual}{MaxMin}.
+\insertCite{Sayyady2016}{MaxMin}.
 As this problem is NP-hard, it is feasible only for small sets.
 }
 \details{

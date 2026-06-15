@@ -19,16 +19,15 @@ If it expires before the optimum is proven, the smallest radius proven
 feasible so far is returned, with the attribute \code{proven = FALSE}.}
 }
 \value{
-\code{ExactKCentre()} returns an integer vector of length \verb{<= k}
-(ascending): the chosen centres. It has class
-\code{c("KCentreExact", "KCentreSelection")} and the following attributes:
+\code{ExactKCentre()} returns an integer vector of length $\le k$
+listing the chosen centres in ascending order.
+It has class \code{c("KCentreExact", "KCentreSelection")} and attributes:
 \describe{
-\item{radius}{The covering radius they achieve; the proven optimum when
-\code{proven} is \code{TRUE}, otherwise a valid upper bound.}
-\item{proven}{Logical: \code{TRUE} if optimality was certified within budget.}
+\item{radius}{The covering radius achieved; the proven optimum when
+\code{proven} is \code{TRUE}, otherwise an upper bound.}
+\item{proven}{Logical: \code{TRUE} if optimality is certified.}
 \item{time_s}{Wall-clock seconds elapsed.}
-\item{n, k}{Instance size and centre budget.}
-\item{n_centres}{\code{length(result)}.}
+\item{N, k}{Instance size and centre budget.}
 }
 It prints as a one-line summary and indexes a matrix or data frame directly.
 The \code{"KCentreSelection"} superclass means \code{\link[=KCentreRadius]{KCentreRadius()}} and any generic
