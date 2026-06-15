@@ -124,24 +124,18 @@
 #' neighbour-evaluation tricks
 #' \insertCite{@algorithms 1--4 in @Porumbel2011}{MaxMin}.
 #'
-#' @param k Integer; subset size, \eqn{2 \le k \le n}.
+#' @param k Integer; subset size, \eqn{2 \le k \le N}.
 #' @param d A \code{dist} object or square symmetric numeric matrix.
-#'   Mutually exclusive with \code{points}; supply exactly one.
-#' @param points A numeric \eqn{n \times \mathrm{dim}} coordinate matrix (or an
-#'   object coercible to one via \code{as.matrix}). Must be complete (no
-#'   \code{NA}). Mutually exclusive with \code{d}; supply exactly one. When
-#'   supplied, the algorithm never materialises the dense \eqn{n \times n}
-#'   distance matrix, giving \eqn{O(n)} working memory and enabling use at
-#'   \eqn{n} far exceeding the matrix path's ceiling (R's
-#'   \code{as.matrix.dist} overflows at \eqn{n = 46340}).
+#' @param points A numeric \eqn{N \times \mathrm{dim}} coordinate matrix (or an
+#'  object coercible to one via \code{as.matrix}).
+#'  Must be complete (no \code{NA}).
+#'  Ignored if `d` specified.
+#'  Avoids creating an \eqn{N \times N} distance matrix, enabling use at
+#'  \eqn{N \ge 46340}).
 #' @param plateau Integer; stop after this many consecutive drop-add
-#'   iterations that do not improve the best objective. The primary,
-#'   deterministic stopping criterion. The search is RNG-free (ties broken by
-#'   smallest index), so for a given instance the result is reproducible and
-#'   machine-independent. Default 5000.
-#' @param maxSeconds Optional wall-clock ceiling in seconds, checked at
-#'   iteration boundaries. Default \code{Inf} (no ceiling, fully reproducible).
-#'   A finite value caps runtime but makes the result machine-dependent.
+#'  iterations do not improve the score.
+#' @param maxSeconds Numeric: terminate search after this many seconds have
+#' elapsed.
 #' @section Progress bar:
 #' Shows status messages controlled by
 #' `getOption("MaxMin.progress", interactive())` — `TRUE` by default in
