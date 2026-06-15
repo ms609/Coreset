@@ -1,18 +1,14 @@
-# Exact Max-Min Diversity Problem optimum on small instances
+# Exact Max-Min Diversity Problem solution
 
-Solves the Max-Min Diversity Problem (discrete p-dispersion) to proven
-optimality by iterated node-packing Sayyady and Fathi (2016) : the
-optimum is the largest threshold `lambda`, over the achieved distinct
-pairwise distances, for which the threshold graph `G(lambda)` (edges
-join pairs closer than `lambda`) contains an independent set of size at
-least `k`. Each probe solves a maximum-independent-set integer program
-with the `highs` MILP backend, the packing constraints held as a sparse
-matrix.
+`ExactMaxMin()` finds the optimal solution to the Max-Min Diversity
+Problem (discrete *p*-dispersion) by iterated node-packing Sayyady and
+Fathi (2016) . As this problem is NP-hard, it is feasible only for small
+sets.
 
 ## Usage
 
 ``` r
-ExactMaxMin(k, d, solver = NULL, maxSeconds = 60, warmStart = NULL)
+ExactMaxMin(k, d, maxSeconds = 60, warmStart = NULL)
 ```
 
 ## Arguments
@@ -25,17 +21,10 @@ ExactMaxMin(k, d, solver = NULL, maxSeconds = 60, warmStart = NULL)
 
   A `dist` object or a square symmetric numeric distance matrix.
 
-- solver:
-
-  Solver to use. Currently only `"highs"` is implemented; `NULL` selects
-  it. Other values raise an error.
-
 - maxSeconds:
 
-  Wall-clock budget in seconds for the whole search (shared across all
-  internal IP solves). If the budget expires before the optimum is
-  proven, the largest threshold proven feasible so far is returned with
-  `proven = FALSE`.
+  Numeric: search terminates after this many seconds have elapsed;
+  returning largest threshold proven feasible so far.
 
 - warmStart:
 
@@ -82,8 +71,7 @@ since it reports both the optimum and a proof status. The fields are
   Instance size and target subset size.
 
 The list has class `c("MaxMinExact", "MaxMinSelection")` and prints as a
-one-line summary (size, indices, solver, proof status and achieved
-`T_k`; see
+one-line summary (size, indices, proof status and achieved `T_k`; see
 [print.MaxMinSelection](https://ms609.github.io/MaxMin/reference/print.MaxMin.md));
 it is otherwise an ordinary list. The `"MaxMinSelection"` superclass
 means `inherits(result, "MaxMinSelection")` is `TRUE`, and any generic
@@ -97,12 +85,7 @@ restarts and a
 [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md)
 pass), then gallops upward from that bound to the first infeasible
 threshold and bisects the resulting bracket. When a heuristic already
-attains the optimum – common at the small `k` for which an exact
-reference is wanted – a single infeasibility solve certifies it. The
-warm start only sets the starting lower bound: the returned optimum is
-proven regardless of heuristic quality (a loose seed merely costs extra
-solves). The problem is NP-hard, so this remains an external
-ground-truth reference for small instances, not a scalable method.
+attains the optimum, a single infeasibility solve certifies it.
 
 The proven `objective` is exact and does not depend on the RNG. Only the
 returned `indices` can vary when several subsets attain the optimum: the

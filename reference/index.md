@@ -16,7 +16,7 @@ Farthest-first (Gonzalez) selection and its seeding strategies.
 - [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) : GRASP
   with Path Relinking for the Max-Min Diversity Problem
 - [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
-  : Exact Max-Min Diversity Problem optimum on small instances
+  : Exact Max-Min Diversity Problem solution
 
 ## k-centre solvers
 
