@@ -9,8 +9,8 @@ DropAdd_points_cpp <- function(points, m, time_budget_s, max_iter, max_no_improv
     .Call(`_MaxMin_DropAdd_points_cpp`, points, m, time_budget_s, max_iter, max_no_improve, want_trace)
 }
 
-Grasp_cpp <- function(dmat, m, max_no_improve, max_iter, elite_size, alpha, time_budget_s) {
-    .Call(`_MaxMin_Grasp_cpp`, dmat, m, max_no_improve, max_iter, elite_size, alpha, time_budget_s)
+Grasp_cpp <- function(dmat, m, max_no_improve, max_iter, elite_size, alpha, time_budget_s, progress_cb = NULL) {
+    .Call(`_MaxMin_Grasp_cpp`, dmat, m, max_no_improve, max_iter, elite_size, alpha, time_budget_s, progress_cb)
 }
 
 IsSymmetric_cpp <- function(d, tol) {
