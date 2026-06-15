@@ -10,9 +10,10 @@ ExactKCentre(k, d, maxSeconds = 60)
 ExactKCenter(k, d, maxSeconds = 60)
 }
 \arguments{
-\item{k}{Integer specifying maximum number of centres, \verb{1 <= k <= nrow(d)}.}
+\item{k}{Integer specifying maximum number of centres to identify,
+from 1 to \code{nrow(d)}.}
 
-\item{d}{A \code{dist} object or a square symmetric numeric distance matrix.}
+\item{d}{\code{dist} object or a square symmetric numeric distance matrix.}
 
 \item{maxSeconds}{Wall-clock budget in seconds for the whole search.
 If it expires before the optimum is proven, the smallest radius proven

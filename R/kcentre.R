@@ -299,8 +299,7 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L) {
 #' that caps the binary search, then bisects downward to the smallest feasible
 #' radius.
 #'
-#' @param k Integer specifying maximum number of centres, `1 <= k <= nrow(d)`.
-#' @param d A `dist` object or a square symmetric numeric distance matrix.
+#' @inheritParams KCentre
 #' @param maxSeconds Wall-clock budget in seconds for the whole search.
 #' If it expires before the optimum is proven, the smallest radius proven
 #' feasible so far is returned, with the attribute `proven = FALSE`.
