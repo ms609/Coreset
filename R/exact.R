@@ -210,6 +210,10 @@
 #'   Prints as a one-line summary via [print.MaxMinSelection()].
 #'   `inherits(result, "MaxMinSelection")` is `TRUE`.
 #' @references \insertAllCited{}
+#' @examples
+#' set.seed(1)
+#' pts <- matrix(rnorm(18), ncol = 2)
+#' ExactMaxMin(3L, dist(pts))
 #' @export
 ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
   progress <- getOption("MaxMin.progress", interactive())

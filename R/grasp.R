@@ -304,10 +304,7 @@
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
-#' # Call set.seed() before Grasp() for a reproducible run:
-#' set.seed(1)
-#' res <- Grasp(5L, dist(pts), plateau = 20L, eliteSize = 4L)
-#' res
+#' Grasp(5L, dist(pts), plateau = 20L, eliteSize = 4L)
 #' @export
 Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
                   maxSeconds = Inf) {
