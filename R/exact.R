@@ -165,25 +165,18 @@
 
 # ----- main -----------------------------------------------------------------
 
-#' Exact Max-Min Diversity Problem optimum on small instances
+#' Exact Max-Min Diversity Problem solution
 #'
-#' Solves the Max-Min Diversity Problem (discrete p-dispersion) to proven
-#' optimality by iterated node-packing \insertCite{Sayyady2016;textual}{MaxMin}: the optimum is
-#' the largest threshold `lambda`, over the achieved distinct pairwise
-#' distances, for which the threshold graph `G(lambda)` (edges join pairs
-#' closer than `lambda`) contains an independent set of size at least `k`.
-#' Each probe solves a maximum-independent-set integer program with the `highs`
-#' MILP backend, the packing constraints held as a sparse matrix.
+#' `ExactMaxMin()` finds the optimal solution to the Max-Min Diversity Problem
+#' (discrete _p_-dispersion) by iterated node-packing
+#' \insertCite{Sayyady2016;textual}{MaxMin}.
+#' As this problem is NP-hard, it is feasible only for small sets.
 #'
 #' The search is warm-started from a heuristic lower bound (the best of several
 #' [Grasp()] restarts and a [DropAdd()] pass), then gallops upward from that
 #' bound to the first infeasible threshold and bisects the resulting bracket.
-#' When a heuristic already attains the optimum -- common at the small `k` for
-#' which an exact reference is wanted -- a single infeasibility solve certifies
-#' it. The warm start only sets the starting lower bound: the returned optimum
-#' is proven regardless of heuristic quality (a loose seed merely costs extra
-#' solves). The problem is NP-hard, so this remains an external ground-truth
-#' reference for small instances, not a scalable method.
+#' When a heuristic already attains the optimum, a single infeasibility solve
+#' certifies it.
 #'
 #' The proven `objective` is exact and does not depend on the RNG. Only the
 #' returned `indices` can vary when several subsets attain the optimum: the warm
