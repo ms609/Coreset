@@ -185,12 +185,8 @@
 #'
 #' @param k Integer target subset size, `2 <= k <= nrow(d)`.
 #' @param d A `dist` object or a square symmetric numeric distance matrix.
-#' @param solver Solver to use. Currently only `"highs"` is implemented;
-#'   `NULL` selects it. Other values raise an error.
-#' @param maxSeconds Wall-clock budget in seconds for the whole search
-#'   (shared across all internal IP solves). If the budget expires before the
-#'   optimum is proven, the largest threshold proven feasible so far is
-#'   returned with `proven = FALSE`.
+#' @param maxSeconds Numeric: search terminates after this many seconds have
+#' elapsed; returning largest threshold proven feasible so far.
 #' @param warmStart Optional integer vector: a candidate `k`-subset (1-based
 #'   indices into `d`) to add to the heuristic warm-start pool, e.g. a selection
 #'   already computed by another solver. Ignored unless it is a valid `k`-subset.
@@ -206,30 +202,24 @@
 #'     \item{indices}{Integer vector of length `k`, sorted ascending: the
 #'       selected points.}
 #'     \item{objective}{The achieved `T_k` -- the minimum pairwise distance
-#'       within `indices`. When `proven` is `TRUE` this equals the threshold
-#'       `lambda` and is the true optimum; otherwise it is a valid lower
-#'       bound on the optimum.}
+#'       within `indices`. When `proven` is `TRUE` this is the true optimum;
+#'       otherwise it is a lower bound on the optimum.}
 #'     \item{proven}{Logical: `TRUE` if the search certified optimality
 #'       within the budget, `FALSE` if it returned an unproven incumbent.}
 #'     \item{time_s}{Wall-clock seconds elapsed.}
-#'     \item{solver}{Name of the MILP backend used.}
-#'     \item{n, k}{Instance size and target subset size.}
+#'     \item{solver}{The name of this solver: `"highs"`.}
+#'     \item{N, k}{Instance size and target subset size.}
 #'   }
 #'   The list has class `c("MaxMinExact", "MaxMinSelection")` and prints as a
-#'   one-line summary (size, indices, solver, proof status and achieved `T_k`;
+#'   one-line summary (size, indices, proof status and achieved `T_k`;
 #'   see [print.MaxMinSelection]); it is otherwise an ordinary list.
 #'   The `"MaxMinSelection"` superclass means `inherits(result, "MaxMinSelection")`
 #'   is `TRUE`, and any generic written against that class works here too.
 #' @references \insertAllCited{}
 #' @export
-ExactMaxMin <- function(k, d, solver = NULL, maxSeconds = 60,
-                        warmStart = NULL) {
+ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
   progress <- getOption("MaxMin.progress", interactive())
   t0 <- proc.time()[[3L]]
-  if (is.null(solver)) solver <- "highs"
-  if (!identical(solver, "highs")) {
-    stop("Unsupported `solver`: ", solver, ". Only \"highs\" is implemented.")
-  }
   if (!requireNamespace("highs", quietly = TRUE)) { # nocov start
     stop("The `highs` package is required for ExactMaxMin(). ",
          "Install it with install.packages(\"highs\").")
@@ -280,7 +270,7 @@ ExactMaxMin <- function(k, d, solver = NULL, maxSeconds = 60,
     # Tripwire (proven branch only): at the optimum the achieved minimum
     # equals lambda exactly -- the largest feasible threshold has the next
     # candidate proven infeasible, so the witness cannot beat it. A mismatch
-    # would signal a solver or construction bug, never normal degeneracy. On
+    # would signal a construction bug, never normal degeneracy. On
     # an unproven incumbent `obj` may exceed `lambda`; that is a legitimately
     # better lower bound, not an error.
     if (proven && abs(obj - lambda) > 1e-9 * max(1, abs(lambda))) { # nocov start
@@ -293,8 +283,8 @@ ExactMaxMin <- function(k, d, solver = NULL, maxSeconds = 60,
         objective = obj,
         proven    = proven,
         time_s    = Elapsed(),
-        solver    = solver,
-        n         = n,
+        solver    = "highs",
+        N         = n,
         k         = as.integer(k)
       ),
       class = c("MaxMinExact", "MaxMinSelection")

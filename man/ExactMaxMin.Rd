@@ -2,22 +2,17 @@
 % Please edit documentation in R/exact.R
 \name{ExactMaxMin}
 \alias{ExactMaxMin}
-\title{Exact Max-Min Diversity Problem optimum on small instances}
+\title{Exact Max-Min Diversity Problem solution}
 \usage{
-ExactMaxMin(k, d, solver = NULL, maxSeconds = 60, warmStart = NULL)
+ExactMaxMin(k, d, maxSeconds = 60, warmStart = NULL)
 }
 \arguments{
 \item{k}{Integer target subset size, \verb{2 <= k <= nrow(d)}.}
 
 \item{d}{A \code{dist} object or a square symmetric numeric distance matrix.}
 
-\item{solver}{Solver to use. Currently only \code{"highs"} is implemented;
-\code{NULL} selects it. Other values raise an error.}
-
-\item{maxSeconds}{Wall-clock budget in seconds for the whole search
-(shared across all internal IP solves). If the budget expires before the
-optimum is proven, the largest threshold proven feasible so far is
-returned with \code{proven = FALSE}.}
+\item{maxSeconds}{Numeric: search terminates after this many seconds have
+elapsed; returning largest threshold proven feasible so far.}
 
 \item{warmStart}{Optional integer vector: a candidate \code{k}-subset (1-based
 indices into \code{d}) to add to the heuristic warm-start pool, e.g. a selection
@@ -44,30 +39,23 @@ within the budget, \code{FALSE} if it returned an unproven incumbent.}
 \item{n, k}{Instance size and target subset size.}
 }
 The list has class \code{c("MaxMinExact", "MaxMinSelection")} and prints as a
-one-line summary (size, indices, solver, proof status and achieved \code{T_k};
+one-line summary (size, indices, proof status and achieved \code{T_k};
 see \link{print.MaxMinSelection}); it is otherwise an ordinary list.
 The \code{"MaxMinSelection"} superclass means \code{inherits(result, "MaxMinSelection")}
 is \code{TRUE}, and any generic written against that class works here too.
 }
 \description{
-Solves the Max-Min Diversity Problem (discrete p-dispersion) to proven
-optimality by iterated node-packing \insertCite{Sayyady2016;textual}{MaxMin}: the optimum is
-the largest threshold \code{lambda}, over the achieved distinct pairwise
-distances, for which the threshold graph \code{G(lambda)} (edges join pairs
-closer than \code{lambda}) contains an independent set of size at least \code{k}.
-Each probe solves a maximum-independent-set integer program with the \code{highs}
-MILP backend, the packing constraints held as a sparse matrix.
+\code{ExactMaxMin()} finds the optimal solution to the Max-Min Diversity Problem
+(discrete \emph{p}-dispersion) by iterated node-packing
+\insertCite{Sayyady2016;textual}{MaxMin}.
+As this problem is NP-hard, it is feasible only for small sets.
 }
 \details{
 The search is warm-started from a heuristic lower bound (the best of several
 \code{\link[=Grasp]{Grasp()}} restarts and a \code{\link[=DropAdd]{DropAdd()}} pass), then gallops upward from that
 bound to the first infeasible threshold and bisects the resulting bracket.
-When a heuristic already attains the optimum -- common at the small \code{k} for
-which an exact reference is wanted -- a single infeasibility solve certifies
-it. The warm start only sets the starting lower bound: the returned optimum
-is proven regardless of heuristic quality (a loose seed merely costs extra
-solves). The problem is NP-hard, so this remains an external ground-truth
-reference for small instances, not a scalable method.
+When a heuristic already attains the optimum, a single infeasibility solve
+certifies it.
 
 The proven \code{objective} is exact and does not depend on the RNG. Only the
 returned \code{indices} can vary when several subsets attain the optimum: the warm

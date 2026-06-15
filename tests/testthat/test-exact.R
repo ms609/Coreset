@@ -144,7 +144,6 @@ test_that("ExactMaxMin validates k and solver", {
   d <- as.matrix(stats::dist(matrix(stats::rnorm(20), ncol = 2)))   # n = 10
   expect_error(ExactMaxMin(1L, d), "2 <= k <= nrow")
   expect_error(ExactMaxMin(11L, d), "2 <= k <= nrow")
-  expect_error(ExactMaxMin(3L, d, solver = "gurobi"), "Unsupported")
   # .ExactAsMatrix validation: non-matrix and non-square inputs
   expect_error(ExactMaxMin(3L, 1:9), "dist|matrix")
   expect_error(ExactMaxMin(2L, matrix(1:6, 2, 3)), "dist|matrix")
@@ -171,11 +170,11 @@ test_that("ExactMaxMin returns the documented fields", {
   d <- as.matrix(stats::dist(matrix(stats::rnorm(40), ncol = 4)))   # n = 10
   res <- ExactMaxMin(3L, d)
   expect_named(res, c("indices", "objective", "proven", "time_s",
-                      "solver", "n", "k"),
+                      "solver", "N", "k"),
                ignore.order = TRUE)
   expect_type(res$indices, "integer")
   expect_type(res$proven, "logical")
   expect_identical(res$solver, "highs")
-  expect_identical(res$n, 10L)
+  expect_identical(res$N, 10L)
   expect_identical(res$k, 3L)
 })
