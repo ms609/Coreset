@@ -58,6 +58,11 @@ In interactive sessions, a progress indicator is shown.
 To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
 }
 
+\examples{
+set.seed(1)
+pts <- matrix(rnorm(18), ncol = 2)
+ExactMaxMin(3L, dist(pts))
+}
 \references{
 \insertAllCited{}
 }

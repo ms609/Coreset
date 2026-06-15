@@ -38,9 +38,9 @@ The vector has class \code{"MaxMinSelection"} and prints as a one-line summary
 (see \code{\link[=print.MaxMinSelection]{print.MaxMinSelection()}}); it is otherwise an ordinary integer vector.
 }
 \description{
-\code{Grasp()} solves the Max-Min Diversity Problem (discrete p-dispersion) with
+\code{Grasp()} solves the Max-Min Diversity Problem (discrete \emph{p}-dispersion) with
 the static variant of the GRASP / path-relinking metaheuristic
-\insertCite{@Resende2010, fig. 4}{MaxMin}. This is the most expensive
+\insertCite{@{}@Resende2010, fig. 4}{MaxMin}. This is the most expensive
 heuristic in this package, and attains correspondingly high-quality
 selections.
 }
@@ -66,10 +66,7 @@ To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
 \examples{
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
-# Call set.seed() before Grasp() for a reproducible run:
-set.seed(1)
-res <- Grasp(5L, dist(pts), plateau = 20L, eliteSize = 4L)
-res
+Grasp(5L, dist(pts), plateau = 20L, eliteSize = 4L)
 }
 \references{
 \insertAllCited{}
