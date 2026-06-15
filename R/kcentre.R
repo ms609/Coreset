@@ -5,7 +5,7 @@
 # any point to its nearest centre -- is minimised. This is the min-MAX covering
 # objective of facility location (Gonzalez 1985; Hochbaum & Shmoys 1985),
 # distinct from the MMDP/MaxMin objective elsewhere in this package, which
-# maximises the min PAIRWISE distance within the selection (see MinDist()).
+# maximizes the min PAIRWISE distance within the selection (see MinDist()).
 #
 # Three entry points:
 #   KCentreRadius()  -- score a centre set by its covering radius (matrix-free
@@ -234,7 +234,7 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L) {
 # ----- exact covering IP ----------------------------------------------------
 
 # Solve one minimum-cover feasibility probe at radius r and classify it against
-# the centre budget k. The IP minimises the number of open centres subject to
+# the centre budget k. The IP minimizes the number of open centres subject to
 # every point being within r of an open centre; r is feasible for k-centre iff
 # that minimum is <= k. The witness is validated independently of the solver
 # status (the chosen centres are checked to cover every point within r), exactly

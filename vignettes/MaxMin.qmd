@@ -305,12 +305,12 @@ d30   <- dist(pts30)
 #| eval: !expr requireNamespace("highs", quietly = TRUE)
 exPick <- ExactMaxMin(6L, d30, maxSeconds = 30L)
 
-exPick$proven      # TRUE  ⟹  objective is the global optimum
-exPick$objective
+attr(exPick, "proven")      # TRUE  ⟹  objective is the global optimum
+attr(exPick, "score")
 
 # Compare to the greedy heuristic on the same instance
 ff30Pick <- FarFirst(6L, d30)
-c(exact    = exPick$objective,
+c(exact    = attr(exPick, "score"),
   farFirst = MinDist(d30, ff30Pick))
 ```
 
@@ -336,7 +336,7 @@ MinDist(points = pts, idx = ffPick)                # from coordinates
 ## Covering: the k-centre problem
 
 The above methods seek to spread the selection such that its members are
-mutually far apart. The k-centre problem instead minimises the covering radius
+mutually far apart. The k-centre problem instead minimizes the covering radius
 $R$, the largest distance from any point to its nearest chosen centre, such that
 no point of the pool is left far from a representative
 [@Gonzalez1985; @Hochbaum1985], typically resulting in selections that reach
