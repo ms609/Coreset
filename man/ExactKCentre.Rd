@@ -19,7 +19,7 @@ If it expires before the optimum is proven, the smallest radius proven
 feasible so far is returned, with the attribute \code{proven = FALSE}.}
 }
 \value{
-\code{ExactKCentre()} returns an integer vector of length $\lte k$
+\code{ExactKCentre()} returns an integer vector of length \eqn{\lte k}
 listing the chosen centres in ascending order.
 It has class \code{c("KCentreExact", "KCentreSelection")} and attributes:
 \describe{
