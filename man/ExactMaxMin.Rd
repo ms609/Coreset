@@ -28,7 +28,6 @@ a lower bound.}
 \item{proven}{Logical: \code{TRUE} if the search certified optimality within
 the budget, \code{FALSE} if it returned an unproven incumbent.}
 \item{time_s}{Wall-clock seconds elapsed.}
-\item{solver}{The name of the MILP backend: \code{"highs"}.}
 \item{N, k}{Instance size and target subset size.}
 }
 Prints as a one-line summary via \code{\link[=print.MaxMinSelection]{print.MaxMinSelection()}}.
