@@ -114,9 +114,8 @@ it. Call [`set.seed()`](https://rdrr.io/r/base/Random.html) before
 
 ## Progress bar
 
-Shows a progress indicator controlled by
-`getOption("MaxMin.progress", interactive())` — `TRUE` by default in
-interactive sessions, `FALSE` otherwise.
+In interactive sessions, a progress indicator is shown. To toggle, set
+`options("MaxMin.progress" = FALSE)` (or `TRUE`).
 
 ## References
 

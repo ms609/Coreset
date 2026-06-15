@@ -63,36 +63,30 @@ neighbour-evaluation tricks
 
 
 <dl><dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
-<dd><p>Integer; subset size, \(2 \le k \le n\).</p></dd>
+<dd><p>Integer; subset size, \(2 \le k \le N\).</p></dd>
 
 
 <dt id="arg-d">d<a class="anchor" aria-label="anchor" href="#arg-d"></a></dt>
-<dd><p>A <code>dist</code> object or square symmetric numeric matrix.
-Mutually exclusive with <code>points</code>; supply exactly one.</p></dd>
+<dd><p>A <code>dist</code> object or square symmetric numeric matrix.</p></dd>
 
 
 <dt id="arg-plateau">plateau<a class="anchor" aria-label="anchor" href="#arg-plateau"></a></dt>
 <dd><p>Integer; stop after this many consecutive drop-add
-iterations that do not improve the best objective. The primary,
-deterministic stopping criterion. The search is RNG-free (ties broken by
-smallest index), so for a given instance the result is reproducible and
-machine-independent. Default 5000.</p></dd>
+iterations do not improve the score.</p></dd>
 
 
 <dt id="arg-maxseconds">maxSeconds<a class="anchor" aria-label="anchor" href="#arg-maxseconds"></a></dt>
-<dd><p>Optional wall-clock ceiling in seconds, checked at
-iteration boundaries. Default <code>Inf</code> (no ceiling, fully reproducible).
-A finite value caps runtime but makes the result machine-dependent.</p></dd>
+<dd><p>Numeric: terminate search after this many seconds have
+elapsed.</p></dd>
 
 
 <dt id="arg-points">points<a class="anchor" aria-label="anchor" href="#arg-points"></a></dt>
-<dd><p>A numeric \(n \times \mathrm{dim}\) coordinate matrix (or an
-object coercible to one via <code>as.matrix</code>). Must be complete (no
-<code>NA</code>). Mutually exclusive with <code>d</code>; supply exactly one. When
-supplied, the algorithm never materialises the dense \(n \times n\)
-distance matrix, giving \(O(n)\) working memory and enabling use at
-\(n\) far exceeding the matrix path's ceiling (R's
-<code>as.matrix.dist</code> overflows at \(n = 46340\)).</p></dd>
+<dd><p>A numeric \(N \times \mathrm{dim}\) coordinate matrix (or an
+object coercible to one via <code>as.matrix</code>).
+Must be complete (no <code>NA</code>).
+Ignored if <code>d</code> specified.
+Avoids creating an \(N \times N\) distance matrix, enabling use at
+\(N \ge 46340\)).</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -122,9 +116,8 @@ construction phase).</p></dd>
     <h2 id="progress-bar">Progress bar<a class="anchor" aria-label="anchor" href="#progress-bar"></a></h2>
 
 
-<p>Shows status messages controlled by
-<code>getOption("MaxMin.progress", interactive())</code> — <code>TRUE</code> by default in
-interactive sessions, <code>FALSE</code> otherwise.</p>
+<p>In interactive sessions, status messages are shown.
+To toggle, set <code>options("MaxMin.progress" = FALSE)</code> (or <code>TRUE</code>).</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

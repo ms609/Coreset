@@ -82,9 +82,8 @@ search, then bisects downward to the smallest feasible radius.
 
 ## Progress bar
 
-Shows a progress indicator controlled by
-`getOption("MaxMin.progress", interactive())` — `TRUE` by default in
-interactive sessions, `FALSE` otherwise.
+In interactive sessions, a progress indicator is shown. To toggle, set
+`options("MaxMin.progress" = FALSE)` (or `TRUE`).
 
 ## References
 

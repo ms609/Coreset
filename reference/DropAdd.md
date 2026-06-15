@@ -15,36 +15,27 @@ DropAdd(k, d = NULL, plateau = 5000L, maxSeconds = Inf, points = NULL)
 
 - k:
 
-  Integer; subset size, \\2 \le k \le n\\.
+  Integer; subset size, \\2 \le k \le N\\.
 
 - d:
 
-  A `dist` object or square symmetric numeric matrix. Mutually exclusive
-  with `points`; supply exactly one.
+  A `dist` object or square symmetric numeric matrix.
 
 - plateau:
 
-  Integer; stop after this many consecutive drop-add iterations that do
-  not improve the best objective. The primary, deterministic stopping
-  criterion. The search is RNG-free (ties broken by smallest index), so
-  for a given instance the result is reproducible and
-  machine-independent. Default 5000.
+  Integer; stop after this many consecutive drop-add iterations do not
+  improve the score.
 
 - maxSeconds:
 
-  Optional wall-clock ceiling in seconds, checked at iteration
-  boundaries. Default `Inf` (no ceiling, fully reproducible). A finite
-  value caps runtime but makes the result machine-dependent.
+  Numeric: terminate search after this many seconds have elapsed.
 
 - points:
 
-  A numeric \\n \times \mathrm{dim}\\ coordinate matrix (or an object
-  coercible to one via `as.matrix`). Must be complete (no `NA`).
-  Mutually exclusive with `d`; supply exactly one. When supplied, the
-  algorithm never materialises the dense \\n \times n\\ distance matrix,
-  giving \\O(n)\\ working memory and enabling use at \\n\\ far exceeding
-  the matrix path's ceiling (R's `as.matrix.dist` overflows at \\n =
-  46340\\).
+  A numeric \\N \times \mathrm{dim}\\ coordinate matrix (or an object
+  coercible to one via `as.matrix`). Must be complete (no `NA`). Ignored
+  if `d` specified. Avoids creating an \\N \times N\\ distance matrix,
+  enabling use at \\N \ge 46340\\).
 
 ## Value
 
@@ -79,9 +70,8 @@ it is otherwise an ordinary integer vector.
 
 ## Progress bar
 
-Shows status messages controlled by
-`getOption("MaxMin.progress", interactive())` — `TRUE` by default in
-interactive sessions, `FALSE` otherwise.
+In interactive sessions, status messages are shown. To toggle, set
+`options("MaxMin.progress" = FALSE)` (or `TRUE`).
 
 ## References
 

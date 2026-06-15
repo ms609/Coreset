@@ -136,10 +136,10 @@ FarFirst(6L, eurodist, nSeeds = 2L)
 #> 6 elements (1 12 20 16 5 2) selected by farthest-first (best of 2 strategies, 2 tied: random_furthest1, random_furthest2), each at distance >= 1014
 ```
 
-Other, deterministic strategies to select peripheral seeds are available
-via the `strategy` argument; these are described at
-\[[`PickPoint()`](https://ms609.github.io/MaxMin/reference/PickPoint.md)\].
-All named strategies are attempted, and the best solution is returned.
+Other strategies to select peripheral seeds are available via the
+`strategy` argument; these are described at
+[`PickPoint()`](https://ms609.github.io/MaxMin/reference/PickPoint.md).
+The best solution from the requested strategies is used.
 
 ``` r
 
@@ -151,11 +151,12 @@ attr(ffPick, "winning_strategy")
 #> [1] "diameter"    "anti_medoid"
 ```
 
-Where points are not associated with natural coordinates and computing
-or storing all N×N distances at once is infeasible, a function may be
-passed in place of the distance matrix. This function is passed one
-index `i`, and must return the distance from object `i` to each other
-object. `N`, the number of objects, must be supplied.
+With large datasets of points that are not associated with natural
+coordinates, it may not be feasible to compute and store all N×N
+distances. In such cases, a distance function may take the place of the
+distance matrix. This function is passed one index `i` at a time, and
+must return the distance from `i` to each other point. `N`, the number
+of objects, must also be specified.
 
 ``` r
 
@@ -198,18 +199,15 @@ T_(k). Where *N* is too large for a distance matrix to fit in memory
 ## GRASP with path relinking
 
 **GRASP + path relinking** ([Resende et al., 2010](#ref-Resende2010))
-combines a *randomised* greedy construction phase with extended local
-search and then refines an elite set of good solutions by interpolating
-between elite-pair trajectories (*path relinking*). It achieves the
-highest T_(k) of the three heuristics, at a proportionally higher cost.
-Because the construction phase is stochastic, call
-[`set.seed()`](https://rdrr.io/r/base/Random.html) before
-[`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) for a
-reproducible run:
+combines a randomised greedy construction phase with extended local
+search, and then refines an “elite” set of good solutions by
+interpolating between elite-pair trajectories (path relinking). It
+achieves the highest T_(k) of the three heuristics, at a proportionally
+higher cost.
 
 ``` r
 
-set.seed(42)
+set.seed(0)
 grPick <- Grasp(6L, eurodist, plateau = 50L)
 grPick
 #> 6 elements (1 2 4 12 20 21) selected by GRASP with path-relinking, each at distance >= 1305
@@ -220,8 +218,7 @@ attr(grPick, "pr_calls")   # path-relinking calls performed
 ```
 
 `plateau` controls how many consecutive non-improving GRASP iterations
-trigger termination; `maxSeconds` is available as an absolute time cap
-for interactive or batch use.
+trigger termination; `maxSeconds` is available as an absolute time cap.
 
 ## Comparing methods on a simulated example
 
@@ -230,7 +227,7 @@ dimensions and select *k* = 8 from each.
 
 ``` r
 
-set.seed(42)
+set.seed(1) # Seed selected such that FarFirst < DropAdd < Grasp
 pts <- matrix(rnorm(100), ncol = 2)   # 50 points, 2 dimensions
 d50 <- dist(pts)
 k   <- 8L
@@ -238,9 +235,9 @@ k   <- 8L
 
 ``` r
 
+set.seed(1) # Seed selected such that FarFirst < DropAdd < Grasp
 ffPick <- FarFirst(k, d50)
 da50Pick <- DropAdd(k, d50, plateau = 500L)
-set.seed(42)
 gr50Pick <- Grasp(k, d50, plateau = 50L)
 ```
 
@@ -250,13 +247,13 @@ dispersed selection.
 ``` r
 
 scores <- c(
-  FarFirst  = MinDist(d50, ffPick),
+  FarFirst  = attr(ffPick, "score"),
   DropAdd = attr(da50Pick, "score"),
   Grasp   = attr(gr50Pick, "score")
 )
 round(scores, 3)
 #> FarFirst  DropAdd    Grasp 
-#>    1.416    1.428    1.428
+#>    1.271    1.369    1.485
 ```
 
 Plotting the selections against the point cloud makes the differences
@@ -272,26 +269,20 @@ methods <- list(
   Grasp   = gr50Pick
 )
 cols <- c(FarFirst = "#E41A1C", DropAdd = "#377EB8", Grasp = "#4DAF4A")
-pchs <- c(FarFirst = 24L, DropAdd = 21L, Grasp = 22L)
-# Small per-method shift so coincident selections remain distinguishable
-dx   <- c(FarFirst = 0, DropAdd =  0.04, Grasp = -0.04)
-dy   <- c(FarFirst = 0, DropAdd = -0.04, Grasp =  0.04)
+pchs <- c(FarFirst = 1L, DropAdd = 3L, Grasp = 4L)
 
 plot(pts, pch = 1L, col = "grey75", asp = 1L,
-     xlab = "x", ylab = "y",
+     xlab = "x", ylab = "y", frame.plot = FALSE,
      main = "MaxMin method comparison")
 
 for (nm in names(methods)) {
   sel <- methods[[nm]]
-  points(
-    pts[sel, 1L] + dx[nm],
-    pts[sel, 2L] + dy[nm],
-    pch = pchs[nm], col = cols[nm], bg = cols[nm], cex = 1.6
-  )
+  points(pts[sel, 1L], pts[sel, 2L], pch = pchs[nm], col = cols[nm],
+         cex = 1.6)
 }
 
-legend("topright",
-       legend = paste0(names(methods), "  (Tₖ = ", round(scores, 3), ")"),
+legend("topleft",
+       legend = paste0(names(methods), "  (T\U2096 = ", round(scores, 3), ")"),
        pch = pchs, col = cols, pt.bg = cols, pt.cex = 1.4, bty = "n")
 ```
 
@@ -299,7 +290,7 @@ legend("topright",
 
 Selections returned by each method on 50 random 2-D points (k = 8).
 Coloured symbols mark selected points; grey circles are the full
-candidate set. A small jitter separates symbols at shared indices.
+candidate set.
 
 ## Exact solution
 
@@ -307,9 +298,7 @@ For small instances (roughly N ≤ 25–30),
 [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
 solves the problem to proven optimality via a node-packing integer
 programme ([Sayyady & Fathi, 2016](#ref-Sayyady2016)), using the
-**highs** solver.
-
-First we must install **highs**:
+**highs** solver (which we must first install).
 
 ``` r
 
@@ -342,12 +331,10 @@ c(exact    = exPick$objective,
 
 `$proven = TRUE` certifies that no selection can achieve a higher T_(k).
 [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
-is NP-hard; instances with more than ~30 candidates require a time
-budget or should be tackled with the heuristics above.
+is NP-hard; it is wise to set a time budget once the number of points
+exceeds ~30 candidates, or to switch to a heuristic method.
 
 ## Scoring
-
-### `MinDist()`
 
 [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md)
 computes the T_(k) objective for any index set. It accepts a `dist`
@@ -357,35 +344,32 @@ object, a square distance matrix, or a coordinate matrix via the
 ``` r
 
 MinDist(d50, ffPick)                               # from dist
-#> [1] 1.416314
+#> [1] 1.271123
 MinDist(as.matrix(d50), ffPick)                    # from square matrix
-#> [1] 1.416314
+#> [1] 1.271123
 MinDist(points = pts, idx = ffPick)                # from coordinates
-#> [1] 1.416314
+#> [1] 1.271123
 ```
 
 ## Covering: the k-centre problem
 
-Every method above pursues *dispersion* — it spreads the selection so
-its members are mutually far apart. The **k-centre** problem instead
-pursues *coverage*: it minimises the covering radius *R*, the largest
-distance from any point to its nearest chosen centre, so that no point
-of the pool is left far from a representative ([González,
-1985](#ref-Gonzalez1985); [Hochbaum & Shmoys, 1985](#ref-Hochbaum1985)).
-Where dispersion reaches for the extremes, covering reaches into the
-interior, so on the same data the two optima are generally different
-selections.
+The above methods seek to spread the selection such that its members are
+mutually far apart. The k-centre problem instead minimises the covering
+radius $`R`$, the largest distance from any point to its nearest chosen
+centre, such that no point of the pool is left far from a representative
+([González, 1985](#ref-Gonzalez1985); [Hochbaum & Shmoys,
+1985](#ref-Hochbaum1985)), typically resulting in selections that reach
+further into the interior of a sample.
 
-### `KCentre()`: near-optimal covering
+### Heuristic approach
 
-[`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md)
-chooses centres with the deterministic CDSh heuristic ([García-Díaz et
-al., 2017](#ref-GarciaDiaz2017); [García-Díaz et al.,
-2019](#ref-GarciaDiaz2019)), which typically lands within 1–3.5 % of the
-optimum — an order of magnitude tighter than the Gonzalez
-2-approximation that
-[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
-gives for this objective.
+[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) is
+the quickest approximation to the K-centres problem. The CDSh algorithm
+implemented in `KCentres()` gives a more sophisticated heuristic
+([García-Díaz et al., 2017](#ref-GarciaDiaz2017); [García-Díaz et al.,
+2019](#ref-GarciaDiaz2019)); its solutions are typically within 1–3.5 %
+of the optimum, compared to ~10% for
+[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md).
 
 ``` r
 
@@ -411,22 +395,18 @@ c(KCentre  = KCentreRadius(eurodist, centres),
 
 Like [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md),
 [`KCentreRadius()`](https://ms609.github.io/MaxMin/reference/KCentreRadius.md)
-also accepts a `points` coordinate matrix, in which case it never
-materialises the full *N × N* matrix — so it can score a selection well
-past the size at which the solvers’ distance matrix would fit in memory.
+accepts a `points` coordinate matrix, allowing it to score a selection
+on a set of points whose distance matrix would be too large to fit in
+memory.
 
-### `ExactKCentre()`: proven covering optimum
+### Exact solver
 
 For small instances,
 [`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md)
-solves the covering problem to proven optimality with a sequence of
-minimum-set-cover integer programs — the covering dual of
-[`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)’s
-node-packing programme — warm-started from the
-[`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md)
-radius and bisected down to the smallest feasible radius. Like
+finds the optimal solution, using a minimum-set-cover integer program
+approach akin to
 [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md),
-it uses the **highs** solver.
+and using again the **highs** solver.
 
 ``` r
 
@@ -453,21 +433,21 @@ inward to keep every city near a centre.
 
 ``` r
 
-disp <- sort(ExactMaxMin(4L, eurodist)$indices)
-labels(eurodist)[disp]              # dispersion: pushed to the extremes
+disp <- ExactMaxMin(4L, eurodist)$indices
+labels(eurodist)[disp]  # dispersion: pushed to the extremes
 #> [1] "Athens"    "Lisbon"    "Milan"     "Stockholm"
-labels(eurodist)[sort(as.integer(kc))]  # covering: pulled toward the interior
+labels(eurodist)[kc]    # covering: pulled toward the interior
 #> [1] "Cologne"    "Copenhagen" "Madrid"     "Rome"
 ```
 
 ## When to use which method
 
-For **dispersion** (spread the selection; maximise T_(k)):
+For **dispersion** (spread the selection; maximize T_(k)):
 
 | Scenario | Recommended |
 |----|----|
-| Speed matters most, N up to a few thousand | [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) (ensemble default) |
-| Deterministic, reproducible refinement | [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) |
+| Speed matters most | [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) (ensemble default) |
+| Deterministic, good quality valued | [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) |
 | Best quality, [`set.seed()`](https://rdrr.io/r/base/Random.html) for reproducibility | [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) |
 | N \> 46 000 (distance matrix infeasible) | `DropAdd(points = ...)` or `FarFirst(points = ...)` |
 | Arbitrary metric with no coordinate embedding | `FarFirst(<column function>, N = ...)` |
@@ -479,28 +459,42 @@ For **covering** (minimise the radius; no point far from a centre):
 | Scenario | Recommended |
 |----|----|
 | Near-optimal covering, fast and deterministic | [`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md) (CDSh) |
-| A quick 2-approximation baseline | `FarFirst(strategy = "peripheral")` |
+| Quick 2-approximation baseline | `FarFirst(strategy = "peripheral")` |
 | Proven optimum, small N, **highs** installed | [`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md) |
 | Score a centre set’s covering radius (matrix-free at large N) | `KCentreRadius(points = ...)` |
 
-The dispersion heuristics are complementary:
-[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) is
-O(*N* · *k*) and deterministic — an instant first result.
-[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) is
-deterministic and reproducible (no RNG): ties are broken by smallest
-index, so a given instance always yields the same selection, typically
-reaching ≈ 99 % of optimal.
-[`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) is
-stochastic and usually edges out
-[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) on
-T_(k); call [`set.seed()`](https://rdrr.io/r/base/Random.html) before it
-for a reproducible run.
+## Related problems
 
-## Related packages
+`MaxMin` selects a subset from a given set of elements. Several
+established packages solve neighbouring objectives:
 
-The CRAN package
-[**maximin**](https://CRAN.R-project.org/package=maximin) constructs
-continuous space-filling designs by generating new points.
+- **k-medoids / k-median** selects elements that minimize the mean
+  distance from each element to its nearest centre. Implementations
+  include:
+
+  - [`cluster::pam()`](https://cran.r-project.org/package=cluster):
+    generates the full *O(N²)* dissimilarity matrix, and hence caps at
+    *n* ≤ 65 536;
+  - [`banditpam`](https://cran.r-project.org/package=banditpam), a
+    matrix-free $`O(N \log N)`$ implementation restricted to coordinate
+    data;
+  - [`cluster::clara()`](https://rdrr.io/pkg/cluster/man/clara.html)
+    (PAM / FastPAM / FasterPAM);
+  - [`ClusterR::Cluster_Medoids()`](https://cran.r-project.org/package=ClusterR).
+
+- **k-means** ([`stats::kmeans()`](https://rdrr.io/r/stats/kmeans.html))
+  selects elements so as to minimize the within-cluster sum of squares
+  around centres that are coordinate means, not data points; as such, it
+  applies only to Euclidean coordinates. k-means++
+  ([`TreeDist::KMeansPP()`](https://ms609.github.io/TreeDist/reference/KMeansPP.html))
+  initializes its selection using D²-weighted seeding, a randomized
+  relative of
+  [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)’s
+  farthest-first traversal.
+
+- [`maximin`](https://cran.r-project.org/package=maximin) solves the
+  related design problem of adding *new* points at positions that
+  maximize the minimum inter-point distance.
 
 ## References
 

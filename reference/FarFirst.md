@@ -1,8 +1,9 @@
 # Greedy farthest-first point selection
 
-Greedy *k*-centre selection (González 1985; Hochbaum and Shmoys 1985)
-iteratively selects the point furthest from the current selection to
-yield a 2-approximation to the *k*-centre problem.
+Greedy farthest-first selection (González 1985; Hochbaum and Shmoys
+1985) iteratively selects the point furthest from the current selection
+to yield a 2-approximation to the *k*-centre and Max Min Diversity
+problems.
 
 ## Usage
 
@@ -59,20 +60,19 @@ FarFirst(
 
 `FarFirst()` returns an integer vector with class `MaxMinSelection`,
 listing the selected indices in the order they were selected. Attributes
-detail:
+report:
 
-- `score`: the selection's minimum pairwise distance (\\T_k\\)
+- `score`: the selection's minimum pairwise distance (\\T_k\\).
 
 - `winning_strategy`: character vector listing strategies that attained
-  the optimal score..
+  the optimal score.
 
-- `strategy_results`: results for each strategy
+- `strategy_results`: results for each strategy.
 
 ## Progress bar
 
-The distance-column oracle path shows a progress bar controlled by
-`getOption("MaxMin.progress", interactive())` — `TRUE` by default in
-interactive sessions, `FALSE` otherwise.
+In interactive sessions, the distance-column path shows a progress bar.
+To toggle, set `options("MaxMin.progress" = FALSE)` (or `TRUE`).
 
 ## References
 
