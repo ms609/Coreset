@@ -41,24 +41,24 @@ to run each strategy and return the best solution.}
 \value{
 \code{FarFirst()} returns an integer vector with class \code{MaxMinSelection},
 listing the selected indices in the order they were selected.
-Attributes detail:
+Attributes report:
 \itemize{
-\item \code{score}: the selection's minimum pairwise distance (\eqn{T_k})
+\item \code{score}: the selection's minimum pairwise distance (\eqn{T_k}).
 \item \code{winning_strategy}: character vector listing strategies that attained the
-optimal score..
-\item \code{strategy_results}: results for each strategy
+optimal score.
+\item \code{strategy_results}: results for each strategy.
 }
 }
 \description{
-Greedy \emph{k}-centre selection \insertCite{Gonzalez1985,Hochbaum1985}{MaxMin}
+Greedy farthest-first selection \insertCite{Gonzalez1985,Hochbaum1985}{MaxMin}
 iteratively selects the point furthest from the current selection to yield a
-2-approximation to the \emph{k}-centre problem.
+2-approximation to the \emph{k}-centre and Max Min Diversity problems.
 }
 \section{Progress bar}{
 
-The distance-column oracle path shows a progress bar controlled by
-\code{getOption("MaxMin.progress", interactive())} — \code{TRUE} by default in
-interactive sessions, \code{FALSE} otherwise.
+In interactive sessions, the distance-column path shows a progress bar.
+To toggle this progress bar, set \code{options("MaxMin.progress" = FALSE)}
+(or \code{TRUE}).
 }
 
 \examples{

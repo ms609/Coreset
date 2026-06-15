@@ -138,14 +138,14 @@
 
 #' Greedy farthest-first point selection
 #'
-#' Greedy _k_-centre selection \insertCite{Gonzalez1985,Hochbaum1985}{MaxMin}
+#' Greedy farthest-first selection \insertCite{Gonzalez1985,Hochbaum1985}{MaxMin}
 #' iteratively selects the point furthest from the current selection to yield a
-#' 2-approximation to the _k_-centre problem.
+#' 2-approximation to the _k_-centre and Max Min Diversity problems.
 #'
 #' @section Progress bar:
-#' The distance-column oracle path shows a progress bar controlled by
-#' `getOption("MaxMin.progress", interactive())` — `TRUE` by default in
-#' interactive sessions, `FALSE` otherwise.
+#' In interactive sessions, the distance-column path shows a progress bar.
+#' To toggle this progress bar, set `options("MaxMin.progress" = FALSE)`
+#' (or `TRUE`).
 #'
 #' @param k Integer: number of points to select.
 #' @param d A `dist` object, a square numeric matrix of pairwise distances, or
@@ -167,11 +167,11 @@
 #' `"random_furthest"` strategy.
 #' @return `FarFirst()` returns an integer vector with class `MaxMinSelection`,
 #' listing the selected indices in the order they were selected.
-#' Attributes detail:
-#' - `score`: the selection's minimum pairwise distance (\eqn{T_k})
+#' Attributes report:
+#' - `score`: the selection's minimum pairwise distance (\eqn{T_k}).
 #' - `winning_strategy`: character vector listing strategies that attained the
-#' optimal score..
-#' - `strategy_results`: results for each strategy
+#' optimal score.
+#' - `strategy_results`: results for each strategy.
 #'
 #' @references \insertAllCited{}
 #' @seealso [PickPoint()] for the seed indices alone; [DropAdd()] and
