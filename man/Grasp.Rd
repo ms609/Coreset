@@ -40,7 +40,7 @@ The vector has class \code{"MaxMinSelection"} and prints as a one-line summary
 \description{
 \code{Grasp()} solves the Max-Min Diversity Problem (discrete p-dispersion) with
 the static variant of the GRASP / path-relinking metaheuristic
-\insertCite{Resende2010, @fig. 4}{MaxMin}. This is the most expensive
+\insertCite{@Resende2010, fig. 4}{MaxMin}. This is the most expensive
 heuristic in this package, and attains correspondingly high-quality
 selections.
 }
@@ -50,23 +50,12 @@ construction with extended-improvement local search builds; it identifies an
 elite set, then conducts a single pass of path relinking over all elite
 pairs \insertCite{Resende2010}{MaxMin}.
 
-\strong{Deterministic termination.} The refinement loop stops after
-\code{plateau} consecutive GRASP iterations that fail to improve the best
-elite objective (rather than after a wall-clock budget). Call \code{set.seed()}
-before \code{Grasp()} for a reproducible run: the entire run — construction RNG,
-iteration count, and result — is then reproducible and machine-independent,
-because the compiled kernel draws from R's own session RNG stream. An
-optional \code{maxSeconds} ceiling is available as a safety cap, but using a
-finite value reintroduces machine-dependence and is off by default.
+The refinement loop stops after \code{plateau} consecutive GRASP iterations
+fail to improve the best elite objective, or once \code{maxSeconds} have
+elapsed.
 
-This is a \strong{dense-matrix-only} method: it materialises and repeatedly
-subsets the full \eqn{n \times n} distance matrix, so it is suited to
-instances small enough to hold that matrix. It offers no coordinate or
-column-oracle path. For the matrix-free regime where the dense matrix is
-infeasible, use \code{\link[=DropAdd]{DropAdd()}} (coordinate path via \code{points =}) or \code{\link[=FarFirst]{FarFirst()}} (coordinate or
-distance-column oracle path), whose
-\eqn{T_k} lands within roughly a percent on the benchmark while scaling to
-far larger instances.
+This method will fail if the complete \eqn{N \times N} distance matrix, is
+too large to fit into memory.
 }
 \examples{
 set.seed(1)
