@@ -2,7 +2,7 @@
 
 `Grasp()` solves the Max-Min Diversity Problem (discrete p-dispersion)
 with the static variant of the GRASP / path-relinking metaheuristic
-(Resende et al. 2010) . This is the most expensive heuristic in this
+(Resende2010, fig. 4) . This is the most expensive heuristic in this
 package, and attains correspondingly high-quality selections.
 
 ## Usage
@@ -77,35 +77,15 @@ construction with extended-improvement local search builds; it
 identifies an elite set, then conducts a single pass of path relinking
 over all elite pairs (Resende et al. 2010) .
 
-**Deterministic termination.** The refinement loop stops after `plateau`
-consecutive GRASP iterations that fail to improve the best elite
-objective (rather than after a wall-clock budget). Call
-[`set.seed()`](https://rdrr.io/r/base/Random.html) before `Grasp()` for
-a reproducible run: the entire run — construction RNG, iteration count,
-and result — is then reproducible and machine-independent, because the
-compiled kernel draws from R's own session RNG stream. An optional
-`maxSeconds` ceiling is available as a safety cap, but using a finite
-value reintroduces machine-dependence and is off by default.
+The refinement loop stops after `plateau` consecutive GRASP iterations
+fail to improve the best elite objective, or once `maxSeconds` have
+elapsed.
 
-This is a **dense-matrix-only** method: it materialises and repeatedly
-subsets the full \\n \times n\\ distance matrix, so it is suited to
-instances small enough to hold that matrix. It offers no coordinate or
-column-oracle path. For the matrix-free regime where the dense matrix is
-infeasible, use
-[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md)
-(coordinate path via `points =`) or
-[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
-(coordinate or distance-column oracle path), whose \\T_k\\ lands within
-roughly a percent on the benchmark while scaling to far larger
-instances.
+This method will fail if the complete \\N \times N\\ distance matrix, is
+too large to fit into memory.
 
 ## References
 
-Adummy A (2026). “Some keys from package MaxMin are not avalable.”
-Failed to insert reference with keys: Resende2010, @fig. 4 from package
-= 'MaxMin'. Possible cause - missing REFERENCES.bib in package 'MaxMin'
-or 'MaxMin' not installed.  
-  
 Resende MGC, Martí R, Gallego M, Duarte A (2010). “GRASP and path
 relinking for the max-min diversity problem.” *Computers & Operations
 Research*, **37**(3), 498–508.
