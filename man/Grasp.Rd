@@ -26,7 +26,7 @@ among candidates.}
 \item{maxSeconds}{Numeric specifying wall-clock ceiling, in seconds.}
 }
 \value{
-\code{Grasp()} returns an integer vector of length \code{k} specifing the
+\code{Grasp()} returns an integer vector of length \code{k} specifying the
 indices of the selected points, with attributes:
 \describe{
 \item{score}{Achieved MaxMin objective \eqn{T_k}.}

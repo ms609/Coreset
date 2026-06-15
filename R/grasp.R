@@ -285,7 +285,7 @@
 #'   `alpha = 1` is pure greedy (best only); `alpha = 0` is uniform random
 #'   among candidates.
 #' @param maxSeconds Numeric specifying wall-clock ceiling, in seconds.
-#' @return `Grasp()` returns an integer vector of length `k` specifing the
+#' @return `Grasp()` returns an integer vector of length `k` specifying the
 #' indices of the selected points, with attributes:
 #'   \describe{
 #'     \item{score}{Achieved MaxMin objective \eqn{T_k}.}

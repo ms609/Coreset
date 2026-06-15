@@ -127,16 +127,16 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #'
 #' `KCentre()` selects \eqn{k} elements (centres) so as to minimize the largest
 #' distance from any point to its nearest centre (the covering radius),
-#' using the Critical Dominating Set heuristic (CDSh)
+#' using the Critical Dominating Set heuristic (\acronym{CDSh})
 #' \insertCite{GarciaDiaz2017,GarciaDiaz2019}{MaxMin}.
 #'
 #' On the benchmark instances of \insertCite{GarciaDiaz2019;textual}{MaxMin},
-#' the \acronym{CDS}{Critical Dominating Set} heuristic reaches roughly 1-3.5%
+#' the \acronym{CDS} heuristic reaches roughly 1-3.5%
 #' of the optimum at \eqn{O(N^2 \log N)}, far tighter than [FarFirst()]
 #' (typically tens of per cent above optimum).
 #'
-#' Despite this good performance in practice, the
-#' \acronym{CDSh}{Critical Dominating Set heuristic} is a 3-approximation.
+#' Despite this good performance in practice, the \acronym{CDSh} is a
+#' 3-approximation.
 #' To guard against occasional cases where a better candidate is missed,
 #' `KCentre()` runs by default an exhaustive search of a small candidate grid
 #' (for `n` up to ~150); and an additional `FarFirst()` pass
