@@ -38,7 +38,7 @@ farthest-first order), with attributes:
 construction phase).}
 }
 The vector has class \code{"MaxMinSelection"} and prints as a one-line summary
-(see \link{print.MaxMinSelection}); it is otherwise an ordinary integer vector.
+(see \code{\link[=print.MaxMinSelection]{print.MaxMinSelection()}}); it is otherwise an ordinary integer vector.
 }
 \description{
 \code{DropAdd()} selects a maximally-dispersed subset of \code{k} points using the

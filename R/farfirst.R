@@ -213,7 +213,7 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
   strategyMissing <- missing(strategy)
 
   # Every non-empty FarFirst result is a `MaxMinSelection` (a self-describing
-  # integer index vector); see print.MaxMinSelection(). Stamping it at each
+  # integer index vector); see `print.MaxMinSelection()`. Stamping it at each
   # exit keeps the matrix, coordinate and oracle paths byte-identical.
   Classify <- function(x) .AsMaxMinSelection(x, "FarFirst")
 
