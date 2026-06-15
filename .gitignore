@@ -31,3 +31,8 @@ dev/profiling/verify-*.rds
 dev/profiling/.libdir
 dev/profiling/.libdir-new
 dev/profiling/drivers/*profvis*
+
+
+# Other additions
+/*.Rcheck
+MaxMin_*.tar.gz
