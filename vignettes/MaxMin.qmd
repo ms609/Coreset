@@ -217,7 +217,7 @@ dimensions and select *k* = 8 from each.
 
 ```{r}
 #| label: sim-data
-set.seed(1)
+set.seed(1) # Seed selected such that FarFirst < DropAdd < Grasp
 pts <- matrix(rnorm(100), ncol = 2)   # 50 points, 2 dimensions
 d50 <- dist(pts)
 k   <- 8L
@@ -225,7 +225,7 @@ k   <- 8L
 
 ```{r}
 #| label: compare-run
-set.seed(1)
+set.seed(1) # Seed selected such that FarFirst < DropAdd < Grasp
 ffPick <- FarFirst(k, d50)
 da50Pick <- DropAdd(k, d50, plateau = 500L)
 gr50Pick <- Grasp(k, d50, plateau = 50L)
@@ -285,9 +285,7 @@ legend("topleft",
 
 For small instances (roughly N ≤ 25–30), `ExactMaxMin()` solves the problem
 to proven optimality via a node-packing integer programme [@Sayyady2016],
-using the **highs** solver.
-
-First we must install **highs**:
+using the **highs** solver (which we must first install).
 
 ```{r}
 #| label: install-highs
@@ -317,13 +315,11 @@ c(exact    = exPick$objective,
 ```
 
 `$proven = TRUE` certifies that no selection can achieve a higher T~k~.
-`ExactMaxMin()` is NP-hard; instances with more than ~30 candidates require a
-time budget or should be tackled with the heuristics above.
+`ExactMaxMin()` is NP-hard; it is wise to set a time budget once the number
+of points exceeds ~30 candidates, or to switch to a heuristic method.
 
 
 ## Scoring
-
-### `MinDist()`
 
 `MinDist()` computes the T~k~ objective for any index set.
 It accepts a `dist` object, a square distance matrix, or a coordinate matrix
@@ -339,20 +335,20 @@ MinDist(points = pts, idx = ffPick)                # from coordinates
 
 ## Covering: the k-centre problem
 
-Every method above pursues *dispersion* — it spreads the selection so its
-members are mutually far apart. The **k-centre** problem instead pursues
-*coverage*: it minimises the covering radius *R*, the largest distance from any
-point to its nearest chosen centre, so that no point of the pool is left far
-from a representative [@Gonzalez1985; @Hochbaum1985]. Where dispersion reaches
-for the extremes, covering reaches into the interior, so on the same data the
-two optima are generally different selections.
+The above methods seek to spread the selection such that its members are
+mutually far apart. The k-centre problem instead minimises the covering radius
+$R$, the largest distance from any point to its nearest chosen centre, such that
+no point of the pool is left far from a representative
+[@Gonzalez1985; @Hochbaum1985], typically resulting in selections that reach
+further into the interior of a sample.
 
-### `KCentre()`: near-optimal covering
 
-`KCentre()` chooses centres with the deterministic CDSh heuristic
-[@GarciaDiaz2019; @GarciaDiaz2017], which typically lands within 1–3.5 % of the
-optimum — an order of magnitude tighter than the Gonzalez 2-approximation that
-`FarFirst()` gives for this objective.
+### Heuristic approach
+
+`FarFirst()` is the quickest approximation to the K-centres problem.
+The CDSh algorithm implemented in `KCentres()` gives a more sophisticated
+heuristic [@GarciaDiaz2019; @GarciaDiaz2017]; its solutions are typically within 
+1–3.5 % of the optimum, compared to ~10% for `FarFirst()`.
 
 ```{r}
 #| label: kcentre
@@ -372,18 +368,15 @@ c(KCentre  = KCentreRadius(eurodist, centres),
   FarFirst = KCentreRadius(eurodist, ff))
 ```
 
-Like `MinDist()`, `KCentreRadius()` also accepts a `points` coordinate matrix,
-in which case it never materialises the full *N × N* matrix — so it can score a
-selection well past the size at which the solvers' distance matrix would fit in
-memory.
+Like `MinDist()`, `KCentreRadius()` accepts a `points` coordinate matrix,
+allowing it to score a selection on a set of points whose distance matrix would
+be too large to fit in memory.
 
-### `ExactKCentre()`: proven covering optimum
+### Exact solver
 
-For small instances, `ExactKCentre()` solves the covering problem to proven
-optimality with a sequence of minimum-set-cover integer programs — the covering
-dual of `ExactMaxMin()`'s node-packing programme — warm-started from the
-`KCentre()` radius and bisected down to the smallest feasible radius. Like
-`ExactMaxMin()`, it uses the **highs** solver.
+For small instances, `ExactKCentre()` finds the optimal solution, using a 
+minimum-set-cover integer program approach akin to `ExactMaxMin()`, and using
+again the **highs** solver.
 
 ```{r}
 #| label: exact-kcentre
@@ -406,20 +399,20 @@ city near a centre.
 ```{r}
 #| label: dispersion-vs-covering
 #| eval: !expr requireNamespace("highs", quietly = TRUE)
-disp <- sort(ExactMaxMin(4L, eurodist)$indices)
-labels(eurodist)[disp]              # dispersion: pushed to the extremes
-labels(eurodist)[sort(as.integer(kc))]  # covering: pulled toward the interior
+disp <- ExactMaxMin(4L, eurodist)$indices
+labels(eurodist)[disp]  # dispersion: pushed to the extremes
+labels(eurodist)[kc]    # covering: pulled toward the interior
 ```
 
 
 ## When to use which method
 
-For **dispersion** (spread the selection; maximise T~k~):
+For **dispersion** (spread the selection; maximize T~k~):
 
 | Scenario | Recommended |
 |---|---|
-| Speed matters most, N up to a few thousand | `FarFirst()` (ensemble default) |
-| Deterministic, reproducible refinement | `DropAdd()` |
+| Speed matters most | `FarFirst()` (ensemble default) |
+| Deterministic, good quality valued | `DropAdd()` |
 | Best quality, `set.seed()` for reproducibility | `Grasp()` |
 | N > 46 000 (distance matrix infeasible) | `DropAdd(points = ...)` or `FarFirst(points = ...)` |
 | Arbitrary metric with no coordinate embedding | `FarFirst(<column function>, N = ...)` |
@@ -431,21 +424,37 @@ For **covering** (minimise the radius; no point far from a centre):
 | Scenario | Recommended |
 |---|---|
 | Near-optimal covering, fast and deterministic | `KCentre()` (CDSh) |
-| A quick 2-approximation baseline | `FarFirst(strategy = "peripheral")` |
+| Quick 2-approximation baseline | `FarFirst(strategy = "peripheral")` |
 | Proven optimum, small N, **highs** installed | `ExactKCentre()` |
 | Score a centre set's covering radius (matrix-free at large N) | `KCentreRadius(points = ...)` |
 
-The dispersion heuristics are complementary:
-`FarFirst()` is O(*N* · *k*) and deterministic — an instant first result.
-`DropAdd()` is deterministic and reproducible (no RNG): ties are broken by
-smallest index, so a given instance always yields the same selection,
-typically reaching ≈ 99 % of optimal.
-`Grasp()` is stochastic and usually edges out `DropAdd()` on T~k~; call
-`set.seed()` before it for a reproducible run.
 
-## Related packages
+## Related problems
 
-The CRAN package [**maximin**](https://CRAN.R-project.org/package=maximin)
-constructs continuous space-filling designs by generating new points.
+`MaxMin` selects a subset from a given set of elements.
+Several established packages solve neighbouring objectives:
+
+- **k-medoids / k-median** selects elements that minimize the mean distance from
+  each element to its nearest centre.
+  Implementations include:
+  * [`cluster::pam()`](https://cran.r-project.org/package=cluster): generates
+  the full *O(N²)* dissimilarity matrix, and hence caps at *n* ≤ 65 536;
+  * [`banditpam`](https://cran.r-project.org/package=banditpam), a matrix-free
+  $O(N \log N)$ implementation restricted to coordinate data;
+  * `cluster::clara()`  (PAM / FastPAM / FasterPAM);
+  * [`ClusterR::Cluster_Medoids()`](https://cran.r-project.org/package=ClusterR).
+
+- **k-means** ([`stats::kmeans()`](https://rdrr.io/r/stats/kmeans.html)) selects
+  elements so as to minimize the within-cluster sum of squares around centres
+  that are coordinate means, not data points; as such, it applies only to
+  Euclidean coordinates. k-means++ 
+  ([`TreeDist::KMeansPP()`](
+   https://ms609.github.io/TreeDist/reference/KMeansPP.html)) initializes its
+   selection using D²-weighted seeding, a randomized relative of `FarFirst()`'s
+   farthest-first traversal.
+
+- [`maximin`](https://cran.r-project.org/package=maximin) solves the related
+  design problem of adding *new* points at positions that maximize the minimum
+  inter-point distance.
 
 ## References
