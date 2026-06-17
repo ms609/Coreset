@@ -47,9 +47,8 @@ MinDist <- function(d = NULL, idx, points = NULL) {
 #'
 #' Returns the max-mean objective value for a selection:
 #' \deqn{f(S) = \frac{\displaystyle\sum_{i < j,\, i,j \in S} d_{ij}}{|S|}}
-#' This is the sum of pairwise distances divided by the number of *selected
-#' elements* (not the number of pairs \eqn{\binom{|S|}{2}}), matching the
-#' objective maximised by [MaxMean()].
+#' This is the sum of pairwise distances divided by the number of selected
+#' elements, the objective maximised by [MaxMean()].
 #'
 #' @param d Pairwise distance matrix or `dist` object.
 #' @param idx Integer vector of selected row/col indices.

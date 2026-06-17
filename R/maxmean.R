@@ -24,28 +24,22 @@
 #' `MaxMean()` selects a maximally dispersed subset of elements from a
 #' pairwise distance matrix, maximising the *max-mean* objective:
 #' \deqn{f(S) = \frac{\displaystyle\sum_{i < j,\, i,j \in S} d_{ij}}{|S|}}
-#' The subset size \eqn{|S| \ge 2} is itself an optimisation variable; unlike
-#' [FarFirst()], [DropAdd()] and [Grasp()], no target cardinality \eqn{k} is
-#' required.
+#' The number of elements in the subset \eqn{|S| \ge 2} is chosen so as
+#' to maximise the mean dispersion.
 #'
-#' The algorithm is the reinforcement-learning tabu search (RLTS) of
-#' \insertCite{Dieudonne2020}{MaxMin}.
+#' `MaxMean()` implements the reinforcement-learning tabu search
+#' (\acronym{RLTS}) algorithm of \insertCite{Dieudonne2020}{MaxMin}.
 #' An initial solution is constructed randomly for the first restart and
 #' via \eqn{Q}-learning thereafter; each initial solution is then refined by a
 #' tabu search using one-flip moves (adding or removing one element per step),
 #' with efficient \eqn{O(n)} neighbourhood evaluation via the contribution
 #' array \eqn{P_i = \sum_{j \in S,\, j \ne i} d_{ij}}.  Restarts continue until
 #' the `maxSeconds` budget is exhausted; the best solution found is returned.
-#' Because the search restarts indefinitely within the budget, allowing more
-#' time can only improve (never worsen) the result.
 #'
 #' The reinforcement-learning and tabu hyperparameters are fixed at the tuned
 #' values reported by \insertCite{Dieudonne2020}{MaxMin} (greedy factor
 #' \eqn{\epsilon = 0.7}, learning rate \eqn{\alpha = 0.5}, discount
-#' \eqn{\gamma = 0.5}, maximum tabu tenure 120, search depth 50\,000).
-#'
-#' The search is stochastic; call [set.seed()] before `MaxMean()` for a
-#' reproducible result.
+#' \eqn{\gamma = 0.5}, maximum tabu tenure \eqn{120}, search depth 50&nbsp;000).
 #'
 #' @param d A `dist` object or square numeric matrix of pairwise distances.
 #'   Distances may be negative (the max-mean problem is defined for signed
@@ -63,11 +57,11 @@
 #' @return `MaxMean()` returns an integer vector of selected 1-based indices
 #'   (sorted ascending) with class `"MaxMeanSelection"` and attributes:
 #'   \describe{
-#'     \item{score}{numeric(1), achieved objective
+#'     \item{score}{numeric, achieved objective
 #'       \eqn{\sum_{i<j \in S} d_{ij} / |S|}.}
-#'     \item{size}{integer(1), number of selected elements \eqn{|S|}.}
-#'     \item{time_s}{numeric(1), wall-clock seconds spent.}
-#'     \item{iters}{numeric(1), total tabu-search iterations across restarts.
+#'     \item{size}{integer, number of selected elements \eqn{|S|}.}
+#'     \item{time_s}{numeric, wall-clock seconds spent.}
+#'     \item{iters}{numeric, total tabu-search iterations across restarts.
 #'       Stored as a double, not an integer, because a long run can exceed the
 #'       32-bit integer range.}
 #'   }
