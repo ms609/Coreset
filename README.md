@@ -33,6 +33,12 @@ specialized solvers.
 | `Grasp()` |  GRASP with path-relinking metaheuristic (Resende et al. 2010) | Slower but powerful heuristic |
 | `ExactMaxMin()` | Node-packing integer program (Sayyady & Fathi 2016) | Proven optimum, small `k` (needs `highs`) |
 
+### Max-mean dispersion
+
+| Function | Method | Use |
+|---|---|---|
+| `MaxMean()` | Reinforcement-learning tabu search (Nijimbere et al. 2020) | Maximize mean pairwise distance; subset size free; signed distances supported |
+
 ### *k*-centre (min-max covering)
 
 | Function | Method | Use |
@@ -45,8 +51,8 @@ matrices of Euclidian coordinates, or lists of elements from which distances
 can be calculated.
 
 `MinDist()` returns the minimum pairwise distance within a selection (the MMDP
-objective) and `KCentreRadius()` returns its covering radius (the *k*-centre 
-objective).
+objective), `MeanDist()` its mean pairwise dispersion (the max-mean objective),
+and `KCentreRadius()` returns its covering radius (the *k*-centre objective).
 
 
 ## Installation

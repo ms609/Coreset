@@ -78,3 +78,17 @@ n=2004 k=20 (matrix input), not 307 ms — the added correctness guards (in-plac
 `IsSymmetric_cpp` ~70 ms; Gonzalez floor O(nk)) account for the difference. The
 T-010 *kernel* optimisation (cache reorder + C++ candidates) is unchanged; this is
 not a regression in the kernel. `dist` input skips the symmetry scan.
+
+## Area 6 — MaxMean (RLTS tabu loop) — AFTER T-012 (monotonicity scan + branchless P-update)
+
+Throughput (tabu iterations/s) is the metric — MaxMean runs for the full
+`maxSeconds`, so more iterations = better solution. Signed n=500 Type-I instance,
+`useRL = FALSE` (isolates the tabu loop), 3 s budget, `-O2`.
+
+| case | OLD iters/s | NEW iters/s | speedup |
+|------|------------:|------------:|--------:|
+| MaxMean, n=500, signed, useRL=FALSE | 786k | 1.16M | 1.47× |
+
+Inner-loop self-time split (VTune, n=500): scan ~69%, P-array update ~31%.
+`best_flip`/`best_delta` identical (monotonicity); p-arrays bit-identical
+(branchless). All tests green; covr 100% on the new code (157/157 C++, 42/42 R).

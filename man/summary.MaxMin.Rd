@@ -28,6 +28,7 @@ summary(FarFirst(5L, dist(pts)))
 \seealso{
 Other reporting functions:
 \code{\link{print.KCentre}},
+\code{\link[=print.MaxMeanSelection]{print.MaxMeanSelection()}},
 \code{\link{print.MaxMin}}
 }
 \concept{reporting functions}

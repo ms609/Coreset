@@ -49,3 +49,7 @@ DiameterFromPoints_cpp <- function(points) {
     .Call(`_MaxMin_DiameterFromPoints_cpp`, points)
 }
 
+MaxMean_cpp <- function(dmat, time_budget_s, alpha_depth, T_min, T_max, epsilon, alpha_rl, gamma_rl, use_rl) {
+    .Call(`_MaxMin_MaxMean_cpp`, dmat, time_budget_s, alpha_depth, T_min, T_max, epsilon, alpha_rl, gamma_rl, use_rl)
+}
+

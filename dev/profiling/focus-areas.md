@@ -12,6 +12,7 @@ the dense-matrix and matrix-free (`points=`) paths where they exist.
 | 3 | Grasp refinement | `src/grasp.cpp`, `R/grasp.R` | extended-improvement local search scans (n−m) candidates × O(m²) sub-matrix; PR over elite pairs | matrix only | m ∈ {small, large} | 2026-06-10 | OPTIMISED (PR/LS 14–16× T-006; +1.34–2.07× T-007 base_z witness hoist) |
 | 4 | ExactMaxMin node-packing | `R/exact.R` | pure-R orchestration of highs MILP probes; dense O(nEdge·n) packing matrix (GB/probe → the scaling wall) + log₂(n²) full-bisection IP solves | matrix only (highs) | m ∈ {2,4,6,10} (exact regime) | 2026-06-11 | OPTIMISED (sparse-A + Grasp warm-start gallop, 19.6× grid; T-008) |
 | 5 | KCentre CDSh + ExactKCentre | `src/kcentre_cdsh.cpp`, `R/kcentre.R` | CDSh: O(n² log n), per-radius O(n²) dominating-set construction with cache-hostile row scans + R-side `sort(unique(upper.tri))`. ExactKCentre: highs covering-IP probes (dual of area 4). | matrix only | k ∈ {small, n/2} | 2026-06-11 | CDSh OPTIMISED (cache reorder + C++ candidates, 4.16×; T-010). ExactKCentre PENDING (T-011) |
+| 6 | MaxMean RLTS tabu loop | `src/maxmean.cpp`, `R/maxmean.R` | Time-budgeted: throughput (iters/s) sets solution quality. Per tabu iteration O(n): best-flip scan (per-element division by `m±1`, 3-array gather p/in_S/tabu_until) + O(n) P-array update over column u. | matrix only | size free (RLTS) | 2026-06-16 | OPTIMISED (monotonicity scan + branchless P-update, 1.47× throughput; T-012) |
 
 Status legend: `NEW`, `PROFILED`, `OPTIMISED`, `AT-LIMIT`, `SKIPPED`.
 

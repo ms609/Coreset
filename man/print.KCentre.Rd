@@ -38,6 +38,7 @@ KCentre(4L, dist(matrix(rnorm(60), ncol = 2)))
 }
 \seealso{
 Other reporting functions:
+\code{\link[=print.MaxMeanSelection]{print.MaxMeanSelection()}},
 \code{\link{print.MaxMin}},
 \code{\link{summary.MaxMin}}
 }

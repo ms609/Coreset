@@ -412,3 +412,50 @@ Next rotation target for area 5.
 Status: Area 5 CDSh → OPTIMISED (T-010); ExactKCentre → PENDING (T-011).
 
 last_focus: 5
+
+---
+
+## Round (area #6) — MaxMean RLTS tabu loop — 2026-06-16
+
+Target: the per-iteration tabu inner loop in `src/maxmean.cpp` (user-named).
+MaxMean is time-budgeted, so the metric is THROUGHPUT (iters/s) — more iterations
+in the fixed budget = better solution quality.
+
+Driver: `drivers/maxmean.R` (signed n=500 Type-I, 3 s, useRL=FALSE to isolate the
+tabu loop). Baseline 786k iters/s.
+
+profvis triage: skipped (the R wrapper is a coercion + symmetrize + one long
+`.Call`; >99.9% of time is the pure-C++ kernel). Went straight to VTune.
+
+VTune hotspots (`-g` build, result_maxmean): per-iteration self-time split ~69%
+best-flip scan (lines 229–247) / ~31% O(n) P-array update (256–271). Hottest
+lines were the two per-element divisions (233 `/(m+1)`, 237 `/(m-1)`, ~0.84 s) and
+the P-update stores (260/268).
+
+Micro-bench triage (the gate — VTune line shares are NOT a verified win):
+- `bench-scan.cpp`: plain strength-reduction (precompute 1/(m±1), multiply) =
+  **0.97×, REFUTED**. The scan is ILP/load-bound at n=500 (arrays L1-resident);
+  the divide overlaps other work, so the "hot division line" was loads feeding it.
+- `bench-scan2.cpp`: (a) monotonicity scan = **1.13×** (track max-p add / min-p
+  remove with precomputed aspiration thresholds; divide only 2 survivors;
+  best_flip+delta identical). (b) branchless P-update = **1.4×+** (zero the diag at
+  the R boundary so the j!=u guard drops; bit-identical p-arrays).
+
+Implemented both (T-012). End-to-end driver on the optimized -O2 install:
+**786k → 1.16M iters/s (1.47×)** — better than the ~1.20× Amdahl estimate; solution
+quality also improved (f 54.524→54.541, more iterations). Full `test_dir` green;
+covr 100% on all new code (157/157 C++, 42/42 R) — the rewritten scan's new
+branches are all exercised.
+
+Correctness: branchless P-update is bit-identical (guard only skipped the
+now-zeroed diagonal). Monotonicity scan changes only cross-type exact-δ tie-breaks
+(measure-zero on continuous distances); all optima/consistency tests pass.
+
+- status: area #6 OPTIMISED (T-012). The P-update is now branchless memory-stream
+  (likely near AT-LIMIT — GCC -O2 doesn't auto-vectorize, but the loop is simple);
+  the scan is monotonicity-reduced. A further round could test -O3/`#pragma GCC
+  optimize("tree-vectorize")` on the P-update loop, or narrowing tabu_until to int
+  for large-n bandwidth — both speculative, deferred.
+- cleanup: result_maxmean_* and .vtune-lib-* deleted.
+
+last_focus: 6

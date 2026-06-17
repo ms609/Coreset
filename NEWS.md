@@ -1,5 +1,10 @@
 # MaxMin 0.0.0.9003 (development)
 
+- `MaxMean()` solves the Max-Mean Dispersion Problem: choose a subset of
+  unrestricted size maximising the sum of pairwise distances divided by the
+  number of selected elements.  Uses the RLTS algorithm
+  (Nijimbere et al. 2020, doi:10.3934/jimo.2020115).
+- `MeanDist()` scores an arbitrary selection under the max-mean objective.
 - `KCentre()` / `ExactKCentre()` solve the k-centre problem.
 
 # MaxMin 0.0.0.9002 (development)

@@ -34,6 +34,7 @@ print(FarFirst(5L, dist(pts)))
 \seealso{
 Other reporting functions:
 \code{\link{print.KCentre}},
+\code{\link[=print.MaxMeanSelection]{print.MaxMeanSelection()}},
 \code{\link{summary.MaxMin}}
 }
 \concept{reporting functions}
