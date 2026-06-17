@@ -199,3 +199,17 @@ MM-01/02/03 regressions; all other areas unaffected).
   (DropAdd single-fidelity) next.
 
 last_focus: 9
+
+### Round 9 addendum — benchmark validation (2026-06-17)
+
+A/B vs published best-known (Lai & Hao 2016 / Nijimbere et al. 2020 Table 1) on the
+MDPI Type-I n=500 instances (downloaded from grafo.etsii.urjc.es/optsicom/edp/),
+useRL=TRUE, 30 s/instance, set.seed(1) — see dev/ab-mdpi.R:
+
+    MDPI1_500  best 81.277044  MaxMean 81.277044  MATCH
+    MDPI2_500  best 78.610216  MaxMean 78.610216  MATCH
+    MDPI3_500  best 76.300787  MaxMean 76.300787  MATCH  (all gaps < 5e-7)
+
+Confirms the RL-initialisation fidelity fixes (MM-04/05/06) and the implementation
+as a whole reach the paper's optima. Instances not committed (~64 MB); ab-mdpi.R
+documents how to re-download.
