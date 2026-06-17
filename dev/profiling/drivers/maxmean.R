@@ -27,7 +27,7 @@ diag(d) <- 0
 
 budget <- 3
 t0 <- proc.time()[["elapsed"]]
-res <- MaxMean(d, maxSeconds = budget, useRL = FALSE)
+res <- MaxMean(d, maxSeconds = budget, maxIter = Inf, useRL = FALSE)
 el <- proc.time()[["elapsed"]] - t0
 
 iters <- attr(res, "iters")

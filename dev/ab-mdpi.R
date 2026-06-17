@@ -43,7 +43,9 @@ cat(sprintf("%-12s %12s %12s %10s %8s %6s\n",
 for (nm in insts) {
   d <- ReadInstance(file.path("dev/_mdpi", paste0(nm, ".txt")))
   set.seed(1)
-  res <- MaxMean(d, maxSeconds = budget, useRL = TRUE)
+  # maxIter = Inf: budget purely by time (the n=500 paper protocol). Without
+  # this the new default maxIter = 1000 would stop far short of convergence.
+  res <- MaxMean(d, maxSeconds = budget, maxIter = Inf, useRL = TRUE)
   f  <- attr(res, "score")
   bk <- best_known[[nm]]
   cat(sprintf("%-12s %12.6f %12.6f %+10.2e %8.3g %6d   %s\n",

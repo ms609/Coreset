@@ -108,7 +108,8 @@ test_that("MaxMean (no RL) attains the brute-force optimum (n = 6)", {
   d <- MakeD(4, 6)
   brute <- BruteMaxMean(d)
   set.seed(10)
-  result <- MaxMean(d, maxSeconds = 3, useRL = FALSE)
+  # maxIter = Inf: spend the full budget on restarts so the optimum is reached.
+  result <- MaxMean(d, maxSeconds = 3, maxIter = Inf, useRL = FALSE)
   expect_equal(attr(result, "score"), brute$f, tolerance = 1e-10)
   expect_identical(as.integer(result), as.integer(brute$idx))
 })
@@ -117,7 +118,7 @@ test_that("MaxMean (with RL) attains the brute-force optimum (n = 6)", {
   d <- MakeD(5, 6)
   brute <- BruteMaxMean(d)
   set.seed(11)
-  result <- MaxMean(d, maxSeconds = 3, useRL = TRUE)
+  result <- MaxMean(d, maxSeconds = 3, maxIter = Inf, useRL = TRUE)
   expect_equal(attr(result, "score"), brute$f, tolerance = 1e-10)
   expect_identical(as.integer(result), as.integer(brute$idx))
 })
@@ -126,7 +127,7 @@ test_that("MaxMean attains the brute-force optimum (n = 8)", {
   d <- MakeD(6, 8)
   brute <- BruteMaxMean(d)
   set.seed(12)
-  result <- MaxMean(d, maxSeconds = 3, useRL = TRUE)
+  result <- MaxMean(d, maxSeconds = 3, maxIter = Inf, useRL = TRUE)
   expect_equal(attr(result, "score"), brute$f, tolerance = 1e-10)
 })
 
@@ -139,7 +140,7 @@ test_that("MaxMean handles signed (negative) distances", {
   diag(dmat) <- 0
   brute <- BruteMaxMean(dmat)
   set.seed(14)
-  result <- MaxMean(dmat, maxSeconds = 3, useRL = FALSE)
+  result <- MaxMean(dmat, maxSeconds = 3, maxIter = Inf, useRL = FALSE)
   expect_equal(attr(result, "score"), brute$f, tolerance = 1e-10)
 })
 
@@ -217,6 +218,69 @@ test_that("MaxMean rejects a distance matrix with NA/Inf", {
   expect_error(MaxMean(dmat, maxSeconds = 1), "NA")
 })
 
+test_that("MaxMean rejects invalid maxIter", {
+  d <- dist(matrix(1:6, ncol = 2))
+  expect_error(MaxMean(d, maxIter = 0), "maxIter")
+  expect_error(MaxMean(d, maxIter = NA), "maxIter")
+  expect_error(MaxMean(d, maxIter = c(1, 2)), "maxIter")
+  expect_error(MaxMean(d, maxIter = "lots"), "maxIter")
+})
+
+# ---- maxIter budget --------------------------------------------------------
+
+test_that("maxIter is an exact cap on total iterations", {
+  # Generous time budget so the iteration cap, not the clock, is what stops the
+  # search; `iters` must never exceed maxIter (the cap is checked every step).
+  set.seed(40)
+  d <- MakeD(40, 40)
+  result <- MaxMean(d, maxSeconds = 30, maxIter = 100, useRL = FALSE)
+  expect_lte(attr(result, "iters"), 100)
+  expect_s3_class(result, "MaxMeanSelection")
+  expect_equal(attr(result, "score"), MeanDist(d, result), tolerance = 1e-10)
+})
+
+test_that("a smaller maxIter bites: fewer iterations, same instance", {
+  set.seed(41)
+  d <- MakeD(41, 40)
+  set.seed(42); r_small <- MaxMean(d, maxSeconds = 30, maxIter = 50,  useRL = FALSE)
+  set.seed(42); r_big   <- MaxMean(d, maxSeconds = 30, maxIter = 500, useRL = FALSE)
+  expect_lte(attr(r_small, "iters"), 50)
+  expect_lte(attr(r_big,   "iters"), 500)
+  expect_lt(attr(r_small, "iters"), attr(r_big, "iters"))
+})
+
+test_that("maxIter alone stops the search when maxSeconds is Inf", {
+  # The end-of-restart iteration break is load-bearing here: with no time limit,
+  # nothing else would terminate the restart loop once the cap is reached.
+  set.seed(43)
+  d <- MakeD(43, 30)
+  result <- MaxMean(d, maxSeconds = Inf, maxIter = 500, useRL = TRUE)
+  expect_s3_class(result, "MaxMeanSelection")
+  expect_lte(attr(result, "iters"), 500)
+  expect_true(is.finite(attr(result, "score")))
+})
+
+test_that("maxIter = 1 still returns a feasible |S| >= 2 selection", {
+  # S0 is built and scored before any tabu iteration runs, so even a one-flip
+  # budget yields a valid classed result (the do-while restart guarantee).
+  set.seed(44)
+  d <- MakeD(44, 10)
+  result <- MaxMean(d, maxSeconds = Inf, maxIter = 1, useRL = FALSE)
+  expect_s3_class(result, "MaxMeanSelection")
+  expect_gte(length(result), 2L)
+  expect_true(is.finite(attr(result, "score")))
+  expect_equal(attr(result, "score"), MeanDist(d, result), tolerance = 1e-10)
+})
+
+test_that("maxIter = Inf budgets by time alone", {
+  # With the iteration cap disabled a longer clock yields at least as many
+  # iterations — the cap is genuinely off, not silently applied.
+  d <- MakeD(45, 60)
+  set.seed(45); r_short <- MaxMean(d, maxSeconds = 0.2, maxIter = Inf, useRL = FALSE)
+  set.seed(45); r_long  <- MaxMean(d, maxSeconds = 0.6, maxIter = Inf, useRL = FALSE)
+  expect_gte(attr(r_long, "iters"), attr(r_short, "iters"))
+})
+
 # ---- print / format / summary methods --------------------------------------
 
 test_that("print.MaxMeanSelection prints a one-line summary", {
@@ -261,8 +325,10 @@ test_that("matrix and dist input give the same selection and score", {
 
 test_that("a longer budget never worsens the objective", {
   d <- MakeD(20, 25)
-  set.seed(20); r1 <- MaxMean(d, maxSeconds = 0.3, useRL = FALSE)
-  set.seed(20); r2 <- MaxMean(d, maxSeconds = 1.5, useRL = FALSE)
+  # maxIter = Inf so the two runs genuinely differ in budget (a finite iter cap
+  # would make both stop at the same iteration and the test vacuous).
+  set.seed(20); r1 <- MaxMean(d, maxSeconds = 0.3, maxIter = Inf, useRL = FALSE)
+  set.seed(20); r2 <- MaxMean(d, maxSeconds = 1.5, maxIter = Inf, useRL = FALSE)
   expect_gte(attr(r2, "score"), attr(r1, "score") - 1e-10)
 })
 
@@ -295,7 +361,9 @@ test_that("the periodic interrupt/time check fires on a long restart", {
   # executes deterministically — independent of how many restarts fit the budget.
   set.seed(70)
   d <- MakeD(70, 300)
-  result <- MaxMean(d, maxSeconds = 0.5, useRL = FALSE)
+  # maxIter = Inf so the time-expiry break (not the iteration cap) is what stops
+  # the search — that is the branch this test exists to cover.
+  result <- MaxMean(d, maxSeconds = 0.5, maxIter = Inf, useRL = FALSE)
   expect_s3_class(result, "MaxMeanSelection")
   expect_gte(length(result), 2L)
 })
@@ -309,7 +377,9 @@ test_that("RL initial-solution construction can terminate early", {
   d <- (m + t(m)) / 2
   diag(d) <- 0
   set.seed(72)
-  result <- MaxMean(d, maxSeconds = 1.5, useRL = TRUE)
+  # maxIter = Inf so many restarts run (RL construction only fires on restart
+  # >= 1); a finite default cap could leave restart 0 the only one executed.
+  result <- MaxMean(d, maxSeconds = 1.5, maxIter = Inf, useRL = TRUE)
   expect_s3_class(result, "MaxMeanSelection")
   expect_true(is.finite(attr(result, "score")))
 })

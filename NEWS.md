@@ -4,6 +4,12 @@
   unrestricted size maximising the sum of pairwise distances divided by the
   number of selected elements.  Uses the RLTS algorithm
   (Nijimbere et al. 2020, doi:10.3934/jimo.2020115).
+- `MaxMean()` gains a `maxIter` argument (default `1000`): a hard cap on the
+  total number of tabu-search iterations. The search now stops as soon as
+  *either* `maxSeconds` or `maxIter` is reached. **Behaviour change:** because
+  `maxIter` defaults to `1000`, a default `MaxMean()` call now stops at 1000
+  iterations rather than running for the full `maxSeconds`; pass `maxIter = Inf`
+  to budget by time alone (the previous behaviour).
 - `MeanDist()` scores an arbitrary selection under the max-mean objective.
 - `KCentre()` / `ExactKCentre()` solve the k-centre problem.
 

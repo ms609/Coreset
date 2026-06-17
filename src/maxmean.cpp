@@ -31,12 +31,14 @@
 #include <vector>
 #include <chrono>
 #include <algorithm>
+#include <limits>
 
 using namespace Rcpp;
 
 // [[Rcpp::export]]
 List MaxMean_cpp(NumericMatrix dmat,
                  double time_budget_s,
+                 double iter_budget,   // total tabu-iteration cap (Inf = off)
                  int    alpha_depth,   // no-improve limit per restart (paper: 50000)
                  int    T_min,         // minimum tabu tenure
                  int    T_max,         // maximum tabu tenure (paper: 120)
@@ -77,6 +79,11 @@ List MaxMean_cpp(NumericMatrix dmat,
   std::vector<double>    p(n, 0.0);   // contribution array
   std::vector<long long> tabu_until(n, 0);
   std::vector<int>       Sa(n);       // RL optional-action list
+
+  // Iteration budget (Eq.-independent stopping criterion, exposed by the wrapper
+  // as `maxIter`). Inf disables it; any astronomically large finite value is
+  // treated as unlimited too, so the (long long) cast below never overflows.
+  const bool iter_unlimited = !R_finite(iter_budget) || iter_budget > 9.0e18;
 
   auto t0 = std::chrono::steady_clock::now();
   const int check_every = 256;
@@ -210,7 +217,14 @@ List MaxMean_cpp(NumericMatrix dmat,
     // tenures earned in a previous restart must not carry over.
     std::fill(tabu_until.begin(), tabu_until.end(), 0);
 
-    while (depth < (long long)alpha_depth) {
+    // Per-restart slice of the global iteration budget. Checking `iter <
+    // iter_cap` each step makes maxIter an *exact* cap (total_iters never
+    // exceeds it), unlike the every-256 time check which may overshoot.
+    const long long iter_cap = iter_unlimited
+      ? std::numeric_limits<long long>::max()
+      : std::max((long long)0, (long long)iter_budget - total_iters);
+
+    while (depth < (long long)alpha_depth && iter < iter_cap) {
       --countdown;
       if (countdown == 0) {
         Rcpp::checkUserInterrupt();
@@ -328,8 +342,12 @@ List MaxMean_cpp(NumericMatrix dmat,
 
     // Budget check at the END of the cycle (the paper's Algorithm 1 is a
     // do-while), so at least one full restart always completes and the returned
-    // selection satisfies |S| >= 2 even for a vanishingly small budget.
+    // selection satisfies |S| >= 2 even for a vanishingly small budget. Either
+    // budget stops the search; the iteration check is load-bearing when the
+    // time budget is Inf (without it, once iter_cap hits 0 the loop would spin
+    // forever building fresh S0s that run zero tabu iterations).
     if (elapsed_s() >= time_budget_s) break;
+    if (!iter_unlimited && total_iters >= iter_budget) break;
   } // restart loop
 
   // ---- Pack output (1-based indices for R) --------------------------------

@@ -8,7 +8,8 @@
 #
 # The reinforcement-learning hyperparameters are fixed at the paper's tuned
 # values (Section 4.1); they are not exposed, to keep the API minimal. The
-# search is wall-clock budgeted (the paper's t_limit): more time yields more
+# search is budgeted by wall-clock time (the paper's t_limit) and/or a hard cap
+# on tabu iterations, whichever is reached first: more budget yields more
 # restarts and a monotonically non-worsening best solution.
 
 # Paper-tuned constants (Dieudonne et al. 2020, Section 4.1).
@@ -34,7 +35,8 @@
 #' tabu search using one-flip moves (adding or removing one element per step),
 #' with efficient \eqn{O(n)} neighbourhood evaluation via the contribution
 #' array \eqn{P_i = \sum_{j \in S,\, j \ne i} d_{ij}}.  Restarts continue until
-#' the `maxSeconds` budget is exhausted; the best solution found is returned.
+#' the `maxSeconds` or `maxIter` budget is reached, whichever comes first; the
+#' best solution found is returned.
 #'
 #' The reinforcement-learning and tabu hyperparameters are fixed at the tuned
 #' values reported by \insertCite{Dieudonne2020}{MaxMin} (greedy factor
@@ -46,6 +48,12 @@
 #'   distances; \insertCite{Dieudonne2020}{MaxMin}). An asymmetric matrix is
 #'   symmetrized to \eqn{(d_{ij} + d_{ji})/2} before solving.
 #' @param maxSeconds Numeric: wall-clock time budget in seconds.
+#' @param maxIter Numeric: cap on the total number of tabu-search iterations
+#'   (one-flip moves summed over all restarts). The search stops as soon as
+#'   *either* `maxSeconds` or `maxIter` is reached. Unlike `maxSeconds` (checked
+#'   every 256 iterations, so it may overshoot slightly), `maxIter` is an exact
+#'   cap: the reported `iters` never exceeds it. Pass `Inf` to disable the
+#'   iteration cap and budget by time alone.
 #' @param useRL Logical: enable the \eqn{Q}-learning layer that guides
 #'   initial-solution construction across restarts.  When `TRUE` (the default)
 #'   the learning and reward matrices each occupy \eqn{O(n^2)} memory, the same
@@ -83,7 +91,7 @@
 #' result
 #' attr(result, "score")
 #' @export
-MaxMean <- function(d, maxSeconds = 0.1, useRL = TRUE) {
+MaxMean <- function(d, maxSeconds = 0.1, maxIter = 1000, useRL = TRUE) {
   progress <- getOption("MaxMin.progress", interactive())
 
   dmat <- .AsDistMatrix(d)
@@ -105,6 +113,10 @@ MaxMean <- function(d, maxSeconds = 0.1, useRL = TRUE) {
       is.na(maxSeconds) || maxSeconds <= 0) {
     stop("`maxSeconds` must be a single positive numeric (or Inf)")
   }
+  if (!is.numeric(maxIter) || length(maxIter) != 1L ||
+      is.na(maxIter) || maxIter < 1) {
+    stop("`maxIter` must be a single numeric >= 1 (or Inf)")
+  }
   if (!is.logical(useRL) || length(useRL) != 1L || is.na(useRL)) {
     stop("`useRL` must be a single logical (TRUE or FALSE)")
   }
@@ -121,6 +133,7 @@ MaxMean <- function(d, maxSeconds = 0.1, useRL = TRUE) {
   out <- MaxMean_cpp(
     dmat          = dmat,
     time_budget_s = as.double(maxSeconds),
+    iter_budget   = as.double(maxIter),
     alpha_depth   = .kMaxMeanDepth,
     T_min         = .kMaxMeanTMin,
     T_max         = .kMaxMeanTMax,

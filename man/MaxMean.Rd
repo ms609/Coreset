@@ -4,7 +4,7 @@
 \alias{MaxMean}
 \title{RLTS tabu search for the Max-Mean Dispersion Problem}
 \usage{
-MaxMean(d, maxSeconds = 0.05, useRL = TRUE)
+MaxMean(d, maxSeconds = 0.1, maxIter = 1000, useRL = TRUE)
 }
 \arguments{
 \item{d}{A \code{dist} object or square numeric matrix of pairwise distances.
@@ -13,6 +13,13 @@ distances; \insertCite{Dieudonne2020}{MaxMin}). An asymmetric matrix is
 symmetrized to \eqn{(d_{ij} + d_{ji})/2} before solving.}
 
 \item{maxSeconds}{Numeric: wall-clock time budget in seconds.}
+
+\item{maxIter}{Numeric: cap on the total number of tabu-search iterations
+(one-flip moves summed over all restarts). The search stops as soon as
+\emph{either} \code{maxSeconds} or \code{maxIter} is reached. Unlike \code{maxSeconds} (checked
+every 256 iterations, so it may overshoot slightly), \code{maxIter} is an exact
+cap: the reported \code{iters} never exceeds it. Pass \code{Inf} to disable the
+iteration cap and budget by time alone.}
 
 \item{useRL}{Logical: enable the \eqn{Q}-learning layer that guides
 initial-solution construction across restarts.  When \code{TRUE} (the default)
@@ -51,7 +58,8 @@ via \eqn{Q}-learning thereafter; each initial solution is then refined by a
 tabu search using one-flip moves (adding or removing one element per step),
 with efficient \eqn{O(n)} neighbourhood evaluation via the contribution
 array \eqn{P_i = \sum_{j \in S,\, j \ne i} d_{ij}}.  Restarts continue until
-the \code{maxSeconds} budget is exhausted; the best solution found is returned.
+the \code{maxSeconds} or \code{maxIter} budget is reached, whichever comes first; the
+best solution found is returned.
 
 The reinforcement-learning and tabu hyperparameters are fixed at the tuned
 values reported by \insertCite{Dieudonne2020}{MaxMin} (greedy factor
