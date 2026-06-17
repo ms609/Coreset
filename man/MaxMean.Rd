@@ -4,7 +4,7 @@
 \alias{MaxMean}
 \title{RLTS tabu search for the Max-Mean Dispersion Problem}
 \usage{
-MaxMean(d, maxSeconds = 60, useRL = TRUE)
+MaxMean(d, maxSeconds = 0.05, useRL = TRUE)
 }
 \arguments{
 \item{d}{A \code{dist} object or square numeric matrix of pairwise distances.
@@ -70,7 +70,7 @@ pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
 
 # Select the subset that maximises mean pairwise dispersion:
-result <- MaxMean(d, maxSeconds = 1)
+result <- MaxMean(d, maxSeconds = 0.001)
 result
 attr(result, "score")
 }

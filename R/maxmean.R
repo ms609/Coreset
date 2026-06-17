@@ -79,11 +79,11 @@
 #' d <- dist(pts)
 #'
 #' # Select the subset that maximises mean pairwise dispersion:
-#' result <- MaxMean(d, maxSeconds = 1)
+#' result <- MaxMean(d, maxSeconds = 0.001)
 #' result
 #' attr(result, "score")
 #' @export
-MaxMean <- function(d, maxSeconds = 60, useRL = TRUE) {
+MaxMean <- function(d, maxSeconds = 0.1, useRL = TRUE) {
   progress <- getOption("MaxMin.progress", interactive())
 
   dmat <- .AsDistMatrix(d)
@@ -137,7 +137,7 @@ MaxMean <- function(d, maxSeconds = 60, useRL = TRUE) {
     fMsg    <- as.numeric(out$objective)
     iterMsg <- as.numeric(out$iters)
     cli::cli_process_done(
-      msg = "MaxMean: {kMsg} elements, f = {signif(fMsg, 4)}, {iterMsg} iters, {round(timeS, 1)}s"
+      msg = "MaxMean: {kMsg} elements, f = {signif(fMsg, 4)}, {iterMsg} iters, {signif(timeS, 4)}s"
     )
   }
 
