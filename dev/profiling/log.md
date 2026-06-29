@@ -412,3 +412,32 @@ Next rotation target for area 5.
 Status: Area 5 CDSh → OPTIMISED (T-010); ExactKCentre → PENDING (T-011).
 
 last_focus: 5
+
+## Round (targeted) — 2026-06-29 — MaxEntropy (maxdet) selector  [user: /profile MaxEntropy]
+
+**Task:** profile `MaxEntropy()` (R/maxentropy.R + src/maxentropy.cpp) and optimise
+until the best per-round gain < 20%.
+
+**Triage (step-timing, not VTune):** the only O(n³) costs are the R-side
+`eigen()` decomposition(s) and the clip-repair reconstruction; the C++ greedy is
+O(n²k) and negligible at large n. VTune unnecessary — the hotspot is LAPACK
+called from R, located by an internal-step breakdown
+(`dev/profiling/drivers/maxentropy.R`).
+
+**Round 1 finding (T-012, APPLIED, +36.3%):** two stacked levers in the new
+`.MaxEntropyPrepare()` — (a) compute the symmetric `eigen()` ONCE instead of twice
+(values-only for negMass + full for repair, on the same matrix); (b) reconstruct
+the clip repair with `tcrossprod(V·√λ)` (dsyrk) instead of `V·(Λ·Vᵀ)` (dgemm),
+3.6× faster, identical to 1.78e-15. n=1200 prep 3.17 s → 2.02 s.
+Verified safe: test_local 180/180; greedy↔dev-prototype parity 12/12 cases; exact
+10/11 identical + d3 equal-logdet tie (pre-existing ME-003 scorer tie-break, not
+introduced by this change).
+
+**Round 2 (T-013, AT-LIMIT, < 20% → STOP):** after T-012 the remaining cost is 88%
+the LAPACK symmetric eigendecomposition (1.77 s of 2.02 s), required by the
+nearest-PSD repair and algorithmically irreducible without approximating the repair
+(which would break selection parity). Best non-eigen win < 12%. Stopping criterion
+(< 20%) reached. Area marked AT-LIMIT.
+
+**Cleanup:** no VTune result dirs created. last_focus left at 5 (this was a targeted
+run; the ExactKCentre T-011 rotation slot is unchanged).
