@@ -28,6 +28,8 @@ summary(FarFirst(5L, dist(pts)))
 \seealso{
 Other reporting functions:
 \code{\link{print.KCentre}},
-\code{\link{print.MaxMin}}
+\code{\link{print.MaxEntropy}},
+\code{\link{print.MaxMin}},
+\code{\link{print.MaxSum}}
 }
 \concept{reporting functions}

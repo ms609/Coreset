@@ -136,6 +136,17 @@
 #'  iterations do not improve the score.
 #' @param maxSeconds Numeric: terminate search after this many seconds have
 #' elapsed.
+#' @param seed Optional integer: a 1-based start index that overrides the
+#'  construction's default warm-start seed (max-row-sum on the `d` path,
+#'  centroid-peripheral on the `points` path), mirroring [FarFirst()]'s integer
+#'  `strategy`. `NULL` (default) keeps the method's own seed. Not supported when
+#'  candidate thinning binds (pass `maxCandidates = 0L`).
+#' @templateVar default `46340L`
+#' @templateVar default_basis the dense-distance-matrix feasibility ceiling
+#'   (`floor(sqrt(.Machine$integer.max))`) the `points` path already crosses;
+#'   below it nothing changes, at or above it the candidates are thinned to this
+#'   size on the matrix-free path (no \eqn{m \times m} matrix is built)
+#' @template maxCandidates
 #' @templateVar progress_shows status messages are shown
 #' @template progress
 #'
@@ -156,9 +167,20 @@
 #'
 #' @references \insertAllCited{}
 #'
+#' @examples
+#' set.seed(1)
+#' pts <- matrix(rnorm(200), ncol = 2)
+#' DropAdd(5L, dist(pts))
+#'
+#' # Composable coreset: thin to 40 candidates with farthest-first, then run
+#' # DropAdd on the coreset. Returned indices are original-space row indices.
+#' suppressWarnings(DropAdd(5L, points = pts, maxCandidates = 40L))
+#'
+#' # Disable thinning (run on the full problem):
+#' DropAdd(5L, points = pts, maxCandidates = 0L)
 #' @export
 DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
-                    points = NULL) {
+                    points = NULL, maxCandidates = 46340L, seed = NULL) {
   progress <- getOption("MaxMin.progress", interactive())
   if (!is.null(points) && !is.null(d)) {
     stop("supply `d` or `points`, not both")
@@ -184,6 +206,35 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
       is.na(maxSeconds) || maxSeconds <= 0) {
     stop("`maxSeconds` must be a single positive numeric (or Inf)")
   }
+  # `seed` overrides the construction's default warm-start (max-row-sum on the
+  # matrix path, centroid-peripheral on the points path) with an explicit 1-based
+  # start index, mirroring FarFirst()'s integer `strategy`. NULL keeps the default.
+  if (!is.null(seed) &&
+      (length(seed) != 1L || !is.finite(seed) || seed < 1L || seed > n)) {
+    stop("`seed` must be a single index in [1, n], or NULL for the default")
+  }
+  seed0 <- if (is.null(seed)) -1L else as.integer(seed) - 1L
+
+  # Composable-coreset thinning: when `maxCandidates` binds, farthest-first
+  # reduces the n candidates to an m-point coreset and DropAdd runs on that.
+  # The recursive call passes `maxCandidates = 0L`, so the coreset is solved by
+  # the real kernel exactly once; on the points source the subproblem stays on
+  # the matrix-free path (no m x m matrix is built).
+  mc <- .ResolveCap(maxCandidates, n, k)
+  if (!is.na(mc)) {
+    if (!is.null(seed)) {
+      stop("`seed=` is not supported with candidate thinning; pass ",
+           "`maxCandidates = 0L` to run on the full problem")
+    }
+    return(.FarFirstThin(
+      k, mc,
+      d      = if (usePoints) NULL else dmat,
+      points = if (usePoints) points else NULL,
+      RunOnSubset = function(d, points)
+        DropAdd(k, d = d, points = points, plateau = plateau,
+                maxSeconds = maxSeconds, maxCandidates = 0L),
+      label = "DropAdd"))
+  }
 
   t0 <- proc.time()[[3L]]
   eps <- 1e-9
@@ -197,7 +248,7 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
       )
     }
     out <- DropAdd_points_cpp(points, k, as.double(maxSeconds),
-                                .Machine$integer.max, plateau, FALSE)
+                                .Machine$integer.max, plateau, FALSE, seed0)
     timeS <- proc.time()[[3L]] - t0
     if (progress) {
       itersMsg <- as.integer(out$iters)
@@ -223,7 +274,7 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
     )
   }
   out <- DropAdd_cpp(dmat, k, as.double(maxSeconds),
-                       .Machine$integer.max, plateau, FALSE)
+                       .Machine$integer.max, plateau, FALSE, seed0)
   timeS <- proc.time()[[3L]] - t0
   if (progress) {
     itersMsg <- as.integer(out$iters)

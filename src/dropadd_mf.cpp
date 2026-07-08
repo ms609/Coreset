@@ -25,16 +25,18 @@
 // (a point whose nearest selected peer just vanished). Memory is ~5 length-n
 // arrays — strictly O(n).
 //
-// DEVIATION (documented): seed point.
-// Porumbel's construction seed is argmax_x sum_y d(x, y) (max row-sum), which is
-// O(n^2 * dim) — the very cost this variant avoids. We substitute a cheap
-// O(n * dim) proxy: the point farthest from the coordinate anti_centroid,
+// Construction seed (an O(n) design choice; pass DropAdd(seed=) to override).
+// The matrix kernel seeds at the max-row-sum point, argmax_x sum_y d(x, y). From
+// coordinates that costs O(n^2 * dim) — the very cost this matrix-free path exists
+// to avoid — so here the seed is the O(n * dim) centroid-peripheral point,
 //     seed = argmax_x || points[x,] - mean_x ||,
-// which approximates the peripheral max-row-sum point (a point far from the
-// anti_centroid tends to have a large sum of distances to all others). Ties break to
-// the smallest index, as in the matrix kernel. The subsequent greedy max-min
-// construction and the drop-add search are faithful; only the single seed
-// differs, so on instances where the two seed rules coincide the entire
+// the point farthest from the coordinate centroid. It closely tracks the max-row-sum
+// point (a point far from the centroid has a large total distance to the rest; in
+// practice the two rules select the same point on typical data). The seed has little
+// bearing on the converged objective regardless: the greedy construction is a
+// 2-approximation from ANY start and the drop-add tabu search determines the result.
+// Ties break to the smallest index, as in the matrix kernel; the construction and
+// search are otherwise identical, so when the two seed rules coincide the entire
 // trajectory matches the matrix path bit-for-bit.
 //
 // Bit-faithful distances: EuclidCol below mirrors stats::dist()'s R_euclidean
@@ -62,7 +64,8 @@ static inline double EuclidCol(const double* P, int nPts, int dim,
 
 // [[Rcpp::export]]
 List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
-                          int max_iter, int max_no_improve, bool want_trace) {
+                          int max_iter, int max_no_improve, bool want_trace,
+                          int seed0 = -1) {
   const int n   = points.nrow();
   const int dim = points.ncol();
   if (m < 2 || m > n) stop("m must satisfy 2 <= m <= nrow(points)");
@@ -93,8 +96,13 @@ List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
   // -- Construction (Algorithm 1) -----------------------------------------
   // Seed: farthest point from the coordinate anti_centroid (O(n*dim) proxy for the
   // O(n^2*dim) max-row-sum seed). Ties → smallest index. See header DEVIATION.
+  // seed0 >= 0 overrides the default warm-start with a caller-supplied 0-based
+  // start index (R/dropadd.R::DropAdd() validates the range); seed0 = -1 (the
+  // default) computes the centroid-peripheral seed below. See header note.
   int seed = 0;
-  {
+  if (seed0 >= 0) {
+    seed = seed0;
+  } else {
     std::vector<double> anti_centroid(dim, 0.0);
     for (int j = 0; j < dim; ++j) {
       long double s = 0.0L;            // long-double accumulator: stable mean
@@ -201,6 +209,11 @@ List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
       trace_adds.reserve(max_iter);
     }
   }                                                  // # nocov end
+
+  // Anytime trace (want_trace only): best T_k at each improvement, for
+  // time-to-quality profiling. The construction value is logged at iteration 0.
+  std::vector<int> imp_iter; std::vector<double> imp_tk;   // # nocov start
+  if (want_trace) { imp_iter.push_back(0); imp_tk.push_back(best_maxmin); }  // # nocov end
 
   auto t0 = std::chrono::steady_clock::now();
   // chrono::now() is cheap but not free; at large n each iteration is heavy
@@ -371,6 +384,10 @@ List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
       best_sumpair = cs;
       best_score   = cur_score;
       no_improve   = 0;
+      if (want_trace) {                              // # nocov start
+        imp_iter.push_back(static_cast<int>(iters_done + 1));
+        imp_tk.push_back(cm);
+      }                                              // # nocov end
     } else {
       ++no_improve;
     }
@@ -399,6 +416,8 @@ List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
     std::copy(trace_adds.begin(),  trace_adds.end(),  aR.begin());
     out["drops"] = dR;
     out["adds"]  = aR;
+    out["imp_iter"] = wrap(imp_iter);
+    out["imp_tk"]   = wrap(imp_tk);
   }                                                  // # nocov end
 
   return out;

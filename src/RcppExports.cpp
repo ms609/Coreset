@@ -11,8 +11,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // DropAdd_cpp
-List DropAdd_cpp(NumericMatrix dmat, int m, double time_budget_s, int max_iter, int max_no_improve, bool want_trace);
-RcppExport SEXP _MaxMin_DropAdd_cpp(SEXP dmatSEXP, SEXP mSEXP, SEXP time_budget_sSEXP, SEXP max_iterSEXP, SEXP max_no_improveSEXP, SEXP want_traceSEXP) {
+List DropAdd_cpp(NumericMatrix dmat, int m, double time_budget_s, int max_iter, int max_no_improve, bool want_trace, int seed0);
+RcppExport SEXP _MaxMin_DropAdd_cpp(SEXP dmatSEXP, SEXP mSEXP, SEXP time_budget_sSEXP, SEXP max_iterSEXP, SEXP max_no_improveSEXP, SEXP want_traceSEXP, SEXP seed0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -22,13 +22,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
     Rcpp::traits::input_parameter< int >::type max_no_improve(max_no_improveSEXP);
     Rcpp::traits::input_parameter< bool >::type want_trace(want_traceSEXP);
-    rcpp_result_gen = Rcpp::wrap(DropAdd_cpp(dmat, m, time_budget_s, max_iter, max_no_improve, want_trace));
+    Rcpp::traits::input_parameter< int >::type seed0(seed0SEXP);
+    rcpp_result_gen = Rcpp::wrap(DropAdd_cpp(dmat, m, time_budget_s, max_iter, max_no_improve, want_trace, seed0));
     return rcpp_result_gen;
 END_RCPP
 }
 // DropAdd_points_cpp
-List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s, int max_iter, int max_no_improve, bool want_trace);
-RcppExport SEXP _MaxMin_DropAdd_points_cpp(SEXP pointsSEXP, SEXP mSEXP, SEXP time_budget_sSEXP, SEXP max_iterSEXP, SEXP max_no_improveSEXP, SEXP want_traceSEXP) {
+List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s, int max_iter, int max_no_improve, bool want_trace, int seed0);
+RcppExport SEXP _MaxMin_DropAdd_points_cpp(SEXP pointsSEXP, SEXP mSEXP, SEXP time_budget_sSEXP, SEXP max_iterSEXP, SEXP max_no_improveSEXP, SEXP want_traceSEXP, SEXP seed0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -38,7 +39,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
     Rcpp::traits::input_parameter< int >::type max_no_improve(max_no_improveSEXP);
     Rcpp::traits::input_parameter< bool >::type want_trace(want_traceSEXP);
-    rcpp_result_gen = Rcpp::wrap(DropAdd_points_cpp(points, m, time_budget_s, max_iter, max_no_improve, want_trace));
+    Rcpp::traits::input_parameter< int >::type seed0(seed0SEXP);
+    rcpp_result_gen = Rcpp::wrap(DropAdd_points_cpp(points, m, time_budget_s, max_iter, max_no_improve, want_trace, seed0));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -95,6 +97,43 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type cand(candSEXP);
     Rcpp::traits::input_parameter< bool >::type exhaustive(exhaustiveSEXP);
     rcpp_result_gen = Rcpp::wrap(KCentreCDSh_cpp(d, k, seed, cand, exhaustive));
+    return rcpp_result_gen;
+END_RCPP
+}
+// MaxEntropyGreedy_cpp
+IntegerVector MaxEntropyGreedy_cpp(const NumericMatrix& K, int k, int seed);
+RcppExport SEXP _MaxMin_MaxEntropyGreedy_cpp(SEXP KSEXP, SEXP kSEXP, SEXP seedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type K(KSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(MaxEntropyGreedy_cpp(K, k, seed));
+    return rcpp_result_gen;
+END_RCPP
+}
+// MaxEntropyExact_cpp
+IntegerVector MaxEntropyExact_cpp(const NumericMatrix& K, int k);
+RcppExport SEXP _MaxMin_MaxEntropyExact_cpp(SEXP KSEXP, SEXP kSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type K(KSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    rcpp_result_gen = Rcpp::wrap(MaxEntropyExact_cpp(K, k));
+    return rcpp_result_gen;
+END_RCPP
+}
+// MaxEntropyLogDet_cpp
+double MaxEntropyLogDet_cpp(const NumericMatrix& K, const IntegerVector& idx);
+RcppExport SEXP _MaxMin_MaxEntropyLogDet_cpp(SEXP KSEXP, SEXP idxSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type K(KSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type idx(idxSEXP);
+    rcpp_result_gen = Rcpp::wrap(MaxEntropyLogDet_cpp(K, idx));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -172,12 +211,15 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_MaxMin_DropAdd_cpp", (DL_FUNC) &_MaxMin_DropAdd_cpp, 6},
-    {"_MaxMin_DropAdd_points_cpp", (DL_FUNC) &_MaxMin_DropAdd_points_cpp, 6},
+    {"_MaxMin_DropAdd_cpp", (DL_FUNC) &_MaxMin_DropAdd_cpp, 7},
+    {"_MaxMin_DropAdd_points_cpp", (DL_FUNC) &_MaxMin_DropAdd_points_cpp, 7},
     {"_MaxMin_Grasp_cpp", (DL_FUNC) &_MaxMin_Grasp_cpp, 8},
     {"_MaxMin_IsSymmetric_cpp", (DL_FUNC) &_MaxMin_IsSymmetric_cpp, 2},
     {"_MaxMin_KCentreCandidates_cpp", (DL_FUNC) &_MaxMin_KCentreCandidates_cpp, 1},
     {"_MaxMin_KCentreCDSh_cpp", (DL_FUNC) &_MaxMin_KCentreCDSh_cpp, 5},
+    {"_MaxMin_MaxEntropyGreedy_cpp", (DL_FUNC) &_MaxMin_MaxEntropyGreedy_cpp, 3},
+    {"_MaxMin_MaxEntropyExact_cpp", (DL_FUNC) &_MaxMin_MaxEntropyExact_cpp, 2},
+    {"_MaxMin_MaxEntropyLogDet_cpp", (DL_FUNC) &_MaxMin_MaxEntropyLogDet_cpp, 2},
     {"_MaxMin_MaximinFrom_cpp", (DL_FUNC) &_MaxMin_MaximinFrom_cpp, 3},
     {"_MaxMin_MaximinFromPoints_cpp", (DL_FUNC) &_MaxMin_MaximinFromPoints_cpp, 4},
     {"_MaxMin_RowSumsFromPoints_cpp", (DL_FUNC) &_MaxMin_RowSumsFromPoints_cpp, 1},

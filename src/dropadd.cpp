@@ -24,7 +24,8 @@ using namespace Rcpp;
 
 // [[Rcpp::export]]
 List DropAdd_cpp(NumericMatrix dmat, int m, double time_budget_s,
-                   int max_iter, int max_no_improve, bool want_trace) {
+                   int max_iter, int max_no_improve, bool want_trace,
+                   int seed0 = -1) {
   const int n = dmat.nrow();
   if (n != dmat.ncol()) stop("dmat must be square");
   if (m < 2 || m > n) stop("m must satisfy 2 <= m <= nrow(dmat)");
@@ -51,8 +52,14 @@ List DropAdd_cpp(NumericMatrix dmat, int m, double time_budget_s,
   // miss per step at large n); sweeping j outer / i inner over the contiguous
   // column `dp + j*n` is sequential. Each rs[i] still accumulates over j in
   // increasing order, so the sums — and the argmax seed — are bit-identical.
+  // seed0 >= 0 overrides the default warm-start with a caller-supplied 0-based
+  // start index (R/dropadd.R::DropAdd() validates the range); seed0 = -1 (the
+  // default) uses the max-row-sum seed. The override exists so the construction
+  // can be started from any peripheral seed without rebuilding the kernel.
   int seed = 0;
-  {
+  if (seed0 >= 0) {
+    seed = seed0;
+  } else {
     std::vector<double> rs(n, 0.0);
     for (int j = 0; j < n; ++j) {
       const double *col = dp + (std::size_t)j * n;

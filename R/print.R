@@ -276,6 +276,43 @@ print.KCentreSelection <- function(x, ...) {
   invisible(x)
 }
 
+#' Format and print Max-Sum (maximum diversity) solver results
+#'
+#' Terse summary of the object returned by [ExactMaxSum()]
+#' (`"MaxSumSelection"`), reporting the achieved **total** pairwise distance
+#' (the max-sum objective) rather than the minimum distance of [ExactMaxMin()].
+#'
+#' @param x A `"MaxSumSelection"` object.
+#' @param ... Ignored; present for S3 compatibility.
+#' @return `format.MaxSumSelection()` returns a one-line character summary;
+#'   `print.MaxSumSelection()` returns `x` invisibly, called for its side-effect.
+#' @name print.MaxSum
+#' @family reporting functions
+#' @examples
+#' set.seed(1)
+#' ExactMaxSum(3L, dist(matrix(rnorm(20), ncol = 2)))
+#' @export
+format.MaxSumSelection <- function(x, ...) {
+  idx <- as.integer(x)
+  nc <- length(idx)
+  status <- if (isTRUE(attr(x, "proven"))) {
+    "exact MILP, proven optimal"
+  } else {
+    "exact MILP, unproven incumbent"
+  }
+  rel <- if (isTRUE(attr(x, "proven"))) "=" else ">="
+  sprintf("%d element%s (%s) by %s, total distance %s %s",
+          nc, if (nc == 1L) "" else "s", .FormatIndexList(idx), status, rel,
+          format(signif(attr(x, "score"), 4L)))
+}
+
+#' @rdname print.MaxSum
+#' @export
+print.MaxSumSelection <- function(x, ...) {
+  cat(format(x, ...), "\n", sep = "")
+  invisible(x)
+}
+
 #' @rdname print.KCentre
 #' @export
 format.KCentreExact <- function(x, ...) {

@@ -68,16 +68,16 @@ test_that("ensemble keeps the best anchor by T_k", {
   expect_length(attr(two, "strategy_results"), 2L)
 })
 
-test_that("the default ensemble is eight random-furthest starts", {
+test_that("the default ensemble is three random-furthest starts", {
   dat <- MakeData()
   n   <- 8L
-  # Default is `"random_furthest"` alone -> eight random starts on both paths.
+  # Default is `"random_furthest"` alone -> three random starts on both paths.
   mat <- FarFirst(n, dat$d)
   expect_identical(names(attr(mat, "strategy_results")),
-                   paste0("random_furthest", 1:8))
+                   paste0("random_furthest", 1:3))
   pt <- FarFirst(k = n, points = dat$pts)
   expect_identical(names(attr(pt, "strategy_results")),
-                   paste0("random_furthest", 1:8))
+                   paste0("random_furthest", 1:3))
   # Neither path includes the deterministic anchors by default.
   expect_false("anti_centroid" %in% names(attr(pt, "strategy_results")))
   expect_false("peripheral" %in% names(attr(mat, "strategy_results")))
@@ -93,8 +93,8 @@ test_that("the default selection is reproducible under set.seed", {
 test_that("nSeeds controls the number of random-furthest starts", {
   dat <- MakeData()
   n   <- 8L
-  # Default is 8 random-furthest starts.
-  expect_length(attr(FarFirst(n, dat$d), "strategy_results"), 8L)
+  # Default is 3 random-furthest starts.
+  expect_length(attr(FarFirst(n, dat$d), "strategy_results"), 3L)
   # nSeeds sets the count.
   expect_length(attr(FarFirst(n, dat$d, nSeeds = 4L), "strategy_results"), 4L)
   expect_length(attr(FarFirst(n, dat$d, nSeeds = 1L), "strategy_results"), 1L)

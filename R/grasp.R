@@ -285,6 +285,11 @@
 #'   `alpha = 1` is pure greedy (best only); `alpha = 0` is uniform random
 #'   among candidates.
 #' @param maxSeconds Numeric specifying wall-clock ceiling, in seconds.
+#' @templateVar default `2000L`
+#' @templateVar default_basis conservative because `Grasp()` is matrix-only, so
+#'   the coreset subproblem is a dense \eqn{m \times m} matrix
+#'   (\eqn{2000 \times 2000 \approx} 32 MB)
+#' @template maxCandidates
 #' @return `Grasp()` returns an integer vector of length `k` specifying the
 #' indices of the selected points, with attributes:
 #'   \describe{
@@ -305,9 +310,13 @@
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' Grasp(5L, dist(pts), plateau = 20L, eliteSize = 4L)
+#'
+#' # Composable coreset: thin to 20 candidates with farthest-first, then run
+#' # GRASP on the coreset. Returned indices are original-space row indices.
+#' suppressWarnings(Grasp(5L, dist(pts), plateau = 20L, maxCandidates = 20L))
 #' @export
 Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
-                  maxSeconds = Inf) {
+                  maxSeconds = Inf, maxCandidates = 2000L) {
   progress <- getOption("MaxMin.progress", interactive())
   d <- .AsDistMatrix(d)
   n <- nrow(d)
@@ -327,6 +336,20 @@ Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
   if (!is.numeric(alpha) || length(alpha) != 1L || is.na(alpha) ||
       alpha < 0 || alpha > 1) {
     stop("`alpha` must be a single number in [0, 1]")
+  }
+
+  # Composable-coreset thinning: when `maxCandidates` binds, farthest-first
+  # reduces the n candidates to an m-point coreset (a cheap d[core, core] subset
+  # of the matrix Grasp already holds) and Grasp runs on that. The recursive
+  # call passes `maxCandidates = 0L`, so the coreset is solved exactly once.
+  mc <- .ResolveCap(maxCandidates, n, k)
+  if (!is.na(mc)) {
+    return(.FarFirstThin(
+      k, mc, d = d, points = NULL,
+      RunOnSubset = function(d, points)
+        Grasp(k, d = d, plateau = plateau, eliteSize = eliteSize,
+              alpha = alpha, maxSeconds = maxSeconds, maxCandidates = 0L),
+      label = "Grasp"))
   }
 
   # The kernel reports its stall counter (consecutive non-improving GRASP

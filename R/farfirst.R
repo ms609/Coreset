@@ -162,7 +162,11 @@
 #' Pass the name of one or more seeding strategies described in [`PickPoint()`]
 #' to run each strategy and return the best solution.
 #' @param nSeeds Integer: number of distinct seeds to draw under the (default)
-#' `"random_furthest"` strategy.
+#' `"random_furthest"` strategy. Three starts captures most of the gain from
+#' restarting — the improvement curve bends early (knee at n ≈ 3–4 across
+#' benchmarks) and additional restarts add little. For higher-quality
+#' solutions, prefer [DropAdd()]: tabu search escapes the farthest-first
+#' construction family where restarts plateau.
 #' @return `FarFirst()` returns an integer vector with class `MaxMinSelection`,
 #' listing the selected indices in the order they were selected.
 #' Attributes report:
@@ -179,7 +183,7 @@
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' d <- dist(pts)
 #'
-#' # Default: best of eight random-furthest starts (set.seed for reproducibility):
+#' # Default: best of three random-furthest starts (set.seed for reproducibility):
 #' FarFirst(5L, d)
 #'
 #' # More random-furthest starts:
@@ -208,7 +212,7 @@
 #' arrestTypes[idx, ]
 #' @export
 FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
-                     strategy = "random_furthest", nSeeds = 8L) {
+                     strategy = "random_furthest", nSeeds = 3L) {
   progress <- getOption("MaxMin.progress", interactive())
   strategyMissing <- missing(strategy)
 

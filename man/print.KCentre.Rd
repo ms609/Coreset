@@ -38,7 +38,9 @@ KCentre(4L, dist(matrix(rnorm(60), ncol = 2)))
 }
 \seealso{
 Other reporting functions:
+\code{\link{print.MaxEntropy}},
 \code{\link{print.MaxMin}},
+\code{\link{print.MaxSum}},
 \code{\link{summary.MaxMin}}
 }
 \concept{reporting functions}

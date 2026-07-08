@@ -70,16 +70,20 @@
   # Heuristic pool: optional caller warmStart, several Grasp restarts (drawing
   # on the session RNG -- this is where their diversity comes from), one
   # deterministic DropAdd. Like Grasp() itself, this advances the session RNG.
+  # `maxCandidates = 0L` pins both to no thinning: the warm starts must see the
+  # full matrix the user handed to the exact solver, regardless of the solvers'
+  # own default coreset caps.
   grasps <- local({
     op <- options(MaxMin.progress = FALSE); on.exit(options(op))
     lapply(seq_len(nStart), function(s)
-      tryCatch(Grasp(k, d, plateau = 50L), error = function(e) NULL))
+      tryCatch(Grasp(k, d, plateau = 50L, maxCandidates = 0L),
+               error = function(e) NULL))
   })
   raw <- c(if (is.null(warmStart)) list() else list(warmStart),
            grasps,
            list(tryCatch(local({
              op <- options(MaxMin.progress = FALSE); on.exit(options(op))
-             DropAdd(d = d, k = k, plateau = 512L)
+             DropAdd(d = d, k = k, plateau = 512L, maxCandidates = 0L)
            }), error = function(e) NULL)))
   pool <- Filter(Negate(is.null), lapply(raw, valid))
   if (!length(pool)) {

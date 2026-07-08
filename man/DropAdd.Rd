@@ -4,7 +4,15 @@
 \alias{DropAdd}
 \title{DropAdd Tabu Search for the Max-Min Diversity Problem}
 \usage{
-DropAdd(k, d = NULL, plateau = 5000L, maxSeconds = Inf, points = NULL)
+DropAdd(
+  k,
+  d = NULL,
+  plateau = 5000L,
+  maxSeconds = Inf,
+  points = NULL,
+  maxCandidates = 46340L,
+  seed = NULL
+)
 }
 \arguments{
 \item{k}{Integer; subset size, \eqn{2 \le k \le N}.}
@@ -23,6 +31,24 @@ Must be complete (no \code{NA}).
 Ignored if \code{d} specified.
 Avoids creating an \eqn{N \times N} distance matrix, enabling use at
 \eqn{N \ge 46340}).}
+
+\item{maxCandidates}{Integer: a composable-coreset tractability cap. When the
+number of candidate points \code{N} exceeds \code{maxCandidates}, \code{\link[=FarFirst]{FarFirst()}} thins
+the candidates to a \code{maxCandidates}-point coreset (with the deterministic,
+RNG-free \code{"peripheral"} seed, so no random stream is perturbed), the solver
+runs on the coreset, and the chosen indices are mapped back to the original
+numbering. This lets the solver produce a solution at scales where it would
+otherwise be intractable. \code{maxCandidates = 0} (or \code{Inf}) disables thinning
+and runs on the full problem; a cap at or above \code{N} is a no-op. A cap below
+\code{k} is an error. The default is \code{46340L}, the dense-distance-matrix feasibility ceiling
+Thinning is \strong{on by default}: an input larger than the cap is thinned (and
+a warning is emitted) unless \code{maxCandidates = 0} is passed.}
+
+\item{seed}{Optional integer: a 1-based start index that overrides the
+construction's default warm-start seed (max-row-sum on the \code{d} path,
+centroid-peripheral on the \code{points} path), mirroring \code{\link[=FarFirst]{FarFirst()}}'s integer
+\code{strategy}. \code{NULL} (default) keeps the method's own seed. Not supported when
+candidate thinning binds (pass \code{maxCandidates = 0L}).}
 }
 \value{
 \code{DropAdd()} returns an integer vector of length \code{k} containing the 1-based selected
@@ -53,6 +79,18 @@ In interactive sessions, status messages are shown.
 To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
 }
 
+\examples{
+set.seed(1)
+pts <- matrix(rnorm(200), ncol = 2)
+DropAdd(5L, dist(pts))
+
+# Composable coreset: thin to 40 candidates with farthest-first, then run
+# DropAdd on the coreset. Returned indices are original-space row indices.
+suppressWarnings(DropAdd(5L, points = pts, maxCandidates = 40L))
+
+# Disable thinning (run on the full problem):
+DropAdd(5L, points = pts, maxCandidates = 0L)
+}
 \references{
 \insertAllCited{}
 }

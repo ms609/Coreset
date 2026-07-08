@@ -1,3 +1,46 @@
+# MaxMin 0.0.0.9004 (development)
+
+- New `MaxEntropy()`: maximum-entropy (maxdet) subset selection -- choose the
+  `k`-subset maximising `log det K_S` for a radial-basis similarity kernel built
+  from the distances (Shewry & Wynn 1987; the mode of a determinantal point
+  process, Kulesza & Taskar 2012). The kernel is repaired to positive-
+  semidefinite form (eigen-clip by default); selection is by greedy pivoted
+  Cholesky, with exact enumeration where `choose(n, k)` is small. A redundant
+  point adds zero volume and is never co-selected, so the objective is exactly
+  density-blind. Returns a `"MaxEntropySelection"` carrying the retained
+  log-determinant and the repair magnitude, with its own `format()`/`print()`.
+
+- New `ExactMaxSum()`: exact solver for the Max-Sum Diversity Problem (the
+  "maximum diversity problem" -- select the `k`-subset of greatest *total*
+  pairwise distance), the max-sum counterpart of `ExactMaxMin()`. Uses the
+  Kuo--Glover--Dhir per-node MILP linearisation (`highs`) with a multi-start
+  1-swap local-search incumbent as floor and time-limited fallback. Returns a
+  `"MaxSumSelection"` with its own `format()`/`print()` reporting the achieved
+  total distance.
+
+- `DropAdd()` and `Grasp()` gain a `maxCandidates` argument: a composable
+  coreset (Indyk et al. 2014; Aghamolaei et al. 2015) that thins the candidates
+  to a farthest-first subset before the heavy search, letting the solvers run at
+  scales where they were previously intractable. The coreset uses the
+  deterministic `"peripheral"` seed (no session RNG is drawn) and the chosen
+  indices are mapped back to the original numbering. Thinning is **on by
+  default** (`DropAdd()`: `46340`; `Grasp()`: `2000`) and emits a warning when it
+  binds; pass `maxCandidates = 0` to run on the full problem as before. A request
+  for more points than the cap (`k > maxCandidates`) is now an error.
+
+- `FarFirst()`'s default `nSeeds` is reduced from `8` to `3`. The random-furthest
+  restart gain curve bends early (a knee at roughly three to four starts across
+  benchmarks), so three starts capture most of the benefit at well under half the
+  cost. This changes the default selection for a given `set.seed()`; pass
+  `nSeeds = 8` for the previous default, or `DropAdd()` for higher-quality results.
+
+- `DropAdd()` gains a `seed` argument: an optional 1-based start index that
+  overrides the construction's default warm-start (the max-row-sum point on the
+  `d` path, the centroid-peripheral point on the `points` path), mirroring
+  `FarFirst()`'s integer `strategy`. `NULL` (the default) keeps the method's own
+  seed. It is not supported when candidate thinning binds (pass
+  `maxCandidates = 0`).
+
 # MaxMin 0.0.0.9003 (development)
 
 - `KCentre()` / `ExactKCentre()` solve the k-centre problem.
