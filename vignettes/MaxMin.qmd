@@ -187,8 +187,31 @@ labels(eurodist)[daPick]
 ```
 
 The algorithm terminates after `plateau` iterations do not improve T~k~.
-Where *N* is too large for a distance matrix to fit in memory 
+Where *N* is too large for a distance matrix to fit in memory
 (roughly N > 46 000), pass a coordinate matrix via `DropAdd(points = ...)`.
+
+`DropAdd()` also accepts the distance-column function described above for
+`FarFirst()`, for objects that have no coordinate representation at all.
+Because the search then buys each distance column from your function, cost is
+measured in calls, not in flops: the construction takes *k* of them and each
+drop-add iteration two more, so `plateau` sets the bill. Derive whatever the
+metric reuses once, when you build the closure, and — where *N* columns of cache
+are affordable — memoise, which caps the oracle at one evaluation per object.
+
+```{r}
+#| label: dropadd-oracle
+CityOracle <- function(d) {
+  m <- as.matrix(d)                    # built once, when the closure is built
+  function(i) m[, i]                   # each call only looks it up
+}
+DropAdd(6L, CityOracle(eurodist), N = attr(eurodist, "Size"), plateau = 100L)
+```
+
+Given the same starting point the column path reproduces the matrix path
+exactly, iteration for iteration; only the default warm start differs, because
+the matrix path's max-row-sum seed would need every column. Pass `seed` to pin
+it. Candidate thinning (`maxCandidates`) needs a coreset distance matrix, so it
+is unavailable here and warns if the cap binds.
 
 
 ## GRASP with path relinking
