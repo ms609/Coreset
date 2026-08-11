@@ -308,7 +308,11 @@ test_that("seed, plateau and maxSeconds are validated on the oracle path", {
   expect_error(DropAdd(3L, colFn, N = 10L, maxSeconds = 0), "maxSeconds")
 })
 
-test_that("a malformed or non-finite colFn result is rejected", {
+test_that("a malformed or NA/NaN colFn result is rejected", {
+  # NA/NaN only: .DistColumn()'s guard deliberately lets `Inf` through, matching
+  # FarFirst()'s oracle path. (The matrix path is stricter -- .AsDistMatrix()
+  # rejects Inf -- but that is a permissiveness difference on input the matrix
+  # path refuses outright, not a divergence in the search.)
   set.seed(19)
   dmat <- as.matrix(dist(matrix(rnorm(10L * 2L), ncol = 2L)))
   # Wrong length: neither N nor N - 1.
