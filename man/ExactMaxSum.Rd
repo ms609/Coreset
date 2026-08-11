@@ -34,9 +34,9 @@ budget.}
 (the "maximum diversity problem"): select the \code{k}-subset of points
 maximising the \strong{total} pairwise distance it contains. It is the max-sum
 counterpart of \code{\link[=ExactMaxMin]{ExactMaxMin()}} (which maximises the \emph{minimum} pairwise
-distance), solved by the Kuo--Glover--Dhir per-node integer-program
-linearisation \insertCite{Kuo1993}{MaxMin}. As the problem is NP-hard it is
-feasible only for small sets.
+distance), solved by per-node integer-program linearisation
+\insertCite{Kuo1993}{MaxMin}. As the problem is NP-hard it is feasible only
+for small sets.
 }
 \details{
 The optimum is floored by a multi-start 1-swap local search, which warms the

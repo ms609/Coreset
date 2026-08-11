@@ -7,6 +7,7 @@ codecov
 composable
 coreset
 cpp
+determinantal
 doi
 Díaz
 DropAdd
@@ -24,8 +25,10 @@ Gonzalez
 Gramacy
 GRASP
 Hao
+Kulesza
 lex
 Marti
+maxdet
 maximin
 metaheuristic
 MaxMin
@@ -47,11 +50,13 @@ rownorm
 rowsum
 R's
 Sayyady
+Shewry
 sel
 SOTA
 subsample
 subsampling
 Tamir
+Taskar
 tabu
 TS
 Vassilvitskii

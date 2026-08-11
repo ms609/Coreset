@@ -109,9 +109,9 @@
 #' (the "maximum diversity problem"): select the `k`-subset of points
 #' maximising the **total** pairwise distance it contains. It is the max-sum
 #' counterpart of [ExactMaxMin()] (which maximises the *minimum* pairwise
-#' distance), solved by the Kuo--Glover--Dhir per-node integer-program
-#' linearisation \insertCite{Kuo1993}{MaxMin}. As the problem is NP-hard it is
-#' feasible only for small sets.
+#' distance), solved by per-node integer-program linearisation
+#' \insertCite{Kuo1993}{MaxMin}. As the problem is NP-hard it is feasible only
+#' for small sets.
 #'
 #' The optimum is floored by a multi-start 1-swap local search, which warms the
 #' lower bound and is returned when the MILP cannot prove optimality within

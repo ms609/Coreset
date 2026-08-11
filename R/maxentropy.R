@@ -115,8 +115,9 @@
 #'   points.
 #' @param sigma Optional kernel bandwidth; defaults to the median positive
 #'   distance.
-#' @param repair PSD repair for the kernel: `"clip"` (nearest PSD; the default),
-#'   `"shift"` (diagonal loading) or `"truncate"` (low-rank embedding).
+#' @param repair Positive Semi-Definite repair method for the kernel:
+#' `"clip"` (nearest), `"shift"` (diagonal loading) or
+#' `"truncate"` (low-rank embedding).
 #' @param exact Logical, or `NA` (the default) to choose automatically: use the
 #'   exact enumeration when `choose(n, k) <= maxCombos`, otherwise the greedy.
 #'   `TRUE` forces enumeration (error if it exceeds `maxCombos`); `FALSE` forces
@@ -129,7 +130,7 @@
 #'       `-Inf` for a degenerate selection (one forced to repeat near-identical
 #'       points because `k` exceeds the number of distinct points, which also
 #'       warns).}
-#'     \item{negMass}{Fraction of spectral mass removed by the PSD repair.}
+#'     \item{negMass}{Fraction of spectral mass removed by the Positive Semi-Definite repair.}
 #'     \item{sigma, repair, exact}{The bandwidth, repair, and whether the
 #'       optimum was certified by enumeration.}
 #'     \item{seed, N, k}{The peripheral seed index, instance size, target size.}
