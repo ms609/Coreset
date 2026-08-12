@@ -232,15 +232,10 @@
   # Eviction is restricted to members WORSE than the candidate -- Resende et al.
   # (2010) Fig. 4 line 8, "closest solution to x' in ES with z(x') > z(x^k)", and
   # §4.1, "we remove the closest solution to x' in ES among those worse than it
-  # in value". The restriction is what makes esZ[1] monotone: the discarded
-  # member is always below the incoming one, so the pool maximum cannot fall.
-  # Searching all of ES instead would let a mid-value candidate that happens to
-  # be the unique Hamming-nearest neighbour of the incumbent best displace it.
+  # in value".
+  #
   # The pool is never empty: acceptance already requires selZ > z1 (every member
   # is then worse) or selZ > zb (the worst member qualifies).
-  # Note dmin above stays a distance to the WHOLE elite set -- it is the
-  # diversity test, not the eviction scan, so the member chosen here may sit
-  # further away than dmin.
   worse <- which(esZ < selZ)
   hammWorse <- hamm[worse]
   cand <- worse[hammWorse == min(hammWorse)]

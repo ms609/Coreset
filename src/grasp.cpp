@@ -62,11 +62,11 @@ static double objective_of(const double* d, int n, const std::vector<int>& sel) 
 // tighter branchless min. Measured a net loss below m ~ 50 (see T-014).
 //
 // The result is the exact double a direct scan of `set \ {v}` would return — it
-// re-selects the very same matrix cell, with no arithmetic. The tie handling is
-// what makes that hold: `<` on the min1 update means the FIRST minimum wins, so
+// re-selects the very same matrix cell, with no arithmetic. The tie handling
+// makes that hold: `<` on the min1 update means the FIRST minimum wins, so
 // arg1 is the vertex a forward scan would settle on; a later value tying with
 // min1 falls through to the `else if (v < min2)` branch, leaving min2 == min1,
-// which is correct — a duplicate of the minimum survives the exclusion.
+// — a duplicate of the minimum survives the exclusion.
 // Selections hold distinct vertices, so excluding by vertex id is well defined.
 struct NearTwo { double min1, min2; int arg1; };
 
@@ -389,10 +389,9 @@ static void grasp_try_insert(std::vector<std::vector<int>>& ES,
   // (2010) §4.1, "we remove the closest solution to x' in ES among those worse
   // than it in value". (Fig. 4 line 8 states the same step as "closest solution
   // to x' in ES with z(x') > z(x^k)", where the primed symbol is the incoming
-  // solution, not the elite member; read the other way round the inequality
-  // would say the opposite, so §4.1 is the wording to check this code against.)
-  // That restriction is what makes ESz[0] monotone: the discarded member is
-  // always below the incoming one, so the pool maximum cannot fall. The pool is
+  // solution, not the elite member.)
+  // That restriction makes ESz[0] monotone: the discarded member is always
+  // below the incoming one, so the pool maximum cannot fall. The pool is
   // never empty, since acceptance requires sel_z > z1 or sel_z > zb. `dmin`
   // above remains a distance to the WHOLE elite set: it is the diversity test,
   // not the eviction scan, so `dworse` here may exceed it.
