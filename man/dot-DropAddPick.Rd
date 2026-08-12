@@ -18,9 +18,6 @@ exclude from \verb{Add X(k)} for one iteration -- the tabu rule.}
 }
 \description{
 The \code{argmax} over the unselected elements of \verb{(minDist, sumDist)} taken
-lexicographically, ties broken to the smallest index. This is exactly the
-rule of the add scans in \code{src/dropadd.cpp}: a single ascending pass that
-replaces the incumbent only on a strict improvement, so it lands on the first
-index attaining the lexicographic maximum.
+lexicographically, ties broken to the smallest index.
 }
 \keyword{internal}

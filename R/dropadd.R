@@ -381,12 +381,9 @@
 #'
 #' @param k Integer: subset size, \eqn{2 \le k \le N}.
 #' @param d A \code{dist} object, a square symmetric numeric matrix, or a
-#'  distance-column function that takes an index `i` and returns the distances
-#'  from `i` to each other element (optionally including the self-distance); see
-#'  the *Distance-column oracle* section.
-#' @param N Integer: the total number of elements. Required (and used) only on
-#'  the distance-column oracle path, where it cannot be inferred from the
-#'  closure; ignored for the matrix and coordinate paths.
+#'  distance-column function (see §*Distance-column function*).
+#' @param N Integer: the total number of elements. Required only if `d` is a
+#'  function.
 #' @param points A numeric \eqn{N \times \mathrm{dim}} coordinate matrix (or an
 #'  object coercible to one via \code{as.matrix}).
 #'  Must be complete (no \code{NA}).
@@ -398,16 +395,12 @@
 #' @param maxSeconds Numeric: terminate search after this many seconds have
 #' elapsed.
 #' @param seed Optional integer: a 1-based start index that overrides the
-#'  construction's default warm-start seed (max-row-sum on the `d` matrix path,
-#'  centroid-peripheral on the `points` path, two-sweep peripheral on the
-#'  distance-column path), mirroring [FarFirst()]'s integer
-#'  `strategy`. `NULL` (default) keeps the method's own seed. Not supported when
-#'  candidate thinning binds (pass `maxCandidates = 0L`).
+#'  construction's default warm-start seed.
+#'  `NULL` (default) keeps the method's own seed. Not supported when
+#'  `maxCandidates = 0L`.
 #' @templateVar default `46340L`
 #' @templateVar default_basis the dense-distance-matrix feasibility ceiling
-#'   (`floor(sqrt(.Machine$integer.max))`) the `points` path already crosses;
-#'   below it nothing changes, at or above it the candidates are thinned to this
-#'   size on the matrix-free path (no \eqn{m \times m} matrix is built)
+#'   (`floor(sqrt(.Machine$integer.max))`) the `points` path already crosses
 #' @template maxCandidates
 #' @templateVar progress_shows status messages are shown
 #' @template progress
@@ -428,34 +421,15 @@
 #'   (see [print.MaxMinSelection()]); it is otherwise an ordinary integer vector.
 #'
 #' @section Distance-column oracle:
-#' When `d` is a **function**, it is treated as a distance-column oracle:
-#' `d(i)` must return the distances from element `i` to every element (length
-#' `N`, the self-distance ignored) or to every *other* element (length
-#' `N - 1`, in index order). Supply `N`. This suits metrics with neither a
-#' stored matrix nor a coordinate embedding -- on-demand tree-to-tree distances,
-#' say -- and never materialises the \eqn{N \times N} matrix: memory is
-#' \eqn{O(N)}.
+#' When `d` is a **function**, `d(i)` must return the distances from element `i`
+#' to every element (length `N`, with the self-distance ignored)
+#' or to every *other* element (length `N - 1`, in order).
+#' `N` is required, and memory is \eqn{O(N)}.
+#' This suits metrics with neither a stored matrix nor a coordinate embedding.
 #'
-#' The search is the same algorithm against a different distance source, so on a
-#' symmetric oracle the trajectory and result are identical to the matrix path
-#' given the same seed. Two things differ:
-#'
-#' - **The seed.** The matrix path's max-row-sum warm start would need all `N`
-#'   columns, i.e. the whole pairwise set. The oracle path substitutes a
-#'   two-sweep peripheral seed costing two calls (see
-#'   [.DropAddConstructColumn()]); `seed=` overrides it.
-#' - **`maxCandidates` thinning is unavailable** (it builds a coreset distance
-#'   matrix), and a binding cap warns rather than silently thinning.
-#'
-#' Cost is counted in **oracle calls**, not flops: `k` for the construction (two
-#' more for the default seed), plus two per main-loop iteration (and one per
-#' element whose nearest selected
-#' peer just vanished). `plateau` and `maxSeconds` therefore set the distance
-#' bill directly, and with the default `plateau` a run can request far more
-#' columns than the `N` a full matrix would cost. Write the closure accordingly:
-#' hoist everything reusable into the enclosing environment so a call pays only
-#' for the `N` comparisons, and -- when `N` columns of cache are affordable --
-#' memoize, which caps the oracle at `N` distinct evaluations.
+#' It is likely that `d` will be called many times; unless `d` implements
+#' caching, specifying a distance matrix is likely to require less calculation
+#' than the multiple calls to `d`, where memory permits.
 #'
 #' @references \insertAllCited{}
 #'

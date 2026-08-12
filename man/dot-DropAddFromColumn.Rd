@@ -45,12 +45,6 @@ trajectory-identity tests.}
 }
 \description{
 The pure-R counterpart of \code{DropAdd_cpp()}, substituting an on-demand
-\code{colFn(i)} call for the matrix-column read \code{dmat[, i]}. Implements the
-distance-column oracle path of \code{\link[=DropAdd]{DropAdd()}} (dispatched there when \code{d} is a
-function); see that function's \emph{Distance-column oracle} section for the
-user-facing contract. Every record update, tie-break and stopping rule
-matches \code{src/dropadd.cpp} statement for statement, so on a symmetric oracle
-the whole search trajectory -- not merely the final subset -- is identical to
-the matrix path given the same seed.
+\code{colFn(i)} call for the matrix-column read \code{dmat[, i]}.
 }
 \keyword{internal}

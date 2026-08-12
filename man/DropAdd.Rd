@@ -19,9 +19,7 @@ DropAdd(
 \item{k}{Integer: subset size, \eqn{2 \le k \le N}.}
 
 \item{d}{A \code{dist} object, a square symmetric numeric matrix, or a
-distance-column function that takes an index \code{i} and returns the distances
-from \code{i} to each other element (optionally including the self-distance); see
-the \emph{Distance-column oracle} section.}
+distance-column function (see §\emph{Distance-column function}).}
 
 \item{plateau}{Integer: stop after this many consecutive drop-add
 iterations do not improve the score.}
@@ -49,15 +47,12 @@ Thinning is \strong{on by default}: an input larger than the cap is thinned (and
 a warning is emitted) unless \code{maxCandidates = 0} is passed.}
 
 \item{seed}{Optional integer: a 1-based start index that overrides the
-construction's default warm-start seed (max-row-sum on the \code{d} matrix path,
-centroid-peripheral on the \code{points} path, two-sweep peripheral on the
-distance-column path), mirroring \code{\link[=FarFirst]{FarFirst()}}'s integer
-\code{strategy}. \code{NULL} (default) keeps the method's own seed. Not supported when
-candidate thinning binds (pass \code{maxCandidates = 0L}).}
+construction's default warm-start seed.
+\code{NULL} (default) keeps the method's own seed. Not supported when
+\code{maxCandidates = 0L}.}
 
-\item{N}{Integer: the total number of elements. Required (and used) only on
-the distance-column oracle path, where it cannot be inferred from the
-closure; ignored for the matrix and coordinate paths.}
+\item{N}{Integer: the total number of elements. Required only if \code{d} is a
+function.}
 }
 \value{
 \code{DropAdd()} returns an integer vector of length \code{k} containing the 1-based selected
@@ -90,35 +85,15 @@ To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
 
 \section{Distance-column oracle}{
 
-When \code{d} is a \strong{function}, it is treated as a distance-column oracle:
-\code{d(i)} must return the distances from element \code{i} to every element (length
-\code{N}, the self-distance ignored) or to every \emph{other} element (length
-\code{N - 1}, in index order). Supply \code{N}. This suits metrics with neither a
-stored matrix nor a coordinate embedding -- on-demand tree-to-tree distances,
-say -- and never materialises the \eqn{N \times N} matrix: memory is
-\eqn{O(N)}.
+When \code{d} is a \strong{function}, \code{d(i)} must return the distances from element \code{i}
+to every element (length \code{N}, with the self-distance ignored)
+or to every \emph{other} element (length \code{N - 1}, in order).
+\code{N} is required, and memory is \eqn{O(N)}.
+This suits metrics with neither a stored matrix nor a coordinate embedding.
 
-The search is the same algorithm against a different distance source, so on a
-symmetric oracle the trajectory and result are identical to the matrix path
-given the same seed. Two things differ:
-\itemize{
-\item \strong{The seed.} The matrix path's max-row-sum warm start would need all \code{N}
-columns, i.e. the whole pairwise set. The oracle path substitutes a
-two-sweep peripheral seed costing two calls (see
-\code{\link[=.DropAddConstructColumn]{.DropAddConstructColumn()}}); \verb{seed=} overrides it.
-\item \strong{\code{maxCandidates} thinning is unavailable} (it builds a coreset distance
-matrix), and a binding cap warns rather than silently thinning.
-}
-
-Cost is counted in \strong{oracle calls}, not flops: \code{k} for the construction (two
-more for the default seed), plus two per main-loop iteration (and one per
-element whose nearest selected
-peer just vanished). \code{plateau} and \code{maxSeconds} therefore set the distance
-bill directly, and with the default \code{plateau} a run can request far more
-columns than the \code{N} a full matrix would cost. Write the closure accordingly:
-hoist everything reusable into the enclosing environment so a call pays only
-for the \code{N} comparisons, and -- when \code{N} columns of cache are affordable --
-memoize, which caps the oracle at \code{N} distinct evaluations.
+It is likely that \code{d} will be called many times; unless \code{d} implements
+caching, specifying a distance matrix is likely to require less calculation
+than the multiple calls to \code{d}, where memory permits.
 }
 
 \examples{

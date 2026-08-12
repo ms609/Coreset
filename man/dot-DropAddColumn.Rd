@@ -18,14 +18,6 @@
 position \code{i} is \code{0}, matching a distance matrix's diagonal.
 }
 \description{
-\code{\link[=.DistColumn]{.DistColumn()}} masks the self-distance to \code{-Inf}, which is what
-\code{which.max()} / \code{pmin.int()} want on the \code{\link[=FarFirst]{FarFirst()}} oracle path.
-DropAdd requires the opposite: \code{src/dropadd.cpp} reads a matrix whose
-diagonal is \code{0} and folds the \emph{whole} column into \code{sumDist} (relying on
-\code{d(x, x) = 0} being harmless), masking \code{minDist} at the selected index
-separately. A \code{-Inf} self entry would poison \code{sumDist} irrecoverably and
-corrupt the MMDPo tie-break while leaving the returned indices plausible. So
-take \code{\link[=.DistColumn]{.DistColumn()}}'s length normalisation and \code{NA} guard, then restore the
-zero diagonal.
+Reports the self-distance as 0, cf. \code{-Inf} in \code{\link[=.DistColumn]{.DistColumn()}}
 }
 \keyword{internal}
