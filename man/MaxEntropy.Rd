@@ -22,8 +22,9 @@ points.}
 \item{sigma}{Optional kernel bandwidth; defaults to the median positive
 distance.}
 
-\item{repair}{PSD repair for the kernel: \code{"clip"} (nearest PSD; the default),
-\code{"shift"} (diagonal loading) or \code{"truncate"} (low-rank embedding).}
+\item{repair}{Positive Semi-Definite repair method for the kernel:
+\code{"clip"} (nearest), \code{"shift"} (diagonal loading) or
+\code{"truncate"} (low-rank embedding).}
 
 \item{exact}{Logical, or \code{NA} (the default) to choose automatically: use the
 exact enumeration when \code{choose(n, k) <= maxCombos}, otherwise the greedy.
@@ -40,7 +41,7 @@ ascending) with class \code{"MaxEntropySelection"}, carrying attributes:
 \code{-Inf} for a degenerate selection (one forced to repeat near-identical
 points because \code{k} exceeds the number of distinct points, which also
 warns).}
-\item{negMass}{Fraction of spectral mass removed by the PSD repair.}
+\item{negMass}{Fraction of spectral mass removed by the Positive Semi-Definite repair.}
 \item{sigma, repair, exact}{The bandwidth, repair, and whether the
 optimum was certified by enumeration.}
 \item{seed, N, k}{The peripheral seed index, instance size, target size.}
