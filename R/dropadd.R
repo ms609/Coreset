@@ -433,7 +433,7 @@
 #' neighbour-evaluation tricks
 #' \insertCite{@algorithms 1--4 in @Porumbel2011}{MaxMin}.
 #'
-#' @param k Integer; subset size, \eqn{2 \le k \le N}.
+#' @param k Integer: subset size, \eqn{2 \le k \le N}.
 #' @param d A \code{dist} object, a square symmetric numeric matrix, or a
 #'  distance-column function that takes an index `i` and returns the distances
 #'  from `i` to each other element (optionally including the self-distance); see
@@ -447,7 +447,7 @@
 #'  Ignored if `d` specified.
 #'  Avoids creating an \eqn{N \times N} distance matrix, enabling use at
 #'  \eqn{N \ge 46340}).
-#' @param plateau Integer; stop after this many consecutive drop-add
+#' @param plateau Integer: stop after this many consecutive drop-add
 #'  iterations do not improve the score.
 #' @param maxSeconds Numeric: terminate search after this many seconds have
 #' elapsed.

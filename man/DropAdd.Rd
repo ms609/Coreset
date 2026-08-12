@@ -16,14 +16,14 @@ DropAdd(
 )
 }
 \arguments{
-\item{k}{Integer; subset size, \eqn{2 \le k \le N}.}
+\item{k}{Integer: subset size, \eqn{2 \le k \le N}.}
 
 \item{d}{A \code{dist} object, a square symmetric numeric matrix, or a
 distance-column function that takes an index \code{i} and returns the distances
 from \code{i} to each other element (optionally including the self-distance); see
 the \emph{Distance-column oracle} section.}
 
-\item{plateau}{Integer; stop after this many consecutive drop-add
+\item{plateau}{Integer: stop after this many consecutive drop-add
 iterations do not improve the score.}
 
 \item{maxSeconds}{Numeric: terminate search after this many seconds have
