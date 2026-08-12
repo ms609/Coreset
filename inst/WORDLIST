@@ -4,7 +4,10 @@ Arthur
 CDSh
 CMD
 codecov
+composable
+coreset
 cpp
+determinantal
 doi
 Díaz
 DropAdd
@@ -23,8 +26,10 @@ Gonzalez
 Gramacy
 GRASP
 Hao
+Kulesza
 lex
 Marti
+maxdet
 maximin
 memoise
 memoised
@@ -48,11 +53,13 @@ rownorm
 rowsum
 R's
 Sayyady
+Shewry
 sel
 SOTA
 subsample
 subsampling
 Tamir
+Taskar
 tabu
 TS
 Vassilvitskii

@@ -12,6 +12,7 @@
 }
 
 test_that("ExactMaxSum matches the brute-force optimum (proven)", {
+  skip_if_not_installed("highs")
   set.seed(1)
   d <- dist(matrix(rnorm(40), ncol = 2))   # 20 points
   for (k in c(2L, 3L, 5L)) {
@@ -29,18 +30,21 @@ test_that("ExactMaxSum matches the brute-force optimum (proven)", {
 })
 
 test_that("ExactMaxSum picks the two most distant points at k = 2", {
+  skip_if_not_installed("highs")
   m <- matrix(c(0, 0, 0, 1, 0, 20), ncol = 2, byrow = TRUE)  # collinear; pt 3 far
   res <- ExactMaxSum(2L, dist(m))
   expect_equal(as.integer(res), c(1L, 3L))   # the diameter pair (1,3): dist 20
 })
 
 test_that("ExactMaxSum validates k", {
+  skip_if_not_installed("highs")
   d <- dist(matrix(rnorm(20), ncol = 2))
   expect_error(ExactMaxSum(1L, d), "2 <= k")
   expect_error(ExactMaxSum(99L, d), "2 <= k")
 })
 
 test_that("ExactMaxSum accepts a dist or a square matrix and warmStart", {
+  skip_if_not_installed("highs")
   set.seed(2)
   d <- as.matrix(dist(matrix(rnorm(30), ncol = 2)))
   bf <- .BruteMaxSum(d, 4L)
@@ -51,6 +55,7 @@ test_that("ExactMaxSum accepts a dist or a square matrix and warmStart", {
 })
 
 test_that("ExactMaxSum result prints with a total-distance summary", {
+  skip_if_not_installed("highs")
   res <- ExactMaxSum(3L, dist(matrix(rnorm(20), ncol = 2)))
   expect_match(format(res), "total distance")
   expect_invisible(print(res))
@@ -65,5 +70,6 @@ test_that("the local-search helpers return valid k-subsets", {
   improved <- MaxMin:::.MaxSumLocalSearch(d, 5L, greedy)
   expect_length(improved, 5L)
   # local search never worsens the objective
-  expect_gte(MaxMin:::.MaxSumScore(d, improved), MaxMin:::.MaxSumScore(d, greedy))
+  expect_gte(MaxMin:::.MaxSumScore(d, improved),
+             MaxMin:::.MaxSumScore(d, greedy))
 })
