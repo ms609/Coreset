@@ -2,17 +2,14 @@
 #
 # DropAdd Tabu Search (DropAdd-TS) for the Max-Min Diversity Problem.
 #
-# Implementation of Porumbel, Hao & Glover (2011) "A simple and effective
-# algorithm for the MaxMin diversity problem", Annals of Operations Research
-# 186:275-293. Algorithms 1-4 of that paper.
+# Implements Algorithms 1-4 of Porumbel, Hao & Glover (2011) "A simple and
+# effective algorithm for the MaxMin diversity problem", Annals of Operations
+# Research 186:275-293.
 #
 # The MMDPo (eq. 2 of the paper) objective is
 #     max  [ min_{x,y in X} d(x,y) + eps * sum_{x,y in X} d(x,y) ]
 # with a small eps. We use eps = 1e-9. The first term is the canonical MMDP
 # (MaxMin) objective; the sum acts purely as a tie-break.
-#
-# Used in the manuscript as the SOTA heuristic competitor for MMDP per Marti
-# et al. 2022 EJOR.
 
 # ----- helpers --------------------------------------------------------------
 
@@ -24,7 +21,7 @@
   S <- integer(k)
   # Seed point: argmax over Z of sum_y d(x, y) (Porumbel's eq. before Alg. 1).
   rowSumsD <- rowSums(dmat)
-  S[1L] <- which.max(rowSumsD)  # ties: which.max → smallest index (deterministic)
+  S[1L] <- which.max(rowSumsD)
   inS <- logical(n)
   inS[S[1L]] <- TRUE
 
@@ -96,38 +93,14 @@
 
 # ----- distance-column oracle path ------------------------------------------
 #
-# The oracle path is the pure-R twin of src/dropadd.cpp: identical streamlined
-# records (minDist / sumDist / minDistCount), identical FIFO circular-buffer
-# drop, identical lexicographic (minDist, sumDist) add with the just-dropped
-# x# excluded for one iteration, identical MMDPo objective. The ONLY change is
-# the distance source -- each needed column d(., x) comes from a caller-supplied
-# `colFn(x)` instead of a matrix read `dmat[, x]`, so the N x N matrix is never
-# materialised. This is the same "same algorithm, different distance source"
-# framing as src/dropadd_mf.cpp, and the counterpart for DropAdd of
-# .MaximinFromColumn() for FarFirst.
+# The oracle path is the pure-R twin of src/dropadd.cpp.
+# The only change is that each needed column d(., x) comes from a
+# caller-supplied `colFn(x)` instead of a matrix read, so the N x N matrix is
+# never materialised.
 #
-# Oracle-call budget: k for the construction (the seed's own column, then one
-# per added element), plus 2 for the default peripheral seed, plus 2 per
-# main-loop iteration, plus one per entry of `needRecompute`. Unlike the matrix
-# path the per-iteration cost is *distance evaluations*, so `plateau` and
-# `maxSeconds` control the oracle bill directly; see the DropAdd() roxygen for
-# the caller-side closure advice.
-#
-# Symmetry: as on FarFirst()'s oracle path, the records assume d(i, j) = d(j, i).
-# The matrix path makes the same assumption (.AsDistMatrix() deliberately skips
-# the O(N^2) symmetry check).
-
 #' Normalise a distance-column oracle result for the DropAdd records
 #'
-#' [.DistColumn()] masks the self-distance to `-Inf`, which is what
-#' `which.max()` / `pmin.int()` want on the [FarFirst()] oracle path.
-#' DropAdd requires the opposite: `src/dropadd.cpp` reads a matrix whose
-#' diagonal is `0` and folds the *whole* column into `sumDist` (relying on
-#' `d(x, x) = 0` being harmless), masking `minDist` at the selected index
-#' separately. A `-Inf` self entry would poison `sumDist` irrecoverably and
-#' corrupt the MMDPo tie-break while leaving the returned indices plausible. So
-#' take [.DistColumn()]'s length normalisation and `NA` guard, then restore the
-#' zero diagonal.
+#' Reports the self-distance as 0, cf. `-Inf` in [.DistColumn()]
 #' @inheritParams .DistColumn
 #' @return `.DropAddColumn()` returns a numeric vector of length `N` whose
 #'   position `i` is `0`, matching a distance matrix's diagonal.
@@ -142,10 +115,7 @@
 #' Choose the next element to add to a DropAdd selection
 #'
 #' The `argmax` over the unselected elements of `(minDist, sumDist)` taken
-#' lexicographically, ties broken to the smallest index. This is exactly the
-#' rule of the add scans in `src/dropadd.cpp`: a single ascending pass that
-#' replaces the incumbent only on a strict improvement, so it lands on the first
-#' index attaining the lexicographic maximum.
+#' lexicographically, ties broken to the smallest index.
 #' @param st Record environment; see [.DropAddConstructColumn()].
 #' @param exclude Integer index barred from selection this iteration (`0L` for
 #'   none). Used for the just-dropped `x#`, which Porumbel et al. (2011, p. 281)
@@ -198,26 +168,12 @@
 #' Constructive phase of DropAdd from a distance-column oracle
 #'
 #' Algorithm 1 of \insertCite{Porumbel2011;textual}{MaxMin} against a column
-#' oracle: the counterpart of `.DropAddConstruct()` (and of the construction
-#' block of `src/dropadd.cpp`) that never materialises the distance matrix.
-#' Costs one oracle call per selected element.
+#' oracle: the counterpart of `.DropAddConstruct()`that never materialises the
+#' distance matrix.
 #'
 #' @section Seed deviation:
 #' The matrix kernel seeds at the max-row-sum point,
-#' \eqn{\mathrm{argmax}_x \sum_y d(x, y)}. From a column oracle that needs all
-#' `N` columns -- the full \eqn{O(N^2)} pairwise set, the very cost this path
-#' exists to avoid. We therefore substitute the \eqn{O(N)} two-sweep peripheral
-#' point of [.PeripheralSeedColumn()] (the element furthest from element 1, then
-#' the element furthest from that; two oracle calls, no RNG). This is the
-#' column-oracle twin of the centroid-peripheral seed substituted on the
-#' coordinate path (`src/dropadd_mf.cpp`), and rests on the same argument: a
-#' peripheral element has a large total distance to the rest, so it tracks the
-#' max-row-sum point closely. The seed has little bearing on the converged
-#' objective in any case -- the greedy construction is a 2-approximation from
-#' *any* start, and the drop-add tabu search determines the result. Ties break
-#' to the smallest index, as in the matrix kernel, so when the two seed rules
-#' coincide the whole trajectory matches the matrix path bit-for-bit. Pass
-#' `DropAdd(seed=)` to override.
+#' \eqn{\mathrm{argmax}_x \sum_y d(x, y)}. Pass `DropAdd(seed=)` to override.
 #'
 #' @param colFn Column oracle; see [DropAdd()].
 #' @param N Integer element count.
@@ -261,13 +217,7 @@
 #' DropAdd tabu search from a distance-column oracle
 #'
 #' The pure-R counterpart of `DropAdd_cpp()`, substituting an on-demand
-#' `colFn(i)` call for the matrix-column read `dmat[, i]`. Implements the
-#' distance-column oracle path of [DropAdd()] (dispatched there when `d` is a
-#' function); see that function's *Distance-column oracle* section for the
-#' user-facing contract. Every record update, tie-break and stopping rule
-#' matches `src/dropadd.cpp` statement for statement, so on a symmetric oracle
-#' the whole search trajectory -- not merely the final subset -- is identical to
-#' the matrix path given the same seed.
+#' `colFn(i)` call for the matrix-column read `dmat[, i]`.
 #'
 #' @inheritParams .DropAddConstructColumn
 #' @param plateau Integer: stop after this many consecutive non-improving
@@ -331,12 +281,7 @@
     needRecompute <- which(touched & st$minDistCount == 0L)
 
     for (xx in needRecompute) {
-      # Inverted relative to src/dropadd.cpp, which scans the k - 1 surviving
-      # *columns* S[j]: from an oracle that would be k - 1 calls per triggering
-      # iteration, the one place a literal port would be quadratic in oracle
-      # calls. Reading xx's own column instead costs one call per entry of
-      # needRecompute. min and the equality count are order-independent, and the
-      # oracle is assumed symmetric, so the rebuilt records are bit-identical.
+      # Inverted relative to src/dropadd.cpp
       peers <- survivors[survivors != xx]
       if (length(peers)) {
         dv <- .DropAddColumn(colFn, xx, N)[peers]
@@ -403,11 +348,12 @@
   out
 }
 
-# Internal test scaffolding (not part of the public API). Runs the production
-# C++ DropAdd with tracing enabled and returns the dropped/added index
-# sequences alongside the result, so the FIFO + tabu invariants can be asserted
-# without exposing a `.trace` argument on `DropAdd()`. Kept deliberately thin:
-# it mirrors only the `d`-path coercion and the single C++ call.
+# Internal test scaffolding.
+# Runs the production C++ DropAdd with tracing enabled and returns the
+# dropped/added index sequences alongside the result, so the FIFO + tabu
+# invariants can be asserted without exposing a `.trace` argument on `DropAdd()`.
+# Kept deliberately thin: it mirrors only the `d`-path coercion and the single
+# C++ call.
 .DropAddTrace <- function(d, k, maxIter = NULL, plateau = 5000L,
                           maxSeconds = Inf) {
   dmat <- .AsDistMatrix(d)
