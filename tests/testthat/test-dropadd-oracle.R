@@ -289,7 +289,7 @@ test_that("candidate thinning warns and is skipped on the oracle path", {
   dmat <- as.matrix(dist(matrix(rnorm(20L * 2L), ncol = 2L)))
   colFn <- function(i) dmat[, i]
   expect_warning(DropAdd(3L, colFn, N = 20L, maxCandidates = 10L),
-                 "not supported on the distance-column path")
+                 "not supported when .d. is a function")
   # Skipped, not silently substituted: the answer is the full-problem answer.
   .ExpectSameSelection(
     suppressWarnings(DropAdd(3L, colFn, N = 20L, maxCandidates = 10L)),
