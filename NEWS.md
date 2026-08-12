@@ -7,10 +7,16 @@
   could displace the incumbent best whenever it was that member's unique nearest
   neighbour, and the pool maximum fell. Eviction is now restricted to members
   worse than the incoming solution, as Resende et al. (2010) Fig. 4 line 8
-  specifies. `Grasp()` therefore returns a solution at least as good as before
-  for any given `plateau`, and its stagnation counter no longer treats a
-  re-attained objective as fresh progress, so runs stop where the `plateau` rule
-  says they should. Results and iteration counts change for a given seed.
+  specifies. The elite maximum is now monotone within a run, and the stagnation
+  counter no longer treats a re-attained objective as fresh progress, so runs
+  stop where the `plateau` rule says they should.
+
+  Results and iteration counts change for a given seed. Because the eviction
+  choice steers the whole subsequent search, a run is not simply a better
+  version of the old one: over a 44-cell probe (4 datasets x the dyadic
+  `plateau` ladder, k = 100) the objective rose in 20 cells, fell in 7 and was
+  unchanged in 17, mean +0.73%, range -0.89% to +7.9%. Gains concentrate at the
+  eager end, where the old code's forgotten incumbents cost most.
 
 # MaxMin 0.0.0.9004 (development)
 
