@@ -1,3 +1,17 @@
+# MaxMin 0.0.0.9005 (development)
+
+## Bug fixes
+
+- `Grasp()` no longer discards its best-known solution. The elite-set update
+  evicted the Hamming-closest member of the whole pool, so a mid-value candidate
+  could displace the incumbent best whenever it was that member's unique nearest
+  neighbour, and the pool maximum fell. Eviction is now restricted to members
+  worse than the incoming solution, as Resende et al. (2010) Fig. 4 line 8
+  specifies. `Grasp()` therefore returns a solution at least as good as before
+  for any given `plateau`, and its stagnation counter no longer treats a
+  re-attained objective as fresh progress, so runs stop where the `plateau` rule
+  says they should. Results and iteration counts change for a given seed.
+
 # MaxMin 0.0.0.9004 (development)
 
 - New `MaxEntropy()`: maximum-entropy (maxdet) subset selection.

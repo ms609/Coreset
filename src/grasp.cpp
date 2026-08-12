@@ -323,12 +323,23 @@ static void grasp_try_insert(std::vector<std::vector<int>>& ES,
   else if (sel_z > zb && dmin >= dth) accept = true;
   if (dmin == 0) accept = false;
   if (!accept) return;
-  // closest member: smallest Hamming distance; ties broken by lowest ESz, and
-  // among equal ESz the first (lowest index) -- matches which.min().
+  // Eviction is restricted to members WORSE than the candidate -- Resende et al.
+  // (2010) Fig. 4 line 8, "closest solution to x' in ES with z(x') > z(x^k)".
+  // That restriction is what makes ESz[0] monotone: the discarded member is
+  // always below the incoming one, so the pool maximum cannot fall. The pool is
+  // never empty, since acceptance requires sel_z > z1 or sel_z > zb. `dmin`
+  // above remains a distance to the WHOLE elite set: it is the diversity test,
+  // not the eviction scan, so `dworse` here may exceed it.
+  int dworse = INT_MAX;
+  for (int b = 0; b < B; ++b) {
+    if (ESz[b] < sel_z && hamm[b] < dworse) dworse = hamm[b];
+  }
+  // closest member among those worse; ties broken by lowest ESz, and among
+  // equal ESz the first (lowest index) -- matches which.min().
   int closest = -1;
   double minz = POS_INF;
   for (int b = 0; b < B; ++b) {
-    if (hamm[b] == dmin) {
+    if (ESz[b] < sel_z && hamm[b] == dworse) {
       if (closest < 0 || ESz[b] < minz) { closest = b; minz = ESz[b]; }
     }
   }

@@ -229,13 +229,23 @@
   # Don't admit a duplicate
   if (dmin == 0L) accept <- FALSE
   if (!accept) return(list(ES = ES, esZ = esZ, changed = FALSE))
-  # remove the closest member (smallest Hamming distance); break ties on lowest z
-  closest <- which(hamm == dmin)
-  if (length(closest) > 1L) {
-    closest <- closest[which.min(esZ[closest])]
-  } else {
-    closest <- closest[1L]
-  }
+  # Eviction is restricted to members WORSE than the candidate -- Resende et al.
+  # (2010) Fig. 4 line 8, "closest solution to x' in ES with z(x') > z(x^k)", and
+  # §4.1, "we remove the closest solution to x' in ES among those worse than it
+  # in value". The restriction is what makes esZ[1] monotone: the discarded
+  # member is always below the incoming one, so the pool maximum cannot fall.
+  # Searching all of ES instead would let a mid-value candidate that happens to
+  # be the unique Hamming-nearest neighbour of the incumbent best displace it.
+  # The pool is never empty: acceptance already requires selZ > z1 (every member
+  # is then worse) or selZ > zb (the worst member qualifies).
+  # Note dmin above stays a distance to the WHOLE elite set -- it is the
+  # diversity test, not the eviction scan, so the member chosen here may sit
+  # further away than dmin.
+  worse <- which(esZ < selZ)
+  hammWorse <- hamm[worse]
+  cand <- worse[hammWorse == min(hammWorse)]
+  # Ties: lowest z, then lowest index (which.min gives the first minimum).
+  closest <- cand[which.min(esZ[cand])]
   ES <- ES[-closest]
   esZ <- esZ[-closest]
   # insert sorted (descending z)
