@@ -120,8 +120,8 @@
 #' Normalise a distance-column oracle result for the DropAdd records
 #'
 #' [.DistColumn()] masks the self-distance to `-Inf`, which is what
-#' `which.max()` / `pmin.int()` want on [FarFirst()]'s oracle path. DropAdd's
-#' streamlined records want the opposite: `src/dropadd.cpp` reads a matrix whose
+#' `which.max()` / `pmin.int()` want on the [FarFirst()] oracle path.
+#' DropAdd requires the opposite: `src/dropadd.cpp` reads a matrix whose
 #' diagonal is `0` and folds the *whole* column into `sumDist` (relying on
 #' `d(x, x) = 0` being harmless), masking `minDist` at the selected index
 #' separately. A `-Inf` self entry would poison `sumDist` irrecoverably and
