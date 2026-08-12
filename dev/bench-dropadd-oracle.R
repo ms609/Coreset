@@ -10,7 +10,7 @@
 # Compares, at a couple of representative (N, k):
 #   (a) bulk all-pairs call + DropAdd matrix path (the status quo);
 #   (b) oracle path, "good closure"  -- splits precomputed once, looked up;
-#   (c) oracle path, "good closure" + memoised columns;
+#   (c) oracle path, "good closure" + memoized columns;
 #   (d) oracle path, "bad closure"   -- splits re-derived on every call
 #       (measured per column only; a full run at this cost is not worth the
 #       wall-clock).
@@ -126,7 +126,7 @@ for (N in c(200L, 400L)) {
     }
     memo <- Timed(DropAdd(k, counted, N = N, plateau = kPlateau))
     nDistinct <- length(unique(distinct$seen))
-    Row("oracle (memoised)", sprintf("%.1f", memo$seconds),
+    Row("oracle (memoized)", sprintf("%.1f", memo$seconds),
         sprintf("%s (%s distinct)", format(length(distinct$seen), big.mark = ","),
                 nDistinct),
         format(nDistinct * N, big.mark = ","),

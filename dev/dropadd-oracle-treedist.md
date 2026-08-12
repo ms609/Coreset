@@ -75,25 +75,25 @@ runs finish):
 |---|---|---|---|---|
 | bulk all-pairs + matrix kernel | **1.8** | – | 19,900 | 0.3 |
 | oracle, good closure | 155.0 | 4,835 | 967,000 | ~0.01 |
-| oracle, good closure + memoised | 6.3 | 4,835 (200 distinct) | 40,000 | 0.3 |
+| oracle, good closure + memoized | 6.3 | 4,835 (200 distinct) | 40,000 | 0.3 |
 
 | N = 200, k = 25 | seconds | oracle calls | pair evaluations | matrix MB |
 |---|---|---|---|---|
 | bulk all-pairs + matrix kernel | **1.6** | – | 19,900 | 0.3 |
 | oracle, good closure | 62.1 | 1,958 | 391,600 | ~0.01 |
-| oracle, good closure + memoised | 6.9 | 1,958 (200 distinct) | 40,000 | 0.3 |
+| oracle, good closure + memoized | 6.9 | 1,958 (200 distinct) | 40,000 | 0.3 |
 
 | N = 400, k = 10 | seconds | oracle calls | pair evaluations | matrix MB |
 |---|---|---|---|---|
 | bulk all-pairs + matrix kernel | **7.2** | – | 79,800 | 1.2 |
 | oracle, good closure | 555.8 | 8,314 | 3,325,600 | ~0.02 |
-| oracle, good closure + memoised | 26.4 | 8,314 (400 distinct) | 160,000 | 1.2 |
+| oracle, good closure + memoized | 26.4 | 8,314 (400 distinct) | 160,000 | 1.2 |
 
 | N = 400, k = 25 | seconds | oracle calls | pair evaluations | matrix MB |
 |---|---|---|---|---|
 | bulk all-pairs + matrix kernel | **7.3** | – | 79,800 | 1.2 |
 | oracle, good closure | 246.2 | 3,567 | 1,426,800 | ~0.02 |
-| oracle, good closure + memoised | 27.9 | 3,567 (400 distinct) | 160,000 | 1.2 |
+| oracle, good closure + memoized | 27.9 | 3,567 (400 distinct) | 160,000 | 1.2 |
 
 The uncached column oracle performs **18–48× more pairwise distance evaluations
 than the full matrix does** across these four cells, because it re-derives the
@@ -120,7 +120,7 @@ symmetry plus per-call overhead — and it restores the matrix's memory footprin
 The docs (`?DropAdd`, *Distance-column oracle*; `NEWS.md`; the vignette) say
 memory and call-count, not speed, and tell callers that `plateau` and
 `maxSeconds` set the distance bill directly. The roxygen example shows the
-precompute-once **and memoise** closure shape, since §3 shows memoisation is the
+precompute-once **and memoize** closure shape, since §3 shows memoisation is the
 one that matters.
 
 ## 5. Correctness, incidentally

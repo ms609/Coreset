@@ -118,7 +118,7 @@ bill directly, and with the default \code{plateau} a run can request far more
 columns than the \code{N} a full matrix would cost. Write the closure accordingly:
 hoist everything reusable into the enclosing environment so a call pays only
 for the \code{N} comparisons, and -- when \code{N} columns of cache are affordable --
-memoise, which caps the oracle at \code{N} distinct evaluations.
+memoize, which caps the oracle at \code{N} distinct evaluations.
 }
 
 \examples{
@@ -137,7 +137,7 @@ DropAdd(5L, points = pts, maxCandidates = 0L)
 # factory so everything the metric reuses is derived ONCE, in the enclosing
 # environment, and each call only looks it up -- a closure that re-derives its
 # representation per call pays that cost thousands of times over. `cache`
-# memoises the columns, capping the oracle at one evaluation per element.
+# memoizes the columns, capping the oracle at one evaluation per element.
 data("USArrests")
 ArrestOracle <- function(dat) {
   scaled <- scale(as.matrix(dat))                 # derived once
