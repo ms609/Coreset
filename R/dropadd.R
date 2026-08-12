@@ -425,7 +425,7 @@
 #' to every element (length `N`, with the self-distance ignored)
 #' or to every *other* element (length `N - 1`, in order).
 #' `N` is required, and memory is \eqn{O(N)}.
-#' This suits metrics with neither a stored matrix nor a coordinate embedding.
+#' This suits metrics where no stored matrix or coordinate embedding is available.
 #'
 #' It is likely that `d` will be called many times; unless `d` implements
 #' caching, specifying a distance matrix is likely to require less calculation
@@ -442,16 +442,12 @@
 #' # DropAdd on the coreset. Returned indices are original-space row indices.
 #' suppressWarnings(DropAdd(5L, points = pts, maxCandidates = 40L))
 #'
-#' # Disable thinning (run on the full problem):
+#' # Disable thinning on the full problem
 #' DropAdd(5L, points = pts, maxCandidates = 0L)
 #'
-#' # Distance-column oracle: `d` is a function of one index. Build it in a
-#' # factory so everything the metric reuses is derived ONCE, in the enclosing
-#' # environment, and each call only looks it up -- a closure that re-derives its
-#' # representation per call pays that cost thousands of times over. `cache`
-#' # memoizes the columns, capping the oracle at one evaluation per element.
+#' # Distance function; `cache` memoizes the columns to reduce computation.
 #' data("USArrests")
-#' ArrestOracle <- function(dat) {
+#' ArrestDist <- function(dat) {
 #'   scaled <- scale(as.matrix(dat))                 # derived once
 #'   cache <- new.env(parent = emptyenv())
 #'   function(i) {
@@ -463,7 +459,7 @@
 #'   }
 #' }
 #' arrests <- USArrests[, c("Murder", "Assault", "Rape")]
-#' idx <- DropAdd(4L, ArrestOracle(arrests), N = nrow(arrests), plateau = 200L)
+#' idx <- DropAdd(4L, ArrestDist(arrests), N = nrow(arrests), plateau = 200L)
 #' USArrests[idx, ]
 #' @export
 DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
@@ -473,11 +469,7 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
   if (!is.null(points) && !is.null(d)) {
     stop("supply `d` or `points`, not both")
   }
-  # Distance-column oracle path: `d` is a closure returning one matrix column at
-  # a time, for metrics with neither a stored matrix nor a coordinate embedding
-  # (e.g. on-demand tree-to-tree distances). Detected before .AsDistMatrix(),
-  # which rejects a function, and before the thinning block, which would need a
-  # coreset distance matrix. Mirrors FarFirst()'s dispatch.
+  # Function path: `d` is a closure returning one matrix column at a time.
   useOracle <- is.function(d)
   usePoints <- !useOracle && !is.null(points)
   if (useOracle) {
@@ -492,8 +484,7 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
     n <- N
   } else {
     if (!is.null(N)) {
-      warning("`N` is ignored on the matrix/coordinate path; ",
-              "it is only needed when `d` is a distance-column function")
+      warning("Ignoring `N`: `d` is not a function.")
     }
     if (usePoints) {
       points <- .AsPointsMatrix(points)

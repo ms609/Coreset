@@ -89,7 +89,7 @@ When \code{d} is a \strong{function}, \code{d(i)} must return the distances from
 to every element (length \code{N}, with the self-distance ignored)
 or to every \emph{other} element (length \code{N - 1}, in order).
 \code{N} is required, and memory is \eqn{O(N)}.
-This suits metrics with neither a stored matrix nor a coordinate embedding.
+This suits metrics where no stored matrix or coordinate embedding is available.
 
 It is likely that \code{d} will be called many times; unless \code{d} implements
 caching, specifying a distance matrix is likely to require less calculation

@@ -273,8 +273,8 @@ test_that("N is required on the oracle path and validated", {
 
 test_that("N is warned about on the matrix and coordinate paths", {
   pts <- matrix(rnorm(10L * 2L), ncol = 2L)
-  expect_warning(DropAdd(3L, dist(pts), N = 10L), "ignored")
-  expect_warning(DropAdd(3L, points = pts, N = 10L), "ignored")
+  expect_warning(DropAdd(3L, dist(pts), N = 10L), "Ignoring.*N")
+  expect_warning(DropAdd(3L, points = pts, N = 10L), "Ignoring.*N")
   expect_no_warning(DropAdd(3L, function(i) .EuclidCol(pts, i), N = 10L))
 })
 
