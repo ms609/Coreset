@@ -1,20 +1,7 @@
 # MaxMin 0.0.0.9005 (development)
 
-- `DropAdd()` gains a **distance-column oracle** path, parallel to
-  `FarFirst()`'s: pass a function as `d` (with `N`) and it is called as `d(i)`
-  to obtain the distances from element `i` to the others, one column at a time.
-  This suits metrics with neither a stored matrix nor a coordinate embedding --
-  on-demand tree-to-tree distances, say -- and never materialises the `N x N`
-  matrix, so memory is `O(N)`. The search itself is unchanged: on a symmetric
-  oracle the whole drop-add trajectory, and hence the selection, `score` and
-  `secondary`, are bit-identical to the matrix path given the same `seed`.
-  Two things differ, both documented under `?DropAdd`: the max-row-sum warm
-  start would cost all `N` columns, so an `O(N)` two-sweep peripheral seed is
-  substituted (override with `seed=`); and `maxCandidates` thinning is
-  unavailable, warning rather than silently thinning when the cap binds.
-  Cost is counted in oracle calls (`k` to construct, two per iteration), so
-  `plateau` and `maxSeconds` set the distance bill directly -- see
-  `?DropAdd`'s example for the closure shape that keeps it cheap.
+- `DropAdd()` can now compute distances between pairs on the fly, rather than
+  needing a complete matrix _a priori_.
 
 # MaxMin 0.0.0.9004 (development)
 
