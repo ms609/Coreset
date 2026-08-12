@@ -13,10 +13,11 @@
 
   Results and iteration counts change for a given seed. Because the eviction
   choice steers the whole subsequent search, a run is not simply a better
-  version of the old one: over a 44-cell probe (4 datasets x the dyadic
-  `plateau` ladder, k = 100) the objective rose in 20 cells, fell in 7 and was
-  unchanged in 17, mean +0.73%, range -0.89% to +7.9%. Gains concentrate at the
-  eager end, where the old code's forgotten incumbents cost most.
+  version of the old one. Over a 44-cell probe -- the dyadic `plateau` ladder at
+  k = 100 on the four datasets where the old rule's regressions were largest, so
+  an upper bound rather than a typical effect -- the objective rose in 20 cells,
+  fell in 7 and was unchanged in 17, mean +0.73%, range -0.89% to +7.9%. The
+  largest single gain, +7.9%, recovers a solution the old rule had discarded.
 
 # MaxMin 0.0.0.9004 (development)
 
