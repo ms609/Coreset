@@ -46,14 +46,44 @@ static double objective_of(const double* d, int n, const std::vector<int>& sel) 
   return best;
 }
 
-// min over k in `set` of d(x, k); POS_INF if set empty. The incremental piece
-// of a one-element swap: adding `x` to a base selection lowers its min pairwise
-// distance to min(base_min, min_to_set(x, base)).
-static inline double min_to_set(const double* d, int n, int x,
-                                const std::vector<int>& set) {
-  double best = POS_INF;
-  for (int k : set) { double v = D(d, n, x, k); if (v < best) best = v; }
-  return best;
+// The two smallest distances from `x` to `set`, with the VERTEX achieving the
+// smallest.
+//
+// The path-relink walk needs `min over set \ {v} of d(x, .)` for one `x` against
+// every candidate excluded `v`. All of those minima are drawn from the same
+// x-to-set row, so reading the row once for its two smallest entries answers
+// them all in O(1) each (see near_excl), in place of a fresh O(|set|) scan per
+// (x, v) pair. The incremental piece of a one-element swap: adding `x` to a base
+// selection lowers its min pairwise distance to min(base_min, that minimum).
+//
+// The local search's candidate scan looks like the same shape but is NOT worth
+// converting: it excludes only the (usually two) critical vertices, so it pays
+// this row scan back barely twice, and the direct scan it would replace is a
+// tighter branchless min. Measured a net loss below m ~ 50 (see T-014).
+//
+// The result is the exact double a direct scan of `set \ {v}` would return — it
+// re-selects the very same matrix cell, with no arithmetic. The tie handling is
+// what makes that hold: `<` on the min1 update means the FIRST minimum wins, so
+// arg1 is the vertex a forward scan would settle on; a later value tying with
+// min1 falls through to the `else if (v < min2)` branch, leaving min2 == min1,
+// which is correct — a duplicate of the minimum survives the exclusion.
+// Selections hold distinct vertices, so excluding by vertex id is well defined.
+struct NearTwo { double min1, min2; int arg1; };
+
+static inline NearTwo near_two(const double* d, int n, int x,
+                               const std::vector<int>& set) {
+  NearTwo t; t.min1 = POS_INF; t.min2 = POS_INF; t.arg1 = -1;
+  for (int k : set) {
+    double v = D(d, n, x, k);
+    if (v < t.min1) { t.min2 = t.min1; t.min1 = v; t.arg1 = k; }
+    else if (v < t.min2) { t.min2 = v; }
+  }
+  return t;
+}
+
+// min over `set \ {v}` of d(x, .); POS_INF if that set is empty.
+static inline double near_excl(const NearTwo& t, int v) {
+  return v == t.arg1 ? t.min2 : t.min1;
 }
 
 // Global minimum pairwise distance within `sel`, returning the witness edge as
@@ -75,18 +105,26 @@ static double min_edge_witness(const double* d, int n,
   return best;
 }
 
-// #unordered pairs in (rem ∪ {s}) with distance <= thr — the extended-
-// improvement tie-break count (.GraspMinPairCount on cand = rem ++ s). Only paid
-// for the rare candidate that can actually win a swap (nd >= best_dstar).
-// Counts the rem×rem pairs and the s×rem pairs over the same set.
-static int count_pairs_le(const double* d, int n, const std::vector<int>& rem,
-                          int s, double thr) {
+// The extended-improvement tie-break count — #unordered pairs in (rem ∪ {s})
+// with distance <= thr (.GraspMinPairCount on cand = rem ++ s) — split into its
+// two halves. The rem×rem half is O(m^2) but does not depend on `s`, so the
+// caller memoises it across the candidate scan (see the local-search loop);
+// the s×rem half is the only O(m) work left per candidate. The split is an
+// integer sum of the same comparisons, so it is exactly the old total
+// regardless of accumulation order.
+static int count_pairs_within(const double* d, int n,
+                              const std::vector<int>& rem, double thr) {
   int c = 0, mm = (int)rem.size();
-  for (int a = 0; a < mm; ++a) {
-    if (D(d, n, s, rem[a]) <= thr) ++c;
+  for (int a = 0; a < mm; ++a)
     for (int b = a + 1; b < mm; ++b)
       if (D(d, n, rem[a], rem[b]) <= thr) ++c;
-  }
+  return c;
+}
+
+static int count_to_set_le(const double* d, int n, const std::vector<int>& rem,
+                           int s, double thr) {
+  int c = 0;
+  for (int v : rem) if (D(d, n, s, v) <= thr) ++c;
   return c;
 }
 
@@ -191,19 +229,36 @@ static std::vector<int> grasp_local_search(const double* d, int n,
       if (rem.size() < 2) base_z = POS_INF;
       else if (drop == wa || drop == wb) base_z = objective_of(d, n, rem);
       else base_z = dstar;
+      // The rem x rem half of the tie-break count depends only on (ci, thr), so
+      // hold it across the scan. `thr` is `best_dstar` on every tie -- the
+      // overwhelming majority of the calls that get this far -- and changes only
+      // on the rare improvement, so this recomputes a handful of times per
+      // critical position instead of once per candidate. The `!=` test is an
+      // exact double comparison on purpose: `thr` is the same value flowing down
+      // both branches, not an approximation of one, so a tolerance would be
+      // wrong here.
+      double memoThr = 0;
+      int memoWithin = -1;
       for (int s = 0; s < n; ++s) {            // out-of-selection, ascending
         if (in_sel[s]) continue;
         // nd = min(base_z, min dist from s to remaining); identical to
         // eval_cand's dstar on (rem ∪ {s}) but O(m) not O(m^2). The pc tie-break
         // is only needed when this candidate can win (nd >= best_dstar).
-        double cross = min_to_set(d, n, s, rem);
+        double cross = POS_INF;
+        for (int v : rem) { double vv = D(d, n, s, v); if (vv < cross) cross = vv; }
         double nd = base_z < cross ? base_z : cross;
-        if (nd > best_dstar) {
-          best_dstar = nd; best_pc = count_pairs_le(d, n, rem, s, nd);
-          best_drop = drop; best_add = s;
-        } else if (nd == best_dstar) {
-          int npc = count_pairs_le(d, n, rem, s, nd);
-          if (npc < best_pc) { best_pc = npc; best_drop = drop; best_add = s; }
+        if (nd >= best_dstar) {                // win or tie; NaN falls through
+          if (memoWithin < 0 || nd != memoThr) {
+            memoWithin = count_pairs_within(d, n, rem, nd);
+            memoThr = nd;
+          }
+          int npc = memoWithin + count_to_set_le(d, n, rem, s, nd);
+          if (nd > best_dstar) {
+            best_dstar = nd; best_pc = npc;
+            best_drop = drop; best_add = s;
+          } else if (npc < best_pc) {
+            best_pc = npc; best_drop = drop; best_add = s;
+          }
         }
       }
     }
@@ -274,6 +329,13 @@ static PRResult grasp_path_relink(const double* d, int n,
     // since min just re-selects the surviving D() value.
     int wa, wb;
     double gmin = min_edge_witness(d, n, pk, wa, wb);
+    // Every (drop, add) pair below needs min(dist from the add to pk \ {drop}),
+    // which is one row of add-to-pk distances read once per drop. Take the two
+    // smallest per add candidate ONCE here, then read each exclusion off in O(1):
+    // the walk's inner cost loses a whole factor of |drop_cands|.
+    std::vector<NearTwo> near_add(add_cands.size());
+    for (int jj = 0; jj < (int)add_cands.size(); ++jj)
+      near_add[jj] = near_two(d, n, add_cands[jj], pk);
     std::vector<int> rem;
     rem.reserve((int)pk.size());
     for (int ii = 0; ii < (int)drop_cands.size(); ++ii) {
@@ -287,7 +349,7 @@ static PRResult grasp_path_relink(const double* d, int n,
       else base_z = gmin;
       for (int jj = 0; jj < (int)add_cands.size(); ++jj) {
         int dj_ = add_cands[jj];
-        double cross = min_to_set(d, n, dj_, rem);
+        double cross = near_excl(near_add[jj], di_);
         double zc = base_z < cross ? base_z : cross;   // == objective_of(rem ∪ {dj_})
         if (zc > best_pair_z) { best_pair_z = zc; bi = di_; bj = dj_; }
       }
@@ -324,7 +386,11 @@ static void grasp_try_insert(std::vector<std::vector<int>>& ES,
   if (dmin == 0) accept = false;
   if (!accept) return;
   // Eviction is restricted to members WORSE than the candidate -- Resende et al.
-  // (2010) Fig. 4 line 8, "closest solution to x' in ES with z(x') > z(x^k)".
+  // (2010) §4.1, "we remove the closest solution to x' in ES among those worse
+  // than it in value". (Fig. 4 line 8 states the same step as "closest solution
+  // to x' in ES with z(x') > z(x^k)", where the primed symbol is the incoming
+  // solution, not the elite member; read the other way round the inequality
+  // would say the opposite, so §4.1 is the wording to check this code against.)
   // That restriction is what makes ESz[0] monotone: the discarded member is
   // always below the incoming one, so the pool maximum cannot fall. The pool is
   // never empty, since acceptance requires sel_z > z1 or sel_z > zb. `dmin`

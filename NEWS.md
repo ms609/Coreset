@@ -1,3 +1,22 @@
+# MaxMin 0.0.0.9006 (development)
+
+## Performance
+
+- `Grasp()` is 2.0–3.8× faster at `k = 100`, and 1.5–1.9× at smaller subset sizes,
+  with no shape measured slower. Selections are unchanged: the compiled kernel
+  returns bit-identical indices, objectives, iteration counts and path-relinking
+  call counts over a 1458-cell grid of `n`, dimension, `k`, `eliteSize`, `alpha`,
+  `plateau` and seed, and still matches the pure-R reference exactly.
+
+  Two inner loops were doing work they could reuse. The path-relinking walk
+  rescored every (drop, add) pair against the remaining selection, though all
+  those distances come from a single row; it now reads each row once for its two
+  smallest entries, which answers every drop in constant time. The local search's
+  extended-improvement tie-break recounted the whole candidate set per candidate;
+  the part of that count which does not depend on the candidate is now held across
+  the scan. Which loop dominates depends on `plateau` — path relinking when it is
+  small, the local search when it is large — so both were needed.
+
 # MaxMin 0.0.0.9005 (development)
 
 ## Bug fixes
