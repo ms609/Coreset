@@ -441,3 +441,54 @@ nearest-PSD repair and algorithmically irreducible without approximating the rep
 
 **Cleanup:** no VTune result dirs created. last_focus left at 5 (this was a targeted
 run; the ExactKCentre T-011 rotation slot is unchanged).
+
+---
+
+## Round — 2026-08-12 — Area 3: Grasp refinement (round 3)
+
+**Question (user):** before re-running the manuscript's canonical grid, is `Grasp()`
+as optimised as it can be? A targeted run, not a search for the next general
+hotspot.
+
+**Shape:** taken from the canonical pipeline — GRASP runs coreset-thinned at
+`maxCandidates = 2000`, k ∈ {10, 100}, over a `plateau` ladder (canonical ≈ 512).
+**Drivers:** `drivers/grasp-battery.R` (1458-cell bit-identity battery over
+n/dim/k/eliteSize/alpha/plateau/seed, comparing indices, objective, `iters` and
+`pr_calls`, and re-checking R↔C++ parity on the small cells) and
+`drivers/grasp-timing.R` (clean-build timing, best-of-3).
+
+**Method.** T-006/T-007 had already reduced both swap scans to O(m) inner terms, so
+a sampling profiler could no longer separate them. Instead a throwaway instrumented
+build counted inner operations directly — call and op counts for the min-to-set scan
+and the tie-break pair count, plus critical-position counts.
+
+**The finding that shaped the round:** the two remaining terms' shares *swap* with
+`plateau`. At low `plateau` phase C (path relinking) is ~90% of wall time; at high
+`plateau` — canonical included — phase B's local search is ~93%. Optimising either
+alone would have looked good on one half of the ladder and done nothing for the
+other. `crit`/pass is exactly 2.00, which is what kills the most obvious lever
+(T-015).
+
+**Round 3 finding (T-014, APPLIED, 2.03–3.79× at k=100):** (a) hoist the
+add-to-`pk` minima in the PR walk behind a two-smallest summary, dropping a factor
+of `|drop_cands|`; (b) split the LS extended-improvement pair count into its rem×rem
+and s×rem halves and memoise the former per (ci, thr) — 72% hit rate. Verified
+1458/1458 bit-identical including `iters` and `pr_calls`; R↔C++ parity 324/324; full
+suite 4893 pass / 0 fail; all 7 new C++ branches exercised.
+
+**Rejected en route (T-015):** the same hoist inside the local search. Because
+`crit` is exactly 2 it can save ~2× in op count at best, and `near_two` costs more
+per element than the branchless min it would replace — net +1.17× at k=100 but
+**0.64× at k=10**, a regression on a canonical cell. A branchless row-buffer rewrite
+meant to fix that was worse again (16.05 s vs 11.13 s at plateau 256): the strided
+reads it targeted are already cheap, because consecutive candidates share cache
+lines down each column. Both rejected variants were themselves bit-identical, so
+this was a pure cost decision. Recorded so it is not re-attempted.
+
+**Note on timings.** These are local *relative* ratios (clean build vs clean build,
+best-of-3), used only to choose between implementations. Canonical wall-clock
+figures for the manuscript belong on Hamilton, not this Windows box.
+
+**Cleanup:** scratch libraries and instrumented builds live under the session
+scratchpad, outside the repo; no instrumentation ships. last_focus unchanged (this
+was a targeted run, not a rotation slot).

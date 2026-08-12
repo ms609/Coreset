@@ -1,3 +1,7 @@
+# MaxMin 0.0.0.9006 (development)
+
+- `Grasp()` no longer discards its best-known solution, and is ~2.0 faster.
+
 # MaxMin 0.0.0.9004 (development)
 
 - New `MaxEntropy()`: maximum-entropy (maxdet) subset selection.

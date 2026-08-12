@@ -221,6 +221,68 @@ test_that(".GraspTryInsert line 217 (second condition) and lines 233-234 (tail i
   expect_equal(res$esZ[2L], selZ)   # sel inserted at tail position
 })
 
+# 11b. .GraspTryInsert never evicts a member better than the candidate --------
+# Resende et al. (2010) Fig. 4 line 8 restricts eviction to elite members worse
+# than the incoming solution. Searching all of ES instead lets a mid-value
+# candidate displace the incumbent best whenever it is that member's unique
+# Hamming-nearest neighbour, and the pool maximum falls.
+#
+# Geometry pins the case deterministically. Elite set {s1, s2}; the candidate
+# `sel` shares one element with s1 (Hamming 1) and none with s2 (Hamming 2), so
+# s1 -- the incumbent BEST -- is the unique nearest. selZ sits between the two
+# elite objectives, so s1 must survive and s2 must go.
+
+test_that(".GraspTryInsert evicts only members worse than the candidate", {
+  pts <- rbind(c(0, 0), c(10, 0),          # s1 = {1,2}: z = 10   (the best)
+               c(0, 1), c(1, 1),           # s2 = {3,4}: z = 1
+               c(0, 5))                    # sel = {1,5}: z = 5
+  dm  <- as.matrix(dist(pts))
+  s1  <- c(1L, 2L); s2 <- c(3L, 4L); sel <- c(1L, 5L)
+  z1  <- MaxMin:::.GraspObjective(dm, s1)
+  z2  <- MaxMin:::.GraspObjective(dm, s2)
+  selZ <- MaxMin:::.GraspObjective(dm, sel)
+  expect_equal(c(z1, z2, selZ), c(10, 1, 5))
+
+  # The incumbent best really is the unique Hamming-nearest member.
+  hamm <- MaxMin:::.GraspHammingToES(sel, list(s1, s2))
+  expect_identical(hamm, c(1L, 2L))
+
+  res <- MaxMin:::.GraspTryInsert(dm, list(s1, s2), c(z1, z2), sel, selZ,
+                                  dth = 1L)
+  expect_true(res$changed)
+  expect_identical(res$ES[[1L]], s1)        # incumbent best survives
+  expect_equal(res$esZ, c(z1, selZ))        # the worse member was displaced
+})
+
+# 11c. The pool maximum is monotone under repeated insertion ------------------
+# The invariant .Grasp_R's stagnation rule relies on (see grasp.R): the stall
+# counter resets on a rise in esZ[1], so a fall would let a re-attained value
+# count as fresh progress and extend the run past its stopping rule.
+
+test_that(".GraspTryInsert never lowers the elite best", {
+  set.seed(1)
+  n <- 60L; k <- 8L; b <- 10L; dth <- 2L
+  dm <- as.matrix(dist(matrix(rnorm(n * 3L), n)))
+  z <- function(s) MaxMin:::.GraspObjective(dm, s)
+
+  ES  <- lapply(seq_len(b), function(i) sort(sample(n, k)))
+  esZ <- vapply(ES, z, numeric(1L))
+  ord <- order(esZ, decreasing = TRUE); ES <- ES[ord]; esZ <- esZ[ord]
+
+  drops <- 0L
+  for (it in seq_len(2000L)) {
+    sel <- sort(sample(n, k))
+    before <- esZ[1L]
+    res <- MaxMin:::.GraspTryInsert(dm, ES, esZ, sel, z(sel), dth)
+    ES <- res$ES; esZ <- res$esZ
+    if (esZ[1L] < before - 1e-12) drops <- drops + 1L
+    # The set stays the right size and sorted best-to-worst throughout.
+    expect_length(esZ, b)
+    expect_false(is.unsorted(rev(esZ)))
+  }
+  expect_identical(drops, 0L)
+})
+
 # 12. Path relinking improves bestSel (.Grasp_R lines 422-423) ---------
 # Scan seeds until Phase C PR beats the Phase A best, confirming lines 422-423.
 # Phase A is replicated manually (same RNG path) to get the pre-PR ceiling;
