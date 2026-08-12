@@ -507,34 +507,26 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
       is.na(maxSeconds) || maxSeconds <= 0) {
     stop("`maxSeconds` must be a single positive numeric (or Inf)")
   }
-  # `seed` overrides the construction's default warm-start (max-row-sum on the
-  # matrix path, centroid-peripheral on the points path, two-sweep peripheral on
-  # the distance-column path) with an explicit 1-based start index, mirroring
-  # FarFirst()'s integer `strategy`. NULL keeps the default.
+  # `seed` overrides the construction's default warm-start with an explicit
+  # 1-based start index, mirroring; NULL keeps the default.
   if (!is.null(seed) &&
       (length(seed) != 1L || !is.finite(seed) || seed < 1L || seed > n)) {
     stop("`seed` must be a single index in [1, n], or NULL for the default")
   }
   seed0 <- if (is.null(seed)) -1L else as.integer(seed) - 1L
 
-  # Composable-coreset thinning: when `maxCandidates` binds, farthest-first
-  # reduces the n candidates to an m-point coreset and DropAdd runs on that.
-  # The recursive call passes `maxCandidates = 0L`, so the coreset is solved by
-  # the real kernel exactly once; on the points source the subproblem stays on
-  # the matrix-free path (no m x m matrix is built).
+  # Composable-coreset thinning: reduce the n candidates via farthest-first
+  # to an m-point coreset.
   mc <- .ResolveCap(maxCandidates, n, k)
   if (!is.na(mc) && useOracle) {
-    # Thinning restricts the problem to an m-point coreset and hands the solver
-    # the m x m submatrix, which a column oracle cannot supply without extra
-    # machinery. Warn rather than silently substituting, as FarFirst() does for
-    # its unreachable seeding strategies.
-    warning("`maxCandidates` thinning is not supported on the distance-column ",
-            "path; running on the full problem", call. = FALSE)
+    # Thinning restricts the problem to an m-point coreset.
+    warning("`maxCandidates` thinning is not supported when `d` is a function;",
+            " running on the full problem", call. = FALSE)
     mc <- NA_integer_
   }
   if (!is.na(mc)) {
     if (!is.null(seed)) {
-      stop("`seed=` is not supported with candidate thinning; pass ",
+      stop("`seed` is not supported with candidate thinning; pass ",
            "`maxCandidates = 0L` to run on the full problem")
     }
     return(.FarFirstThin(
@@ -550,11 +542,11 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
   t0 <- proc.time()[[3L]]
   eps <- 1e-9
 
-  # --- Distance-column oracle path ------------------------------------------
+  # --- `d` is a function ------------------------------------------
   if (useOracle) {
     if (progress) {
       cli::cli_process_start(
-        "DropAdd tabu search (column oracle; n = {n}, k = {k}, budget = {maxSeconds}s)",
+        "DropAdd tabu search (column function; n = {n}, k = {k}, budget = {maxSeconds}s)",
         .auto_close = FALSE
       )
     }
