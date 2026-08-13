@@ -386,3 +386,29 @@ test_that(".Grasp_R time budget halts execution (grasp.R line 397)", {
   # Need 2s to pass on memcheck runs
   expect_lte(attr(res, "time_s"), 2)
 })
+
+# 16. Tied distances exercise the witness/tie machinery ------------------------
+# Lattice points give many EXACTLY equal distances (multiple pairs at 1,
+# sqrt(2), 2, ...), driving the compiled kernel through the tie arms of its
+# incremental summaries — duplicate minima occupying both witness slots, tied
+# pair counts (mcnt > 1), and the tie-decrement on swap maintenance — that
+# continuous random data cannot reach (cross-cell equality is measure-zero
+# there). The pure-R reference computes everything naively, so exact
+# agreement is a strong end-to-end check of those branches.
+
+test_that("Grasp_cpp == .Grasp_R on a tie-rich lattice", {
+  latt <- as.matrix(expand.grid(x = 1:5, y = 1:5))
+  dl <- as.matrix(dist(latt))
+  for (s in c(3L, 11L)) {
+    for (al in c(0, 0.8)) {
+      set.seed(s)
+      ref <- MaxMin:::.Grasp_R(6L, dl, plateau = 15L, eliteSize = 4L,
+                               alpha = al)
+      set.seed(s)
+      ker <- Grasp(d = dl, k = 6L, plateau = 15L, eliteSize = 4L,
+                   alpha = al)
+      attr(ker, "time_s") <- attr(ref, "time_s") <- NULL
+      expect_identical(ker, ref, info = sprintf("seed=%d alpha=%g", s, al))
+    }
+  }
+})
