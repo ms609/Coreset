@@ -117,9 +117,9 @@ test_that(".GraspPathRelink strictly improves on at least one pair", {
   found <- FALSE
   for (s in 1:100) {
     set.seed(s)
-    x <- MaxMin:::.GraspConstruct(d30m, 5L, 0.5)
+    x <- MaxMin:::.GraspConstruct(d30m, 5L, 0.5, runif(5L))
     set.seed(s + 100L)
-    y <- MaxMin:::.GraspConstruct(d30m, 5L, 0.5)
+    y <- MaxMin:::.GraspConstruct(d30m, 5L, 0.5, runif(5L))
     if (!identical(sort(x), sort(y))) {
       zx <- MaxMin:::.GraspObjective(d30m, x)
       zy <- MaxMin:::.GraspObjective(d30m, y)
@@ -289,20 +289,27 @@ test_that(".GraspTryInsert never lowers the elite best", {
 # Phase C is deterministic, so any gain must have fired those lines.
 
 test_that(".Grasp_R phase-C path relinking fires lines 422-423", {
-  k     <- 4L
-  es    <- 6L
-  alpha <- 0.8
+  # Shape retuned for the T-021 draw protocol: the old (k = 4, es = 6,
+  # alpha = 0.8, n = 30) scan no longer contains a PR-improving case in its
+  # first 400 seeds under the batched uniform stream; this shape fires by
+  # seed 4, leaving generous headroom in the 200-seed scan.
+  k     <- 6L
+  es    <- 8L
+  alpha <- 0.3
   found <- FALSE
   for (s in seq_len(200L)) {
     set.seed(s)
-    pts <- matrix(rnorm(30L * 2L), ncol = 2L)
+    pts <- matrix(rnorm(40L * 2L), ncol = 2L)
     d   <- as.matrix(dist(pts))
 
     # Replicate Phase A: same RNG, same constructions -> same Phase A ceiling.
+    # Phase A draws its uniforms in one up-front batch (T-021), so the
+    # replay must consume them the same way.
     set.seed(s)
+    usA <- matrix(runif(es * k), nrow = k)
     phaseABest <- -Inf
     for (b in seq_len(es)) {
-      x  <- MaxMin:::.GraspConstruct(d, k, alpha)
+      x  <- MaxMin:::.GraspConstruct(d, k, alpha, usA[, b])
       xp <- MaxMin:::.GraspLocalSearch(d, x)
       phaseABest <- max(phaseABest, MaxMin:::.GraspObjective(d, xp))
     }
@@ -411,4 +418,23 @@ test_that("Grasp_cpp == .Grasp_R on a tie-rich lattice", {
       expect_identical(ker, ref, info = sprintf("seed=%d alpha=%g", s, al))
     }
   }
+})
+
+# 17. mc.cores changes wall-clock only, never the result -----------------------
+# The kernel's determinism contract (T-021): random draws happen only on the
+# main thread in fixed-size batches, and batches merge in iteration order, so
+# a given seed returns the identical selection at every thread count. CRAN
+# checks cap at 2 cores, which suffices: the code path is the same for any
+# nThreads > 1.
+
+test_that("Grasp results are invariant to mc.cores", {
+  oldOpt <- options(mc.cores = 1L)
+  on.exit(options(oldOpt), add = TRUE)
+  set.seed(99)
+  serial <- Grasp(d = d30m, k = 6L, plateau = 30L, eliteSize = 4L)
+  options(mc.cores = 2L)
+  set.seed(99)
+  threaded <- Grasp(d = d30m, k = 6L, plateau = 30L, eliteSize = 4L)
+  attr(serial, "time_s") <- attr(threaded, "time_s") <- NULL
+  expect_identical(threaded, serial)
 })

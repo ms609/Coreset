@@ -4,25 +4,47 @@
 // Diversity Problem (Resende, Marti, Gallego & Duarte 2010, static variant).
 //
 // This mirrors the pure-R reference .Grasp_R() / .Grasp* helpers step for
-// step. Crucially, the randomised construction draws its random indices from
-// R's own RNG via R_unif_index(), exactly as R's sample.int(k, 1L) does, so
-// that from a common set.seed() the kernel and the R reference consume the
-// identical random stream and return bit-identical selections. The parity is
-// asserted in tests/testthat/test-grasp.R.
+// step. The randomised constructions consume uniforms PRE-DRAWN from R's own
+// RNG on the main thread — one batch of GRASP_BATCH x m draws per phase-B
+// batch (matching R's runif() stream draw for draw) — so that from a common
+// set.seed() the kernel and the R reference consume the identical random
+// stream and return bit-identical selections. The parity is asserted in
+// tests/testthat/test-grasp.R.
+//
+// T-021 determinism contract: the result depends on the seed alone. Worker
+// threads never touch R's RNG (or any R API); every construction is a pure
+// function of its pre-drawn uniforms; and batches merge into the elite set
+// on the main thread in iteration order — so the returned selection is
+// bit-identical at EVERY core count, and n_threads buys wall-clock only.
+// GRASP_BATCH is part of the algorithm definition, not a tuning knob: R's
+// RNG consumption (whole batches of GRASP_BATCH x m draws) depends on it.
 //
 // Termination is the deterministic stagnation rule: the refinement loop stops
 // after max_no_improve consecutive iterations that do not raise the best
-// elite objective. Given a seed, iteration count and result are reproducible
-// and machine-independent. An optional finite time_budget_s ceiling is
-// honoured but (by reintroducing wall-clock dependence) is off by default.
+// elite objective, evaluated at merge time in iteration order (at most one
+// batch of surplus constructions is computed and discarded past the stopping
+// point; discards never touch the elite set). Given a seed, iteration count
+// and result are reproducible and machine-independent. An optional finite
+// time_budget_s ceiling is honoured but (by reintroducing wall-clock
+// dependence) is off by default; when it gates, workers skip slots once the
+// budget is spent, so truncation lands at slot granularity.
 
 #include <Rcpp.h>
 #include <R_ext/Random.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 #include <vector>
 #include <algorithm>
 #include <limits>
 #include <chrono>
+#include <utility>
 using namespace Rcpp;
+
+// Phase-B batch size: fixed, algorithm-defining (see header note). Sized for
+// load balance at realistic core counts without inflating the discarded
+// tail past the stopping point.
+static const int GRASP_BATCH = 32;
 
 static const double NEG_INF = -std::numeric_limits<double>::infinity();
 static const double POS_INF =  std::numeric_limits<double>::infinity();
@@ -129,8 +151,19 @@ static int intersect_count(const std::vector<int>& a, const std::vector<int>& b)
   return c;
 }
 
-// One randomised greedy construction; matches .GraspConstruct. Uses R_unif_index
-// so the draw stream matches R's sample.int(k, 1L). Returns ascending sel.
+// One randomised greedy construction; matches .GraspConstruct. Returns
+// ascending sel.
+//
+// T-021: consumes m PRE-DRAWN uniforms from `u` — u[0] picks the first
+// vertex, u[h] step h's RCL member — as index = floor(u * size), clamped to
+// size-1 against the (never-observed) u*size == size rounding edge. Steps
+// whose RCL is a singleton (or empty; see below) leave their uniform unused:
+// consumption is FIXED at m draws either way, which is what lets the caller
+// pre-draw whole batches on the main thread and run constructions on worker
+// threads that must never touch R's RNG. floor(u * size) departs from
+// R_unif_index's rejection-sampled unbiased index: the bias is O(size/2^53),
+// unobservable at any real problem size, and the pure-R reference mirrors
+// the floor exactly (see .GraspConstruct), so parity is preserved.
 //
 // T-019: the gmax/gmin/argmax scan folds into the PREVIOUS step's g-update
 // pass, which already touches every live entry — setting g[pick] = NEG_INF
@@ -140,10 +173,12 @@ static int intersect_count(const std::vector<int>& a, const std::vector<int>& b)
 // outright: g is dead once the last pick is made, so the old last pass
 // computed values nobody read. Three O(n) passes per step become two, and
 // the RCL buffer is reused across steps instead of reallocated.
-static std::vector<int> grasp_construct(const double* d, int n, int m, double alpha) {
+static std::vector<int> grasp_construct(const double* d, int n, int m,
+                                        double alpha, const double* u) {
   std::vector<int> sel;
   sel.reserve(m);
-  int first = (int)R_unif_index((double)n);
+  int first = (int)(u[0] * n);
+  if (first >= n) first = n - 1;
   sel.push_back(first);
   std::vector<double> g(n);
   for (int i = 0; i < n; ++i) g[i] = D(d, n, i, first);
@@ -166,14 +201,17 @@ static std::vector<int> grasp_construct(const double* d, int n, int m, double al
     // FP rounding at the documented alpha = 1 (and deterministically for
     // alpha > 1) can push thresh just past gmax, emptying the RCL — indexing
     // rcl[0] on an empty vector would segfault. Fall back to the unique
-    // greedy-best (argmax-g, first index on ties) WITHOUT an R_unif_index draw,
-    // matching .GraspConstruct so the two stay bit-identical.
+    // greedy-best (argmax-g, first index on ties); the step's pre-drawn
+    // uniform simply goes unused, matching .GraspConstruct exactly.
     if (rcl.empty()) rcl.push_back(gmax_idx);
     int pick;
     if ((int)rcl.size() == 1) {
       pick = rcl[0];
     } else {
-      pick = rcl[(int)R_unif_index((double)rcl.size())];
+      int sz = (int)rcl.size();
+      int j = (int)(u[h] * sz);
+      if (j >= sz) j = sz - 1;
+      pick = rcl[j];
     }
     sel.push_back(pick);
     if (h + 1 < m) {
@@ -668,12 +706,12 @@ static void grasp_try_insert(std::vector<std::vector<int>>& ES,
 // [[Rcpp::export]]
 List Grasp_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter,
                  int elite_size, double alpha, double time_budget_s,
+                 int n_threads = 1,
                  Rcpp::Nullable<Rcpp::Function> progress_cb = R_NilValue) {
   Rcpp::RNGScope scope;                       // GetRNGstate / PutRNGstate
   int n = dmat.nrow();
   const double* d = dmat.begin();
   const int dth = 5;
-  LSScratch lsw(n);                   // shared by every local-search call
   const bool gated = R_finite(time_budget_s);
   auto t0 = std::chrono::steady_clock::now();
   auto elapsed = [&]() {
@@ -681,12 +719,37 @@ List Grasp_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter,
              std::chrono::steady_clock::now() - t0).count();
   };
 
-  // Phase A: build the initial elite set.
+  // One local-search workspace per worker thread; workers touch no R API
+  // (no RNG, no allocation through R, no interrupts), so construct + local
+  // search + objective are safe off the main thread. Without OpenMP the
+  // pragmas vanish and everything runs serially through pool[0].
+  int nthr = n_threads < 1 ? 1 : n_threads;
+#ifndef _OPENMP
+  nthr = 1;
+#endif
+  std::vector<LSScratch> pool;
+  pool.reserve(nthr);
+  for (int t = 0; t < nthr; ++t) pool.emplace_back(n);
+#ifdef _OPENMP
+#define GRASP_TID omp_get_thread_num()
+#else
+#define GRASP_TID 0
+#endif
+
+  // Phase A: build the initial elite set — one batch of elite_size slots,
+  // uniforms pre-drawn on the main thread (see the header note).
   std::vector<std::vector<int>> ES(elite_size);
   std::vector<double> ESz(elite_size);
+  std::vector<double> ubuf((size_t)elite_size * (size_t)m);
+  for (size_t t = 0; t < ubuf.size(); ++t) ubuf[t] = unif_rand();
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic) num_threads(nthr)
+#endif
   for (int b = 0; b < elite_size; ++b) {
-    std::vector<int> x  = grasp_construct(d, n, m, alpha);
-    std::vector<int> xp = grasp_local_search(d, n, x, lsw);
+    LSScratch& W = pool[GRASP_TID];
+    std::vector<int> x  = grasp_construct(d, n, m, alpha,
+                                          &ubuf[(size_t)b * (size_t)m]);
+    std::vector<int> xp = grasp_local_search(d, n, x, W);
     ESz[b] = objective_of(d, n, xp);
     ES[b]  = xp;
   }
@@ -706,56 +769,101 @@ List Grasp_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter,
 
   // Phase B: refine until max_no_improve consecutive non-improving iterations
   // (deterministic), an optional iteration cap, or an optional time ceiling.
+  // Constructions and local searches for a whole batch run in parallel —
+  // they never read the elite set — and the batch merges on the main thread
+  // in iteration order, where every stopping rule is evaluated exactly as
+  // the serial loop did. Slots past the stopping point are discarded without
+  // touching the elite set, so the merged prefix (and hence the result) is
+  // independent of both the batch size and the thread count.
   long long iters = 0;
   long long no_improve = 0;
   double best_z_B = ESz[0];
-  const int check_every = 256;        // interrupt-poll cadence (RNG-neutral)
-  int countdown = check_every;
   // Optional progress callback: reports the stall counter no_improve (0 ..
   // max_no_improve) so the caller can render a bar that fills as the search
   // stagnates and snaps back to 0 whenever a better elite objective is found.
   // Read-only -- it draws no random numbers, so the RNG stream and result are
-  // unaffected whether or not it is supplied.
+  // unaffected whether or not it is supplied. Called at merge time, on the
+  // main thread only, as is Rcpp::checkUserInterrupt (once per batch).
   const bool report = progress_cb.isNotNull();
   Rcpp::Function cb = report ? Rcpp::Function(progress_cb.get())
                              : Rcpp::Function("identity");
-  for (;;) {
+  std::vector<std::vector<int>> bsel(GRASP_BATCH);
+  std::vector<double> bz(GRASP_BATCH);
+  std::vector<char> bdone(GRASP_BATCH);
+  ubuf.resize((size_t)GRASP_BATCH * (size_t)m);
+  bool stop_B = false;
+  while (!stop_B) {
     if (no_improve >= max_no_improve) break;
     if (iters >= max_iter) break;
     if (gated && elapsed() >= time_budget_s) break;
-    if (--countdown == 0) {
-      Rcpp::checkUserInterrupt();      // honour Ctrl-C / setTimeLimit() even here
-      countdown = check_every;
+    Rcpp::checkUserInterrupt();      // honour Ctrl-C / setTimeLimit() even here
+    for (size_t t = 0; t < ubuf.size(); ++t) ubuf[t] = unif_rand();
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic) num_threads(nthr)
+#endif
+    for (int b = 0; b < GRASP_BATCH; ++b) {
+      // Under a finite budget a worker may find the clock already spent;
+      // skipping the slot bounds the overshoot at slot granularity. The
+      // budget path is wall-clock-defined anyway; with the budget off,
+      // every slot completes and determinism is unconditional.
+      if (gated && elapsed() >= time_budget_s) { bdone[b] = 0; continue; }
+      LSScratch& W = pool[GRASP_TID];
+      std::vector<int> x  = grasp_construct(d, n, m, alpha,
+                                            &ubuf[(size_t)b * (size_t)m]);
+      bsel[b] = grasp_local_search(d, n, x, W);
+      bz[b] = objective_of(d, n, bsel[b]);
+      bdone[b] = 1;
     }
-    std::vector<int> x  = grasp_construct(d, n, m, alpha);
-    std::vector<int> xp = grasp_local_search(d, n, x, lsw);
-    double zp = objective_of(d, n, xp);
-    grasp_try_insert(ES, ESz, xp, zp, dth);
-    ++iters;
-    if (ESz[0] > best_z_B) { best_z_B = ESz[0]; no_improve = 0; }
-    else ++no_improve;
-    if (report) cb((int) no_improve);
+    for (int b = 0; b < GRASP_BATCH; ++b) {
+      if (!bdone[b] || no_improve >= max_no_improve || iters >= max_iter ||
+          (gated && elapsed() >= time_budget_s)) {
+        stop_B = true;
+        break;
+      }
+      grasp_try_insert(ES, ESz, bsel[b], bz[b], dth);
+      ++iters;
+      if (ESz[0] > best_z_B) { best_z_B = ESz[0]; no_improve = 0; }
+      else ++no_improve;
+      if (report) cb((int) no_improve);
+    }
   }
 
   // Phase C: path relinking over all elite pairs (deterministic; no RNG).
+  // Pairs are independent given the elite set, so they compute in parallel;
+  // the reduce runs on the main thread in pair order, preserving the serial
+  // first-best-wins tie behaviour. Under a finite budget workers skip pairs
+  // once the clock is spent (the serial loop stopped mid-phase the same way).
   std::vector<int> best_sel = ES[0];
   double best_z = ESz[0];
   int pr_calls = 0;
   int K = (int)ES.size();
   if (K >= 2 && !(gated && elapsed() >= time_budget_s)) {
-    bool done = false;
-    for (int i = 0; i < K - 1 && !done; ++i) {
-      for (int j = i + 1; j < K; ++j) {
-        PRResult pr1 = grasp_path_relink(d, n, ES[i], ES[j]);
-        PRResult pr2 = grasp_path_relink(d, n, ES[j], ES[i]);
-        pr_calls += 2;
-        std::vector<int>& y_sel = (pr1.objective >= pr2.objective) ? pr1.best
-                                                                   : pr2.best;
-        std::vector<int> yp = grasp_local_search(d, n, y_sel, lsw);
-        double zp = objective_of(d, n, yp);
-        if (zp > best_z) { best_z = zp; best_sel = yp; }
-        if (gated && elapsed() >= time_budget_s) { done = true; break; }
-      }
+    std::vector<std::pair<int, int>> prs;
+    prs.reserve((size_t)K * (K - 1) / 2);
+    for (int i = 0; i < K - 1; ++i)
+      for (int j = i + 1; j < K; ++j) prs.emplace_back(i, j);
+    int np = (int)prs.size();
+    std::vector<std::vector<int>> psel(np);
+    std::vector<double> pz(np);
+    std::vector<char> pdone(np, 0);
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic) num_threads(nthr)
+#endif
+    for (int p = 0; p < np; ++p) {
+      if (gated && elapsed() >= time_budget_s) continue;
+      LSScratch& W = pool[GRASP_TID];
+      PRResult pr1 = grasp_path_relink(d, n, ES[prs[p].first], ES[prs[p].second]);
+      PRResult pr2 = grasp_path_relink(d, n, ES[prs[p].second], ES[prs[p].first]);
+      std::vector<int>& y_sel = (pr1.objective >= pr2.objective) ? pr1.best
+                                                                 : pr2.best;
+      psel[p] = grasp_local_search(d, n, y_sel, W);
+      pz[p] = objective_of(d, n, psel[p]);
+      pdone[p] = 1;
+    }
+    for (int p = 0; p < np; ++p) {
+      if (!pdone[p]) continue;
+      pr_calls += 2;
+      if (pz[p] > best_z) { best_z = pz[p]; best_sel = psel[p]; }
     }
   }
 
