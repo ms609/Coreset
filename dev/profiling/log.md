@@ -1144,6 +1144,12 @@ the semantic reference.
 - The parallel recompute merge argument — (min, count) partials merge as
   min-then-sum — is recorded here should the branch ever dominate.
 
+**Baseline provenance:** the battery/timing baseline build is main at
+0215450 (the post-#2 merge, perf/dropadd's original branch point);
+regenerate with `Rscript dev/profiling/drivers/dropadd-battery.R
+<out.rds>` against a scratch install of that commit, then compare any
+later build with the two-argument form.
+
 **Round-10 result.** Serial: points cells 1.08–1.27× (battery-exact);
 matrix kernel unchanged and certified at its floor (seed row-sums at DRAM
 bandwidth; fused argmax and threading both measured flat; recompute lead
