@@ -131,6 +131,15 @@ static int intersect_count(const std::vector<int>& a, const std::vector<int>& b)
 
 // One randomised greedy construction; matches .GraspConstruct. Uses R_unif_index
 // so the draw stream matches R's sample.int(k, 1L). Returns ascending sel.
+//
+// T-019: the gmax/gmin/argmax scan folds into the PREVIOUS step's g-update
+// pass, which already touches every live entry — setting g[pick] = NEG_INF
+// before that pass makes the fold read exactly the values the standalone
+// scan would, in the same ascending order (same first-index tie semantics).
+// One standalone scan seeds the loop. The final step's update is skipped
+// outright: g is dead once the last pick is made, so the old last pass
+// computed values nobody read. Three O(n) passes per step become two, and
+// the RCL buffer is reused across steps instead of reallocated.
 static std::vector<int> grasp_construct(const double* d, int n, int m, double alpha) {
   std::vector<int> sel;
   sel.reserve(m);
@@ -139,17 +148,19 @@ static std::vector<int> grasp_construct(const double* d, int n, int m, double al
   std::vector<double> g(n);
   for (int i = 0; i < n; ++i) g[i] = D(d, n, i, first);
   g[first] = NEG_INF;
-  for (int h = 1; h < m; ++h) {
-    double gmax = NEG_INF, gmin = POS_INF;
-    int gmax_idx = -1;                          // first index achieving gmax
-    for (int i = 0; i < n; ++i) {
-      if (g[i] > NEG_INF) {
-        if (g[i] > gmax) { gmax = g[i]; gmax_idx = i; }
-        if (g[i] < gmin) gmin = g[i];
-      }
+  double gmax = NEG_INF, gmin = POS_INF;
+  int gmax_idx = -1;                          // first index achieving gmax
+  for (int i = 0; i < n; ++i) {
+    if (g[i] > NEG_INF) {
+      if (g[i] > gmax) { gmax = g[i]; gmax_idx = i; }
+      if (g[i] < gmin) gmin = g[i];
     }
+  }
+  std::vector<int> rcl;
+  rcl.reserve(n);
+  for (int h = 1; h < m; ++h) {
     double thresh = gmin + alpha * (gmax - gmin);
-    std::vector<int> rcl;
+    rcl.clear();
     for (int i = 0; i < n; ++i)
       if (g[i] > NEG_INF && g[i] >= thresh) rcl.push_back(i);
     // FP rounding at the documented alpha = 1 (and deterministically for
@@ -165,11 +176,19 @@ static std::vector<int> grasp_construct(const double* d, int n, int m, double al
       pick = rcl[(int)R_unif_index((double)rcl.size())];
     }
     sel.push_back(pick);
-    for (int i = 0; i < n; ++i) {
-      double dv = D(d, n, i, pick);
-      if (dv < g[i]) g[i] = dv;
+    if (h + 1 < m) {
+      g[pick] = NEG_INF;
+      const double* col = d + (size_t)pick * (size_t)n;
+      gmax = NEG_INF; gmin = POS_INF; gmax_idx = -1;
+      for (int i = 0; i < n; ++i) {
+        double gi = g[i];
+        if (gi > NEG_INF) {
+          if (col[i] < gi) { gi = col[i]; g[i] = gi; }
+          if (gi > gmax) { gmax = gi; gmax_idx = i; }
+          if (gi < gmin) gmin = gi;
+        }
+      }
     }
-    g[pick] = NEG_INF;
   }
   std::sort(sel.begin(), sel.end());
   return sel;
