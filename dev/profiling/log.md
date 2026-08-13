@@ -800,6 +800,72 @@ last_focus unchanged (targeted continuation of area 3).
 
 
 
+## Round 7 — 2026-08-13 — Area 1 (FarFirst): argmax fold + nCores-invariant parallel kernels
+
+**Trigger:** user mandate ("direct the same level of effort at ... the
+FarthestFirst solver"); area files changed 2026-07-08 > last profiled
+2026-06-10, so the rotation was due regardless. Prior ground re-read first:
+round 1 priced the R glue at < 0.2 ms (T-003 refuted "fold into C++"),
+T-001/T-002 shipped free-T_k + squared space, T-004's column reorder left
+the points pass "AT-LIMIT" — but the argmax fold and parallelism were never
+tried on these kernels. VTune (symboled OpenMP build, farfirst-vtune7.R:
+matrix N=6000 n=3000; points dim {2,10}; N=60,000 case): EuclidColSqInto
+1.63 s + MaximinFromPoints self 0.87 s (the separate argmax/pmin passes) of
+~2.9 s kernel time; matrix kernel 0.23 s, bandwidth-bound.
+
+**Lever 1 — fused greedy step (exact; the T-019 pattern).** Both kernels
+seed (best, best_val) with one standalone scan, then ride each step's
+argmax on the update pass — strict >, ascending i, masked −Inf entries
+can't win, so the first-maximum tie rule is preserved read-for-read. The
+points kernel additionally fuses the squared-column fill into the same
+sweep: dimension 0 writes (no zeroing pass), middle dimensions accumulate
+in the same j-ascending order (identical partial doubles), the last
+dimension finishes in a register, merges, and tracks the max. Final step's
+dead update skipped (nothing reads min_dist after the last pick). dim ∈
+{0, 1} handled (0 = degenerate all-zero column, kept defined).
+**Measured** (interleaved min-of-3): points dim=2 **1.43×** (N=6e3) /
+**1.49×** (N=1e5); dim=10 1.11× / 1.14×; matrix 1.04× (bandwidth-bound, as
+VTune said). Battery 925/925 bit-identical + cross-path identity intact.
+
+**Lever 2 — mc.cores parallelism, results invariant to thread count.**
+No RNG anywhere in these kernels, so exactness is chunking-trivial:
+elementwise pmin/accumulation each computed by exactly one thread in the
+serial order; argmax reduced per contiguous chunk then merged ascending
+with strict > (= global first maximum); RowSums/RowSqSums keep each row's
+long-double accumulation on one thread in j order; Diameter merges
+column-chunk winners in ascending chunk order (column-major first-wins
+preserved). Greedy pass engages at nPts >= 32768 (GONZ_PAR_MIN — below
+that the per-step barrier outweighs a ~30 µs sweep; pure tuning constant,
+results identical either way). Anchors parallelise at nPts > 64.
+`.NThreads()` (utils.R) reads mc.cores once per wrapper; Grasp() refactored
+onto the same helper. Oracle path stays serial (calls back into user R).
+**Measured** (8 threads): N=1e5 pass 2.5× (dim 2) / 4.5× (dim 10);
+O(N²) anchors 5.3× (compute-bound, near-linear as expected); N=6e3 cells
+unchanged (below threshold, by design). Serial cost of the parallel build:
+within noise (0.96–1.00×). **Verification:** battery bit-identical at
+mc.cores 1 AND 2 (925/925 each, anchors' parallel paths exercised);
+farfirst-invariance.R INVARIANT over nCores {1,2,8} × 5 cases including
+two above-threshold passes and the seeded default ensemble; two
+mc.cores-invariance tests added to test-farfirst.R (CRAN 2-core cap
+respected).
+
+**Round-7 result.** Cumulative on the round's cells: points N=1e5 dim=10
+0.63 → 0.125 s (5.0×, 8T), dim=2 0.203 → 0.057 s (3.6×, 8T); anchors
+ensemble N=6e3 0.73 → 0.14 s (5.2×, 8T); serial-only gains 1.04–1.49×.
+Every gain is selection-preserving: 925-case battery + 1620-style
+cross-path identity + suite. Area 1 stays AT-LIMIT serially (matrix path
+bandwidth-bound; points pass now one fused sweep per step); remaining
+axis is cores, which now scale. Windows-local relative figures
+(interleaved min-of-N); Linux/gcc first exercised by this branch's CI.
+
+**In-round fixes, no issues filed** (skill rule). Drivers added:
+farfirst-battery.R (925-case old-vs-new + cross-path), farfirst-timing.R,
+farfirst-invariance.R, farfirst-vtune7.R. Baselines refreshed (area 1
+round-7 rows). Cleanup: result_ff7/ and .vtune-lib-* deleted post-round.
+last_focus unchanged (user-targeted round on area 1).
+
+
+
 ## Round 8 — 2026-08-13 — Area 3 (Grasp): memory-layout stab, REFUTED — floor certified on the second axis
 
 **Trigger:** user-requested "one last stab" after PR #2 merged. The branch
@@ -855,4 +921,3 @@ than round 6's fixed-seed 40-call row, so the two k=10 totals are not
 comparable; ladder rows are). Cleanup done: result_grasp8/, symboled and
 scratch libs deleted post-round.
 last_focus unchanged (targeted continuation of area 3).
-

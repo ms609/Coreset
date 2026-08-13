@@ -1,3 +1,29 @@
+# MaxMin 0.0.0.9010 (development)
+
+## Performance
+
+- `FarFirst()` selections are unchanged — every strategy on every path
+  returns bit-identical indices and scores over a 925-case battery, and the
+  coordinate path still matches the matrix path exactly — but the kernels are
+  faster and, for large inputs, parallel:
+
+  - The greedy pass folds its argmax scan into the update pass (which
+    already reads every entry), the coordinate path fuses the new point's
+    squared column, the running-minimum merge and the next argmax into one
+    sweep with no zeroing pass, and the final step's dead update is skipped.
+    Locally ~1.45× at `dim = 2` and ~1.1× at `dim = 10` on the coordinate
+    path, single-threaded.
+
+  - When built with OpenMP, the kernels follow the standard `"mc.cores"`
+    option (default 1). The greedy pass engages threads past ~32,000 points
+    (below that a step is too brief for the synchronisation to pay); the
+    `O(N^2)` seeding anchors (`diameter`, `medoid`, `anti_medoid`, `rowsum`,
+    `rownorm`) parallelise at any non-trivial size. These kernels draw no
+    random numbers and every parallel reduction preserves the serial
+    first-maximum tie rule, so **results are identical at every thread
+    count**. Locally at 8 threads: ~2.5–4.5× on an `N = 100,000` greedy pass
+    and ~5× on the `O(N^2)` anchors.
+
 # MaxMin 0.0.0.9009 (development)
 
 ## Performance

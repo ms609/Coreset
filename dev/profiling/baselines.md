@@ -102,6 +102,21 @@ only with the original fixed-seed protocol.
 | points, dim=2, N=6000, n=3000 | median | 40.4 |
 | points, dim=10, N=6000, n=3000 | median | 108.8 |
 
+### AFTER round 7 (argmax fold + mc.cores kernels, 2026-08-13)
+
+Bit-identical selections (925-case battery, both paths, every strategy).
+Interleaved min-of-3, `drivers/farfirst-timing.R`; regress against THESE
+rows. Threads engage on the pass only at N ≥ 32768.
+
+| case | 1 thread ms | 8 threads ms |
+|------|---:|---:|
+| matrix, dim=10, N=6000, k=3000 | 233 | 235 (below threshold) |
+| points, dim=2, N=6000, k=3000 | 23 | 23 (below threshold) |
+| points, dim=10, N=6000, k=3000 | 87 | 90 (below threshold) |
+| points, dim=2, N=100000, k=1000 | 140 | 57 |
+| points, dim=10, N=100000, k=1000 | 560 | 125 |
+| anchors ensemble (diameter+anti_medoid+rownorm), N=6000, k=300 | 740 | 140 |
+
 ## Area 4 — ExactMaxMin — AFTER T-008 (sparse-A + Grasp warm-start gallop)
 
 Wall time per solve (single call, highs threads=1, `set.seed(1)`); OLD = dense-A
