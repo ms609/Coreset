@@ -1,5 +1,8 @@
 #include <Rcpp.h>
 #include <vector>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 // Greedy furthest-point (maximin) selection in a single C++ pass.
 //
@@ -13,6 +16,12 @@
 // Threads engage past this many points (matches maximin_points.cpp): below
 // it the per-step barrier costs more than the parallel sweep saves. Results
 // are identical at every thread count (see the chunk note in the kernel).
+// For THIS kernel the threshold is effectively unreachable — an N x N
+// matrix at N = 32768 is 8.6 GB — and lowering it measured slower at every
+// RAM-feasible size (round 9: N = 16384, 8 threads 2x slower than serial;
+// the per-step barriers dominate a ~15 us sweep), so the matrix pass runs
+// serially in practice. The constant is kept aligned with the points
+// kernel, whose large-N regime genuinely engages it.
 static const int GONZ_PAR_MIN = 32768;
 
 // One fused greedy-step update over [lo, hi): merge the new point's distance
@@ -126,4 +135,135 @@ Rcpp::IntegerVector MaximinFrom_cpp(Rcpp::NumericMatrix d, int n, int first,
   selected.attr("t_k") = (n >= 2 && R_finite(tk)) ? tk : NA_REAL;
 
   return selected;
+}
+
+// One contiguous column range [cLo, cHi) of the off-diagonal first-maximum
+// scan: column-outer / row-inner with strict > (first max wins ties),
+// diagonal skipped — R's column-major which.max order restricted to the
+// range.
+static inline void OffDiagMaxChunk(const double* dp, int n, int cLo, int cHi,
+                                   double* best_out, int* br_out) {
+  double best = R_NegInf;
+  int br = 0;
+  for (int c = cLo; c < cHi; c++) {
+    const double* col = dp + (R_xlen_t)c * n;
+    for (int r = 0; r < n; r++) {
+      if (r == c) continue;
+      if (col[r] > best) { best = col[r]; br = r + 1; }
+    }
+  }
+  *best_out = best;
+  *br_out = br;
+}
+
+// Off-diagonal maximum of a square distance matrix and the 1-based row of
+// the first cell attaining it under R's column-major `which.max`. Replaces
+// the seeding idiom
+//   dOff <- d; diag(dOff) <- -Inf
+//   dMax <- max(dOff); arrayInd(which.max(dOff), dim(dOff))[1L, 1L]
+// which copies the full N x N matrix and then scans it twice more. Unlike
+// DiameterFromPoints_cpp, the FULL matrix is scanned: `.AsDistMatrix`
+// silently accepts asymmetric matrices, where an upper-triangle cell can be
+// the winner, so the symmetric lower-triangle shortcut would be wrong here.
+//
+// Returns c(max, row); row is 0 (and max -Inf) when there is no
+// off-diagonal cell (N < 2), letting the R caller take its degenerate-data
+// fallback exactly as before.
+//
+// Parallel over contiguous column chunks (every column holds n - 1
+// off-diagonal cells, so plain ranges balance); chunk winners merge in
+// ascending chunk order with strict >, preserving the global column-major
+// first maximum at every thread count.
+//
+// [[Rcpp::export]]
+Rcpp::NumericVector MatrixOffDiagMax_cpp(Rcpp::NumericMatrix d,
+                                         int n_threads = 1) {
+  int n = d.nrow();
+  const double* dp = d.begin();
+  double best = R_NegInf;
+  int best_r = 0;
+#ifdef _OPENMP
+  if (n_threads > 1 && n > 64) {
+    const int C = n_threads;
+    std::vector<double> tb(C, R_NegInf);
+    std::vector<int> tr(C, 0);
+#pragma omp parallel for num_threads(n_threads) schedule(static, 1)
+    for (int t = 0; t < C; t++) {
+      int lo = (int)((R_xlen_t)n * t / C);
+      int hi = (int)((R_xlen_t)n * (t + 1) / C);
+      OffDiagMaxChunk(dp, n, lo, hi, &tb[t], &tr[t]);
+    }
+    for (int t = 0; t < C; t++) {
+      if (tb[t] > best) { best = tb[t]; best_r = tr[t]; }
+    }
+  } else
+#endif
+  {
+    OffDiagMaxChunk(dp, n, 0, n, &best, &best_r);
+  }
+  Rcpp::NumericVector out(2);
+  out[0] = best;
+  out[1] = best_r;
+  // Return:
+  return out;
+}
+
+// rowSums(d^2) for a square matrix without materialising d^2 (a full N x N
+// double allocation in R). Bit-exact: R squares each entry as a double and
+// rowSums then accumulates each row in a long double over columns in
+// ascending index; here acc[i] receives the identical double squares in the
+// identical j-ascending order via one column-sequential pass, so the
+// returned doubles equal R's exactly (a store/load round-trip of the
+// squared double is exact). (A register-banded row layout was measured
+// identical to this accumulator-array pass — see log.md round 9 — so the
+// simpler orientation is kept.)
+//
+// Parallel over contiguous row bands: each row's accumulator lives on one
+// thread and still receives its terms in j-ascending order (each thread
+// walks all columns, reading its band's contiguous segment), so the result
+// is identical at every thread count.
+//
+// [[Rcpp::export]]
+Rcpp::NumericVector RowSqSumsFromMatrix_cpp(Rcpp::NumericMatrix d,
+                                            int n_threads = 1) {
+  int n = d.nrow();
+  const double* dp = d.begin();
+  Rcpp::NumericVector out(n);
+  double* o = out.begin();
+#ifdef _OPENMP
+  if (n_threads > 1 && n > 64) {
+#pragma omp parallel num_threads(n_threads)
+    {
+      int nt = omp_get_num_threads();
+      int t  = omp_get_thread_num();
+      int lo = (int)((R_xlen_t)n * t / nt);
+      int hi = (int)((R_xlen_t)n * (t + 1) / nt);
+      if (hi > lo) {
+        std::vector<long double> acc(hi - lo, 0.0L);
+        for (int j = 0; j < n; j++) {
+          const double* col = dp + (R_xlen_t)j * n;
+          for (int i = lo; i < hi; i++) {
+            double v = col[i];
+            acc[i - lo] += (long double)(v * v);
+          }
+        }
+        for (int i = lo; i < hi; i++) o[i] = (double)acc[i - lo];
+      }
+    }
+    return out;
+  }
+#else
+  (void)n_threads;
+#endif
+  std::vector<long double> acc(n, 0.0L);
+  for (int j = 0; j < n; j++) {
+    const double* col = dp + (R_xlen_t)j * n;
+    for (int i = 0; i < n; i++) {
+      double v = col[i];
+      acc[i] += (long double)(v * v);
+    }
+  }
+  for (int i = 0; i < n; i++) o[i] = (double)acc[i];
+  // Return:
+  return out;
 }

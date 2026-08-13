@@ -117,6 +117,25 @@ rows. Threads engage on the pass only at N ≥ 32768.
 | points, dim=10, N=100000, k=1000 | 560 | 125 |
 | anchors ensemble (diameter+anti_medoid+rownorm), N=6000, k=300 | 740 | 140 |
 
+### AFTER round 9 (validation scan + block sweeps + anchor scans, 2026-08-13)
+
+Bit-identical selections and scores everywhere (battery 925/925; cross-path
+identity at dims 1–11; nCores-invariant). Interleaved min-of-3,
+`drivers/farfirst-timing.R` (which now includes the matrix-anchors cell);
+regress against THESE rows. The matrix cells' validation scan
+(`AllFinite_cpp`) follows mc.cores; the matrix greedy pass itself is serial
+at every RAM-feasible N (round 9 lever F).
+
+| case | 1 thread ms | 8 threads ms |
+|------|---:|---:|
+| matrix, dim=10, N=6000, k=3000 | 42 | 28 |
+| points, dim=2, N=6000, k=3000 | 18 | 20 |
+| points, dim=10, N=6000, k=3000 | 67 | 67 |
+| points, dim=2, N=100000, k=1000 | 107 | 47 |
+| points, dim=10, N=100000, k=1000 | 395 | 85 |
+| anchors ensemble (diameter+anti_medoid+rownorm), N=6000, k=300 | 280 | 60 |
+| matrix anchors ensemble (same anchors), N=6000, k=300 | 200 | 90 |
+
 ## Area 4 — ExactMaxMin — AFTER T-008 (sparse-A + Grasp warm-start gallop)
 
 Wall time per solve (single call, highs threads=1, `set.seed(1)`); OLD = dense-A

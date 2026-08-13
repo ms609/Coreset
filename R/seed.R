@@ -146,7 +146,8 @@
                     "or use `peripheral` on the distance-matrix path"),
     medoid  = as.integer(which.min(rowSums(d))),
     rowsum  = as.integer(which.max(rowSums(d))),
-    rownorm = as.integer(which.max(rowSums(d ^ 2))),
+    # Fused C++ scan: rowSums(d ^ 2) materialises the full squared matrix.
+    rownorm = as.integer(which.max(RowSqSumsFromMatrix_cpp(d, .NThreads()))),
     anti_medoid = {
       med <- which.min(rowSums(d))
       dd  <- d[, med]
@@ -154,13 +155,13 @@
       as.integer(which.max(dd))
     },
     diameter = {
-      dOff <- d
-      diag(dOff) <- -Inf
-      dMax <- max(dOff)
-      if (!is.finite(dMax) || dMax <= 0) {
+      # C++ off-diagonal first-max scan: the R idiom copies the full matrix
+      # to plant -Inf on the diagonal, then scans it twice more.
+      dm <- MatrixOffDiagMax_cpp(d, .NThreads())
+      if (!is.finite(dm[[1L]]) || dm[[1L]] <= 0) {
         1L
       } else {
-        as.integer(arrayInd(which.max(dOff), dim(dOff))[1L, 1L])
+        as.integer(dm[[2L]])
       }
     },
     peripheral = {
@@ -314,12 +315,9 @@ PickPoint <- function(d = NULL, points = NULL,
     lazy$rowSums
   }
   GetRowSqSums <- function() {
-    lazy$rowSqSums <- lazy$rowSqSums %||% rowSums(d ^ 2)
+    # Fused C++ scan: rowSums(d ^ 2) materialises the full squared matrix.
+    lazy$rowSqSums <- lazy$rowSqSums %||% RowSqSumsFromMatrix_cpp(d, .NThreads())
     lazy$rowSqSums
-  }
-  GetDOffdiag <- function() {
-    lazy$dOffdiag <- lazy$dOffdiag %||% { tmp <- d; diag(tmp) <- -Inf; tmp }
-    lazy$dOffdiag
   }
   GetMedoid <- function() {
     lazy$medoid <- lazy$medoid %||% as.integer(which.min(GetRowSums()))
@@ -344,12 +342,12 @@ PickPoint <- function(d = NULL, points = NULL,
   AnchorSeed <- function(name) {
     switch(name,
       diameter = {
-        dOff <- GetDOffdiag()
-        dMax <- max(dOff)
-        if (!is.finite(dMax) || dMax <= 0) {
+        # C++ off-diagonal first-max scan; see .PickPoint's diameter branch.
+        dm <- MatrixOffDiagMax_cpp(d, .NThreads())
+        if (!is.finite(dm[[1L]]) || dm[[1L]] <= 0) {
           1L
         } else {
-          as.integer(arrayInd(which.max(dOff), dim(dOff))[1L, 1L])
+          as.integer(dm[[2L]])
         }
       },
       anti_medoid = {
@@ -408,6 +406,16 @@ PickPoint <- function(d = NULL, points = NULL,
   if (m == 0L)   return(integer(0))
 
   lazy <- new.env(parent = emptyenv())
+  # When the requested anchors span BOTH row-aggregate families, one fused
+  # pair sweep fills both: each accumulator receives the identical summands
+  # in the identical order as its dedicated kernel (bit-identical results),
+  # while each pair's distance -- and its sqrt -- is computed once, not twice.
+  if (any(c("anti_medoid", "medoid", "rowsum") %in% anchors) &&
+        "rownorm" %in% anchors) {
+    both <- RowSumsSqFromPoints_cpp(points, .NThreads())
+    lazy$rowSums   <- both[[1L]]
+    lazy$rowSqSums <- both[[2L]]
+  }
   GetRowSums <- function() {
     lazy$rowSums <- lazy$rowSums %||% RowSumsFromPoints_cpp(points, .NThreads())
     lazy$rowSums

@@ -41,6 +41,14 @@ MaximinFrom_cpp <- function(d, n, first, n_threads = 1L) {
     .Call(`_MaxMin_MaximinFrom_cpp`, d, n, first, n_threads)
 }
 
+MatrixOffDiagMax_cpp <- function(d, n_threads = 1L) {
+    .Call(`_MaxMin_MatrixOffDiagMax_cpp`, d, n_threads)
+}
+
+RowSqSumsFromMatrix_cpp <- function(d, n_threads = 1L) {
+    .Call(`_MaxMin_RowSqSumsFromMatrix_cpp`, d, n_threads)
+}
+
 MaximinFromPoints_cpp <- function(points, n, first, mask, n_threads = 1L) {
     .Call(`_MaxMin_MaximinFromPoints_cpp`, points, n, first, mask, n_threads)
 }
@@ -53,11 +61,19 @@ RowSqSumsFromPoints_cpp <- function(points, n_threads = 1L) {
     .Call(`_MaxMin_RowSqSumsFromPoints_cpp`, points, n_threads)
 }
 
+RowSumsSqFromPoints_cpp <- function(points, n_threads = 1L) {
+    .Call(`_MaxMin_RowSumsSqFromPoints_cpp`, points, n_threads)
+}
+
 EuclidColFromPoints_cpp <- function(points, col) {
     .Call(`_MaxMin_EuclidColFromPoints_cpp`, points, col)
 }
 
 DiameterFromPoints_cpp <- function(points, n_threads = 1L) {
     .Call(`_MaxMin_DiameterFromPoints_cpp`, points, n_threads)
+}
+
+AllFinite_cpp <- function(x, n_threads = 1L) {
+    .Call(`_MaxMin_AllFinite_cpp`, x, n_threads)
 }
 

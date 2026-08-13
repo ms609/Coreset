@@ -1,3 +1,45 @@
+# MaxMin 0.0.0.9011 (development)
+
+## Performance
+
+- All solvers taking a distance matrix (`FarFirst()`, `DropAdd()`, `Grasp()`,
+  `KCentre()`, and the seed/score helpers) validate it with a single-pass,
+  allocation-free C++ scan. The previous
+  `anyNA(d) || any(!is.finite(d))` guard allocated two full-size logical
+  intermediates and cost 20x the greedy kernel it guarded on a
+  6,000-point matrix; a bare matrix-path `FarFirst()` call is ~5x faster
+  end-to-end. Rejection behaviour is unchanged.
+
+- `FarFirst()` results remain bit-identical everywhere (925-case battery,
+  cross-path identity at every dimension, `mc.cores`-invariance), but the
+  kernels are faster again:
+
+  - The coordinate greedy pass processes dimensions in blocks of up to four
+    per sweep, holding each point's running squared sum in a register:
+    `dim <= 4` never touches the scratch column at all, and larger `dim`
+    cuts its traffic from one read-modify-write per dimension to one per
+    block. ~1.3-1.4x single-threaded across `dim` 2-10 at
+    `N` = 6,000-100,000.
+
+  - The `diameter` seeding anchor scans only the strict lower triangle
+    (the column-major first maximum of a symmetric matrix always lies
+    there) in squared space, taking a `sqrt` only when a pair beats the
+    running maximum; the `rowsum`/`rownorm`/`medoid`/`anti_medoid` anchors
+    halve their pair work on the serial path via the symmetric lower
+    triangle; and an ensemble whose anchors span both row-aggregate
+    families fills both from one fused pair sweep. Coordinate-path anchor
+    ensembles run ~2.6x faster single-threaded.
+
+  - Matrix-path seeding anchors no longer copy the `N x N` matrix: the
+    `diameter` anchor's off-diagonal first-maximum and `rownorm`'s
+    `rowSums(d^2)` are single-pass C++ scans (asymmetric matrices still
+    honoured). A matrix-path anchors ensemble runs ~4.7x faster.
+
+  Every reformulated quantity is provably the same double (same summands,
+  same order) or the same comparison sequence as before, so selections,
+  scores, and tie decisions are unchanged on every path, at every thread
+  count.
+
 # MaxMin 0.0.0.9010 (development)
 
 ## Performance

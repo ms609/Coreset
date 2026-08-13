@@ -439,3 +439,39 @@ test_that("FarFirst results are invariant to mc.cores (parallel greedy pass)", {
   s2 <- FarFirst(50L, points = pts, strategy = 5L)
   expect_identical(s1, s2)
 })
+
+test_that("AllFinite_cpp matches the anyNA/is.finite guard semantics", {
+  # .AsDistMatrix's finite check runs through this single-pass scan; it must
+  # flag exactly what `anyNA(x) || any(!is.finite(x))` flags, for double and
+  # integer storage, serially and through the parallel OR-reduction.
+  af <- MaxMin:::AllFinite_cpp
+  expect_true(af(c(0, 1.5, -2), 1L))
+  expect_false(af(c(0, NA_real_), 1L))
+  expect_false(af(c(0, NaN), 1L))
+  expect_false(af(c(0, Inf), 1L))
+  expect_false(af(c(0, -Inf), 1L))
+  expect_true(af(c(1L, 3L), 1L))
+  expect_false(af(c(1L, NA_integer_), 1L))
+  expect_error(af("a", 1L), "storage")
+  # The parallel reduction engages past 2^20 elements (CRAN 2-core cap).
+  big <- runif(1200000L)
+  expect_true(af(big, 2L))
+  big[[999983L]] <- NaN
+  expect_false(af(big, 2L))
+})
+
+test_that("points pass is cross-path identical at every dimension block shape", {
+  # The fused update sweeps up to four dimensions per block, with distinct
+  # code paths for a single-block dim (<= 4) and each final-block width
+  # (dim mod 4). The matrix path never touches that code, so cross-path
+  # agreement certifies every instantiation.
+  for (dim in c(1:5, 8:11)) {
+    set.seed(dim)
+    pts <- matrix(rnorm(120L * dim), ncol = dim)
+    d <- as.matrix(dist(pts))
+    pm <- FarFirst(40L, d, strategy = 5L)
+    pp <- FarFirst(40L, points = pts, strategy = 5L)
+    expect_identical(as.integer(pm), as.integer(pp))
+    expect_identical(attr(pm, "score"), attr(pp, "score"))
+  }
+})

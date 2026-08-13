@@ -56,15 +56,22 @@
 // preserves the first-maximum rule), so this is a pure tuning constant.
 static const int GONZ_PAR_MIN = 32768;
 
-// Squared-Euclidean accumulated in double over columns, matching dist's order.
-static inline double EuclidCol(const double* P, int nPts, int dim,
-                               int i, int c) {
+// Squared-Euclidean between two points, accumulated in double over columns
+// in ascending order — the exact argument stats::dist() passes to sqrt.
+static inline double EuclidSqPair(const double* P, int nPts, int dim,
+                                  int i, int c) {
   double s = 0.0;
   for (int j = 0; j < dim; j++) {
     double dev = P[i + (R_xlen_t)j * nPts] - P[c + (R_xlen_t)j * nPts];
     s += dev * dev;
   }
-  return std::sqrt(s);
+  return s;
+}
+
+// True Euclidean distance, bit-matching the stats::dist() matrix entry.
+static inline double EuclidCol(const double* P, int nPts, int dim,
+                               int i, int c) {
+  return std::sqrt(EuclidSqPair(P, nPts, dim, i, c));
 }
 
 // Squared-Euclidean column for the greedy pass, WITHOUT the final sqrt. The
@@ -95,68 +102,104 @@ static inline void EuclidColSqInto(const double* P, int nPts, int dim, int c,
   }
 }
 
-// One fused greedy-step update over the contiguous range [lo, hi): fill the
-// new centre's squared column into dcol (dimension 0 writes — no zeroing
-// pass; middle dimensions accumulate in EuclidColSqInto's j-ascending order,
-// so every partial sum is the identical double), finish each entry in a
-// register on the last dimension, merge it into md (pmin), and track the
-// range's post-update first maximum (strict >, ascending i — R's which.max
-// rule). dim == 1 collapses the write and the finish into one pass; masked
-// entries (-Inf) pass through untouched and can never win the max.
+// One sweep over [lo, hi) covering the NB (1..4) dimensions starting at
+// column j0, with the running squared sum held in a register. READ_DC loads
+// the running sum from dc (false for a leading block, which starts the sum
+// at its first dev^2). MERGE marks the final block: instead of storing the
+// sum back to dc it merges into md (pmin) and tracks the range's
+// post-update first maximum (strict >, ascending i — R's which.max rule;
+// masked -Inf entries pass through untouched and can never win).
+//
+// Exactness: each element's sum is the same left-associated chain
+// (((dev_0^2 + dev_1^2) + ...) + dev_{dim-1}^2) as EuclidColSqInto's
+// one-dimension-at-a-time accumulation — a store/load round-trip of a
+// double is exact, so batching four adds per sweep instead of one changes
+// only where the partial sums live (register vs dc), never their values.
+template <int NB, bool READ_DC, bool MERGE>
+static inline void SweepBlock(const double* P, int nPts, int c, int j0,
+                              double* md, double* dc, int lo, int hi,
+                              int* nb_out, double* nbv_out) {
+  const double* p0 = P + (R_xlen_t)j0 * nPts;
+  const double* p1 = NB > 1 ? p0 + nPts : p0;
+  const double* p2 = NB > 2 ? p1 + nPts : p1;
+  const double* p3 = NB > 3 ? p2 + nPts : p2;
+  const double c0 = p0[c], c1 = p1[c], c2 = p2[c], c3 = p3[c];
+  int nb = lo;
+  double nbv = R_NegInf;
+  for (int i = lo; i < hi; i++) {
+    double dev = p0[i] - c0;
+    double s = READ_DC ? dc[i] + dev * dev : dev * dev;
+    if (NB > 1) { dev = p1[i] - c1; s += dev * dev; }
+    if (NB > 2) { dev = p2[i] - c2; s += dev * dev; }
+    if (NB > 3) { dev = p3[i] - c3; s += dev * dev; }
+    if (MERGE) {
+      double m = md[i];
+      if (s < m) { m = s; md[i] = m; }
+      if (m > nbv) { nbv = m; nb = i; }
+    } else {
+      dc[i] = s;
+    }
+  }
+  if (MERGE) {
+    *nb_out = nb;
+    *nbv_out = nbv;
+  }
+}
+
+// One fused greedy-step update over the contiguous range [lo, hi): the new
+// centre's squared column, the pmin merge and the next argmax, processed in
+// blocks of up to four dimensions per sweep (SweepBlock). dim <= 4 runs as
+// a single sweep touching dc not at all; larger dim writes dc once per
+// leading block and reads it once per continuation, cutting dc traffic
+// from one read-modify-write per middle dimension to one per block of four.
 static inline void FusedUpdateChunk(const double* P, int nPts, int dim, int c,
                                     double* md, double* dc, int lo, int hi,
                                     int* nb_out, double* nbv_out) {
-  int nb = lo;
-  double nbv = R_NegInf;
   if (dim == 0) {
     // Degenerate zero-column input: the old EuclidColSqInto produced an
     // all-zero column, i.e. pmin(md, 0). Kept defined.
+    int nb = lo;
+    double nbv = R_NegInf;
     for (int i = lo; i < hi; i++) {
       double m = md[i];
       if (0.0 < m) { m = 0.0; md[i] = m; }
       if (m > nbv) { nbv = m; nb = i; }
     }
-  } else if (dim == 1) {
-    const double* pj = P;
-    double cj = pj[c];
-    for (int i = lo; i < hi; i++) {
-      double dev = pj[i] - cj;
-      double v = dev * dev;
-      double m = md[i];
-      if (v < m) { m = v; md[i] = m; }
-      if (m > nbv) { nbv = m; nb = i; }
-    }
-  } else {
-    {
-      const double* pj = P;
-      double cj = pj[c];
-      for (int i = lo; i < hi; i++) {
-        double dev = pj[i] - cj;
-        dc[i] = dev * dev;
-      }
-    }
-    for (int j = 1; j < dim - 1; j++) {
-      const double* pj = P + (R_xlen_t)j * nPts;
-      double cj = pj[c];
-      for (int i = lo; i < hi; i++) {
-        double dev = pj[i] - cj;
-        dc[i] += dev * dev;
-      }
-    }
-    {
-      const double* pj = P + (R_xlen_t)(dim - 1) * nPts;
-      double cj = pj[c];
-      for (int i = lo; i < hi; i++) {
-        double dev = pj[i] - cj;
-        double v = dc[i] + dev * dev;
-        double m = md[i];
-        if (v < m) { m = v; md[i] = m; }
-        if (m > nbv) { nbv = m; nb = i; }
-      }
-    }
+    *nb_out = nb;
+    *nbv_out = nbv;
+    return;
   }
-  *nb_out = nb;
-  *nbv_out = nbv;
+  int j0 = 0;
+  bool leading = true;
+  while (dim - j0 > 4) {
+    if (leading) {
+      SweepBlock<4, false, false>(P, nPts, c, j0, md, dc, lo, hi,
+                                  nb_out, nbv_out);
+    } else {
+      SweepBlock<4, true, false>(P, nPts, c, j0, md, dc, lo, hi,
+                                 nb_out, nbv_out);
+    }
+    leading = false;
+    j0 += 4;
+  }
+  switch ((dim - j0 - 1) * 2 + (leading ? 1 : 0)) {
+    case 0: SweepBlock<1, true,  true>(P, nPts, c, j0, md, dc, lo, hi,
+                                       nb_out, nbv_out); break;
+    case 1: SweepBlock<1, false, true>(P, nPts, c, j0, md, dc, lo, hi,
+                                       nb_out, nbv_out); break;
+    case 2: SweepBlock<2, true,  true>(P, nPts, c, j0, md, dc, lo, hi,
+                                       nb_out, nbv_out); break;
+    case 3: SweepBlock<2, false, true>(P, nPts, c, j0, md, dc, lo, hi,
+                                       nb_out, nbv_out); break;
+    case 4: SweepBlock<3, true,  true>(P, nPts, c, j0, md, dc, lo, hi,
+                                       nb_out, nbv_out); break;
+    case 5: SweepBlock<3, false, true>(P, nPts, c, j0, md, dc, lo, hi,
+                                       nb_out, nbv_out); break;
+    case 6: SweepBlock<4, true,  true>(P, nPts, c, j0, md, dc, lo, hi,
+                                       nb_out, nbv_out); break;
+    default: SweepBlock<4, false, true>(P, nPts, c, j0, md, dc, lo, hi,
+                                        nb_out, nbv_out); break;
+  }
 }
 
 // [[Rcpp::export]]
@@ -187,7 +230,9 @@ Rcpp::IntegerVector MaximinFromPoints_cpp(Rcpp::NumericMatrix points,
   Rcpp::NumericVector min_dist(nPts);
   double* md = min_dist.begin();
   EuclidColSqInto(P, nPts, dim, first0, md);
-  std::vector<double> dcol(nPts);   // reused per step for the new point's column
+  // Per-step running sums between dimension blocks; a single-block dim
+  // (<= 4) keeps the whole sum in registers and never touches it.
+  std::vector<double> dcol(dim > 4 ? nPts : 0);
 #ifdef _OPENMP
   std::vector<int> tnb(nthr);       // per-chunk argmax candidates (see below)
   std::vector<double> tnbv(nthr);
@@ -283,10 +328,22 @@ Rcpp::IntegerVector MaximinFromPoints_cpp(Rcpp::NumericMatrix points,
 // accumulator, j ascending, EuclidCol(i, i) == 0 contributes a harmless 0 —
 // so the returned doubles equal R's and which.min picks the same index.
 //
-// Each row's long-double accumulation runs wholly on one thread in the same
-// j-ascending order, so the parallel result is the identical double per row
-// at every thread count. O(N^2 * dim) with a sqrt per pair — compute-bound,
-// the one FarFirst primitive where threads scale near-linearly.
+// Each row's long-double accumulation receives its contributions in the same
+// j-ascending order on every path, so the returned doubles equal R's exactly:
+//
+// - Serial: the scan walks the strict lower triangle once (i < j), adding
+//   each pair's distance to both endpoint rows. Row r's accumulator then
+//   receives d(r, k) for k = 0..r-1 during the earlier outer iterations and
+//   d(r, k) for k = r+1..N-1 during its own — ascending k overall, exactly
+//   the reference order, with the diagonal's exact +0 contribution dropped
+//   (adding a true zero to a long double never rounds). d(i, j) and d(j, i)
+//   are the same double bit-for-bit ((-x)*(-x) == x*x), so halving the
+//   EuclidCol/sqrt evaluations changes no summand.
+// - Parallel: pair-halving would interleave rows' updates across threads in
+//   schedule order, so each thread instead computes whole rows (full N-term
+//   sweeps, j ascending) — the identical double per row at every thread
+//   count. O(N^2 * dim) with a sqrt per pair — compute-bound, the one
+//   FarFirst primitive where threads scale near-linearly.
 //
 // [[Rcpp::export]]
 Rcpp::NumericVector RowSumsFromPoints_cpp(Rcpp::NumericMatrix points,
@@ -297,16 +354,29 @@ Rcpp::NumericVector RowSumsFromPoints_cpp(Rcpp::NumericMatrix points,
   Rcpp::NumericVector out(nPts);
   double* o = out.begin();
 #ifdef _OPENMP
-#pragma omp parallel for if(n_threads > 1 && nPts > 64) \
-    num_threads(n_threads) schedule(static)
-#endif
-  for (int i = 0; i < nPts; i++) {
-    long double s = 0.0L;
-    for (int j = 0; j < nPts; j++) {
-      s += (long double) EuclidCol(P, nPts, dim, i, j);
+  if (n_threads > 1 && nPts > 64) {
+#pragma omp parallel for num_threads(n_threads) schedule(static)
+    for (int i = 0; i < nPts; i++) {
+      long double s = 0.0L;
+      for (int j = 0; j < nPts; j++) {
+        s += (long double) EuclidCol(P, nPts, dim, i, j);
+      }
+      o[i] = (double) s;
     }
-    o[i] = (double) s;
+    return out;
   }
+#else
+  (void)n_threads;
+#endif
+  std::vector<long double> acc(nPts, 0.0L);
+  for (int i = 0; i < nPts - 1; i++) {
+    for (int j = i + 1; j < nPts; j++) {
+      long double v = (long double) EuclidCol(P, nPts, dim, i, j);
+      acc[i] += v;
+      acc[j] += v;
+    }
+  }
+  for (int i = 0; i < nPts; i++) o[i] = (double) acc[i];
   // Return:
   return out;
 }
@@ -324,7 +394,10 @@ Rcpp::NumericVector RowSumsFromPoints_cpp(Rcpp::NumericMatrix points,
 // sum_j (N*||x_i||^2 - 2 x_i.x_j + ||x_j||^2) is NOT used: it rounds differently
 // from squaring the sqrt distances and would flip which.max on tie-dense data.
 //
-// Parallel per-row exactly as RowSumsFromPoints_cpp (see its note).
+// Serial pair-halved lower-triangle scan and per-row parallel path exactly
+// as RowSumsFromPoints_cpp (see its exactness note); the summand here is
+// the squared double (dij * dij, matching R's `d^2`), which is the same
+// bit-for-bit from either triangle.
 //
 // [[Rcpp::export]]
 Rcpp::NumericVector RowSqSumsFromPoints_cpp(Rcpp::NumericMatrix points,
@@ -335,19 +408,93 @@ Rcpp::NumericVector RowSqSumsFromPoints_cpp(Rcpp::NumericMatrix points,
   Rcpp::NumericVector out(nPts);
   double* o = out.begin();
 #ifdef _OPENMP
-#pragma omp parallel for if(n_threads > 1 && nPts > 64) \
-    num_threads(n_threads) schedule(static)
-#endif
-  for (int i = 0; i < nPts; i++) {
-    long double s = 0.0L;
-    for (int j = 0; j < nPts; j++) {
-      double dij = EuclidCol(P, nPts, dim, i, j);
-      s += (long double) (dij * dij);
+  if (n_threads > 1 && nPts > 64) {
+#pragma omp parallel for num_threads(n_threads) schedule(static)
+    for (int i = 0; i < nPts; i++) {
+      long double s = 0.0L;
+      for (int j = 0; j < nPts; j++) {
+        double dij = EuclidCol(P, nPts, dim, i, j);
+        s += (long double) (dij * dij);
+      }
+      o[i] = (double) s;
     }
-    o[i] = (double) s;
+    return out;
   }
+#else
+  (void)n_threads;
+#endif
+  std::vector<long double> acc(nPts, 0.0L);
+  for (int i = 0; i < nPts - 1; i++) {
+    for (int j = i + 1; j < nPts; j++) {
+      double dij = EuclidCol(P, nPts, dim, i, j);
+      long double v = (long double) (dij * dij);
+      acc[i] += v;
+      acc[j] += v;
+    }
+  }
+  for (int i = 0; i < nPts; i++) o[i] = (double) acc[i];
   // Return:
   return out;
+}
+
+// Fused RowSums + RowSqSums in ONE pair sweep, for ensembles that need both
+// aggregate families (anti_medoid/medoid/rowsum read the plain sums;
+// rownorm reads the squared sums). Each family's accumulators receive the
+// identical summands ((long double)d_ij and (long double)(d_ij * d_ij),
+// d_ij the same double as the dedicated kernels') in the identical
+// j-ascending per-row order — the two families never mix, so both results
+// are bit-identical to RowSumsFromPoints_cpp / RowSqSumsFromPoints_cpp;
+// the fusion just computes each pair's distance (and its sqrt) once
+// instead of twice. Serial pair-halved triangle scan and per-row parallel
+// path exactly as those kernels (see RowSumsFromPoints_cpp's note).
+//
+// Returns list(sums, sqsums).
+//
+// [[Rcpp::export]]
+Rcpp::List RowSumsSqFromPoints_cpp(Rcpp::NumericMatrix points,
+                                   int n_threads = 1) {
+  int nPts = points.nrow();
+  int dim  = points.ncol();
+  const double* P = points.begin();
+  Rcpp::NumericVector sums(nPts), sqsums(nPts);
+  double* oS = sums.begin();
+  double* oQ = sqsums.begin();
+#ifdef _OPENMP
+  if (n_threads > 1 && nPts > 64) {
+#pragma omp parallel for num_threads(n_threads) schedule(static)
+    for (int i = 0; i < nPts; i++) {
+      long double s = 0.0L, q = 0.0L;
+      for (int j = 0; j < nPts; j++) {
+        double dij = EuclidCol(P, nPts, dim, i, j);
+        s += (long double) dij;
+        q += (long double) (dij * dij);
+      }
+      oS[i] = (double) s;
+      oQ[i] = (double) q;
+    }
+    return Rcpp::List::create(sums, sqsums);
+  }
+#else
+  (void)n_threads;
+#endif
+  std::vector<long double> accS(nPts, 0.0L), accQ(nPts, 0.0L);
+  for (int i = 0; i < nPts - 1; i++) {
+    for (int j = i + 1; j < nPts; j++) {
+      double dij = EuclidCol(P, nPts, dim, i, j);
+      long double v = (long double) dij;
+      long double vq = (long double) (dij * dij);
+      accS[i] += v;
+      accS[j] += v;
+      accQ[i] += vq;
+      accQ[j] += vq;
+    }
+  }
+  for (int i = 0; i < nPts; i++) {
+    oS[i] = (double) accS[i];
+    oQ[i] = (double) accQ[i];
+  }
+  // Return:
+  return Rcpp::List::create(sums, sqsums);
 }
 
 // One column d(., col) of the on-the-fly Euclidean distance matrix: a drop-in
@@ -376,19 +523,53 @@ Rcpp::NumericVector EuclidColFromPoints_cpp(Rcpp::NumericMatrix points,
 // the 1-based (row, col) of the first cell achieving it under R's column-major
 // `which.max`. WideSampleGist takes the diameter pair from
 //   arrayInd(which.max(d_offdiag), dim(d))   # d_offdiag has diag = -Inf
-// which, on a symmetric matrix, lands on the below-diagonal cell (row > col)
-// with the smallest column index, then smallest row. We reproduce that by
-// scanning column-outer / row-inner with a strict `>` (first max wins ties)
-// and skipping the diagonal.
+// which, on a symmetric matrix, always lands on a below-diagonal cell: pair
+// {a, b} (a < b) appears at linear indices b + a*N (lower) and a + b*N
+// (upper), and b + a*N < a + b*N whenever a < b. Scanning only the strict
+// lower triangle in the same column-outer / row-inner order therefore visits
+// every possible winner in the reference's relative order — half the pairs,
+// tie-identical pick.
 //
+// The scan itself runs in SQUARED space with a guarded sqrt: `best` always
+// equals sqrt(bestSq) (see the loop), so a pair with sq <= bestSq satisfies
+// sqrt(sq) <= best and can never win the reference's strict-> comparison —
+// skipping its sqrt drops no candidate. A pair with sq > bestSq gets the
+// true sqrt and the reference's own strict-> test on distances (two distinct
+// squared values can round to the same sqrt, so comparing sq alone could
+// pick a later cell the reference would have rejected on the tie rule).
+// sqrt therefore runs only on running-max candidates, O(log) of them in
+// expectation, and the hot loop is sqrt-free.
+static inline void DiameterChunk(const double* P, int nPts, int dim,
+                                 int cLo, int cHi,
+                                 double* best_out, int* br_out, int* bc_out) {
+  double best = R_NegInf;     // true distance of the running winner
+  double bestSq = R_NegInf;   // largest squared distance seen so far
+  int br = 0, bc = 0;
+  for (int c = cLo; c < cHi; c++) {
+    for (int r = c + 1; r < nPts; r++) {
+      double sq = EuclidSqPair(P, nPts, dim, r, c);
+      if (sq > bestSq) {
+        bestSq = sq;
+        double dist = std::sqrt(sq);
+        if (dist > best) { best = dist; br = r + 1; bc = c + 1; }
+      }
+    }
+  }
+  *best_out = best;
+  *br_out = br;
+  *bc_out = bc;
+}
+
 // Returns c(d_max, row, col); row/col are 1-based. If every off-diagonal
 // distance is 0 (or N < 2) d_max is 0 and row/col are 0, letting the R caller
 // take its degenerate-data fallback.
 //
-// Parallel over contiguous column chunks; each chunk scans in the original
-// column-outer/row-inner order with strict >, and chunks merge in ascending
-// order with strict >, so the winning cell is the global column-major first
-// maximum at every thread count — exactly the serial scan's pick.
+// Parallel over column chunks balanced by PAIR count (column c holds
+// nPts-1-c pairs, so equal column ranges would leave the last thread nearly
+// idle); each chunk scans in the serial order and chunk winners merge in
+// ascending chunk order with strict > on the true distance, so the winning
+// cell is the global column-major first maximum at every thread count —
+// exactly the serial scan's pick.
 //
 // [[Rcpp::export]]
 Rcpp::NumericVector DiameterFromPoints_cpp(Rcpp::NumericMatrix points,
@@ -402,21 +583,21 @@ Rcpp::NumericVector DiameterFromPoints_cpp(Rcpp::NumericMatrix points,
   if (n_threads > 1 && nPts > 64) {
     const int C = n_threads;
     std::vector<double> tb(C, R_NegInf);
-    std::vector<int> tr(C, 0), tc(C, 0);
+    std::vector<int> tr(C, 0), tc(C, 0), lo(C + 1, 0);
+    const double T = (double)nPts * (nPts - 1) / 2.0;
+    int cb = 0;
+    for (int t = 1; t < C; t++) {
+      double target = T * t / C;
+      while (cb < nPts &&
+             (double)cb * (nPts - 1) - (double)cb * (cb - 1) / 2.0 < target) {
+        cb++;
+      }
+      lo[t] = cb;
+    }
+    lo[C] = nPts;
 #pragma omp parallel for num_threads(n_threads) schedule(static, 1)
     for (int t = 0; t < C; t++) {
-      int lo = (int)((R_xlen_t)nPts * t / C);
-      int hi = (int)((R_xlen_t)nPts * (t + 1) / C);
-      double b = R_NegInf;
-      int br = 0, bc = 0;
-      for (int c = lo; c < hi; c++) {
-        for (int r = 0; r < nPts; r++) {
-          if (r == c) continue;
-          double dist = EuclidCol(P, nPts, dim, r, c);
-          if (dist > b) { b = dist; br = r + 1; bc = c + 1; }
-        }
-      }
-      tb[t] = b; tr[t] = br; tc[t] = bc;
+      DiameterChunk(P, nPts, dim, lo[t], lo[t + 1], &tb[t], &tr[t], &tc[t]);
     }
     for (int t = 0; t < C; t++) {
       if (tb[t] > best) { best = tb[t]; best_r = tr[t]; best_c = tc[t]; }
@@ -424,17 +605,7 @@ Rcpp::NumericVector DiameterFromPoints_cpp(Rcpp::NumericMatrix points,
   } else
 #endif
   {
-    for (int c = 0; c < nPts; c++) {
-      for (int r = 0; r < nPts; r++) {
-        if (r == c) continue;
-        double dist = EuclidCol(P, nPts, dim, r, c);
-        if (dist > best) {
-          best = dist;
-          best_r = r + 1;
-          best_c = c + 1;
-        }
-      }
-    }
+    DiameterChunk(P, nPts, dim, 0, nPts, &best, &best_r, &best_c);
   }
   Rcpp::NumericVector out(3);
   out[0] = (best_r == 0) ? 0.0 : best;

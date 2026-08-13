@@ -80,9 +80,12 @@ and every parallel reduction preserves the serial first-maximum tie rule,
 so \strong{the selection returned is identical at every thread count}:
 \code{mc.cores} trades wall-clock time only. The greedy pass engages its
 threads only past ~32,000 points (below that a step is too brief for the
-synchronisation to pay); the seeding anchors parallelise at any
-non-trivial size, and the distance-column oracle path stays serial (it
-calls back into user R code).
+synchronisation to pay) — a size only the coordinate path reaches in
+practice, since a 32,000-point distance matrix already occupies 8 GB and
+the matrix pass measures faster serially at every smaller size; the
+seeding anchors parallelise at any non-trivial size, and the
+distance-column oracle path stays serial (it calls back into user R
+code).
 }
 
 \examples{

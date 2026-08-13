@@ -40,6 +40,9 @@ tab <- rbind(
     FarFirst(1000L, points = big10, strategy = 5L), 2L),
   cell("ens-anchors N=6e3 dim=10 k=300", function()
     FarFirst(300L, points = pts10,
+             strategy = c("diameter", "anti_medoid", "rownorm")), 1L),
+  cell("ens-anchors-matrix N=6e3 k=300", function()
+    FarFirst(300L, d10,
              strategy = c("diameter", "anti_medoid", "rownorm")), 1L)
 )
 saveRDS(tab, out)

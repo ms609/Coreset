@@ -17,8 +17,10 @@
   }
   # NA/NaN/Inf propagate silently through pmin.int()/which.max() and can yield a
   # repeated index in the selection; reject them up front (the coordinate path
-  # already errors via .AsPointsMatrix()'s anyNA check).
-  if (anyNA(d) || any(!is.finite(d))) {
+  # already errors via .AsPointsMatrix()'s anyNA check). The single-pass C++
+  # scan replaces `anyNA(d) || any(!is.finite(d))`, whose two full-size logical
+  # intermediates dwarfed the greedy kernel itself on large matrices.
+  if (!AllFinite_cpp(d, .NThreads())) {
     stop("distance matrix must not contain NA/NaN/Inf")
   }
   d
@@ -191,9 +193,12 @@
 #' so **the selection returned is identical at every thread count**:
 #' `mc.cores` trades wall-clock time only. The greedy pass engages its
 #' threads only past ~32,000 points (below that a step is too brief for the
-#' synchronisation to pay); the seeding anchors parallelise at any
-#' non-trivial size, and the distance-column oracle path stays serial (it
-#' calls back into user R code).
+#' synchronisation to pay) — a size only the coordinate path reaches in
+#' practice, since a 32,000-point distance matrix already occupies 8 GB and
+#' the matrix pass measures faster serially at every smaller size; the
+#' seeding anchors parallelise at any non-trivial size, and the
+#' distance-column oracle path stays serial (it calls back into user R
+#' code).
 #'
 #' @references \insertAllCited{}
 #' @seealso [PickPoint()] for the seed indices alone; [DropAdd()] and

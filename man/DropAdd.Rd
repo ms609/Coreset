@@ -105,16 +105,12 @@ DropAdd(5L, dist(pts))
 # DropAdd on the coreset. Returned indices are original-space row indices.
 suppressWarnings(DropAdd(5L, points = pts, maxCandidates = 40L))
 
-# Disable thinning (run on the full problem):
+# Disable thinning on the full problem
 DropAdd(5L, points = pts, maxCandidates = 0L)
 
-# Distance-column oracle: `d` is a function of one index. Build it in a
-# factory so everything the metric reuses is derived ONCE, in the enclosing
-# environment, and each call only looks it up -- a closure that re-derives its
-# representation per call pays that cost thousands of times over. `cache`
-# memoizes the columns, capping the oracle at one evaluation per element.
+# Distance function; `cache` memoizes the columns to reduce computation.
 data("USArrests")
-ArrestOracle <- function(dat) {
+ArrestDist <- function(dat) {
   scaled <- scale(as.matrix(dat))                 # derived once
   cache <- new.env(parent = emptyenv())
   function(i) {
@@ -126,7 +122,7 @@ ArrestOracle <- function(dat) {
   }
 }
 arrests <- USArrests[, c("Murder", "Assault", "Rape")]
-idx <- DropAdd(4L, ArrestOracle(arrests), N = nrow(arrests), plateau = 200L)
+idx <- DropAdd(4L, ArrestDist(arrests), N = nrow(arrests), plateau = 200L)
 USArrests[idx, ]
 }
 \references{

@@ -226,3 +226,58 @@ test_that(".GonzEnsembleFromPoints medoid/anti_centroid/rownorm branches covered
   expect_true(all(attr(res, "winning_strategy") %in%
                   c("medoid", "anti_centroid", "rownorm")))
 })
+
+# ---- round-9 C++ anchor scans (matrix off-diagonal max, fused row sums) ----
+
+test_that("matrix anchor scans match their R idioms exactly", {
+  # MatrixOffDiagMax_cpp / RowSqSumsFromMatrix_cpp must reproduce the exact
+  # reference values -- including on ASYMMETRIC matrices (accepted by
+  # .AsDistMatrix) and under ties (column-major first-max rule) -- at 1 and
+  # 2 threads (CRAN core cap).
+  for (ds in 1:4) {
+    set.seed(ds)
+    n <- c(3L, 50L, 65L, 120L)[[ds]]
+    d <- if (ds %% 2L) {
+      matrix(runif(n * n), n, n)                              # asymmetric
+    } else {
+      matrix(as.double(sample.int(4L, n * n, TRUE)), n, n)    # tie-dense
+    }
+    dOff <- d
+    diag(dOff) <- -Inf
+    for (nc in 1:2) {
+      dm <- MaxMin:::MatrixOffDiagMax_cpp(d, nc)
+      expect_identical(dm[[1L]], max(dOff))
+      expect_identical(as.integer(dm[[2L]]),
+                       as.integer(arrayInd(which.max(dOff), dim(dOff))[1L, 1L]))
+      expect_identical(MaxMin:::RowSqSumsFromMatrix_cpp(d, nc),
+                       unname(rowSums(d ^ 2)))
+    }
+  }
+  # No off-diagonal cell: row 0 sends the caller to its degenerate branch.
+  expect_identical(MaxMin:::MatrixOffDiagMax_cpp(matrix(0, 1L, 1L), 1L)[[2L]],
+                   0)
+})
+
+test_that("fused row-aggregate sweep equals the dedicated kernels", {
+  # RowSumsSqFromPoints_cpp fills both aggregate families in one pair sweep;
+  # each must be bit-identical to its dedicated kernel, serial and parallel.
+  for (n in c(50L, 65L, 300L)) {
+    set.seed(n)
+    pts <- matrix(rnorm(n * 3L), ncol = 3L)
+    for (nc in 1:2) {
+      both <- MaxMin:::RowSumsSqFromPoints_cpp(pts, nc)
+      expect_identical(both[[1L]], MaxMin:::RowSumsFromPoints_cpp(pts, nc))
+      expect_identical(both[[2L]], MaxMin:::RowSqSumsFromPoints_cpp(pts, nc))
+    }
+  }
+  # An ensemble spanning both families rides the fused sweep; it must agree
+  # with the matrix path, which computes its anchors independently.
+  set.seed(99)
+  pts <- matrix(rnorm(200L * 4L), ncol = 4L)
+  anchors <- c("medoid", "rownorm", "anti_medoid")
+  ensP <- FarFirst(20L, points = pts, strategy = anchors)
+  ensM <- FarFirst(20L, as.matrix(dist(pts)), strategy = anchors)
+  expect_identical(as.integer(ensP), as.integer(ensM))
+  expect_identical(attr(ensP, "winning_strategy"),
+                   attr(ensM, "winning_strategy"))
+})

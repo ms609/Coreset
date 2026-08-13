@@ -152,6 +152,30 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// MatrixOffDiagMax_cpp
+Rcpp::NumericVector MatrixOffDiagMax_cpp(Rcpp::NumericMatrix d, int n_threads);
+RcppExport SEXP _MaxMin_MatrixOffDiagMax_cpp(SEXP dSEXP, SEXP n_threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type d(dSEXP);
+    Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(MatrixOffDiagMax_cpp(d, n_threads));
+    return rcpp_result_gen;
+END_RCPP
+}
+// RowSqSumsFromMatrix_cpp
+Rcpp::NumericVector RowSqSumsFromMatrix_cpp(Rcpp::NumericMatrix d, int n_threads);
+RcppExport SEXP _MaxMin_RowSqSumsFromMatrix_cpp(SEXP dSEXP, SEXP n_threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type d(dSEXP);
+    Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(RowSqSumsFromMatrix_cpp(d, n_threads));
+    return rcpp_result_gen;
+END_RCPP
+}
 // MaximinFromPoints_cpp
 Rcpp::IntegerVector MaximinFromPoints_cpp(Rcpp::NumericMatrix points, int n, int first, int mask, int n_threads);
 RcppExport SEXP _MaxMin_MaximinFromPoints_cpp(SEXP pointsSEXP, SEXP nSEXP, SEXP firstSEXP, SEXP maskSEXP, SEXP n_threadsSEXP) {
@@ -191,6 +215,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// RowSumsSqFromPoints_cpp
+Rcpp::List RowSumsSqFromPoints_cpp(Rcpp::NumericMatrix points, int n_threads);
+RcppExport SEXP _MaxMin_RowSumsSqFromPoints_cpp(SEXP pointsSEXP, SEXP n_threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type points(pointsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(RowSumsSqFromPoints_cpp(points, n_threads));
+    return rcpp_result_gen;
+END_RCPP
+}
 // EuclidColFromPoints_cpp
 Rcpp::NumericVector EuclidColFromPoints_cpp(Rcpp::NumericMatrix points, int col);
 RcppExport SEXP _MaxMin_EuclidColFromPoints_cpp(SEXP pointsSEXP, SEXP colSEXP) {
@@ -215,6 +251,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// AllFinite_cpp
+bool AllFinite_cpp(SEXP x, int n_threads);
+RcppExport SEXP _MaxMin_AllFinite_cpp(SEXP xSEXP, SEXP n_threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(AllFinite_cpp(x, n_threads));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_MaxMin_DropAdd_cpp", (DL_FUNC) &_MaxMin_DropAdd_cpp, 7},
@@ -227,11 +275,15 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MaxMin_MaxEntropyExact_cpp", (DL_FUNC) &_MaxMin_MaxEntropyExact_cpp, 2},
     {"_MaxMin_MaxEntropyLogDet_cpp", (DL_FUNC) &_MaxMin_MaxEntropyLogDet_cpp, 2},
     {"_MaxMin_MaximinFrom_cpp", (DL_FUNC) &_MaxMin_MaximinFrom_cpp, 4},
+    {"_MaxMin_MatrixOffDiagMax_cpp", (DL_FUNC) &_MaxMin_MatrixOffDiagMax_cpp, 2},
+    {"_MaxMin_RowSqSumsFromMatrix_cpp", (DL_FUNC) &_MaxMin_RowSqSumsFromMatrix_cpp, 2},
     {"_MaxMin_MaximinFromPoints_cpp", (DL_FUNC) &_MaxMin_MaximinFromPoints_cpp, 5},
     {"_MaxMin_RowSumsFromPoints_cpp", (DL_FUNC) &_MaxMin_RowSumsFromPoints_cpp, 2},
     {"_MaxMin_RowSqSumsFromPoints_cpp", (DL_FUNC) &_MaxMin_RowSqSumsFromPoints_cpp, 2},
+    {"_MaxMin_RowSumsSqFromPoints_cpp", (DL_FUNC) &_MaxMin_RowSumsSqFromPoints_cpp, 2},
     {"_MaxMin_EuclidColFromPoints_cpp", (DL_FUNC) &_MaxMin_EuclidColFromPoints_cpp, 2},
     {"_MaxMin_DiameterFromPoints_cpp", (DL_FUNC) &_MaxMin_DiameterFromPoints_cpp, 2},
+    {"_MaxMin_AllFinite_cpp", (DL_FUNC) &_MaxMin_AllFinite_cpp, 2},
     {NULL, NULL, 0}
 };
 
