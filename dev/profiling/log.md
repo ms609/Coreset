@@ -608,3 +608,103 @@ rescans 297,878, witness evictions 120,756, dropped-vertex fresh scans
 (both arms), `edi` fresh/evict/adopt 4,298/4,336/16,312, NearTwo witness
 evictions 4,098 and O(1) inserts 4,276. No targeted test additions owed;
 CI codecov is expected green on the existing suite.
+
+---
+
+## Round — 2026-08-13 — Area 3: Grasp round 5 (to the ceiling, then across the cores)
+
+**Question (user):** the project compares heuristics on a time/quality
+frontier, so every implementation must be absolutely optimised — keep going
+until the ceiling, parallelism authorised with core count controlled per the
+`../TreeDist` convention. Design in ROUND5_PLAN.md; order was load-bearing
+(the RNG change invalidates the battery baseline, so exact levers landed
+first).
+
+**T-018 — member summaries across passes (cde916a).** Round 4's declared
+next floor — the per-pass m²/2 pair sweep — dies: each selected member
+carries (mmin1, mmin2, witnesses for both slots, and mcnt = #partners AT
+mmin1). dstar, its witness edge, the extended-improvement pair count
+(halved mcnt sum over members at dstar — even and exact) and the post-drop
+witness rescores (near_excl per member, O(m) per endpoint) all read off it;
+a swap adjusts O(m) entries plus rare witness-eviction rescans, with a tied
+departure decrementing mcnt BEFORE the entrant's insertion. All working
+arrays moved into an LSScratch allocated once per Grasp_cpp call. Battery
+1458/1458 bit-identical; interleaved min-of-3: plateau 8/64/256 =
+0.12→0.09 / 0.50→0.37 / 2.25→1.68 s (~1.35× uniformly, every run beating
+every round-4-tip run).
+
+**Tie coverage hole closed (de87ef9).** Continuous random data cannot
+produce two equal distances from different cells, so the tie arms
+(duplicate minima, mcnt > 1, the tie-decrement, multi-pair dstar) were
+unreachable by every existing test AND the battery. A lattice-points parity
+test supplies exact ties in bulk; branch counters confirm the suite now
+fires every T-018 branch (tie-decrement 9, duplicate-min insertions 681,
+multi-pair dstar 204). Suite 4897/0/6.
+
+**T-019 — construction scan fold (603c779).** The gmax/gmin/argmax scan
+merges into the previous step's g-update pass (g[pick] = -Inf set first;
+same values, same ascending order, same first-index ties); one standalone
+scan seeds the loop; the dead final update is skipped; the RCL buffer is
+reused. Bit-identical 1458/1458; ~1.09× overall (0.37→0.34, 1.69→1.55 s),
+every T-019 run beating every T-018 run.
+
+**T-020 — measured, dropped.** Post-T-018 the LS init (candidate summary +
+member seed) is 9–11% of total wall (tLSinit 0.091 of 0.996 s at plateau
+256). A construction-g handoff would save ≤ ~8% for real coupling; below
+the bar. Serial split after T-019: LS passes ~64%, construction 22%,
+PR 4%, LS init ~9% — AT-LIMIT-shaped (the screen's O(n) is mandated by the
+tie-break's enumeration requirement, construction by its own sequential
+update pass).
+
+**T-021 — nCores-invariant parallel GRASP (6295fb8).** The round's one
+deliberate trajectory change, landed last. Constructions consume uniforms
+pre-drawn on the main thread (floor-index, bias O(size/2^53), fixed m draws
+per construction; GRASP_BATCH = 32 is algorithm-defining since R-stream
+consumption depends on it); workers (OpenMP, schedule(dynamic), per-thread
+LSScratch pool) run construct + LS + objective with no R API; batches merge
+in iteration order with all stopping rules at merge time; phase C
+parallelises its pairs with a pair-order reduce. `mc.cores` (TreeDist
+convention, default 1) → n_threads. **Contract verified: one seed,
+nCores ∈ {1,2,8}, three shapes — bit-identical** (grasp-invariance.R).
+R↔C++ parity holds over the whole grasp suite (4271/0 incl. the lattice)
+because .Grasp_R mirrors the batch protocol draw for draw. Quality:
+equal-plateau deltas −0.24%…+0.54% (mean +0.2%); equal-budget k = 100 up to
++1.6% mean T_k with PR reached inside budgets the old build exhausted; two
+losing seeds only at the tightest k = 10 quarter-second budget (−0.33%
+mean). Scaling (16-core box, grasp-scaling.R): plateau 256 =
+0.83/0.43/0.23/0.14 s at 1/2/4/8 threads (**5.9× at 8**), objective
+constant across the row; per-iteration serial cost unchanged (~2.1 ms at
+plateau 256). New battery baseline captured (c5c-battery.rds pattern) —
+pre-T-021 captures are obsolete as anchors. The phase-C scan test was
+retuned (k=6, es=8, alpha=0.3, n=40): the old shape's scan contained no
+PR-improving case under the new stream in 400 seeds (replay verified exact
+— 0 ceiling violations — before retuning).
+
+**Environment trap (memory: makevars-pkgcxxflags-clobber):** the user-level
+`~/.R/Makevars.win` assigns bare `PKG_CXXFLAGS =`, which empties every
+package's own src/Makevars compile flags — OpenMP linked but never
+compiled, silently serial. Agent builds redirect R_MAKEVARS_USER to a
+scratch copy (ccache/-j8/-O2 kept, clobber dropped); the package ships
+canonical $(SHLIB_OPENMP_CXXFLAGS) in PKG_CXXFLAGS and PKG_LIBS. Reported
+to the user — their own local OpenMP builds (TreeDist included) are
+affected.
+
+**Round-5 result.** Serial: 2.25 → 1.55 s at the canonical plateau-256 cell
+(1.45×, bit-identical to round 4's trajectory), on top of round 4's 4.4×.
+Parallel: ×5.9 at 8 threads with seed-determinism independent of core
+count — the strongest reproducibility property the manuscript comparison
+can hold. Manuscript figure caches: invalidated ONCE by T-021 (the round-4
+"no re-pin needed" no longer stands); future re-runs are core-count-proof.
+
+**Ceiling statement.** Serial residue is at its structural floor: the
+extended-improvement rule requires enumerating every candidate (O(n) screen
+per critical drop), construction is bound by its own O(n)-per-step
+sequential update, the tie-arm memo is the last m²/2 term and fires ~2×
+per pass. The remaining axis is core count; real scaling curves and
+canonical wall-clock belong on Hamilton, with the Linux/gcc cross-check
+owed before any mission-wide claim (/profile skill).
+
+**Timing policy:** Windows-local relative figures throughout (interleaved
+min-of-N per the round-4 method note). **Cleanup:** no VTune dirs; scratch
+libs and instrumented builds in the session scratchpad; instrumentation
+reverted after each capture. last_focus unchanged (targeted continuation).

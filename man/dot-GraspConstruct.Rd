@@ -4,7 +4,7 @@
 \alias{.GraspConstruct}
 \title{One randomised greedy construction.}
 \usage{
-.GraspConstruct(d, k, alpha)
+.GraspConstruct(d, k, alpha, us)
 }
 \arguments{
 \item{d}{Square distance matrix.}
@@ -12,6 +12,14 @@
 \item{k}{Target subset size.}
 
 \item{alpha}{RCL threshold parameter (alpha=1 -> greedy, alpha=0 -> random).}
+
+\item{us}{Numeric vector of \code{k} pre-drawn uniforms. \code{us[[1]]} picks the
+first vertex and \code{us[[h]]} step \code{h}'s RCL member, as
+\code{floor(u * size)} clamped to \code{size - 1} — exactly the kernel's mapping,
+so R and C++ stay bit-identical. Steps whose RCL is a singleton (or
+empty; see below) leave their uniform unused: consumption is fixed at
+\code{k} draws either way, which is what lets whole batches be drawn up
+front and constructions run on threads that must not touch R's RNG.}
 }
 \value{
 \code{.GraspConstruct()} returns an integer vector of length k.

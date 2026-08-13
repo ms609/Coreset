@@ -56,6 +56,24 @@ interleaved minima, never one run; see log.md round 4).
  1458/1458 bit-identical, equal-plateau objectives identical at n = 2000.
  Quality-vs-time harness: `drivers/grasp-frontier.R`.)
 
+### AFTER round 5 (T-018/T-019/T-021, 2026-08-13) — single-threaded
+
+**Trajectory changed once at T-021** (batched floor-index draws): `iters`
+per plateau differ from all earlier rows, so cross-version wall-clock is not
+per-iteration comparable — per-iteration cost is unchanged (~2.1 ms at
+plateau 256). Regress against THESE rows, single-threaded, interleaved
+minima. Determinism is nCores-invariant (`drivers/grasp-invariance.R`);
+scaling curve in `drivers/grasp-scaling.R` (plateau 256:
+0.83/0.43/0.23/0.14 s at 1/2/4/8 threads, 16-core box).
+
+| case | metric | ms |
+|------|--------|---:|
+| n=2000 dim=10 k=100 plateau=8 (iters 8) | min | 120 |
+| n=2000 dim=10 k=100 plateau=64 (iters 64) | min | 220 |
+| n=2000 dim=10 k=100 plateau=256 (iters 372) | min | 820 |
+| n=2000 dim=10 k=10 plateau=64 (iters 64) | min | 20 |
+| n=500 dim=10 k=50 plateau=64 (iters 163) | min | 50 |
+
 ## Area 1 — FarFirst single pass — AFTER T-004 (column reorder, AT-LIMIT)
 
 | case | metric | ms |

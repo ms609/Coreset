@@ -1,3 +1,36 @@
+# MaxMin 0.0.0.9008 (development)
+
+## Performance
+
+- `Grasp()` runs its search phases on multiple threads when the package is
+  built with OpenMP (the default on Linux and Windows). The thread count
+  follows the standard `"mc.cores"` option (default 1, single-threaded).
+  Random draws happen only on the main thread, in fixed-size batches, and
+  batch results merge in a fixed order, so **a given seed returns the
+  identical selection at every core count**: `mc.cores` trades wall-clock
+  time only, and published results remain reproducible whatever parallelism
+  produced them. Locally measured ~5.9× at 8 threads on the canonical
+  n = 2000, k = 100 shape, with single-threaded cost unchanged.
+
+- A further ~1.45× single-threaded on the canonical shapes. The local
+  search's remaining per-pass pair sweep is replaced by per-member nearest
+  summaries maintained across passes with the same witness technique as
+  0.0.0.9007 — one structure now supplies the objective floor, its witness
+  edge, the extended-improvement pair count and the post-drop rescores —
+  and construction folds its candidate scan into the update pass, skipping
+  the final update whose results nothing read.
+
+## Breaking changes
+
+- `Grasp()` selections change once relative to 0.0.0.9007: constructions
+  draw their random indices from pre-drawn uniform batches through a
+  floor-index mapping (bias below 1 part in 2⁵⁰) — the price of the
+  core-count-invariant determinism above. Quality at equal search effort and
+  at equal time budget is unchanged within noise, measured across seeds,
+  shapes and budgets. Seed-reproducibility within 0.0.0.9008 is exact, at
+  any core count, and the pure-R reference implementation mirrors the new
+  draw protocol bit for bit.
+
 # MaxMin 0.0.0.9007 (development)
 
 ## Performance

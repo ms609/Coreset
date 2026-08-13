@@ -77,6 +77,24 @@ elapsed.
 This method will fail if the complete \eqn{N \times N} distance matrix is
 too large to fit into memory.
 }
+\section{Parallelism}{
+
+When the package is built with OpenMP support (the default on Linux and
+Windows), the GRASP construction/local-search iterations and the
+path-relinking pairs run on multiple threads. The number of threads is
+controlled by the standard \code{"mc.cores"} option:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{options(mc.cores = parallel::detectCores())  # use all available cores
+options(mc.cores = 4L)                        # or a fixed number
+}\if{html}{\out{</div>}}
+
+The default is \code{1} (single-threaded). Random draws happen only on the
+main thread, in fixed-size batches, and batch results are merged in a
+fixed order, so \strong{the selection returned for a given seed is identical at
+every thread count}: \code{mc.cores} trades wall-clock time only, and
+published results remain reproducible whatever parallelism produced them.
+}
+
 \section{Progress bar}{
 
 In interactive sessions, a bar tracks how close the search is to its \code{plateau} stopping criterion, snapping back each time a better solution is found.
