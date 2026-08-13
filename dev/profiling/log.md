@@ -798,3 +798,61 @@ symboled VTune build still needs one (adds -g -fno-omit-frame-pointer via
 PKG_CXXFLAGS without losing $(SHLIB_OPENMP_CXXFLAGS)).
 last_focus unchanged (targeted continuation of area 3).
 
+
+
+## Round 8 — 2026-08-13 — Area 3 (Grasp): memory-layout stab, REFUTED — floor certified on the second axis
+
+**Trigger:** user-requested "one last stab" after PR #2 merged. The branch
+was first rebased onto post-#2 main (clean, no conflicts; interleaved
+re-measurement matched the round-6 baseline rows: 100/150/590 ms on the
+plateau 8/64/256 ladder — no regression from the rebase).
+
+**Candidate lever — symmetric-transpose reads (bit-identity preserved).**
+Round 6 certified the algorithmic passes but never the *orientation* of the
+matrix reads. Fresh line-level VTune on the rebased tip put three stride-n
+gather loops at ~29% of the 4.3 s kernel: the `arg1[s] == drop` cross
+rescan (grasp.cpp:446, 0.76 s ≈ 17% alone), the post-swap candidate rescan
+(:530, 0.40 s) and the floor-achievers count (:465, 0.11 s). `d` is
+symmetric by documented contract, so each `d(s, v)` can be read as
+`d(v, s)` — one contiguous walk down a single column instead of a gather
+across the m selected columns, the same doubles bit for bit. Implemented at
+all three sites (plus the s-half tie count sharing :446's shape);
+verified bit-identical before timing: battery 1458/1458 vs the rebased-tip
+build, R↔C++ parity 324/324, iters/objective identical on every ladder
+shape.
+
+**Measured — SLOWER at every shape; reverted.** Interleaved min-of-9
+ladder + 3×40-rep k=10 cell, single-threaded:
+| shape | base | transposed | ratio |
+|---|---|---|---|
+| n=2000 k=100 plateau=8   | 0.10 s | 0.14 s | 0.71× |
+| n=2000 k=100 plateau=64  | 0.15 s | 0.20 s | 0.75× |
+| n=2000 k=100 plateau=256 | 0.59 s | 0.86 s | 0.69× |
+| n=2000 k=10 plateau=64 (40 calls, seeds 1:40) | 1.58 s | 3.33 s | 0.47× (worst rep 0.33×) |
+| n=500 k=50 plateau=64    | 0.04 s | 0.04 s | ~1× |
+
+**Why the profile misled:** the "gathers" all land inside the m *selected*
+columns — an ~m·8n-byte working set (1.6 MB at the canonical shape) that
+every rescan and every swap re-touches, so it stays cache-resident and the
+VTune time on those lines is hot-set latency, not DRAM stalls. The
+transposed orientation reads each rescanned candidate's *own* column —
+~n/m fresh 16 KB columns per critical drop and per swap with no reuse
+across candidates or swaps (~3 MB/swap of cold traffic at k=10, where the
+regression peaks at 2–3×). The shipped orientation is the cache-optimal
+one of the two; no hybrid is worth carrying (the transposed arm wins
+nowhere measured).
+
+**Verdict: AT-LIMIT on the memory axis too.** Round 6 certified every hot
+loop as a semantics-mandated single pass (instruction axis); round 8
+certifies the access orientation of those passes (memory axis) by refuting
+the only alternative layout. Serial Grasp is at its floor with measured
+evidence on both axes; remaining axes stay cores + Hamilton. No code
+shipped (edit reverted), so no NEWS entry or version bump; no issues filed
+(in-round refutation, skill rule). Post-rebase full suite green before
+push. Drivers: committed grasp-timing.R/grasp-battery.R plus a scratch
+40-rep k=10 loop (seeds 1:40 — note this draws a different workload mix
+than round 6's fixed-seed 40-call row, so the two k=10 totals are not
+comparable; ladder rows are). Cleanup done: result_grasp8/, symboled and
+scratch libs deleted post-round.
+last_focus unchanged (targeted continuation of area 3).
+

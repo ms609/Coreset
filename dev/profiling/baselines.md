@@ -89,6 +89,12 @@ this box's timer granularity).
 | n=2000 dim=10 k=10 plateau=64, 40 calls | min | 1020 |
 | n=500 dim=10 k=50 plateau=64 (iters 163) | min | 40 |
 
+Re-verified 2026-08-13 after the rebase onto post-#2 main (round 8, no code
+change shipped): interleaved minima 100/150/590/—/40 ms — within noise of
+the rows above. The 40-call k=10 row is seed-protocol-sensitive (fixed-seed
+calls; a seeds-1:40 mix measures ~1.6 s on the same build) — regress it
+only with the original fixed-seed protocol.
+
 ## Area 1 — FarFirst single pass — AFTER T-004 (column reorder, AT-LIMIT)
 
 | case | metric | ms |
