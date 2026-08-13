@@ -53,12 +53,11 @@ using namespace Rcpp;
 
 // Threads engage on the per-pass regions only past this many points: below
 // it a pass is a few tens of microseconds and the per-pass barrier costs
-// more than it buys (measured at n = 20,000, where the parallel path wins
-// at every dim tested; the matrix kernel stays serial outright — its
-// column reads stream a multi-GB matrix at DRAM bandwidth, which threads
-// measured unable to improve at any RAM-feasible n). Results are identical
-// at every thread count (see the chunk notes in the kernel), so this is a
-// pure tuning constant.
+// more than it buys. Results are identical at every thread count (see the
+// chunk notes in the kernel), so this is a pure tuning constant. The
+// matrix kernel has no parallel path at all: its per-iteration cost is
+// streaming matrix columns from main memory, which one core saturates
+// (evidence in dev/profiling/log.md).
 static const int DA_PAR_MIN = 16384;
 
 // Squared-Euclidean accumulated in double over columns, matching dist's order;
@@ -84,8 +83,8 @@ static inline double EuclidCol(const double* P, int nPts, int dim,
 // the final squared value, and the sqrt applied to it below, match
 // EuclidCol's exactly. The payoff is the access shape: contiguous streams
 // down up to four coordinate columns at once, instead of EuclidCol's
-// per-point gather across all `dim` columns (the same restructure as
-// maximin_points.cpp's SweepBlock, round 9).
+// per-point gather across all `dim` columns (cf. SweepBlock in
+// maximin_points.cpp).
 template <int NB, bool FIRST>
 static inline void FillSqBlock(const double* P, int nPts, int c, int j0,
                                double* col, int lo, int hi) {

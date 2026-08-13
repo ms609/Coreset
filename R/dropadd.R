@@ -428,10 +428,9 @@
 #' random numbers and every parallel reduction preserves the serial
 #' tie-breaking rules, so **the selection returned is identical at every
 #' thread count**: `mc.cores` trades wall-clock time only. The matrix and
-#' distance-column paths stay single-threaded — the matrix kernel's
+#' distance-column paths are single-threaded — the matrix kernel's
 #' per-iteration cost is dominated by streaming matrix columns from main
-#' memory, which additional threads measured unable to accelerate at any
-#' RAM-feasible size.
+#' memory, which additional threads do not accelerate.
 #'
 #' @section Distance-column oracle:
 #' When `d` is a **function**, `d(i)` must return the distances from element `i`

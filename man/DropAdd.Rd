@@ -92,10 +92,9 @@ on multiple threads past ~16,000 points, controlled by the standard
 random numbers and every parallel reduction preserves the serial
 tie-breaking rules, so \strong{the selection returned is identical at every
 thread count}: \code{mc.cores} trades wall-clock time only. The matrix and
-distance-column paths stay single-threaded — the matrix kernel's
+distance-column paths are single-threaded — the matrix kernel's
 per-iteration cost is dominated by streaming matrix columns from main
-memory, which additional threads measured unable to accelerate at any
-RAM-feasible size.
+memory, which additional threads do not accelerate.
 }
 
 \section{Distance-column oracle}{
