@@ -1028,3 +1028,18 @@ ens-anchors-matrix cell. man/DropAdd.Rd re-synced with its roxygen source
 in passing (the Concision commits shortened the source but left the Rd
 stale). Cleanup: result_ff9 dirs and scratch libs deleted post-round.
 last_focus unchanged (user-targeted round on area 1).
+
+**Post-push addendum (same day) — block width swept, floor closed.** The
+sweep width 4 was initially an un-swept tuning constant; a scratch-only
+B = 6 variant ({6,4} split at dim = 10 — identical left-associated chain,
+verified same score and indices) measured 390–400 ms vs 400 ms on the
+N=1e5 dim=10 cell: within noise, refuted. Width 4 ships. Remaining
+unpursued micro-levers, recorded so a future round need not re-derive
+them (estimated ceilings all ≤ ~1.2× cell-level, below this box's
+±20–35% noise floor for reliable single-cell verification): buffered
+column-streamed fills for the serial pair sweeps (arithmetic would SIMD
+but the scalar errno-guarded sqrt chain remains), banded pair
+accumulators for the halved row aggregates (x87 RMW per acc[j] survives
+banding — see lever H's null result), and a fused matrix
+RowSums+RowSqSums pass (saves one 288 MB stream, ~20 ms of a 200 ms
+cell).
