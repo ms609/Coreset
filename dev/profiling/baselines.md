@@ -28,6 +28,29 @@ Median wall time, `bench::mark`, R-devel, `-O2`. Refresh each round.
 
 (Pre-fix construction: 116 ms / 293 ms → 11.3× / 13.1×.)
 
+### AFTER round 10 (blocked fills + fused-pass mc.cores, 2026-08-13)
+
+All trajectories bit-identical (295-case battery incl. drop/add sequences;
+nCores-invariant). Kernel-direct cells, `drivers/dropadd-timing.R`,
+interleaved minima; regress against THESE rows. Threads engage on the
+points kernel only at n ≥ 16384 (the matrix kernel is serial by
+measurement — see log.md round 10).
+
+| case | 1 thread ms | 8 threads ms |
+|------|---:|---:|
+| matrix n=4e3 m=10 construct (maxIter=0) | 8 | — |
+| matrix n=4e3 m=2000 construct (maxIter=0) | 45 | — |
+| matrix n=4e3 m=10 search1500 | 50 | — |
+| matrix n=4e3 m=2000 search1500 | 130 | — |
+| points n=2e4 d2 m=10 search1000 | 217 | ~180 |
+| points n=2e4 d10 m=10 search600 | 277 | ~210 |
+| points n=2e4 d10 m=1e4 construct | 1460 | 610 |
+| points n=2e4 d10 m=1e4 search600 total | 1670 | — |
+
+(Pre-round-10 points cells: 233 / 327 / 1860 / 2110 ms. The 8-thread
+figures are from the same-code experiment build and the public-API run;
+mc.cores end-to-end at n=2e4 m=2000 plateau-capped: 320 → 180 ms, 1.75×.)
+
 ## Area 3 — Grasp — AFTER T-007 (base_z min-edge witness hoist)
 
 | case | metric | ms |

@@ -1,3 +1,31 @@
+# MaxMin 0.0.0.9012 (development)
+
+## Performance
+
+- `DropAdd()` trajectories are unchanged — a 295-case battery records every
+  drop/add sequence, objective, secondary score and iteration count
+  bit-identical on both kernels and the pure-R oracle twin, over Euclidean,
+  tie-dense and asymmetric inputs — but the coordinate (`points =`) kernel
+  is faster and, for large inputs, parallel:
+
+  - The whole-column distance fills replace their per-point gathers with
+    contiguous dimension-blocked squared sweeps, and each element's true
+    distance is computed by `sqrt()` only as the record loops consume it
+    (of the identical squared double, so every distance is the same value
+    bit-for-bit). ~1.1-1.3x single-threaded, growing with `dim`.
+
+  - When built with OpenMP, the coordinate path runs its per-iteration
+    passes on multiple threads past ~16,000 points, under the standard
+    `"mc.cores"` option (default 1). The add-candidate argmax rides the
+    fused passes as a lexicographic reduction, so **the selection is
+    identical at every thread count**. At 8 threads: construction ~2.3x,
+    search ~1.3-1.75x.
+
+  - The matrix kernel stays single-threaded by measurement, not neglect:
+    its per-iteration cost is dominated by streaming matrix columns from
+    main memory, which additional threads could not accelerate at any
+    RAM-feasible size.
+
 # MaxMin 0.0.0.9011 (development)
 
 ## Performance

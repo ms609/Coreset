@@ -1043,3 +1043,115 @@ accumulators for the halved row aggregates (x87 RMW per acc[j] survives
 banding — see lever H's null result), and a fused matrix
 RowSums+RowSqSums pass (saves one 288 MB stream, ~20 ms of a 200 ms
 cell).
+
+## Round 10 — 2026-08-13 — Area 2 (DropAdd): blocked fills, fused-pass mc.cores; matrix kernel certified serial
+
+**Trigger:** user mandate (continue "…then of DropAdd… until both are
+unimprovable"), and PR #2's merge (oracle path) plus 2026-07/08 kernel
+changes made the area stale (last profiled 2026-06-10). Branch
+perf/dropadd, stacked on perf/farfirst for `.NThreads()` + the OpenMP
+Makevars. New trajectory-identity battery (dropadd-battery.R, 295 cases):
+kernels called directly with `want_trace = TRUE`, so every case pins the
+full drop/add sequence, objective, secondary and iters — over Euclidean,
+TIE-DENSE integer-valued, and asymmetric matrices, both m regimes, default
+and explicit seeds, dims 1/2/7/10 — plus two within-build invariants
+(matrix ≡ points trajectory at a shared explicit seed; the pure-R oracle
+twin ≡ the matrix kernel), kept green throughout.
+
+**VTune (symboled, kernel-direct):** points kernel EuclidCol self-time
+~1.6 s of 2.2 s (per-point strided gathers + sqrt at all four column-fill
+sites); matrix kernel's top cost the need_recompute branch (~37% at
+m = n/2, scattered K×m reads), then the ADD argmax ~10%; the T-005a seed
+row-sums stream at DRAM bandwidth (certified at floor). The wrapper's
+`.AsDistMatrix` guard resurfaced as the matrix intake cost — already fixed
+by round 9's AllFinite lever on the parent branch; attributed, not
+re-fixed (timing cells call the kernels directly).
+
+**Shipped levers (each gated on the 295-trajectory battery before timing):**
+- **P2 — blocked fills + sqrt at consumption** (dropadd_mf.cpp): the four
+  whole-column fills become contiguous dimension-blocked squared sweeps
+  (round 9's SweepBlock shape; identical left-associated chains), and each
+  element's true distance is sqrt'd as the record loops consume it — the
+  fills stay pure SIMD streams, no separate sqrt pass re-streams the
+  column, and every distance is sqrt() of the identical squared double.
+  (First cut used a separate sqrt pass: 1.09–1.12× at dim 10 but **0.93×
+  at dim 2** — the extra column round-trip; the consumption form fixed the
+  regression.) Points cells **1.08× (d2) / 1.18× (d10 search) / 1.26–1.27×
+  (d10, m = 10⁴)**; matrix kernel untouched.
+- **mc.cores for the points kernel** (fused pass regions): each
+  per-iteration pass — column fill + sqrt + record updates, with the ADD
+  argmax riding the drop pass and the construction update pass — splits
+  into one contiguous chunk per thread inside a single parallel region
+  (two barriers per iteration). Exactness: every element is computed by
+  one thread with the identical chain; chunk argmax winners merge in
+  ascending chunk order (an earlier chunk's winner has a smaller index
+  than everything after it — first-max preserved); count-zero elements are
+  skipped in the pass and merged after the recompute with the explicit
+  (min_dist, sum_dist, smaller-index) triple — a lexicographic maximum,
+  order-independent; chunk-local need_recompute lists concatenate in
+  ascending chunk order (= the serial push order); the objective loop and
+  self-record gathers stay serial (the secondary's long-double sum runs in
+  FIFO buffer order — order-load-bearing). Engages at n ≥ 16384
+  (DA_PAR_MIN). **Measured at 8T:** construction m = 10⁴ **2.3×**
+  (1400 → 610 ms), search 1.3–1.5× kernel-direct, **1.75×** end-to-end
+  through the public API at n = 2e4 m = 2000; d2 positive (1.2×).
+  nCores-invariant {1,2,8} through DropAdd() on three above-threshold
+  cells + a 2-core CRAN-capped test; above-threshold full-trajectory
+  identity (drops/adds sequences) verified 1T ≡ 8T on five cases
+  including matrix n = 16384.
+
+**Refuted in-round (no code shipped, log-only per skill rules):**
+- **M1 — matrix fused argmax** (search + construction): bit-identical
+  (295/295) but **flat** — n=4000 cells 0.90–1.05×, n=16384 construct
+  1.11×, search 1.00×. The record arrays are cache-resident at every
+  feasible matrix size, so the fold trades instructions for nothing
+  (FarFirst's fold won because its arrays streamed from DRAM). Reverted.
+  The same logic ships inside the points kernel's parallel path, where it
+  is what makes the drop pass a single region — serially it measures flat
+  there too (1400 vs 1460 ms construct, within noise the rest).
+- **Matrix-kernel threading**: fused-region chunking at n = 16384
+  (2 GB matrix, both m regimes) measured **flat at 8T** (230/550 ms
+  unchanged) — each pass streams a fresh matrix column from DRAM, which
+  one core already saturates. With M1 flat and threading flat, the matrix
+  kernel is certified serial-at-limit: its per-iteration cost is the
+  mandatory column stream + cache-resident record logic.
+- **Fills-only threading** (first experiment): 1.1–1.3× and **0.79× at
+  d2** — post-P2 the record loops dominate the iteration, so
+  parallelising fills alone was Amdahl-capped; superseded by the fused
+  full treatment above.
+
+**Oracle path (PR #2's R harness): AT-LIMIT by design.** Rprof with a
+realistic vectorised colFn (n = 4000, dim 5): the user's colFn is ~93% of
+sampled time; the harness (.DropAddPick / .DropAddApplyAdd / record logic)
+is single-digit %. No optimisation warranted; the R twin stays frozen as
+the semantic reference.
+
+**Recorded leads (not pursued; anti-dup memory):**
+- Lazy second-minimum record for the matrix recompute branch (the top
+  matrix cost, ~37% at m = n/2): (min2, count2) maintenance would replace
+  most K×m rescans with O(1) pops; exactness surface is large (count
+  semantics must reproduce the rescanned values exactly). Estimated ≤1.3×
+  cell-level on the m = n/2 search.
+- Symmetric-transpose reads for the matrix recompute/self-records (read
+  d(x, s) from column x instead of column s): blocked by a documentation
+  tension — DropAdd's Rd requires a symmetric matrix, but `.AsDistMatrix`
+  documents that asymmetric matrices are silently accepted with d_ij and
+  d_ji treated as independent, and this round's battery pins asymmetric
+  trajectories. Resolving the contract either way is a maintainer call.
+- K-row coordinate pre-gather for the points recompute branch (contiguous
+  scratch for the K rows' coordinates): exact by copy; matters only at
+  large m (recompute ≈ 8% of the m = 10⁴ profile).
+- The parallel recompute merge argument — (min, count) partials merge as
+  min-then-sum — is recorded here should the branch ever dominate.
+
+**Round-10 result.** Serial: points cells 1.08–1.27× (battery-exact);
+matrix kernel unchanged and certified at its floor (seed row-sums at DRAM
+bandwidth; fused argmax and threading both measured flat; recompute lead
+recorded). Parallel: points path 2.3× construction / up to 1.75×
+end-to-end at 8T, nCores-invariant, engaging at n ≥ 16384 — honest
+DRAM-bound scaling, not FarFirst-class, and said so in the Rd. Area 2 →
+OPTIMISED serial + mc.cores points path; matrix kernel AT-LIMIT. Drivers:
+dropadd-battery.R, dropadd-timing.R, dropadd-vtune10.R,
+dropadd-invariance.R. Cleanup: result_da10/ and scratch libs deleted
+post-round.
+last_focus: 2

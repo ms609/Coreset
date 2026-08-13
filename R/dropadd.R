@@ -420,6 +420,19 @@
 #'   The vector has class `"MaxMinSelection"` and prints as a one-line summary
 #'   (see [print.MaxMinSelection()]); it is otherwise an ordinary integer vector.
 #'
+#' @section Parallelism:
+#' When the package is built with OpenMP support (the default on Linux and
+#' Windows), the coordinate (`points =`) path runs its per-iteration passes
+#' on multiple threads past ~16,000 points, controlled by the standard
+#' `"mc.cores"` option (default 1, single-threaded). The kernel draws no
+#' random numbers and every parallel reduction preserves the serial
+#' tie-breaking rules, so **the selection returned is identical at every
+#' thread count**: `mc.cores` trades wall-clock time only. The matrix and
+#' distance-column paths stay single-threaded — the matrix kernel's
+#' per-iteration cost is dominated by streaming matrix columns from main
+#' memory, which additional threads measured unable to accelerate at any
+#' RAM-feasible size.
+#'
 #' @section Distance-column oracle:
 #' When `d` is a **function**, `d(i)` must return the distances from element `i`
 #' to every element (length `N`, with the self-distance ignored)
@@ -579,7 +592,8 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
       )
     }
     out <- DropAdd_points_cpp(points, k, as.double(maxSeconds),
-                                .Machine$integer.max, plateau, FALSE, seed0)
+                                .Machine$integer.max, plateau, FALSE, seed0,
+                                .NThreads())
     timeS <- proc.time()[[3L]] - t0
     if (progress) {
       itersMsg <- as.integer(out$iters)

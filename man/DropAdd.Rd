@@ -83,6 +83,21 @@ In interactive sessions, status messages are shown.
 To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
 }
 
+\section{Parallelism}{
+
+When the package is built with OpenMP support (the default on Linux and
+Windows), the coordinate (\verb{points =}) path runs its per-iteration passes
+on multiple threads past ~16,000 points, controlled by the standard
+\code{"mc.cores"} option (default 1, single-threaded). The kernel draws no
+random numbers and every parallel reduction preserves the serial
+tie-breaking rules, so \strong{the selection returned is identical at every
+thread count}: \code{mc.cores} trades wall-clock time only. The matrix and
+distance-column paths stay single-threaded — the matrix kernel's
+per-iteration cost is dominated by streaming matrix columns from main
+memory, which additional threads measured unable to accelerate at any
+RAM-feasible size.
+}
+
 \section{Distance-column oracle}{
 
 When \code{d} is a \strong{function}, \code{d(i)} must return the distances from element \code{i}
