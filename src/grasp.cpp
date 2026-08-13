@@ -68,15 +68,23 @@ static double objective_of(const double* d, int n, const std::vector<int>& sel) 
 // min1 falls through to the `else if (v < min2)` branch, leaving min2 == min1,
 // — a duplicate of the minimum survives the exclusion.
 // Selections hold distinct vertices, so excluding by vertex id is well defined.
-struct NearTwo { double min1, min2; int arg1; };
+//
+// arg2 names the vertex holding the min2 slot, so the walk can maintain a
+// NearTwo across one-element swaps of `set` (T-017): every element other than
+// the two stored witnesses sits at >= min2, so removing a non-witness leaves
+// (min1, min2) the two smallest, and only a removal of arg1 or arg2 forces a
+// rescan; an insertion is the classic O(1) two-smallest update.
+struct NearTwo { double min1, min2; int arg1, arg2; };
 
 static inline NearTwo near_two(const double* d, int n, int x,
                                const std::vector<int>& set) {
-  NearTwo t; t.min1 = POS_INF; t.min2 = POS_INF; t.arg1 = -1;
+  NearTwo t; t.min1 = POS_INF; t.min2 = POS_INF; t.arg1 = -1; t.arg2 = -1;
   for (int k : set) {
     double v = D(d, n, x, k);
-    if (v < t.min1) { t.min2 = t.min1; t.min1 = v; t.arg1 = k; }
-    else if (v < t.min2) { t.min2 = v; }
+    if (v < t.min1) {
+      t.min2 = t.min1; t.arg2 = t.arg1; t.min1 = v; t.arg1 = k;
+    }
+    else if (v < t.min2) { t.min2 = v; t.arg2 = k; }
   }
   return t;
 }
@@ -84,25 +92,6 @@ static inline NearTwo near_two(const double* d, int n, int x,
 // min over `set \ {v}` of d(x, .); POS_INF if that set is empty.
 static inline double near_excl(const NearTwo& t, int v) {
   return v == t.arg1 ? t.min2 : t.min1;
-}
-
-// Global minimum pairwise distance within `sel`, returning the witness edge as
-// the two selected vertices (wa, wb) that realise it. O(m^2); for m < 2 returns
-// POS_INF with wa = wb = -1. Used to hoist the per-drop objective_of(sel\{v})
-// rescore in path-relink / local-search: dropping any vertex other than the
-// witness leaves the global-min edge intact, so the post-drop min is unchanged
-// (and bit-identical, since min just re-selects that surviving D() value).
-static double min_edge_witness(const double* d, int n,
-                               const std::vector<int>& sel, int& wa, int& wb) {
-  int m = (int)sel.size();
-  double best = POS_INF;
-  wa = -1; wb = -1;
-  for (int a = 0; a < m; ++a)
-    for (int b = a + 1; b < m; ++b) {
-      double v = D(d, n, sel[a], sel[b]);
-      if (v < best) { best = v; wa = sel[a]; wb = sel[b]; }
-    }
-  return best;
 }
 
 // The extended-improvement tie-break count — #unordered pairs in (rem ∪ {s})
@@ -387,57 +376,81 @@ static PRResult grasp_path_relink(const double* d, int n,
   double best_z = objective_of(d, n, x);
   double z_y = objective_of(d, n, y);
   if (z_y > best_z) { best_sel = y; best_z = z_y; }
+
+  // T-017: the walk's per-step state persists across steps instead of being
+  // rebuilt from scratch each step.
+  //
+  // dropList/addList ARE the per-step rebuilds pk ∩ to_drop and to_add \ pk:
+  // pk starts at x (⊇ to_drop, disjoint from to_add) and each step removes
+  // one dropList member and adds one addList member, so erasing the chosen
+  // pair keeps both lists equal to the rebuilds, in the same ascending order
+  // — the pair loop enumerates identically.
+  std::vector<int> dropList = to_drop;
+  std::vector<int> addList  = to_add;
+
+  // Per-member nearest-other-member summary over pk, indexed by vertex id —
+  // the same witness invariant as the local search's min1/arg1: earg[v] is a
+  // current member whose distance to v EQUALS edi[v], so the global min edge
+  // and a witness for it read off the array in O(m), and a swap disturbs only
+  // the entries whose witness left. Only members' entries are ever read;
+  // a vertex entering pk is freshly scanned before first use, and dropped
+  // vertices never return (adds come from to_add, disjoint from to_drop).
+  std::vector<double> edi(n, POS_INF);
+  std::vector<int> earg(n, -1);
+  {
+    int mm = (int)pk.size();
+    for (int a = 0; a < mm; ++a)
+      for (int b = a + 1; b < mm; ++b) {
+        double v = D(d, n, pk[a], pk[b]);
+        if (v < edi[pk[a]]) { edi[pk[a]] = v; earg[pk[a]] = pk[b]; }
+        if (v < edi[pk[b]]) { edi[pk[b]] = v; earg[pk[b]] = pk[a]; }
+      }
+  }
+
+  // Two-smallest summary per add candidate over pk (T-014's hoist), now
+  // maintained across steps: each step removes one member and adds one, an
+  // O(1) update unless the removed member is a stored witness (see NearTwo).
+  std::vector<NearTwo> nearList(addList.size());
+  for (int jj = 0; jj < (int)addList.size(); ++jj)
+    nearList[jj] = near_two(d, n, addList[jj], pk);
+
   for (int k = 0; k < r; ++k) {
-    // drop_cands = pk ∩ to_drop ; add_cands = to_add \ pk (both ascending).
-    std::vector<int> drop_cands, add_cands;
-    {
-      int i = 0, j = 0;
-      while (i < (int)pk.size() && j < (int)to_drop.size()) {
-        if (pk[i] == to_drop[j]) { drop_cands.push_back(pk[i]); ++i; ++j; }
-        else if (pk[i] < to_drop[j]) ++i;
-        else ++j;
-      }
+    // Global min edge of pk with a witness, off the maintained summary.
+    // Dropping any vertex other than a witness endpoint leaves that edge
+    // intact, so base_z == gmin; only witness drops need the post-drop
+    // rescore, computed lazily at most once per step for both endpoints
+    // together (re-selecting exactly the cells objective_of(pk \ {w}) would).
+    int wa = -1, wb = -1;
+    double gmin = POS_INF;
+    for (int v : pk) {
+      if (edi[v] < gmin) { gmin = edi[v]; wa = v; wb = earg[v]; }
     }
-    {
-      int i = 0, j = 0;
-      while (i < (int)to_add.size() && j < (int)pk.size()) {
-        if (to_add[i] == pk[j]) { ++i; ++j; }
-        else if (to_add[i] < pk[j]) { add_cands.push_back(to_add[i]); ++i; }
-        else ++j;
-      }
-      while (i < (int)to_add.size()) { add_cands.push_back(to_add[i]); ++i; }
-    }
+    double excl_wa = POS_INF, excl_wb = POS_INF;
+    bool have_excl = false;
     double best_pair_z = NEG_INF;
     int bi = -1, bj = -1;
-    // Global min edge of pk, with a witness. Dropping any vertex other than the
-    // witness leaves that edge intact, so base_z == gmin without an O(m^2)
-    // rescore; only the (<=2) witness vertices need objective_of. Bit-identical,
-    // since min just re-selects the surviving D() value.
-    int wa, wb;
-    double gmin = min_edge_witness(d, n, pk, wa, wb);
-    // Every (drop, add) pair below needs min(dist from the add to pk \ {drop}),
-    // which is one row of add-to-pk distances read once per drop. Take the two
-    // smallest per add candidate ONCE here, then read each exclusion off in O(1):
-    // the walk's inner cost loses a whole factor of |drop_cands|.
-    std::vector<NearTwo> near_add(add_cands.size());
-    for (int jj = 0; jj < (int)add_cands.size(); ++jj)
-      near_add[jj] = near_two(d, n, add_cands[jj], pk);
-    std::vector<int> rem;
-    rem.reserve((int)pk.size());
-    for (int ii = 0; ii < (int)drop_cands.size(); ++ii) {
-      int di_ = drop_cands[ii];
-      // remaining = pk without di_; base_z is its internal min pairwise distance.
-      rem.clear();
-      for (int v : pk) if (v != di_) rem.push_back(v);
+    for (int ii = 0; ii < (int)dropList.size(); ++ii) {
+      int di_ = dropList[ii];
       double base_z;
-      if (rem.size() < 2) base_z = POS_INF;
-      else if (di_ == wa || di_ == wb) base_z = objective_of(d, n, rem);
+      if ((int)pk.size() < 3) base_z = POS_INF;
+      else if (di_ == wa || di_ == wb) {
+        if (!have_excl) {
+          int mm = (int)pk.size();
+          for (int a = 0; a < mm; ++a)
+            for (int b = a + 1; b < mm; ++b) {
+              double v = D(d, n, pk[a], pk[b]);
+              if (pk[a] != wa && pk[b] != wa && v < excl_wa) excl_wa = v;
+              if (pk[a] != wb && pk[b] != wb && v < excl_wb) excl_wb = v;
+            }
+          have_excl = true;
+        }
+        base_z = di_ == wa ? excl_wa : excl_wb;
+      }
       else base_z = gmin;
-      for (int jj = 0; jj < (int)add_cands.size(); ++jj) {
-        int dj_ = add_cands[jj];
-        double cross = near_excl(near_add[jj], di_);
-        double zc = base_z < cross ? base_z : cross;   // == objective_of(rem ∪ {dj_})
-        if (zc > best_pair_z) { best_pair_z = zc; bi = di_; bj = dj_; }
+      for (int jj = 0; jj < (int)addList.size(); ++jj) {
+        double cross = near_excl(nearList[jj], di_);
+        double zc = base_z < cross ? base_z : cross; // == objective_of(pk\{di_} ∪ {dj_})
+        if (zc > best_pair_z) { best_pair_z = zc; bi = di_; bj = addList[jj]; }
       }
     }
     // pk = sort(pk without bi, plus bj)
@@ -448,6 +461,47 @@ static PRResult grasp_path_relink(const double* d, int n,
     std::sort(next.begin(), next.end());
     pk.swap(next);
     if (best_pair_z > best_z) { best_sel = pk; best_z = best_pair_z; }
+    if (k + 1 >= r) break;                     // final step: nothing to maintain
+    dropList.erase(std::find(dropList.begin(), dropList.end(), bi));
+    {
+      int pos = (int)(std::find(addList.begin(), addList.end(), bj)
+                      - addList.begin());
+      addList.erase(addList.begin() + pos);
+      nearList.erase(nearList.begin() + pos);
+    }
+    // Maintain edi/earg under the swap: the entering vertex and any member
+    // whose witness was just dropped rescan; everyone else at most adopts the
+    // entering vertex (min over fewer-plus-one, exact by the witness surviving).
+    for (int v : pk) {
+      if (v == bj || earg[v] == bi) {
+        double b2 = POS_INF; int a2 = -1;
+        for (int u : pk) {
+          if (u == v) continue;
+          double vv = D(d, n, u, v);
+          if (vv < b2) { b2 = vv; a2 = u; }
+        }
+        edi[v] = b2; earg[v] = a2;
+      } else {
+        double vv = D(d, n, v, bj);
+        if (vv < edi[v]) { edi[v] = vv; earg[v] = bj; }
+      }
+    }
+    // Maintain each remaining add candidate's two-smallest over pk: rescan
+    // only if a stored witness was dropped, else the removed value sat at
+    // >= min2 (or was a min-tie whose stored witness survives) and the pair
+    // stands; then the classic O(1) insert of the entering vertex.
+    for (int jj = 0; jj < (int)addList.size(); ++jj) {
+      NearTwo& t = nearList[jj];
+      if (t.arg1 == bi || t.arg2 == bi) {
+        t = near_two(d, n, addList[jj], pk);
+      } else {
+        double w = D(d, n, addList[jj], bj);
+        if (w < t.min1) {
+          t.min2 = t.min1; t.arg2 = t.arg1; t.min1 = w; t.arg1 = bj;
+        }
+        else if (w < t.min2) { t.min2 = w; t.arg2 = bj; }
+      }
+    }
   }
   return { best_sel, best_z };
 }
