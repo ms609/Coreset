@@ -116,29 +116,6 @@ static inline double near_excl(const NearTwo& t, int v) {
   return v == t.arg1 ? t.min2 : t.min1;
 }
 
-// The extended-improvement tie-break count — #unordered pairs in (rem ∪ {s})
-// with distance <= thr (.GraspMinPairCount on cand = rem ++ s) — split into its
-// two halves. The rem×rem half is O(m^2) but does not depend on `s`, so the
-// caller memoises it across the candidate scan (see the local-search loop);
-// the s×rem half is the only O(m) work left per candidate. The split is an
-// integer sum of the same comparisons, so it is exactly the old total
-// regardless of accumulation order.
-static int count_pairs_within(const double* d, int n,
-                              const std::vector<int>& rem, double thr) {
-  int c = 0, mm = (int)rem.size();
-  for (int a = 0; a < mm; ++a)
-    for (int b = a + 1; b < mm; ++b)
-      if (D(d, n, rem[a], rem[b]) <= thr) ++c;
-  return c;
-}
-
-static int count_to_set_le(const double* d, int n, const std::vector<int>& rem,
-                           int s, double thr) {
-  int c = 0;
-  for (int v : rem) if (D(d, n, s, v) <= thr) ++c;
-  return c;
-}
-
 // |intersection| of two ascending-sorted index vectors.
 static int intersect_count(const std::vector<int>& a, const std::vector<int>& b) {
   int i = 0, j = 0, c = 0;
@@ -150,6 +127,24 @@ static int intersect_count(const std::vector<int>& a, const std::vector<int>& b)
   }
   return c;
 }
+
+// Reusable local-search workspace, allocated once per Grasp_cpp call — the
+// local search runs hundreds of times per GRASP run, so per-call vectors are
+// measurable. Arrays are indexed by vertex id. `in_sel` must be all-zero
+// between calls; grasp_local_search restores that on exit. min1/arg1 double
+// as grasp_construct's g/witness arrays, seeding the local search that
+// follows it (round 6; see the construct header).
+struct LSScratch {
+  std::vector<char> in_sel;
+  std::vector<double> min1;              // candidates: nearest-selected
+  std::vector<int> arg1;                 //   ... and its witness
+  std::vector<double> mmin1, mmin2;      // members: two nearest other members
+  std::vector<int> marg1, marg2;         //   ... with their witnesses
+  std::vector<int> mcnt;                 // #partners at exactly mmin1
+  explicit LSScratch(int n)
+    : in_sel(n, 0), min1(n), arg1(n),
+      mmin1(n), mmin2(n), marg1(n), marg2(n), mcnt(n) {}
+};
 
 // One randomised greedy construction; matches .GraspConstruct. Returns
 // ascending sel.
@@ -169,19 +164,35 @@ static int intersect_count(const std::vector<int>& a, const std::vector<int>& b)
 // pass, which already touches every live entry — setting g[pick] = NEG_INF
 // before that pass makes the fold read exactly the values the standalone
 // scan would, in the same ascending order (same first-index tie semantics).
-// One standalone scan seeds the loop. The final step's update is skipped
-// outright: g is dead once the last pick is made, so the old last pass
-// computed values nobody read. Three O(n) passes per step become two, and
-// the RCL buffer is reused across steps instead of reallocated.
+// One standalone scan seeds the loop. Three O(n) passes per step become
+// two, and the RCL buffer is reused across steps instead of reallocated.
+//
+// Round 6: g lives in W.min1, with a witness (the pick that set each entry)
+// kept alongside in W.arg1, and the final pick's column — whose update
+// T-019 skipped as dead — is folded back in by one lean pass. On return the
+// scratch therefore holds exactly the candidate summary the local search
+// needs: min1 = min distance to the FINAL selection (min is exact
+// arithmetic, so accumulating it in pick order equals the local search's
+// old column-order init bit for bit), arg1 a selected witness at exactly
+// that distance. Selected entries hold the NEG_INF placeholder, which the
+// local search never reads while a vertex is selected and refreshes when
+// one leaves. The witness settles on the FIRST pick to reach the minimum
+// (strict <) rather than the lowest index — a different but equally valid
+// witness under ties, which routes the odd rescan differently while every
+// value read stays identical, so results do not move. The m-column init
+// re-read disappears from the construct → local-search path; path-relinked
+// starts (no construction) still run the plain init.
 static std::vector<int> grasp_construct(const double* d, int n, int m,
-                                        double alpha, const double* u) {
+                                        double alpha, const double* u,
+                                        LSScratch& W) {
   std::vector<int> sel;
   sel.reserve(m);
   int first = (int)(u[0] * n);
   if (first >= n) first = n - 1;
   sel.push_back(first);
-  std::vector<double> g(n);
-  for (int i = 0; i < n; ++i) g[i] = D(d, n, i, first);
+  double* g = W.min1.data();
+  int* wit = W.arg1.data();
+  for (int i = 0; i < n; ++i) { g[i] = D(d, n, i, first); wit[i] = first; }
   g[first] = NEG_INF;
   double gmax = NEG_INF, gmin = POS_INF;
   int gmax_idx = -1;                          // first index achieving gmax
@@ -221,32 +232,25 @@ static std::vector<int> grasp_construct(const double* d, int n, int m,
       for (int i = 0; i < n; ++i) {
         double gi = g[i];
         if (gi > NEG_INF) {
-          if (col[i] < gi) { gi = col[i]; g[i] = gi; }
+          if (col[i] < gi) { gi = col[i]; g[i] = gi; wit[i] = pick; }
           if (gi > gmax) { gmax = gi; gmax_idx = i; }
           if (gi < gmin) gmin = gi;
         }
+      }
+    } else {
+      // Final pick: no RCL will read g, but the seeded local search will —
+      // fold the last column in with no gmax/gmin scan. NEG_INF placeholders
+      // pass through (nothing compares below them).
+      g[pick] = NEG_INF;
+      const double* col = d + (size_t)pick * (size_t)n;
+      for (int i = 0; i < n; ++i) {
+        if (col[i] < g[i]) { g[i] = col[i]; wit[i] = pick; }
       }
     }
   }
   std::sort(sel.begin(), sel.end());
   return sel;
 }
-
-// Reusable local-search workspace, allocated once per Grasp_cpp call — the
-// local search runs hundreds of times per GRASP run, so per-call vectors are
-// measurable. Arrays are indexed by vertex id. `in_sel` must be all-zero
-// between calls; grasp_local_search restores that on exit.
-struct LSScratch {
-  std::vector<char> in_sel;
-  std::vector<double> min1;              // candidates: nearest-selected
-  std::vector<int> arg1;                 //   ... and its witness
-  std::vector<double> mmin1, mmin2;      // members: two nearest other members
-  std::vector<int> marg1, marg2;         //   ... with their witnesses
-  std::vector<int> mcnt;                 // #partners at exactly mmin1
-  explicit LSScratch(int n)
-    : in_sel(n, 0), min1(n), arg1(n),
-      mmin1(n), mmin2(n), marg1(n), marg2(n), mcnt(n) {}
-};
 
 // Extended-improvement local search; matches .GraspLocalSearch. `sel` ascending.
 //
@@ -288,8 +292,30 @@ struct LSScratch {
 // The decrement precedes A's insertion, so it compares against the pre-swap
 // minimum. Header work per pass falls m²/2 → O(m), swap upkeep is O(m) plus
 // rare rescans, and one m²/2 sweep remains at entry to seed the summaries.
+//
+// Round 6: the rem×rem half of the extended-improvement tie-break count is
+// DERIVED, not counted. npc = #pairs in (rem ∪ {s}) at distance <= nd splits
+// into a rem×rem half and an s×rem half, and both floors are already known
+// exactly: every pair within rem is >= base_z (rem's true pairwise floor —
+// that is what base_z is), and every d(s, v) over rem is >= cross. Since
+// nd = min(base_z, cross),
+//   rem×rem half = (nd == base_z) ? #pairs in rem at exactly base_z : 0;
+//   s×rem  half = (nd == cross)  ? #v in rem with d(s, v) == cross  : 0.
+// The rem half depends only on the drop: when base_z == dstar it is
+// pair_count - mcnt[drop] (every dstar pair lost by dropping a critical
+// vertex involves it); when base_z > dstar (witness drops) the members
+// achieving the new floor — read off near_excl in O(m) — have their rows
+// counted at == base_z, each pair seen from both endpoints, halved. That
+// retires the former O(m²/2) per-drop sweep. The s half stays a direct O(m)
+// row count at == cross, run only for candidates that reach a win-or-tie: a
+// maintained per-candidate tie count was measured to cost more in summary
+// upkeep (a second column stream per swap, ∝ n) than this count costs at
+// any profiled shape — see log.md round 6. Every count is the same integer
+// the old <= sweeps produced — comparisons on the same exact doubles, and
+// values below the floor cannot exist — so trajectories are unchanged.
 static std::vector<int> grasp_local_search(const double* d, int n,
-                                         std::vector<int> sel, LSScratch& W) {
+                                           std::vector<int> sel, LSScratch& W,
+                                           bool seeded = false) {
   int m = (int)sel.size();
   if (m < 2) return sel;
   std::vector<char>& in_sel = W.in_sel;
@@ -322,14 +348,16 @@ static std::vector<int> grasp_local_search(const double* d, int n,
     }
   };
 
-  // Candidate summary. The first selected column initialises every entry
+  // Candidate summary. When `seeded`, grasp_construct already left it in
+  // W.min1/W.arg1 (see its header) and the m-column re-read is skipped.
+  // Otherwise: the first selected column initialises every entry
   // unconditionally — no reset pass on the reused scratch — and the rest
   // min-update. Column-sequential (d(s, v) = dptr[s + v*n] is contiguous in
   // s); ascending vertices with strict `<` make arg1 the first argmin,
   // exactly as a forward row scan would settle. Entries for selected points
   // are placeholders, never read while selected; a vertex leaving the
   // selection gets a fresh scan before first use.
-  {
+  if (!seeded) {
     const double* col0 = d + (size_t)sel[0] * (size_t)n;
     for (int s = 0; s < n; ++s) { min1[s] = col0[s]; arg1[s] = sel[0]; }
     for (int k = 1; k < m; ++k) {
@@ -399,16 +427,10 @@ static std::vector<int> grasp_local_search(const double* d, int n,
         base_z = excl_wb;
       }
       else base_z = dstar;
-      // The rem x rem half of the tie-break count depends only on (ci, thr), so
-      // hold it across the scan. `thr` is `best_dstar` on every tie -- the
-      // overwhelming majority of the calls that get this far -- and changes only
-      // on the rare improvement, so this recomputes a handful of times per
-      // critical position instead of once per candidate. The `!=` test is an
-      // exact double comparison on purpose: `thr` is the same value flowing down
-      // both branches, not an approximation of one, so a tolerance would be
-      // wrong here.
-      double memoThr = 0;
-      int memoWithin = -1;
+      // #pairs within rem at exactly base_z, lazily, once per drop (see the
+      // round-6 header note): the only value the rem×rem half of the
+      // tie-break count can take besides zero.
+      int within = -1;
       for (int s = 0; s < n; ++s) {            // out-of-selection, ascending
         if (in_sel[s]) continue;
         // nd = min(base_z, min dist from s to remaining); identical to
@@ -425,11 +447,33 @@ static std::vector<int> grasp_local_search(const double* d, int n,
         }
         double nd = base_z < cross ? base_z : cross;
         if (nd >= best_dstar) {                // win or tie; NaN falls through
-          if (memoWithin < 0 || nd != memoThr) {
-            memoWithin = count_pairs_within(d, n, rem, nd);
-            memoThr = nd;
+          int npc = 0;
+          if (nd == base_z) {                  // rem×rem pairs at <= nd exist
+            if (within < 0) {
+              if (base_z == dstar) {
+                within = pair_count - mcnt[drop];
+              } else {
+                // Witness drop raised the floor. The members achieving the
+                // new floor (>= 2 of them; near_excl is O(1) per member)
+                // have their rows counted at == base_z; both endpoints of
+                // every such pair achieve the floor, so halving is exact.
+                int c = 0;
+                for (int v : rem) {
+                  double e = marg1[v] == drop ? mmin2[v] : mmin1[v];
+                  if (e == base_z) {
+                    for (int u : rem) {
+                      if (u != v && D(d, n, v, u) == base_z) ++c;
+                    }
+                  }
+                }
+                within = c / 2;
+              }
+            }
+            npc = within;
           }
-          int npc = memoWithin + count_to_set_le(d, n, rem, s, nd);
+          if (nd == cross) {                   // s×rem pairs at <= nd exist
+            for (int v : rem) if (D(d, n, s, v) == cross) ++npc;
+          }
           if (nd > best_dstar) {
             best_dstar = nd; best_pc = npc;
             best_drop = drop; best_add = s;
@@ -748,8 +792,8 @@ List Grasp_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter,
   for (int b = 0; b < elite_size; ++b) {
     LSScratch& W = pool[GRASP_TID];
     std::vector<int> x  = grasp_construct(d, n, m, alpha,
-                                          &ubuf[(size_t)b * (size_t)m]);
-    std::vector<int> xp = grasp_local_search(d, n, x, W);
+                                          &ubuf[(size_t)b * (size_t)m], W);
+    std::vector<int> xp = grasp_local_search(d, n, x, W, true);
     ESz[b] = objective_of(d, n, xp);
     ES[b]  = xp;
   }
@@ -809,8 +853,8 @@ List Grasp_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter,
       if (gated && elapsed() >= time_budget_s) { bdone[b] = 0; continue; }
       LSScratch& W = pool[GRASP_TID];
       std::vector<int> x  = grasp_construct(d, n, m, alpha,
-                                            &ubuf[(size_t)b * (size_t)m]);
-      bsel[b] = grasp_local_search(d, n, x, W);
+                                            &ubuf[(size_t)b * (size_t)m], W);
+      bsel[b] = grasp_local_search(d, n, x, W, true);
       bz[b] = objective_of(d, n, bsel[b]);
       bdone[b] = 1;
     }
