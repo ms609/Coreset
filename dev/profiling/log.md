@@ -599,3 +599,12 @@ instrumented builds live under the session scratchpad, outside the repo;
 no instrumentation ships (verified by reverting `src/grasp.cpp` to the
 committed state after each instrumented capture). last_focus unchanged
 (targeted run continuing round 3, not a rotation slot).
+
+**Coverage addendum (suite, not driver):** a cumulative branch-counter build
+run against `tests/testthat/test-grasp.R` alone (4266 pass / 0 fail) shows
+every branch added this round fires under the existing tests — LS screen
+rescans 297,878, witness evictions 120,756, dropped-vertex fresh scans
+26,968, exclusion pass 39,370 (both endpoint arms); PR exclusion pass 3,832
+(both arms), `edi` fresh/evict/adopt 4,298/4,336/16,312, NearTwo witness
+evictions 4,098 and O(1) inserts 4,276. No targeted test additions owed;
+CI codecov is expected green on the existing suite.
