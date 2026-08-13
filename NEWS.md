@@ -2,6 +2,11 @@
 
 - `Grasp()` no longer discards its best-known solution, and is ~2.0 faster.
 
+# MaxMin 0.0.0.9005 (development)
+
+- `DropAdd()` can now compute distances between pairs on the fly, rather than
+  needing a complete matrix _a priori_.
+  
 # MaxMin 0.0.0.9004 (development)
 
 - New `MaxEntropy()`: maximum-entropy (maxdet) subset selection.
@@ -90,8 +95,7 @@
 # MaxMin 0.0.0.9000 (development)
 
 - Initial release: a tiered toolbox for the Max-Min Diversity Problem (MMDP /
-  discrete p-dispersion), extracted from the `FurthestPoint` study package so
-  that it can be depended on by CRAN packages (e.g. `TreeSearch`).
+  discrete p-dispersion).
 - `FarFirst()`: deterministic farthest-first selection from a distance matrix,
   Euclidean coordinates (`points =`), or an on-demand **distance-column oracle**
   (pass a column function as `d`, with `N =`) for spaces with no coordinate

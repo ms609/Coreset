@@ -11,15 +11,17 @@ DropAdd(
   maxSeconds = Inf,
   points = NULL,
   maxCandidates = 46340L,
-  seed = NULL
+  seed = NULL,
+  N = NULL
 )
 }
 \arguments{
-\item{k}{Integer; subset size, \eqn{2 \le k \le N}.}
+\item{k}{Integer: subset size, \eqn{2 \le k \le N}.}
 
-\item{d}{A \code{dist} object or square symmetric numeric matrix.}
+\item{d}{A \code{dist} object, a square symmetric numeric matrix, or a
+distance-column function (see §\emph{Distance-column function}).}
 
-\item{plateau}{Integer; stop after this many consecutive drop-add
+\item{plateau}{Integer: stop after this many consecutive drop-add
 iterations do not improve the score.}
 
 \item{maxSeconds}{Numeric: terminate search after this many seconds have
@@ -45,10 +47,12 @@ Thinning is \strong{on by default}: an input larger than the cap is thinned (and
 a warning is emitted) unless \code{maxCandidates = 0} is passed.}
 
 \item{seed}{Optional integer: a 1-based start index that overrides the
-construction's default warm-start seed (max-row-sum on the \code{d} path,
-centroid-peripheral on the \code{points} path), mirroring \code{\link[=FarFirst]{FarFirst()}}'s integer
-\code{strategy}. \code{NULL} (default) keeps the method's own seed. Not supported when
-candidate thinning binds (pass \code{maxCandidates = 0L}).}
+construction's default warm-start seed.
+\code{NULL} (default) keeps the method's own seed. Not supported when
+\code{maxCandidates = 0L}.}
+
+\item{N}{Integer: the total number of elements. Required only if \code{d} is a
+function.}
 }
 \value{
 \code{DropAdd()} returns an integer vector of length \code{k} containing the 1-based selected
@@ -79,6 +83,19 @@ In interactive sessions, status messages are shown.
 To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
 }
 
+\section{Distance-column oracle}{
+
+When \code{d} is a \strong{function}, \code{d(i)} must return the distances from element \code{i}
+to every element (length \code{N}, with the self-distance ignored)
+or to every \emph{other} element (length \code{N - 1}, in order).
+\code{N} is required, and memory is \eqn{O(N)}.
+This suits metrics where no stored matrix or coordinate embedding is available.
+
+It is likely that \code{d} will be called many times; unless \code{d} implements
+caching, specifying a distance matrix is likely to require less calculation
+than the multiple calls to \code{d}, where memory permits.
+}
+
 \examples{
 set.seed(1)
 pts <- matrix(rnorm(200), ncol = 2)
@@ -90,6 +107,27 @@ suppressWarnings(DropAdd(5L, points = pts, maxCandidates = 40L))
 
 # Disable thinning (run on the full problem):
 DropAdd(5L, points = pts, maxCandidates = 0L)
+
+# Distance-column oracle: `d` is a function of one index. Build it in a
+# factory so everything the metric reuses is derived ONCE, in the enclosing
+# environment, and each call only looks it up -- a closure that re-derives its
+# representation per call pays that cost thousands of times over. `cache`
+# memoizes the columns, capping the oracle at one evaluation per element.
+data("USArrests")
+ArrestOracle <- function(dat) {
+  scaled <- scale(as.matrix(dat))                 # derived once
+  cache <- new.env(parent = emptyenv())
+  function(i) {
+    key <- as.character(i)
+    if (is.null(cache[[key]])) {
+      cache[[key]] <- sqrt(rowSums(sweep(scaled, 2, scaled[i, ], "-") ^ 2))
+    }
+    cache[[key]]
+  }
+}
+arrests <- USArrests[, c("Murder", "Assault", "Rape")]
+idx <- DropAdd(4L, ArrestOracle(arrests), N = nrow(arrests), plateau = 200L)
+USArrests[idx, ]
 }
 \references{
 \insertAllCited{}

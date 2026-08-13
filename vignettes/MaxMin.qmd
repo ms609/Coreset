@@ -187,7 +187,7 @@ labels(eurodist)[daPick]
 ```
 
 The algorithm terminates after `plateau` iterations do not improve T~k~.
-Where *N* is too large for a distance matrix to fit in memory 
+Where *N* is too large for a distance matrix to fit in memory
 (roughly N > 46 000), pass a coordinate matrix via `DropAdd(points = ...)`.
 
 

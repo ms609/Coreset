@@ -2,6 +2,7 @@ antimedoid
 argmax
 Arthur
 CDSh
+cf
 CMD
 codecov
 composable
@@ -30,6 +31,8 @@ lex
 Marti
 maxdet
 maximin
+memoize
+memoized
 metaheuristic
 MaxMin
 MGC
