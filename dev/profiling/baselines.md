@@ -74,6 +74,21 @@ scaling curve in `drivers/grasp-scaling.R` (plateau 256:
 | n=2000 dim=10 k=10 plateau=64 (iters 64) | min | 20 |
 | n=500 dim=10 k=50 plateau=64 (iters 163) | min | 50 |
 
+### AFTER round 6 (tie-arm derivation + g-handoff, 2026-08-13) — single-threaded
+
+Bit-identical to the round-5 rows (same iters, objectives, pr_calls;
+battery 1458/1458). Regress against THESE rows, single-threaded,
+interleaved minima. The k=10 row is per 40 calls (single calls sit under
+this box's timer granularity).
+
+| case | metric | ms |
+|------|--------|---:|
+| n=2000 dim=10 k=100 plateau=8 (iters 8) | min | 110 |
+| n=2000 dim=10 k=100 plateau=64 (iters 64) | min | 150 |
+| n=2000 dim=10 k=100 plateau=256 (iters 372) | min | 610 |
+| n=2000 dim=10 k=10 plateau=64, 40 calls | min | 1020 |
+| n=500 dim=10 k=50 plateau=64 (iters 163) | min | 40 |
+
 ## Area 1 — FarFirst single pass — AFTER T-004 (column reorder, AT-LIMIT)
 
 | case | metric | ms |

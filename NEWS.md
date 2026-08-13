@@ -1,3 +1,22 @@
+# MaxMin 0.0.0.9009 (development)
+
+## Performance
+
+- `Grasp()` is a further 1.3–1.4× faster at `k = 100` across the `plateau`
+  ladder, and ~1.1× at small `k`, single-threaded. Selections are unchanged:
+  the kernel returns bit-identical indices, objectives, iteration counts and
+  path-relinking call counts over the same 1458-cell grid, and still matches
+  the pure-R reference exactly.
+
+  Two ideas, both exact. The local search's extended-improvement tie-break
+  count is now derived instead of counted: the candidate's new objective
+  floor already pins both halves of the pair count (values below a known
+  exact floor cannot exist), so the former pair sweep collapses to a couple
+  of reads off the summaries the search already maintains. And a
+  construction now hands its distance-to-selection array — with witnesses —
+  straight to the local search that refines it, which stops re-reading the
+  m distance columns the construction just streamed.
+
 # MaxMin 0.0.0.9008 (development)
 
 ## Performance

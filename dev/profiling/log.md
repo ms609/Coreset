@@ -719,3 +719,82 @@ clamps are defensive-unreachable by design; codecov may flag those lines
 (`# nocov` markers are a reasonable PR-time answer). The OpenMP build has
 compiled and run only on Windows/MinGW so far — Linux/gcc is unexercised
 until a push triggers CI, and real scaling curves belong on Hamilton.
+
+
+## Round 6 — 2026-08-13 — Area 3 (Grasp): VTune certification + two exact levers
+
+**Trigger:** user mandate to eke out every remaining ounce before the PR.
+Rounds 4–5 optimised via timing + branch counters; the shipped 0.0.0.9008
+kernel had never been VTuned. First hotspots collection (symboled -O2 -g
+-fno-omit-frame-pointer build WITH $(SHLIB_OPENMP_CXXFLAGS) — the skill's
+stock recipe would have stripped OpenMP and profiled a kernel without its
+parallel regions) on the canonical serial shape (n=2000 dim=10 k=100
+plateau=256, 6 reps, 5.05 s bare): grasp_local_search 32.8%,
+grasp_construct 19.1%, **count_pairs_within 10.7% + count_to_set_le 6.6%**
+— the tie-arm, which round 5's ceiling statement had written off as
+structural, was the single biggest addressable residue.
+
+**Lever 1 — tie-break count derived, not counted (exact).** npc =
+#pairs(rem ∪ {s}) ≤ nd splits into rem×rem and s×rem halves whose floors
+are both already known exactly: base_z IS rem's pairwise floor, cross IS
+s's floor to rem, and nd = min(base_z, cross). So the rem half is
+(nd == base_z) ? #pairs in rem at exactly base_z : 0 — and that count is
+pair_count − mcnt[drop] when base_z == dstar (O(1) off the T-018
+summaries), else counted from the rows of the ≥2 members achieving the new
+floor (read off near_excl, O(m) each, once per drop, lazily). The s half is
+(nd == cross) ? #v ∈ rem at exactly cross : 0, a direct O(m) row count run
+only for win-or-tie candidates. Same integers from the same exact double
+comparisons ⇒ trajectories unchanged.
+
+**Lever 1a — REJECTED by measurement: maintained candidate tie count.** A
+cnt1[s] (#selected at exactly min1[s]) maintained through init/swap would
+make the s half O(1); it measured 1.17/1.11/1.19× on the k=100 ladder but
+0.82× at k=10 over 40-rep interleaved runs — the maintenance streams a
+second column (col_drop) per swap, a cost ∝ n that small-m tie-arms never
+repay, and even at k=100 it underperformed the stateless variant
+(1.25/1.21/1.32×). Dropped; the O(m) s-half count kept.
+
+**Lever 2 — construction→LS g-handoff (T-020 revisited, exact).**
+grasp_construct now keeps g in W.min1 with a pick-order witness in W.arg1,
+folds the final pick's column back in with one lean pass (T-019 had skipped
+it as dead), and the seeded local search skips its m-column candidate-init
+re-read. min accumulates exactly, so values are bit-equal to the old
+column-order init; the witness settles on first-pick-to-reach rather than
+lowest-index under ties — a different but valid witness that routes the odd
+rescan differently while every value read is identical. Phase-C local
+searches (path-relinked starts, no construction) keep the plain init.
+
+**Verification (each variant separately):** battery 1458/1458 bit-identical
+vs the clean 0.0.0.9008 build + R↔C++ parity 324/324, both levers; full
+suite on the final build 4898 / 0 fail / 6 known-err / 2 skip.
+
+**Measured (interleaved min-of-3, single-threaded, this box):**
+| shape | 0.0.0.9008 | round 6 | speedup |
+|---|---|---|---|
+| n=2000 k=100 plateau=8   | 0.14 s | 0.11 s | 1.27× |
+| n=2000 k=100 plateau=64  | 0.20 s | 0.15 s | 1.33× |
+| n=2000 k=100 plateau=256 | 0.84 s | 0.61 s | 1.38× |
+| n=2000 k=10 plateau=64 (40-rep) | 1.10 s | 1.02 s | 1.09× |
+| n=500 k=50 plateau=64    | 0.04 s | 0.04 s | ~1× |
+
+**Post-round VTune (same driver, 7 reps):** grasp_local_search 44.2%,
+grasp_construct 25.4%, grasp_path_relink 3.4%; the two counting functions
+are gone from the profile. **Revised ceiling statement:** every remaining
+hot loop is a single ordered pass the semantics require — the O(n)
+candidate screen per critical drop (extended-improvement rule), the O(n)
+per-step construction update (each step must stream the picked column), the
+O(m²/2) member-summary seed per LS entry, and the O(n) col_add maintenance
+per swap. No further sub-linear substitution is visible; serial is at its
+structural floor with VTune evidence this time. Remaining axes: cores and
+Hamilton.
+
+**In-round fixes, no issues filed** (skill rule); driver added:
+drivers/grasp-vtune6.R. Baselines refreshed (regress against round-6 rows).
+Cleanup done: result_grasp6*/ and .vtune-lib-* deleted post-round.
+Environment note: the user deleted the bare PKG_CXXFLAGS line from
+~/.R/Makevars.win this round (memory updated) — package OpenMP flags now
+flow to agent AND user builds without the R_MAKEVARS_USER workaround; the
+symboled VTune build still needs one (adds -g -fno-omit-frame-pointer via
+PKG_CXXFLAGS without losing $(SHLIB_OPENMP_CXXFLAGS)).
+last_focus unchanged (targeted continuation of area 3).
+
