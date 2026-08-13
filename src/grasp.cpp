@@ -230,22 +230,32 @@ static std::vector<int> grasp_local_search(const double* d, int n,
   for (;;) {
     // sel is kept ascending. di[k] = nearest-other-selected distance.
     // (wa, wb) is a witness for the global min edge, reused to hoist base_z.
+    // dstar IS gmin (the min of di is the min over all pairs), and because no
+    // pair lies below the minimum, the extended-improvement pair count
+    // (# pairs <= dstar) is the count of pairs AT the running min, kept by a
+    // reset-on-new-min counter: a pair equal to the final minimum is scanned
+    // while the running min is either above it (reset to 1) or equal to it
+    // (increment), never below, so each is counted exactly once — the same
+    // comparisons as a second pass over the pairs, summed in another order.
     std::vector<double> di(m, POS_INF);
     int wa = -1, wb = -1;
     double gmin = POS_INF;
+    int pair_count = 0;
     for (int a = 0; a < m; ++a)
       for (int b = a + 1; b < m; ++b) {
         double v = D(d, n, sel[a], sel[b]);
         if (v < di[a]) di[a] = v;
         if (v < di[b]) di[b] = v;
-        if (v < gmin) { gmin = v; wa = sel[a]; wb = sel[b]; }
+        if (v < gmin) { gmin = v; wa = sel[a]; wb = sel[b]; pair_count = 1; }
+        else if (v == gmin) ++pair_count;
       }
-    double dstar = POS_INF;
-    for (int k = 0; k < m; ++k) if (di[k] < dstar) dstar = di[k];
-    int pair_count = 0;
-    for (int a = 0; a < m; ++a)
-      for (int b = a + 1; b < m; ++b)
-        if (D(d, n, sel[a], sel[b]) <= dstar) ++pair_count;
+    double dstar = gmin;
+    // Post-drop rescores for the (<= 2) witness drops, computed lazily at
+    // most once per pass: min over pairs excluding an endpoint re-selects
+    // exactly the D() cell objective_of(sel \ {endpoint}) would, and one pass
+    // serves both endpoints where the old code rescored each separately.
+    double excl_wa = POS_INF, excl_wb = POS_INF;
+    bool have_excl = false;
 
     double best_dstar = dstar;
     int best_pc = pair_count, best_drop = -1, best_add = -1;
@@ -261,7 +271,18 @@ static std::vector<int> grasp_local_search(const double* d, int n,
       for (int t = 0; t < m; ++t) if (t != ci) rem.push_back(sel[t]);
       double base_z;
       if (rem.size() < 2) base_z = POS_INF;
-      else if (drop == wa || drop == wb) base_z = objective_of(d, n, rem);
+      else if (drop == wa || drop == wb) {
+        if (!have_excl) {
+          for (int a = 0; a < m; ++a)
+            for (int b = a + 1; b < m; ++b) {
+              double v = D(d, n, sel[a], sel[b]);
+              if (sel[a] != wa && sel[b] != wa && v < excl_wa) excl_wa = v;
+              if (sel[a] != wb && sel[b] != wb && v < excl_wb) excl_wb = v;
+            }
+          have_excl = true;
+        }
+        base_z = drop == wa ? excl_wa : excl_wb;
+      }
       else base_z = dstar;
       // The rem x rem half of the tie-break count depends only on (ci, thr), so
       // hold it across the scan. `thr` is `best_dstar` on every tie -- the
