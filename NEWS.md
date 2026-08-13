@@ -1,8 +1,12 @@
+# MaxMin 0.0.0.9006 (development)
+
+- `Grasp()` no longer discards its best-known solution, and is ~2.0 faster.
+
 # MaxMin 0.0.0.9005 (development)
 
 - `DropAdd()` can now compute distances between pairs on the fly, rather than
   needing a complete matrix _a priori_.
-
+  
 # MaxMin 0.0.0.9004 (development)
 
 - New `MaxEntropy()`: maximum-entropy (maxdet) subset selection.
