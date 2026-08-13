@@ -188,7 +188,7 @@ static std::vector<int> grasp_construct(const double* d, int n, int m,
   std::vector<int> sel;
   sel.reserve(m);
   int first = (int)(u[0] * n);
-  if (first >= n) first = n - 1;
+  if (first >= n) first = n - 1;            // # nocov (FP guard; u < 1)
   sel.push_back(first);
   double* g = W.min1.data();
   int* wit = W.arg1.data();
@@ -221,7 +221,7 @@ static std::vector<int> grasp_construct(const double* d, int n, int m,
     } else {
       int sz = (int)rcl.size();
       int j = (int)(u[h] * sz);
-      if (j >= sz) j = sz - 1;
+      if (j >= sz) j = sz - 1;              // # nocov (FP guard; u < 1)
       pick = rcl[j];
     }
     sel.push_back(pick);
@@ -849,8 +849,10 @@ List Grasp_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter,
       // Under a finite budget a worker may find the clock already spent;
       // skipping the slot bounds the overshoot at slot granularity. The
       // budget path is wall-clock-defined anyway; with the budget off,
-      // every slot completes and determinism is unconditional.
-      if (gated && elapsed() >= time_budget_s) { bdone[b] = 0; continue; }
+      // every slot completes and determinism is unconditional. (nocov: the
+      // branch needs the clock to expire mid-batch — inherently flaky to
+      // arrange deterministically in a test.)
+      if (gated && elapsed() >= time_budget_s) { bdone[b] = 0; continue; } // # nocov
       LSScratch& W = pool[GRASP_TID];
       std::vector<int> x  = grasp_construct(d, n, m, alpha,
                                             &ubuf[(size_t)b * (size_t)m], W);
@@ -894,7 +896,7 @@ List Grasp_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter,
 #pragma omp parallel for schedule(dynamic) num_threads(nthr)
 #endif
     for (int p = 0; p < np; ++p) {
-      if (gated && elapsed() >= time_budget_s) continue;
+      if (gated && elapsed() >= time_budget_s) continue; // # nocov (wall-clock-defined; see phase B note)
       LSScratch& W = pool[GRASP_TID];
       PRResult pr1 = grasp_path_relink(d, n, ES[prs[p].first], ES[prs[p].second]);
       PRResult pr2 = grasp_path_relink(d, n, ES[prs[p].second], ES[prs[p].first]);
