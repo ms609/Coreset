@@ -187,12 +187,46 @@ static std::vector<int> grasp_construct(const double* d, int n, int m, double al
 }
 
 // Extended-improvement local search; matches .GraspLocalSearch. `sel` ascending.
+//
+// T-016: the candidate scan is screened through an incrementally-maintained
+// nearest-selected summary instead of an O(m) distance scan per candidate.
+// For every out-of-selection point `s`, min1[s] is the min distance from `s`
+// to the CURRENT selection and arg1[s] the selected vertex realising it.
+// The invariant that carries every branch below: arg1[s] always names a
+// currently-selected vertex whose distance to `s` EQUALS min1[s] (a witness).
+// The strict `<` in every update preserves it under FP ties — a later value
+// tying min1 never displaces the stored witness, which therefore survives
+// any exclusion of a DIFFERENT vertex. Consequently, for a candidate drop:
+//   arg1[s] != drop  =>  min over sel \ {drop} == min1[s]   (exact, O(1));
+//   arg1[s] == drop  =>  the witness is excluded — rescan `rem` for that `s`
+//                        (exact, O(m); only ~(n-m)/m candidates per drop).
+// Every candidate still gets its exact `nd` in the same ascending order, so
+// the extended-improvement tie-break fires on exactly the same candidates
+// with the same values: selections, iters and pr_calls are bit-identical to
+// the direct scan. The values are exact because `min` merely re-selects a
+// D() cell — min over fewer elements cannot fall, and the surviving witness
+// pins it. (min1 alone is only a LOWER bound on the post-drop min; the
+// arg1 test is what makes reading it exact — do not prune on min1 without it.)
 static std::vector<int> grasp_local_search(const double* d, int n,
                                          std::vector<int> sel) {
   int m = (int)sel.size();
   if (m < 2) return sel;
   std::vector<char> in_sel(n, 0);
   for (int v : sel) in_sel[v] = 1;
+  // Nearest-selected summary for the out-of-selection points. Initialised
+  // column-sequentially (cache-friendly: d(s, v) = dptr[s + v*n] is contiguous
+  // in s); processing selected vertices in ascending order with strict `<`
+  // makes arg1 the first argmin, exactly as a forward row scan would settle.
+  // Entries for selected points are placeholders, never read while selected;
+  // a vertex leaving the selection gets a fresh scan before first use.
+  std::vector<double> min1(n, POS_INF);
+  std::vector<int> arg1(n, -1);
+  for (int v : sel) {
+    const double* col = d + (size_t)v * (size_t)n;
+    for (int s = 0; s < n; ++s) {
+      if (!in_sel[s] && col[s] < min1[s]) { min1[s] = col[s]; arg1[s] = v; }
+    }
+  }
   for (;;) {
     // sel is kept ascending. di[k] = nearest-other-selected distance.
     // (wa, wb) is a witness for the global min edge, reused to hoist base_z.
@@ -242,10 +276,17 @@ static std::vector<int> grasp_local_search(const double* d, int n,
       for (int s = 0; s < n; ++s) {            // out-of-selection, ascending
         if (in_sel[s]) continue;
         // nd = min(base_z, min dist from s to remaining); identical to
-        // eval_cand's dstar on (rem ∪ {s}) but O(m) not O(m^2). The pc tie-break
-        // is only needed when this candidate can win (nd >= best_dstar).
-        double cross = POS_INF;
-        for (int v : rem) { double vv = D(d, n, s, v); if (vv < cross) cross = vv; }
+        // eval_cand's dstar on (rem ∪ {s}) but O(1) via the nearest-selected
+        // summary — rescan only when the stored witness IS the dropped
+        // vertex. The pc tie-break is only needed when this candidate can
+        // win (nd >= best_dstar).
+        double cross;
+        if (arg1[s] != drop) {
+          cross = min1[s];
+        } else {
+          cross = POS_INF;
+          for (int v : rem) { double vv = D(d, n, s, v); if (vv < cross) cross = vv; }
+        }
         double nd = base_z < cross ? base_z : cross;
         if (nd >= best_dstar) {                // win or tie; NaN falls through
           if (memoWithin < 0 || nd != memoThr) {
@@ -272,6 +313,30 @@ static std::vector<int> grasp_local_search(const double* d, int n,
     next.push_back(best_add);
     std::sort(next.begin(), next.end());
     sel.swap(next);
+    // Maintain the nearest-selected summary under the swap. For the bulk of
+    // candidates the stored witness survives, so the new min is
+    // min(min1, d(s, best_add)) — one contiguous column read. A fresh scan is
+    // needed only where no valid witness remains: the dropped vertex itself
+    // (its entry is a stale placeholder from its selected tenure) and the
+    // candidates whose witness WAS the dropped vertex (~(n-m)/m of them).
+    // Out-of-selection entries other than best_drop are valid by induction,
+    // so a stale arg1 can never alias best_drop here.
+    {
+      const double* col_add = d + (size_t)best_add * (size_t)n;
+      for (int s = 0; s < n; ++s) {
+        if (in_sel[s]) continue;
+        if (s == best_drop || arg1[s] == best_drop) {
+          double b = POS_INF; int a = -1;
+          for (int v : sel) {
+            double vv = D(d, n, s, v);
+            if (vv < b) { b = vv; a = v; }
+          }
+          min1[s] = b; arg1[s] = a;
+        } else if (col_add[s] < min1[s]) {
+          min1[s] = col_add[s]; arg1[s] = best_add;
+        }
+      }
+    }
   }
   return sel;
 }
