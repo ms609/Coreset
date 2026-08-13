@@ -708,3 +708,14 @@ owed before any mission-wide claim (/profile skill).
 min-of-N per the round-4 method note). **Cleanup:** no VTune dirs; scratch
 libs and instrumented builds in the session scratchpad; instrumentation
 reverted after each capture. last_focus unchanged (targeted continuation).
+
+**Round-5 closing addenda.** Full suite on the final build with the retuned
+test: **4898 / 0 fail / 6 known-err**; invariance additionally confirmed at
+nCores = 16 (the box's maximum). Coverage caveat: unlike T-018 (whose
+branches were counter-proven under the suite), T-021's mid-batch budget-skip
+and phase-C worker-skip branches need the wall clock to expire inside a
+batch — inherently flaky to test deterministically — and the two floor-index
+clamps are defensive-unreachable by design; codecov may flag those lines
+(`# nocov` markers are a reasonable PR-time answer). The OpenMP build has
+compiled and run only on Windows/MinGW so far — Linux/gcc is unexercised
+until a push triggers CI, and real scaling curves belong on Hamilton.
