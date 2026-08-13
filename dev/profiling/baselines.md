@@ -38,6 +38,24 @@ Median wall time, `bench::mark`, R-devel, `-O2`. Refresh each round.
 (T-006→T-007: 22.2→16.4 ms / 85.0→39.5 ms → 1.34× / 2.07×, 416/416 bit-identical.
  Cumulative vs pre-T-006: 315→16.4 ms / 1329→39.5 ms → 19.2× / 33.6×.)
 
+### AFTER round 4 (T-016/T-016b/T-017, 2026-08-13) — canonical coreset shapes
+
+`drivers/grasp-timing.R` best-of-3 minima across interleaved invocations
+(this box spikes ±20–35% on sub-second cells — regress-compare against
+interleaved minima, never one run; see log.md round 4).
+
+| case | metric | ms |
+|------|--------|---:|
+| n=2000 dim=10 k=100 plateau=8 | min | 120 |
+| n=2000 dim=10 k=100 plateau=64 | min | 520 |
+| n=2000 dim=10 k=100 plateau=256 | min | 2390 |
+| n=2000 dim=10 k=10 plateau=64 | min | 50 |
+| n=500 dim=10 k=50 plateau=64 | min | 40 |
+
+(Round 4 vs PR3 tip: 470→120 / 2210→520 / 10490→2390 ms → 3.9× / 4.3× / 4.4×,
+ 1458/1458 bit-identical, equal-plateau objectives identical at n = 2000.
+ Quality-vs-time harness: `drivers/grasp-frontier.R`.)
+
 ## Area 1 — FarFirst single pass — AFTER T-004 (column reorder, AT-LIMIT)
 
 | case | metric | ms |

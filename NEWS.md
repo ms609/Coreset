@@ -1,3 +1,30 @@
+# MaxMin 0.0.0.9007 (development)
+
+## Performance
+
+- `Grasp()` is a further 3.9–4.4× faster at `k = 100` across the whole
+  `plateau` ladder (n = 2000 coreset shapes; ~15× below `plateau` 64 and ~9.5×
+  at `plateau` 256 relative to 0.0.0.9005), with smaller subset sizes
+  unchanged or modestly faster. Selections are unchanged: the kernel returns
+  bit-identical indices, objectives, iteration counts and path-relinking call
+  counts over the same 1458-cell grid as before, and still matches the pure-R
+  reference exactly. Because nothing about the search trajectory moved,
+  results computed with earlier versions remain valid.
+
+  Three ideas, all exact. The local search's candidate scan now screens
+  through an incrementally maintained nearest-selected-point summary instead
+  of rescanning every candidate against the selection: when a candidate's
+  stored nearest survives the proposed drop, its post-drop distance is
+  already known, and only the few candidates whose nearest is being dropped
+  are rescanned. The local search's per-pass bookkeeping folds three
+  pair sweeps into one plus a lazily computed exclusion pass. And the
+  path-relinking walk carries its candidate lists and nearest summaries
+  across steps, recomputing only what a one-element swap can actually
+  disturb. At a fixed `maxSeconds` budget the new kernel completes several
+  times more GRASP iterations and reaches path relinking where the old one
+  ran out of clock; at equal budgets it never returned a worse selection
+  across 60 seeded comparisons.
+
 # MaxMin 0.0.0.9006 (development)
 
 - `Grasp()` no longer discards its best-known solution, and is ~2.0 faster.

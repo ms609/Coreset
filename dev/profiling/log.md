@@ -492,3 +492,110 @@ figures for the manuscript belong on Hamilton, not this Windows box.
 **Cleanup:** scratch libraries and instrumented builds live under the session
 scratchpad, outside the repo; no instrumentation ships. last_focus unchanged (this
 was a targeted run, not a rotation slot).
+
+---
+
+## Round — 2026-08-13 — Area 3: Grasp round 4 (bit-identity lifted; kept anyway)
+
+**Question (user, via ROUND4_PLAN.md):** improve GRASP as much as possible with
+the bit-identity constraint explicitly lifted; quality per unit time is the
+metric; the designated lever is an incrementally-maintained nearest-selected
+summary (its §4), whose cost was assumed to be abandoning the
+extended-improvement tie-break — flagged as the round's quality risk (§7.1).
+
+**The central finding — the plan's premise is false in the favourable
+direction.** The tie-break is compatible with an O(n) screen. Maintaining, per
+out-of-selection point, `min1[s]` (distance to nearest selected) and `arg1[s]`
+(the vertex realising it), with strict-`<` updates, keeps `arg1` a true witness
+under FP ties; then for a candidate drop, `arg1[s] != drop` means the post-drop
+minimum IS `min1[s]` (the witness survives, and `min` re-selects the same
+matrix cell), and only the ~(n−m)/m candidates whose witness is being dropped
+rescan in O(m). Every candidate still gets its exact `nd` in the same ascending
+order, so the tie-break fires on the same candidates with the same values and
+the chosen swap — hence the whole trajectory — is bit-identical. What the
+plan's §3 actually rules out is *sub-linear* candidate skipping, not O(1)
+exact enumeration. That lands the round in the plan's own §1 fast lane
+("a change that only reduces work per iteration can be verified as before"),
+and its §7 decisions collapse: **tie-break kept exactly; `.Grasp_R` untouched
+(parity test still the oracle); the manuscript's cached GRASP figure data
+remains valid and no FurthestPoint re-pin is needed (§7.3 moot).**
+
+**Harness (built first, per plan §5):** `drivers/grasp-frontier.R` (78291a3) —
+mode (a) equal-plateau speed + objective identity at canonical n = 2000 shapes
+the battery's n ≤ 500 grid never reaches; mode (b) equal `maxSeconds` quality,
+plateau-off and canonical-512 sub-modes, 5 seeds/cell, mean AND worst per-seed
+deltas, `iters`/`pr_calls` recorded so budget-bound phase-C skipping is
+visible as mechanism. Real case: satellite (tc14) thinned to 2000 by
+farthest-first, mirroring the canonical coreset pipeline.
+
+**T-016 — LS nearest-selected screen (6ab0cb9):** dominant scan O(n·m) → O(n)
+per pass; maintenance under a swap is one contiguous column read plus rescans
+of the dropped vertex and its stranded witnesses. Verified: battery 1458/1458
+(indices, objective, `iters`, `pr_calls`), R↔C++ parity 324/324, suite
+4893/0/6. Clean-build timing (n = 2000, k = 100): plateau 8 0.47→0.22 s
+(2.1×), 64 2.21→0.62 s (3.6×), 256 10.49→2.58 s (4.1×); k = 10 flat — the
+T-015 small-m regression trap avoided. Instrumented counters (plateau 256):
+screen rescans 1.6% of candidates (≈ 1/m prediction), evictions ~30/swap,
+tie-arm fires 0.8% with 94% memo hits — all new branches exercised.
+
+**T-016b — LS header fold (eed52c7):** `dstar` IS the running `gmin`; the pair
+count becomes a reset-on-new-min counter inside the `di` sweep; the ≤2
+`objective_of(sel \ witness)` rescores become one lazy shared exclusion pass.
+Worth a small consistent win only where the header binds — plateau 256
+2.58→2.47 s, every T-016b run beating every lever-A run — flat elsewhere;
+kept on the T-004 precedent. **Method note:** a first single-chain best-of-3
+showed a phantom +36% regression at plateau 8 that did not reproduce; this box
+throws ±20–35% spikes on sub-second cells, so keep/reject timing calls were
+decided by interleaved min-of-N across separate invocations (the skill's
+"never a single run" guard, applied via interleaving).
+
+**T-017 — PR-walk cross-step maintenance (a5d1f48):** the walk's candidate
+lists, global-min-edge witness (per-member nearest-other summary `edi`/`earg`
+under the same witness invariant), and per-add-candidate `NearTwo` (now
+carrying an `arg2` witness so eviction is detectable) all persist across
+steps; witness drops rescore via the shared lazy exclusion sweep. Per-step
+unconditional O(m²) → O(m) plus rare rescans. Battery 1458/1458 incl.
+`pr_calls`. Interleaved min-of-3: plateau 8 0.20→0.12 s (1.7×), 64 1.1×,
+256 flat — the expected profile for the PR-bound low end.
+
+**Round result (cumulative vs PR3 tip fde54d9, n = 2000 k = 100):** equal
+plateau 8/64/256 = **3.9× / 4.3× / 4.4×** (timing minima; frontier sums say
+3.8×/4.2×/4.5×), satellite coreset 2.6–3.2× across capture rounds, k = 10
+1.0–1.2×, n = 500 k = 50 ~2×. **Objectives IDENTICAL on every equal-plateau
+frontier cell.** Equal-budget: **119/120 seeded cells win or tie**, mean T_k
++0.14% to +1.64% at k = 100 with the mechanism visible (4–5× the iterations
+per budget; path relinking reached inside budgets where the baseline got
+none). The single loss (k = 10, canon, 0.25 s) did not reproduce: a targeted
+3×5-seed rerun hit the best objective 15/15 on the new build while the
+baseline itself dropped seeds under its own budget noise.
+
+**Phase split after (instrumented, seed-42 instance, plateau 8/64/256):**
+construct 0.015/0.056/0.351 s, LS 0.084/0.228/1.335 s, PR 0.064/0.045/0.044 s
+(PR was 0.157/0.100/0.138 before T-017). **Next floor: the local search still
+dominates both ladder ends (52%/69%/77%).** Its remaining mandatory term is
+the per-pass m²/2 pair sweep that the extended-improvement pair count
+requires (di + count + witness now share that one sweep), plus the O(n·m)
+per-call summary init for PR-called LS (a construction `g`-handoff would
+remove it for phase-B calls only). §8's construction-binds prediction is not
+yet reached (construction 9–20%); its lazy-heap idea cannot beat
+construction's own O(n)-per-step update pass and was not attempted.
+
+**Findings placement (per the /profile skill):** all three levers were fixed
+in-round → no GitHub issues, and no new rows in the frozen `findings.md`
+archive; this entry and the commits are the record (T-016/T-017 are
+log-narrative labels, not issue ids; issue filing is in any case unavailable
+while `ms609-agent` is suspended).
+
+**Timing policy:** all ratios are Windows-local *relative* figures (clean
+builds, interleaved minima). No Linux/gcc cross-check this round — the levers
+are op-count reductions, not CRT artifacts — but per the skill, canonical
+wall-clock and any mission-wide claim await Hamilton.
+
+**Docs:** NEWS 0.0.0.9007 states plainly that selections are *unchanged*;
+DESCRIPTION bumped; baselines.md Area 3 refreshed to the round-4 build.
+
+**Cleanup:** no VTune result dirs created; scratch libraries and both
+instrumented builds live under the session scratchpad, outside the repo;
+no instrumentation ships (verified by reverting `src/grasp.cpp` to the
+committed state after each instrumented capture). last_focus unchanged
+(targeted run continuing round 3, not a rotation slot).
