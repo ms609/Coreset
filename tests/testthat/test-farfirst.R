@@ -404,3 +404,38 @@ test_that("nSeeds is silently ignored on the distance-column oracle path", {
   colFn <- function(i) dat$d[, i]
   expect_no_error(FarFirst(6L, colFn, N = nrow(dat$d), nSeeds = 3L))
 })
+
+
+test_that("FarFirst results are invariant to mc.cores (small anchors)", {
+  # The O(N^2) anchor primitives parallelise at any non-trivial size; results
+  # must be bit-identical at every thread count. CRAN caps tests at 2 cores.
+  set.seed(21)
+  pts <- matrix(rnorm(200L * 3L), ncol = 3L)
+  d <- as.matrix(dist(pts))
+  old <- options(mc.cores = NULL)
+  on.exit(options(old), add = TRUE)
+  anchors <- c("diameter", "anti_medoid", "medoid", "rowsum", "rownorm")
+  options(mc.cores = 1L)
+  a1 <- FarFirst(12L, d, strategy = anchors)
+  p1 <- FarFirst(12L, points = pts, strategy = anchors)
+  options(mc.cores = 2L)
+  a2 <- FarFirst(12L, d, strategy = anchors)
+  p2 <- FarFirst(12L, points = pts, strategy = anchors)
+  expect_identical(a1, a2)
+  expect_identical(p1, p2)
+})
+
+test_that("FarFirst results are invariant to mc.cores (parallel greedy pass)", {
+  # N above the kernels' thread-engagement threshold (~32k), so the fused
+  # pmin/argmax sweep really runs chunked; the chunk merge must reproduce the
+  # serial first-maximum rule exactly.
+  set.seed(22)
+  pts <- matrix(rnorm(40000L * 2L), ncol = 2L)
+  old <- options(mc.cores = NULL)
+  on.exit(options(old), add = TRUE)
+  options(mc.cores = 1L)
+  s1 <- FarFirst(50L, points = pts, strategy = 5L)
+  options(mc.cores = 2L)
+  s2 <- FarFirst(50L, points = pts, strategy = 5L)
+  expect_identical(s1, s2)
+})

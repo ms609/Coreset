@@ -37,27 +37,27 @@ MaxEntropyLogDet_cpp <- function(K, idx) {
     .Call(`_MaxMin_MaxEntropyLogDet_cpp`, K, idx)
 }
 
-MaximinFrom_cpp <- function(d, n, first) {
-    .Call(`_MaxMin_MaximinFrom_cpp`, d, n, first)
+MaximinFrom_cpp <- function(d, n, first, n_threads = 1L) {
+    .Call(`_MaxMin_MaximinFrom_cpp`, d, n, first, n_threads)
 }
 
-MaximinFromPoints_cpp <- function(points, n, first, mask) {
-    .Call(`_MaxMin_MaximinFromPoints_cpp`, points, n, first, mask)
+MaximinFromPoints_cpp <- function(points, n, first, mask, n_threads = 1L) {
+    .Call(`_MaxMin_MaximinFromPoints_cpp`, points, n, first, mask, n_threads)
 }
 
-RowSumsFromPoints_cpp <- function(points) {
-    .Call(`_MaxMin_RowSumsFromPoints_cpp`, points)
+RowSumsFromPoints_cpp <- function(points, n_threads = 1L) {
+    .Call(`_MaxMin_RowSumsFromPoints_cpp`, points, n_threads)
 }
 
-RowSqSumsFromPoints_cpp <- function(points) {
-    .Call(`_MaxMin_RowSqSumsFromPoints_cpp`, points)
+RowSqSumsFromPoints_cpp <- function(points, n_threads = 1L) {
+    .Call(`_MaxMin_RowSqSumsFromPoints_cpp`, points, n_threads)
 }
 
 EuclidColFromPoints_cpp <- function(points, col) {
     .Call(`_MaxMin_EuclidColFromPoints_cpp`, points, col)
 }
 
-DiameterFromPoints_cpp <- function(points) {
-    .Call(`_MaxMin_DiameterFromPoints_cpp`, points)
+DiameterFromPoints_cpp <- function(points, n_threads = 1L) {
+    .Call(`_MaxMin_DiameterFromPoints_cpp`, points, n_threads)
 }
 

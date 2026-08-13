@@ -49,6 +49,13 @@
 //
 // Returns an integer vector of length n (1-based indices, same as R).
 
+// Threads engage on the greedy pass only past this many points: below it a
+// step's whole update is a few tens of microseconds and the per-step barrier
+// costs more than it buys. Results are identical either way (every element is
+// computed by exactly one thread in the same order, and the argmax merge
+// preserves the first-maximum rule), so this is a pure tuning constant.
+static const int GONZ_PAR_MIN = 32768;
+
 // Squared-Euclidean accumulated in double over columns, matching dist's order.
 static inline double EuclidCol(const double* P, int nPts, int dim,
                                int i, int c) {
@@ -88,11 +95,77 @@ static inline void EuclidColSqInto(const double* P, int nPts, int dim, int c,
   }
 }
 
+// One fused greedy-step update over the contiguous range [lo, hi): fill the
+// new centre's squared column into dcol (dimension 0 writes — no zeroing
+// pass; middle dimensions accumulate in EuclidColSqInto's j-ascending order,
+// so every partial sum is the identical double), finish each entry in a
+// register on the last dimension, merge it into md (pmin), and track the
+// range's post-update first maximum (strict >, ascending i — R's which.max
+// rule). dim == 1 collapses the write and the finish into one pass; masked
+// entries (-Inf) pass through untouched and can never win the max.
+static inline void FusedUpdateChunk(const double* P, int nPts, int dim, int c,
+                                    double* md, double* dc, int lo, int hi,
+                                    int* nb_out, double* nbv_out) {
+  int nb = lo;
+  double nbv = R_NegInf;
+  if (dim == 0) {
+    // Degenerate zero-column input: the old EuclidColSqInto produced an
+    // all-zero column, i.e. pmin(md, 0). Kept defined.
+    for (int i = lo; i < hi; i++) {
+      double m = md[i];
+      if (0.0 < m) { m = 0.0; md[i] = m; }
+      if (m > nbv) { nbv = m; nb = i; }
+    }
+  } else if (dim == 1) {
+    const double* pj = P;
+    double cj = pj[c];
+    for (int i = lo; i < hi; i++) {
+      double dev = pj[i] - cj;
+      double v = dev * dev;
+      double m = md[i];
+      if (v < m) { m = v; md[i] = m; }
+      if (m > nbv) { nbv = m; nb = i; }
+    }
+  } else {
+    {
+      const double* pj = P;
+      double cj = pj[c];
+      for (int i = lo; i < hi; i++) {
+        double dev = pj[i] - cj;
+        dc[i] = dev * dev;
+      }
+    }
+    for (int j = 1; j < dim - 1; j++) {
+      const double* pj = P + (R_xlen_t)j * nPts;
+      double cj = pj[c];
+      for (int i = lo; i < hi; i++) {
+        double dev = pj[i] - cj;
+        dc[i] += dev * dev;
+      }
+    }
+    {
+      const double* pj = P + (R_xlen_t)(dim - 1) * nPts;
+      double cj = pj[c];
+      for (int i = lo; i < hi; i++) {
+        double dev = pj[i] - cj;
+        double v = dc[i] + dev * dev;
+        double m = md[i];
+        if (v < m) { m = v; md[i] = m; }
+        if (m > nbv) { nbv = m; nb = i; }
+      }
+    }
+  }
+  *nb_out = nb;
+  *nbv_out = nbv;
+}
+
 // [[Rcpp::export]]
 Rcpp::IntegerVector MaximinFromPoints_cpp(Rcpp::NumericMatrix points,
-                                          int n, int first, int mask) {
+                                          int n, int first, int mask,
+                                          int n_threads = 1) {
   int nPts = points.nrow();
   int dim  = points.ncol();
+  int nthr = n_threads < 1 ? 1 : n_threads;
   if (n < 1 || n > nPts) {                  // defensive: public wrapper guards
     Rcpp::stop("'n' must be in [1, %d]; got %d", nPts, n);
   }
@@ -115,6 +188,12 @@ Rcpp::IntegerVector MaximinFromPoints_cpp(Rcpp::NumericMatrix points,
   double* md = min_dist.begin();
   EuclidColSqInto(P, nPts, dim, first0, md);
   std::vector<double> dcol(nPts);   // reused per step for the new point's column
+#ifdef _OPENMP
+  std::vector<int> tnb(nthr);       // per-chunk argmax candidates (see below)
+  std::vector<double> tnbv(nthr);
+#else
+  (void)nthr;
+#endif
   min_dist[first0] = R_NegInf;      // mask seed before entering loop
   if (mask >= 1) {                                   // # nocov start
     min_dist[mask - 1] = R_NegInf;  // pin forbidden point (anti-medoid medoid)
@@ -124,16 +203,22 @@ Rcpp::IntegerVector MaximinFromPoints_cpp(Rcpp::NumericMatrix points,
   // is exactly best_val at each step. Tracked in squared space, sqrt'd once.
   double tk_sq = R_PosInf;
 
-  for (int k = 1; k < n; k++) {
-    // which.max: first index of the global maximum (strict >, so ties -> first)
-    int best = 0;
-    double best_val = min_dist[0];
-    for (int i = 1; i < nPts; i++) {
-      if (min_dist[i] > best_val) {
-        best_val = min_dist[i];
-        best = i;
-      }
+  // which.max, folded (matches MaximinFrom_cpp): the standalone scan below
+  // seeds (best, best_val); each later step's argmax rides the last pass of
+  // the fused update below, which reads every entry's post-update value in
+  // ascending order — strict > keeps the first-maximum tie rule, and masked
+  // entries (-Inf) can never win. The final step's update is skipped:
+  // nothing reads min_dist after the last pick.
+  int best = 0;
+  double best_val = md[0];
+  for (int i = 1; i < nPts; i++) {
+    if (md[i] > best_val) {
+      best_val = md[i];
+      best = i;
     }
+  }
+
+  for (int k = 1; k < n; k++) {
     selected[k] = best + 1;         // back to 1-based
     if (best_val < tk_sq) tk_sq = best_val;   // running min insertion distance
 
@@ -141,9 +226,39 @@ Rcpp::IntegerVector MaximinFromPoints_cpp(Rcpp::NumericMatrix points,
     // overwrite -Inf. A pinned `mask` point keeps -Inf for the same reason:
     // any non-negative distance is never < -Inf.
     min_dist[best] = R_NegInf;
-    EuclidColSqInto(P, nPts, dim, best, dcol.data());
-    for (int i = 0; i < nPts; i++) {
-      if (dcol[i] < md[i]) md[i] = dcol[i];
+
+    if (k + 1 < n) {
+      // The new point's squared column, the pmin merge and the next argmax in
+      // one fused sweep (see FusedUpdateChunk). Past GONZ_PAR_MIN points the
+      // sweep splits into one contiguous chunk per thread — disjoint ranges
+      // of md/dcol, so no thread ever reads another's writes — and the
+      // chunk maxima merge in ascending chunk order with strict >, which is
+      // exactly the global first-maximum: identical selection at every
+      // thread count.
+      const int c = best;
+      int nb;
+      double nbv;
+#ifdef _OPENMP
+      if (nthr > 1 && nPts >= GONZ_PAR_MIN) {
+        const int C = nthr;
+#pragma omp parallel for num_threads(nthr) schedule(static, 1)
+        for (int t = 0; t < C; t++) {
+          int lo = (int)((R_xlen_t)nPts * t / C);
+          int hi = (int)((R_xlen_t)nPts * (t + 1) / C);
+          FusedUpdateChunk(P, nPts, dim, c, md, dcol.data(), lo, hi,
+                           &tnb[t], &tnbv[t]);
+        }
+        nb = tnb[0]; nbv = tnbv[0];
+        for (int t = 1; t < C; t++) {
+          if (tnbv[t] > nbv) { nbv = tnbv[t]; nb = tnb[t]; }
+        }
+      } else
+#endif
+      {
+        FusedUpdateChunk(P, nPts, dim, c, md, dcol.data(), 0, nPts, &nb, &nbv);
+      }
+      best = nb;
+      best_val = nbv;
     }
   }
 
@@ -168,18 +283,29 @@ Rcpp::IntegerVector MaximinFromPoints_cpp(Rcpp::NumericMatrix points,
 // accumulator, j ascending, EuclidCol(i, i) == 0 contributes a harmless 0 —
 // so the returned doubles equal R's and which.min picks the same index.
 //
+// Each row's long-double accumulation runs wholly on one thread in the same
+// j-ascending order, so the parallel result is the identical double per row
+// at every thread count. O(N^2 * dim) with a sqrt per pair — compute-bound,
+// the one FarFirst primitive where threads scale near-linearly.
+//
 // [[Rcpp::export]]
-Rcpp::NumericVector RowSumsFromPoints_cpp(Rcpp::NumericMatrix points) {
+Rcpp::NumericVector RowSumsFromPoints_cpp(Rcpp::NumericMatrix points,
+                                          int n_threads = 1) {
   int nPts = points.nrow();
   int dim  = points.ncol();
   const double* P = points.begin();
   Rcpp::NumericVector out(nPts);
+  double* o = out.begin();
+#ifdef _OPENMP
+#pragma omp parallel for if(n_threads > 1 && nPts > 64) \
+    num_threads(n_threads) schedule(static)
+#endif
   for (int i = 0; i < nPts; i++) {
     long double s = 0.0L;
     for (int j = 0; j < nPts; j++) {
       s += (long double) EuclidCol(P, nPts, dim, i, j);
     }
-    out[i] = (double) s;
+    o[i] = (double) s;
   }
   // Return:
   return out;
@@ -198,19 +324,27 @@ Rcpp::NumericVector RowSumsFromPoints_cpp(Rcpp::NumericMatrix points) {
 // sum_j (N*||x_i||^2 - 2 x_i.x_j + ||x_j||^2) is NOT used: it rounds differently
 // from squaring the sqrt distances and would flip which.max on tie-dense data.
 //
+// Parallel per-row exactly as RowSumsFromPoints_cpp (see its note).
+//
 // [[Rcpp::export]]
-Rcpp::NumericVector RowSqSumsFromPoints_cpp(Rcpp::NumericMatrix points) {
+Rcpp::NumericVector RowSqSumsFromPoints_cpp(Rcpp::NumericMatrix points,
+                                            int n_threads = 1) {
   int nPts = points.nrow();
   int dim  = points.ncol();
   const double* P = points.begin();
   Rcpp::NumericVector out(nPts);
+  double* o = out.begin();
+#ifdef _OPENMP
+#pragma omp parallel for if(n_threads > 1 && nPts > 64) \
+    num_threads(n_threads) schedule(static)
+#endif
   for (int i = 0; i < nPts; i++) {
     long double s = 0.0L;
     for (int j = 0; j < nPts; j++) {
       double dij = EuclidCol(P, nPts, dim, i, j);
       s += (long double) (dij * dij);
     }
-    out[i] = (double) s;
+    o[i] = (double) s;
   }
   // Return:
   return out;
@@ -251,21 +385,54 @@ Rcpp::NumericVector EuclidColFromPoints_cpp(Rcpp::NumericMatrix points,
 // distance is 0 (or N < 2) d_max is 0 and row/col are 0, letting the R caller
 // take its degenerate-data fallback.
 //
+// Parallel over contiguous column chunks; each chunk scans in the original
+// column-outer/row-inner order with strict >, and chunks merge in ascending
+// order with strict >, so the winning cell is the global column-major first
+// maximum at every thread count — exactly the serial scan's pick.
+//
 // [[Rcpp::export]]
-Rcpp::NumericVector DiameterFromPoints_cpp(Rcpp::NumericMatrix points) {
+Rcpp::NumericVector DiameterFromPoints_cpp(Rcpp::NumericMatrix points,
+                                           int n_threads = 1) {
   int nPts = points.nrow();
   int dim  = points.ncol();
   const double* P = points.begin();
   double best = R_NegInf;
   int best_r = 0, best_c = 0;       // 0 => no off-diagonal pair found
-  for (int c = 0; c < nPts; c++) {
-    for (int r = 0; r < nPts; r++) {
-      if (r == c) continue;
-      double dist = EuclidCol(P, nPts, dim, r, c);
-      if (dist > best) {
-        best = dist;
-        best_r = r + 1;
-        best_c = c + 1;
+#ifdef _OPENMP
+  if (n_threads > 1 && nPts > 64) {
+    const int C = n_threads;
+    std::vector<double> tb(C, R_NegInf);
+    std::vector<int> tr(C, 0), tc(C, 0);
+#pragma omp parallel for num_threads(n_threads) schedule(static, 1)
+    for (int t = 0; t < C; t++) {
+      int lo = (int)((R_xlen_t)nPts * t / C);
+      int hi = (int)((R_xlen_t)nPts * (t + 1) / C);
+      double b = R_NegInf;
+      int br = 0, bc = 0;
+      for (int c = lo; c < hi; c++) {
+        for (int r = 0; r < nPts; r++) {
+          if (r == c) continue;
+          double dist = EuclidCol(P, nPts, dim, r, c);
+          if (dist > b) { b = dist; br = r + 1; bc = c + 1; }
+        }
+      }
+      tb[t] = b; tr[t] = br; tc[t] = bc;
+    }
+    for (int t = 0; t < C; t++) {
+      if (tb[t] > best) { best = tb[t]; best_r = tr[t]; best_c = tc[t]; }
+    }
+  } else
+#endif
+  {
+    for (int c = 0; c < nPts; c++) {
+      for (int r = 0; r < nPts; r++) {
+        if (r == c) continue;
+        double dist = EuclidCol(P, nPts, dim, r, c);
+        if (dist > best) {
+          best = dist;
+          best_r = r + 1;
+          best_c = c + 1;
+        }
       }
     }
   }

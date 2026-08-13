@@ -1,4 +1,4 @@
-# seed.R
+﻿# seed.R
 #
 # Peripheral seeding strategies for Gonzalez farthest-first selection, and the
 # ensemble driver that runs several and keeps the best by MinDist(). The single
@@ -188,17 +188,17 @@
   switch(strategy,
     first   = 1L,
     anti_centroid = as.integer(which.max(.CentroidSqDist(points))),
-    medoid  = as.integer(which.min(RowSumsFromPoints_cpp(points))),
-    rowsum  = as.integer(which.max(RowSumsFromPoints_cpp(points))),
-    rownorm = as.integer(which.max(RowSqSumsFromPoints_cpp(points))),
+    medoid  = as.integer(which.min(RowSumsFromPoints_cpp(points, .NThreads()))),
+    rowsum  = as.integer(which.max(RowSumsFromPoints_cpp(points, .NThreads()))),
+    rownorm = as.integer(which.max(RowSqSumsFromPoints_cpp(points, .NThreads()))),
     anti_medoid = {
-      med <- which.min(RowSumsFromPoints_cpp(points))
+      med <- which.min(RowSumsFromPoints_cpp(points, .NThreads()))
       dd  <- EuclidColFromPoints_cpp(points, med)
       dd[med] <- -Inf
       as.integer(which.max(dd))
     },
     diameter = {
-      diam <- DiameterFromPoints_cpp(points)
+      diam <- DiameterFromPoints_cpp(points, .NThreads())
       if (!is.finite(diam[1L]) || diam[1L] <= 0) {
         1L
       } else {
@@ -409,15 +409,15 @@ PickPoint <- function(d = NULL, points = NULL,
 
   lazy <- new.env(parent = emptyenv())
   GetRowSums <- function() {
-    lazy$rowSums <- lazy$rowSums %||% RowSumsFromPoints_cpp(points)
+    lazy$rowSums <- lazy$rowSums %||% RowSumsFromPoints_cpp(points, .NThreads())
     lazy$rowSums
   }
   GetRowSqSums <- function() {
-    lazy$rowSqSums <- lazy$rowSqSums %||% RowSqSumsFromPoints_cpp(points)
+    lazy$rowSqSums <- lazy$rowSqSums %||% RowSqSumsFromPoints_cpp(points, .NThreads())
     lazy$rowSqSums
   }
   GetDiameter <- function() {
-    lazy$diameter <- lazy$diameter %||% DiameterFromPoints_cpp(points)
+    lazy$diameter <- lazy$diameter %||% DiameterFromPoints_cpp(points, .NThreads())
     lazy$diameter
   }
   GetCentroidD2 <- function() {

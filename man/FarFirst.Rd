@@ -64,6 +64,27 @@ In interactive sessions, the distance-column path shows a progress bar.
 To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
 }
 
+\section{Parallelism}{
+
+When the package is built with OpenMP support (the default on Linux and
+Windows), the greedy pass and the \eqn{O(N^2)} seeding anchors (\code{diameter},
+\code{medoid}, \code{anti_medoid}, \code{rowsum}, \code{rownorm}) run on multiple threads. The
+number of threads is controlled by the standard \code{"mc.cores"} option:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{options(mc.cores = parallel::detectCores())  # use all available cores
+options(mc.cores = 4L)                        # or a fixed number
+}\if{html}{\out{</div>}}
+
+The default is \code{1} (single-threaded). The kernels contain no random draws
+and every parallel reduction preserves the serial first-maximum tie rule,
+so \strong{the selection returned is identical at every thread count}:
+\code{mc.cores} trades wall-clock time only. The greedy pass engages its
+threads only past ~32,000 points (below that a step is too brief for the
+synchronisation to pay); the seeding anchors parallelise at any
+non-trivial size, and the distance-column oracle path stays serial (it
+calls back into user R code).
+}
+
 \examples{
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)

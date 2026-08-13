@@ -35,7 +35,7 @@
 #' @return `.MaximinFrom()` returns an integer vector of length `k` of selected row/col indices.
 #' @keywords internal
 .MaximinFrom <- function(d, k, first) {
-  MaximinFrom_cpp(d, as.integer(k), as.integer(first))
+  MaximinFrom_cpp(d, as.integer(k), as.integer(first), .NThreads())
 }
 
 #' Coerce coordinate input for the on-the-fly (matrix-free) samplers
@@ -78,7 +78,7 @@
 #' @keywords internal
 .MaximinFromPoints <- function(points, k, first, mask = 0L) {
   MaximinFromPoints_cpp(points, as.integer(k), as.integer(first),
-                        as.integer(mask))
+                        as.integer(mask), .NThreads())
 }
 
 #' Promote the kernel's free `t_k` score to the user-facing `score` attribute
@@ -174,6 +174,26 @@
 #' - `winning_strategy`: character vector listing strategies that attained the
 #' optimal score.
 #' - `strategy_results`: results for each strategy.
+#'
+#' @section Parallelism:
+#' When the package is built with OpenMP support (the default on Linux and
+#' Windows), the greedy pass and the \eqn{O(N^2)} seeding anchors (`diameter`,
+#' `medoid`, `anti_medoid`, `rowsum`, `rownorm`) run on multiple threads. The
+#' number of threads is controlled by the standard `"mc.cores"` option:
+#'
+#' ```r
+#' options(mc.cores = parallel::detectCores())  # use all available cores
+#' options(mc.cores = 4L)                        # or a fixed number
+#' ```
+#'
+#' The default is `1` (single-threaded). The kernels contain no random draws
+#' and every parallel reduction preserves the serial first-maximum tie rule,
+#' so **the selection returned is identical at every thread count**:
+#' `mc.cores` trades wall-clock time only. The greedy pass engages its
+#' threads only past ~32,000 points (below that a step is too brief for the
+#' synchronisation to pay); the seeding anchors parallelise at any
+#' non-trivial size, and the distance-column oracle path stays serial (it
+#' calls back into user R code).
 #'
 #' @references \insertAllCited{}
 #' @seealso [PickPoint()] for the seed indices alone; [DropAdd()] and

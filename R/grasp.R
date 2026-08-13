@@ -405,14 +405,12 @@ Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
   }
 
   # Thread count follows the house (TreeDist) convention: the standard
-  # "mc.cores" option, default 1. The result is identical at every thread
-  # count (see the kernel's determinism contract) -- mc.cores trades
-  # wall-clock only, so it is read here rather than surfaced as an argument.
-  nThreads <- as.integer(getOption("mc.cores", 1L))
-  if (is.na(nThreads) || nThreads < 1L) nThreads <- 1L
-
+  # "mc.cores" option, default 1 (.NThreads()). The result is identical at
+  # every thread count (see the kernel's determinism contract) -- mc.cores
+  # trades wall-clock only, so it is read here rather than surfaced as an
+  # argument.
   out <- Grasp_cpp(d, k, plateau, .Machine$integer.max, eliteSize,
-                     as.double(alpha), as.double(maxSeconds), nThreads, cb)
+                     as.double(alpha), as.double(maxSeconds), .NThreads(), cb)
 
   if (progress) {
     cli::cli_progress_done(id = pb)
