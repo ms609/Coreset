@@ -62,6 +62,75 @@ static inline double EuclidCol(const double* P, int nPts, int dim,
   return std::sqrt(s);
 }
 
+// One sweep over all points covering the NB (1..4) dimensions starting at
+// column j0, accumulating each point's running squared sum in a register.
+// FIRST starts the sum at the block's first squared deviation (equal to
+// EuclidCol's `0.0 + dev*dev` bit-for-bit); a continuation resumes from the
+// stored sum. Each point's chain is the identical left-associated sequence
+// EuclidCol produces — a store/load round-trip of a double is exact — so
+// the final squared value, and the sqrt applied to it below, match
+// EuclidCol's exactly. The payoff is the access shape: contiguous streams
+// down up to four coordinate columns at once, instead of EuclidCol's
+// per-point gather across all `dim` columns (the same restructure as
+// maximin_points.cpp's SweepBlock, round 9).
+template <int NB, bool FIRST>
+static inline void FillSqBlock(const double* P, int nPts, int c, int j0,
+                               double* col) {
+  const double* p0 = P + (R_xlen_t)j0 * nPts;
+  const double* p1 = NB > 1 ? p0 + nPts : p0;
+  const double* p2 = NB > 2 ? p1 + nPts : p1;
+  const double* p3 = NB > 3 ? p2 + nPts : p2;
+  const double c0 = p0[c], c1 = p1[c], c2 = p2[c], c3 = p3[c];
+  for (int i = 0; i < nPts; ++i) {
+    double dev = p0[i] - c0;
+    double s = FIRST ? dev * dev : col[i] + dev * dev;
+    if (NB > 1) { dev = p1[i] - c1; s += dev * dev; }
+    if (NB > 2) { dev = p2[i] - c2; s += dev * dev; }
+    if (NB > 3) { dev = p3[i] - c3; s += dev * dev; }
+    col[i] = s;
+  }
+}
+
+// Fill col[i] = SQUARED distance from every point to point c: dimension
+// blocks of up to four via FillSqBlock. The consumer applies std::sqrt to
+// each element as it reads it — the record-update loops are scalar and
+// branchy anyway (the errno-guarded sqrt would only de-vectorise a loop
+// that cannot vectorise), while these fills stay pure SIMD streams and no
+// extra column round-trip is spent on a separate sqrt pass. Every distance
+// is sqrt() of the identical squared double EuclidCol feeds it, so each is
+// the same double bit-for-bit. Serves the three whole-column fill sites
+// (construction seed and add, search drop and add); the recompute branch
+// keeps per-pair EuclidCol (it reads scattered rows, not whole columns).
+static void FillSqColumn(const double* P, int nPts, int dim, int c,
+                         double* col) {
+  if (dim == 0) {
+    // Degenerate zero-column input: EuclidCol's sum is 0.
+    for (int i = 0; i < nPts; ++i) col[i] = 0.0;
+    return;
+  }
+  int j0 = 0;
+  bool first = true;
+  while (dim - j0 > 4) {
+    if (first) {
+      FillSqBlock<4, true>(P, nPts, c, j0, col);
+    } else {
+      FillSqBlock<4, false>(P, nPts, c, j0, col);
+    }
+    first = false;
+    j0 += 4;
+  }
+  switch ((dim - j0 - 1) * 2 + (first ? 1 : 0)) {
+    case 0: FillSqBlock<1, false>(P, nPts, c, j0, col); break;
+    case 1: FillSqBlock<1, true>(P, nPts, c, j0, col); break;
+    case 2: FillSqBlock<2, false>(P, nPts, c, j0, col); break;
+    case 3: FillSqBlock<2, true>(P, nPts, c, j0, col); break;
+    case 4: FillSqBlock<3, false>(P, nPts, c, j0, col); break;
+    case 5: FillSqBlock<3, true>(P, nPts, c, j0, col); break;
+    case 6: FillSqBlock<4, false>(P, nPts, c, j0, col); break;
+    default: FillSqBlock<4, true>(P, nPts, c, j0, col); break;
+  }
+}
+
 // [[Rcpp::export]]
 List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
                           int max_iter, int max_no_improve, bool want_trace,
@@ -122,8 +191,9 @@ List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
 
   S[0] = seed;
   in_S[seed] = 1;
+  FillSqColumn(P, n, dim, seed, col.data());
   for (int i = 0; i < n; ++i) {
-    double dv = EuclidCol(P, n, dim, i, seed);
+    double dv = std::sqrt(col[i]);
     min_dist[i] = dv;
     sum_dist[i] = dv;
     min_dist_count[i] = 1;
@@ -153,10 +223,11 @@ List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
     S[h] = x_new;
     in_S[x_new] = 1;
 
-    // Update records for ADD. Recompute the d(., x_new) column once into `col`.
-    for (int i = 0; i < n; ++i) col[i] = EuclidCol(P, n, dim, i, x_new);
+    // Update records for ADD. Recompute the SQUARED d(., x_new) column once
+    // into `col`; each element's true distance is sqrt'd as it is consumed.
+    FillSqColumn(P, n, dim, x_new, col.data());
     for (int i = 0; i < n; ++i) {
-      double dv = col[i];
+      double dv = std::sqrt(col[i]);
       sum_dist[i] += dv;
       if (i == x_new) continue;
       double mdi = min_dist[i];
@@ -171,7 +242,7 @@ List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
     double mn = R_PosInf;
     int cnt = 0;
     for (int j = 0; j < h; ++j) {
-      double dv = col[S[j]];
+      double dv = std::sqrt(col[S[j]]);
       if (dv < mn) { mn = dv; cnt = 1; }
       else if (dv == mn) ++cnt;
     }
@@ -240,15 +311,17 @@ List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
     int x_hash = S[head];
     in_S[x_hash] = 0;
 
-    // Drop pass: recompute the d(., x_hash) column on the fly into d_xhash.
-    // Update sum_dist, decrement min_dist_count for points where
-    // d(., x_hash) <= min_dist[.] (those that had x_hash as a nearest peer).
-    // The cached column also serves the x_hash self-recompute below.
+    // Drop pass: recompute the SQUARED d(., x_hash) column on the fly into
+    // d_xhash (each element's true distance is sqrt'd as it is consumed —
+    // the same double either way). Update sum_dist, decrement
+    // min_dist_count for points where d(., x_hash) <= min_dist[.] (those
+    // that had x_hash as a nearest peer). The cached squared column also
+    // serves the x_hash self-recompute below.
     need_recompute.clear();
     {
-      for (int i = 0; i < n; ++i) d_xhash[i] = EuclidCol(P, n, dim, i, x_hash);
+      FillSqColumn(P, n, dim, x_hash, d_xhash.data());
       for (int i = 0; i < n; ++i) {
-        double dv = d_xhash[i];
+        double dv = std::sqrt(d_xhash[i]);
         sum_dist[i] -= dv;
         if (i == x_hash) continue;
         if (dv <= min_dist[i]) {
@@ -287,13 +360,14 @@ List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
       }
     }
 
-    // x_hash's own record: distance to surviving peers S[j != head] (cached).
+    // x_hash's own record: distance to surviving peers S[j != head], from
+    // the cached squared column.
     {
       double mn = R_PosInf;
       int cnt = 0;
       for (int j = 0; j < m; ++j) {
         if (j == head) continue;
-        double dv = d_xhash[S[j]];     // cached, single read
+        double dv = std::sqrt(d_xhash[S[j]]);
         if (dv < mn) { mn = dv; cnt = 1; }
         else if (dv == mn) ++cnt;
       }
@@ -332,12 +406,13 @@ List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
     }
     in_S[x_new] = 1;
 
-    // Add pass: recompute the d(., x_new) column on the fly into `col`. Same
-    // case logic as ADD in construction.
+    // Add pass: recompute the SQUARED d(., x_new) column on the fly into
+    // `col` (sqrt at each consumption, as in the drop pass). Same case
+    // logic as ADD in construction.
     {
-      for (int i = 0; i < n; ++i) col[i] = EuclidCol(P, n, dim, i, x_new);
+      FillSqColumn(P, n, dim, x_new, col.data());
       for (int i = 0; i < n; ++i) {
-        double dv = col[i];
+        double dv = std::sqrt(col[i]);
         sum_dist[i] += dv;
         if (i == x_new) continue;
         double mdi = min_dist[i];
@@ -349,12 +424,12 @@ List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
         }
       }
       // x_new's own min_dist over surviving peers (S \ {x_hash}); S[head] still
-      // holds x_hash here. Reuse the cached column.
+      // holds x_hash here. Reuse the cached squared column.
       double mn = R_PosInf;
       int cnt = 0;
       for (int j = 0; j < m; ++j) {
         if (j == head) continue;
-        double dv = col[S[j]];
+        double dv = std::sqrt(col[S[j]]);
         if (dv < mn) { mn = dv; cnt = 1; }
         else if (dv == mn) ++cnt;
       }
