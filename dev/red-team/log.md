@@ -150,6 +150,68 @@ does not trigger at n=2004 (binary search + floor).
 - escalation decision: KC-001 high-sev was confirmed by opus and fixed; no further
   immediate escalation needed. Next rotation advances to area #8 (test-suite health).
 
+---
+
+## Round 10 — area #10 MaxMean (max-mean dispersion / RLTS) — opus
+
+date: 2026-06-16
+tier: opus (new area; implementer had already self-found+fixed 3 bugs: RNG not
+seeded → set.seed ignored, aspiration ignoring non-tabu moves, tabu carryover
+across restarts). Ran opus directly as peer to that self-review.
+
+Finder yield: 7 candidates (no high-severity / wrong-answer bug). The objective
+math was verified exact: incremental P-array vs scratch over millions of flips,
+score==MeanDist on symmetric input, brute-force optima matched (RL on/off),
+monotonicity, |S|>=2 guarantee, Sa-compaction fuzz (200k traces), index-overflow
+audit (all *n casts to size_t), RNGScope consumes the stream once.
+
+Verification: behavioural claims (MM-01 empty result, MM-03 score≠MeanDist)
+confirmed by direct empirical probe rather than a verifier agent (a probe is
+stronger evidence). Code+paper-fidelity claims (MM-02 overflow, MM-04/05/06/07 RL
+init) confirmed by re-reading the kernel against the paper's Eqs. 4-10.
+
+All FIXED 9003 except MM-07 (WONTFIX — paper Eq.5/Eq.7 conflict, code follows Eq.5,
+documented in a comment):
+- MM-01 (med): do-while restart loop (budget checked at END, matching paper Alg.1)
+  → ≥1 restart always completes; tiny-budget result is now a classed |S|>=2 set.
+- MM-02 (low): `iters` kept numeric (double), not as.integer → no NA past 2^31.
+- MM-03 (med): root cause deeper than finder thought — the incremental sum_pairs
+  adds the row-sum p_u, so on ASYMMETRIC d the objective drifts order-dependently
+  (finder's fuzz was symmetric, missed it). Fix: symmetrize d once at the R
+  boundary ((d+t(d))*0.5, bit-identical no-op for symmetric input); MeanDist
+  symmetrizes to match. Now well-defined and consistent.
+- MM-04/05/06 (low, RL-init fidelity): true max in Eq.4 (terminal=0); R init 0.0
+  not 1.0; reward magnitude increments AFTER use (first improvement → 1, not 2).
+
+Coverage: maxmean.cpp 149/149, maxmean.R 41/41, MeanDist 7/7, MaxMean print
+methods 18/18 — all 100%. Full test_local green (63 maxmean assertions incl. the
+MM-01/02/03 regressions; all other areas unaffected).
+
+- seam status: ran dry on wrong-answer bugs (objective core verified exact); the
+  7 findings were a contract bug + an overflow + an asymmetric-input wart + 4
+  RL-init fidelity nits, all addressed. A fresh-angle re-visit could probe the RL
+  convergence-vs-paper question (A/B on a published MDPI instance) but that is
+  efficiency, not correctness. Next visit escalates to fable only if a
+  correctness concern resurfaces.
+- escalation decision: no high-sev signal. Rotation advances to area #1
+  (DropAdd single-fidelity) next.
+
+### Round 10 addendum — benchmark validation (2026-06-17)
+
+A/B vs published best-known (Lai & Hao 2016 / Nijimbere et al. 2020 Table 1) on the
+MDPI Type-I n=500 instances (downloaded from grafo.etsii.urjc.es/optsicom/edp/),
+useRL=TRUE, 30 s/instance, set.seed(1) — see dev/ab-mdpi.R:
+
+    MDPI1_500  best 81.277044  MaxMean 81.277044  MATCH
+    MDPI2_500  best 78.610216  MaxMean 78.610216  MATCH
+    MDPI3_500  best 76.300787  MaxMean 76.300787  MATCH  (all gaps < 5e-7)
+
+Confirms the RL-initialisation fidelity fixes (MM-04/05/06) and the implementation
+as a whole reach the paper's optima. Instances not committed (~64 MB); ab-mdpi.R
+documents how to re-download.
+
+---
+
 ### Round — area #9 MaxEntropy (maxdet)  (2026-06-29)
 - tier: opus (numerical core; brand-new, treated as immature — opened above sonnet)
 - finder yield: 4 confirmed non-trivial (ME-001..ME-004); 2 low/latent noted not filed

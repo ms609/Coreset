@@ -336,6 +336,76 @@ print.KCentreExact <- function(x, ...) {
   invisible(x)
 }
 
+# ---- MaxMeanSelection -------------------------------------------------------
+
+#' Stamp the `MaxMeanSelection` class onto a [MaxMean()] result
+#'
+#' Parallel to [.AsMaxMinSelection()] for the fixed-cardinality solvers.
+#' An empty selection is returned unchanged.
+#' @param x Integer index vector carrying `score`, `size`, `time_s`, `iters`.
+#' @return `.AsMaxMeanSelection()` returns `x` with class `"MaxMeanSelection"`,
+#'   or `x` unchanged if it is empty.
+#' @keywords internal
+.AsMaxMeanSelection <- function(x) {
+  if (length(x) == 0L) {
+    # Return:
+    x
+  } else {
+    class(x) <- "MaxMeanSelection"
+    # Return:
+    x
+  }
+}
+
+#' Format and print Max-Mean solver results
+#'
+#' Terse one-line and detailed summaries of the objects returned by [MaxMean()].
+#'
+#' @param x A `MaxMeanSelection` object returned by [MaxMean()].
+#' @param ... Ignored; present for S3 compatibility.
+#' @return
+#' `print.MaxMeanSelection()` returns `x`, invisibly.
+#' `format.MaxMeanSelection()` returns a character string reporting the
+#' selection size, the selected indices, and the achieved max-mean objective
+#' \eqn{f(S)}.
+#'
+#' @examples
+#' set.seed(1)
+#' pts <- matrix(rnorm(60), ncol = 2)
+#' print(MaxMean(dist(pts), maxSeconds = 1))
+#' @name print.MaxMeanSelection
+#' @family reporting functions
+#' @export
+format.MaxMeanSelection <- function(x, ...) {
+  idx <- as.integer(x)
+  n   <- length(idx)
+  f   <- attr(x, "score")
+  f_str <- if (is.na(f)) "" else sprintf(", f = %s", format(signif(f, 4L)))
+  sprintf("%d element%s (%s) selected by MaxMean RLTS%s",
+          n, if (n == 1L) "" else "s", .FormatIndexList(idx), f_str)
+}
+
+#' @rdname print.MaxMeanSelection
+#' @export
+print.MaxMeanSelection <- function(x, ...) {
+  cat(format(x, ...), "\n", sep = "")
+  invisible(x)
+}
+
+#' @param object A `MaxMeanSelection` object returned by [MaxMean()].
+#' @rdname print.MaxMeanSelection
+#' @export
+summary.MaxMeanSelection <- function(object, ...) {
+  cat(format(object), "\n", sep = "")
+  .SummaryField("size",       attr(object, "size"),  12L)
+  .SummaryField("objective",  .SummaryNum(attr(object, "score")), 12L)
+  .SummaryField("iterations", attr(object, "iters"), 12L)
+  .SummaryField("time",  paste(.SummaryNum(attr(object, "time_s")), "s"), 12L)
+  invisible(object)
+}
+
+# ---- MaxEntropySelection ----------------------------------------------------
+
 #' Format and print maximum-entropy (maxdet) solver results
 #'
 #' Terse summary of the object returned by [MaxEntropy()]
