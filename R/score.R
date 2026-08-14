@@ -56,10 +56,7 @@ MinDist <- function(d = NULL, idx, points = NULL) {
 #'   `length(idx) < 2`.
 #' @seealso [MaxMean()] which maximises this objective; [MinDist()] for the
 #'   max-min (MMDP) analogue.
-#' @examples
-#' d <- dist(matrix(rnorm(20), ncol = 2))
-#' selection <- MaxMean(d)
-#' MeanDist(d, selection)
+#' @inherit MaxMean examples
 #' @export
 MeanDist <- function(d, idx) {
   idx <- as.integer(idx)

@@ -73,14 +73,14 @@
 #'   [FarFirst()], [DropAdd()] and [Grasp()] for fixed-cardinality max-min
 #'   solvers.
 #' @examples
+#' # The max-mean problem is defined for signed dissimilarities; with these the
+#' # optimal subset has an interior size, chosen to maximise mean dispersion.
 #' set.seed(1)
-#' pts <- matrix(rnorm(60), ncol = 2)
-#' d <- dist(pts)
-#'
-#' # Select the subset that maximises mean pairwise dispersion:
-#' result <- MaxMean(d, maxSeconds = 0.001)
-#' result
-#' attr(result, "score")
+#' x <- matrix(runif(100, -5, 5), 10)
+#' d <- (x + t(x)) / 2          # symmetric, signed
+#' selection <- MaxMean(d)
+#' selection                    # 5 of the 10 elements: {2, 5, 6, 8, 10}
+#' MeanDist(d, selection)       # 2.714 — equals attr(selection, "score")
 #' @export
 MaxMean <- function(d, maxSeconds = 0.1, maxIter = 1000, useRL = TRUE) {
   progress <- getOption("MaxMin.progress", interactive())

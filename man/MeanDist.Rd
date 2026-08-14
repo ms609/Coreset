@@ -22,9 +22,14 @@ selected elements,
 the objective maximised by \code{\link[=MaxMean]{MaxMean()}}.
 }
 \examples{
-d <- dist(matrix(rnorm(20), ncol = 2))
+# The max-mean problem is defined for signed dissimilarities; with these the
+# optimal subset has an interior size, chosen to maximise mean dispersion.
+set.seed(1)
+x <- matrix(runif(100, -5, 5), 10)
+d <- (x + t(x)) / 2          # symmetric, signed
 selection <- MaxMean(d)
-MeanDist(d, selection)
+selection                    # 5 of the 10 elements: {2, 5, 6, 8, 10}
+MeanDist(d, selection)       # 2.714 — equals attr(selection, "score")
 }
 \seealso{
 \code{\link[=MaxMean]{MaxMean()}} which maximises this objective; \code{\link[=MinDist]{MinDist()}} for the
