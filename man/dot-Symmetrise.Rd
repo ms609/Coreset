@@ -20,10 +20,7 @@ averages them when they differ by no more than \code{tolerance}, and errors
 beyond it.
 }
 \details{
-The solvers read whichever of \code{d[i, j]} and \code{d[j, i]} is the cheaper memory
-access, and which one that is depends on the subset size, so a matrix
-symmetric only to rounding would answer differently for different \code{k}.
-Averaging the two triangles settles the question once, at a cost of one
-\code{n * n} copy: repair \code{d} yourself if calling a solver in a loop.
+Averaging costs one \code{n * n} copy per call: repair \code{d} yourself if calling a
+solver in a loop.
 }
 \keyword{internal}

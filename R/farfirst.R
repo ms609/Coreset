@@ -10,11 +10,8 @@
 #' @param tolerance Numeric: largest scaled discrepancy to repair.
 #' @return `.Symmetrise()` returns an exactly symmetric matrix.
 #' @details
-#' The solvers read whichever of `d[i, j]` and `d[j, i]` is the cheaper memory
-#' access, and which one that is depends on the subset size, so a matrix
-#' symmetric only to rounding would answer differently for different `k`.
-#' Averaging the two triangles settles the question once, at a cost of one
-#' `n * n` copy: repair `d` yourself if calling a solver in a loop.
+#' Averaging costs one `n * n` copy per call: repair `d` yourself if calling a
+#' solver in a loop.
 #' @keywords internal
 .Symmetrise <- function(d, tolerance = .SymmetryTolerance()) {
   dev <- SymmetryDeviation_cpp(d)
@@ -32,9 +29,8 @@
   Symmetrised_cpp(d)
 }
 
-# Largest discrepancy between d[i, j] and d[j, i], relative to
-# max(1, |d[i, j]|, |d[j, i]|), that is repaired rather than refused. The
-# default matches R's own `isSymmetric()`; 0 refuses anything inexact.
+# Largest scaled discrepancy repaired rather than refused; 0 refuses anything
+# inexact. The default is what R's own `isSymmetric()` allows.
 .SymmetryTolerance <- function() {
   tol <- getOption("MaxMin.symmetryTolerance", 100 * .Machine$double.eps)
   if (length(tol) != 1L || !is.numeric(tol) || is.na(tol) || tol < 0) {
