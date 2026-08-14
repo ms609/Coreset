@@ -11,14 +11,6 @@
 // stream and return bit-identical selections. The parity is asserted in
 // tests/testthat/test-grasp.R.
 //
-// T-021 determinism contract: the result depends on the seed alone. Worker
-// threads never touch R's RNG (or any R API); every construction is a pure
-// function of its pre-drawn uniforms; and batches merge into the elite set
-// on the main thread in iteration order — so the returned selection is
-// bit-identical at EVERY core count, and n_threads buys wall-clock only.
-// GRASP_BATCH is part of the algorithm definition, not a tuning knob: R's
-// RNG consumption (whole batches of GRASP_BATCH x m draws) depends on it.
-//
 // Termination is the deterministic stagnation rule: the refinement loop stops
 // after max_no_improve consecutive iterations that do not raise the best
 // elite objective, evaluated at merge time in iteration order (at most one
@@ -219,66 +211,6 @@ static std::vector<int> grasp_construct(const double* d, int n, int m,
 }
 
 // Extended-improvement local search; matches .GraspLocalSearch. `sel` ascending.
-//
-// T-016: the candidate scan is screened through an incrementally-maintained
-// nearest-selected summary instead of an O(m) distance scan per candidate.
-// For every out-of-selection point `s`, min1[s] is the min distance from `s`
-// to the CURRENT selection and arg1[s] the selected vertex realising it.
-// The invariant that carries every branch below: arg1[s] always names a
-// currently-selected vertex whose distance to `s` EQUALS min1[s] (a witness).
-// The strict `<` in every update preserves it under FP ties — a later value
-// tying min1 never displaces the stored witness, which therefore survives
-// any exclusion of a DIFFERENT vertex. Consequently, for a candidate drop:
-//   arg1[s] != drop  =>  min over sel \ {drop} == min1[s]   (exact, O(1));
-//   arg1[s] == drop  =>  the witness is excluded — rescan `rem` for that `s`
-//                        (exact, O(m); only ~(n-m)/m candidates per drop).
-// Every candidate still gets its exact `nd` in the same ascending order, so
-// the extended-improvement tie-break fires on exactly the same candidates
-// with the same values: selections, iters and pr_calls are bit-identical to
-// the direct scan. The values are exact because `min` merely re-selects a
-// D() cell — min over fewer elements cannot fall, and the surviving witness
-// pins it. (min1 alone is only a LOWER bound on the post-drop min; the
-// arg1 test is what makes reading it exact — do not prune on min1 without it.)
-//
-// T-018: the SELECTED side gets the same treatment. Each member carries its
-// two nearest other members (near_two value semantics, witnesses for both
-// slots) plus mcnt, the count of partners at exactly mmin1. That one summary
-// serves everything the former per-pass m²/2 pair sweep provided:
-//   dstar      = min over members of mmin1 (witness: argmin member + marg1);
-//   pair count = Σ mcnt over members at dstar, halved — every pair at dstar
-//                is counted by both endpoints, so the sum is even and exact;
-//   post-drop rescore for witness endpoint w
-//              = min over members v != w of near_excl(summary[v], w), each an
-//                O(1) read: marg1 and marg2 name DIFFERENT partners, so when
-//                marg1[v] == w the mmin2 slot's witness survives w's removal.
-// Maintenance under a swap (drop D, add A), for each surviving member v:
-// a stored witness == D forces a rescan (rare); otherwise D's distance sat
-// at >= mmin2, or tied mmin1 while the stored duplicate witness survives —
-// values stand, and only a tied partner (d(v,D) == mmin1[v]) adjusts mcnt.
-// The decrement precedes A's insertion, so it compares against the pre-swap
-// minimum. Header work per pass falls m²/2 → O(m), swap upkeep is O(m) plus
-// rare rescans, and one m²/2 sweep remains at entry to seed the summaries.
-//
-// Round 6: the rem×rem half of the extended-improvement tie-break count is
-// DERIVED, not counted. npc = #pairs in (rem ∪ {s}) at distance <= nd splits
-// into a rem×rem half and an s×rem half, and both floors are already known
-// exactly: every pair within rem is >= base_z (rem's true pairwise floor —
-// that is what base_z is), and every d(s, v) over rem is >= cross. Since
-// nd = min(base_z, cross),
-//   rem×rem half = (nd == base_z) ? #pairs in rem at exactly base_z : 0;
-//   s×rem  half = (nd == cross)  ? #v in rem with d(s, v) == cross  : 0.
-// The rem half depends only on the drop: when base_z == dstar it is
-// pair_count - mcnt[drop] (every dstar pair lost by dropping a critical
-// vertex involves it); when base_z > dstar (witness drops) the members
-// achieving the new floor — read off near_excl in O(m) — have their rows
-// counted at == base_z, each pair seen from both endpoints, halved. That
-// retires the former O(m²/2) per-drop sweep. The s half stays a direct O(m)
-// row count at == cross, run only for candidates that reach a win-or-tie: a
-// maintained per-candidate tie count was measured to cost more in summary
-// upkeep (a second column stream per swap, ∝ n) than this count costs at
-// any profiled shape — see log.md round 6. Every count is the same integer
-// the old <= sweeps produced — comparisons on the same exact doubles, and
-// values below the floor cannot exist — so trajectories are unchanged.
 static std::vector<int> grasp_local_search(const double* d, int n,
                                            std::vector<int> sel, LSScratch& W,
                                            bool seeded = false) {
