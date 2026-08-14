@@ -613,11 +613,9 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
       .auto_close = FALSE
     )
   }
-  # Unseeded calls get the O(n) peripheral anchor computed here rather than
-  # the kernel's own O(n^2) max-row-sum fallback (seed0 = -1): it gives the
-  # post-tabu-search result a measurably lower gap to the proven optimum
-  # (see dev/profiling/drivers/dropadd-seed-quality.R), matching the
-  # points-path and oracle-path defaults, which already seed peripherally.
+  # The O(n) peripheral anchor gives a lower post-tabu-search gap to the
+  # optimum than the kernel's own O(n^2) max-row-sum fallback (seed0 = -1),
+  # matching the points-path and oracle-path defaults.
   matrixSeed0 <- if (is.null(seed)) {
     as.integer(.PickPoint(dmat, "peripheral")) - 1L
   } else {
