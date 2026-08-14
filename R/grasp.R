@@ -424,6 +424,7 @@ Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
 # the compiled kernel (see tests/testthat/test-grasp.R).
 # Because it mirrors Grasp_cpp() step for step, the two agree bit for bit
 # for a given `set.seed()`.
+#' @importFrom stats runif
 #' @keywords internal
 .Grasp_R <- function(k, d, plateau, maxIter = .Machine$integer.max,
                        eliteSize = 10L, alpha = 0.8, maxSeconds = Inf) {
