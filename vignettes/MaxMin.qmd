@@ -19,7 +19,7 @@ library("MaxMin")
 ```
 
 The MaxMin package selects a subset that represents a fixed pool of *N* items,
-based on one of five complementary objectives:
+based on approximate and exact solutions to a suite of objectives:
 
 The **Max-Min Diversity Problem** (MMDP, the discrete *p*-dispersion objective)
 selects $k$ elements such that the minimum distance between any pair of selected elements is as large as possible; the chosen elements are maximally separated.
@@ -28,41 +28,31 @@ This objective is suited to defining a representative sample from a fixed
 pool: picking biological specimens for sequencing that span available diversity,
 or choosing a representative subset of protein structures from a database.
 
-The **Max-Sum Diversity Problem** (the "maximum diversity problem") instead
-selects $k$ elements that maximize the *total* pairwise distance they contain.
-Unlike the MMDP, whose objective is set by a single closest pair, every pair
-in the selection contributes to the max-sum score, so the optimum tends to
-favour elements spread across the whole extent of the pool rather than
+The **Max-Sum Diversity Problem** (the "maximum diversity problem") selects $k$
+elements that maximize the *total* pairwise distance they contain.
+As every pair in the selection contributes to the max-sum score, the optimum
+tends to favour elements spread across the whole extent of the pool rather than
 elements that merely avoid a single close neighbour.
 
-The **Max-Mean Dispersion Problem** instead maximizes the *average* distance
-between selected elements: the sum of pairwise distances divided by the number
-of elements selected, which is not specified in advance.
+The **Max-Mean Dispersion Problem**  maximizes the *average* distance
+between selected elements; this differs from the Max Sum objective in that the
+number of elements to be selected is not specified in advance.
 
 The **discrete *k*-centre problem** selects $k$ elements such that the maximum
 distance from any element in the original set to a selected element is as small
 as possible.
 In ensuring that each point has a nearby representative, this objective can
 select points that reflect a central compromise, rather than selections that
-are closer to more local points.
+are closer to more local points. Whereas dispersion spreads to the extremes,
+covering gravitates into the interior.
 This objective is useful when selecting centres that represent each point in
 a dataset: for example, siting fire stations to guarantee that all buildings
 can be reached within a given response time.
 
-The **maximum-entropy (maxdet) sampling** objective selects $k$ elements that
-maximize the log-determinant of a similarity kernel built from the distances
-between them -- the spanned volume of the selection. A redundant element lies
-in the span of those already chosen and adds no volume, so this objective is
-"density-blind": it never rewards clusters of near-duplicate elements, without
-requiring the explicit pairwise-distance thresholds that the other objectives
-rely on.
-
-An approximate selection that satisfies the max-min and *k*-centre objectives
-within a factor of two of their respective optima can be attained by a greedy
-farthest-first algorithm [@Gonzalez1985], though the exact optima typically
-differ; dispersion spreads to the extremes, whereas covering gravitates into
-the interior.
-MaxMin provides approximate and exact solvers for each objective.
+The **maximum-entropy (maxdet) sampling** objective selects the $k$ least
+redundant elements: that is, those that maximize the log-determinant of a
+similarity kernel built from the distances between them, and thus that together
+occupy the largest volume.
 
 
 ## Installation
