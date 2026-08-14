@@ -1,15 +1,11 @@
-#' MaxMin: Maximum-Minimum Diversity and Dispersion Subset Selection
+#' MaxMin: Maximum-Minimum Diversity, Discrete k-Centre, and Max-Mean
+#' Dispersion Subset Selection
 #'
-#' Selects a representative subset of a fixed candidate set under one of three
-#' distance-based objectives: the Max-Min Diversity Problem (MMDP, the discrete
-#' *p*-dispersion objective: maximise the minimum pairwise distance within the
-#' chosen subset); the Max-Mean Dispersion Problem (maximise the mean pairwise
-#' distance, the subset size being free); and the discrete *k*-centre problem
-#' (minimise the largest distance from any element to its nearest centre). The
-#' solvers operate on a distance matrix, on Euclidean coordinates (without
-#' materialising the matrix), or on an on-demand distance-column oracle.
+#' Selects a representative subset of a fixed candidate set.
 #'
 #' @section Max-Min diversity solvers:
+#' The Max-Min Diversity Problem (MMDP) maximises the minimum pairwise distance
+#'  within a subset (the discrete *p*-dispersion objective).
 #' \describe{
 #'   \item{[FarFirst()]}{Greedy farthest-first selection from a distance matrix,
 #'     a coordinate matrix, or a distance-column oracle (for spaces with no
@@ -21,11 +17,15 @@
 #' }
 #'
 #' @section Max-Mean dispersion solver:
+#' The Max-Mean Dispersion Problem selects a subset of a size that maximises
+#' the mean pairwise distance.
 #' \describe{
 #'   \item{[MaxMean()]}{Reinforcement-learning tabu search.}
 #' }
 #'
 #' @section k-centre solvers:
+#' The discrete *k*-centre problem minimises the largest distance from any
+#' element to its nearest selected element ('centre').
 #' \describe{
 #'   \item{[KCentre()]}{CDSh covering heuristic.}
 #'   \item{[ExactKCentre()]}{Exact minimum-cover optimum (needs \pkg{highs}).}

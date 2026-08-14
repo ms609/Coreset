@@ -1,5 +1,5 @@
 Package: MaxMin
-Title: Maximum-Minimum Diversity and Discrete k-Centre Subset Selection
+Title: Maximum-Minimum Diversity, Discrete k-Centre, and Max-Mean Dispersion Subset Selection
 Version: 0.0.0.9008
 Authors@R:
   person("Martin R.", "Smith",
