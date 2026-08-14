@@ -1,6 +1,11 @@
+# MaxMin 0.0.0.9010 (development)
+
+- `ExactMaxMin()` decides each threshold probe by clique search instead of an
+  integer program, and no longer needs `highs`.
+
 # MaxMin 0.0.0.9009 (development)
 
-- `ExactMaxMin()` parallelized and optimized.
+- `ExactMaxMin()` optimized.
 
 # MaxMin 0.0.0.9008 (development)
 

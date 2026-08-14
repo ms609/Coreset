@@ -45,8 +45,9 @@ bound to the first infeasible threshold and bisects the resulting bracket.
 When a heuristic already attains the optimum, a single infeasibility solve
 certifies it.
 Each feasibility probe is first reduced to its \eqn{(k-1)}-core and greedily
-coloured; where this does not settle the probe, an algebraic solver is
-launched.
+coloured, then searched exhaustively for a witness under a colouring bound.
+The indices returned may vary between releases where several subsets attain
+the optimum; the \code{score} does not.
 }
 \section{Progress bar}{
 

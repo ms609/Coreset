@@ -1340,4 +1340,133 @@ strategy_results record per label. Drivers: farfirst-timing.R gains three
 ens-default cells. Baselines refreshed (area 1 round-10 rows).
 last_focus unchanged (user-targeted round on area 1).
 
+## Round 12 — 2026-08-14 — Area 4 (ExactMaxMin): the IP replaced by a clique
+search; parallelism measured and declined
+
+**Trigger:** user question — is there gain in parallelising ExactMaxMin, and
+are further gains available there or in DropAdd? Baseline perf/exact tip
+fa482b3 (round 11 shipped), R-devel 4.7.0.
+
+**The parallelism question, asked of the thing that actually cost.** A phase
+breakdown of the shipped solver put **one** HiGHS solve at 94-99% of wall on
+every hard cell (ionosphere k10 0.72 s of 0.77 s; vehicle k10 17.75 s of
+17.91 s) — every other stage was noise, so component- or probe-level
+parallelism had nothing to divide. Re-posing vehicle's certifying model at
+threads 1/2/4/8 and with `parallel = "on"`: **17.6-20.3 s, flat, no trend.**
+HiGHS's MIP does not scale here, so the answer to the question as asked is no
+— and that made the model itself the target.
+
+**What the IP was being asked to do.** vehicle k10's certifying probe is
+"prove no 10-clique exists in an 846-vertex graph of 31% density". A prototype
+Tomita-style bitset branch-and-bound with a greedy-colouring bound answered it
+in 4121 nodes; HiGHS needed 17.75 s to reach the same verdict (alpha = 9).
+Across seven dumped certifying probes the prototype settled every one in
+milliseconds, so the packing IP was removed rather than tuned.
+
+**Levers shipped (verified together):**
+1. `ThresholdDecide_cpp` (src/exact_reduce.cpp) replaces
+   `ThresholdReduce_cpp` and the per-component IP: CSR build, (k-1)-core peel,
+   component split, then a bitset depth-first search per component under
+   Tomita's colour-sort bound, with the candidates of a node held as 64-bit
+   words so a neighbourhood intersection is a word-AND pass. Component
+   vertices are relabelled in descending surviving degree, so each node's
+   greedy colouring follows Welsh-Powell order. Exhaustive: no clique found is
+   a proof that none exists. Deadline shared across components; interrupt and
+   clock checked every 1024 nodes.
+2. Candidate grid restricted to the warm-start tail. Nothing at or below the
+   heuristic's realised value is ever probed, so `cand` is built from the
+   distances >= it and the search starts at `cand[1]`. The full sort was 53%
+   of the wall at n >= 4601.
+3. `TriangleAtLeast_cpp` / `EdgesAtLeast_cpp` replace `d[upper.tri(d)]` and
+   the per-probe `ud < lambda` gathers. `ui`/`uj`/`ud` are gone: at n = 6435
+   they held ~500 MB whose only consumer was the probe rescan, which is now a
+   column-major scan emitting the H edge list directly.
+
+**Root-branch parallelism prototyped, measured, NOT shipped.** Branch i of the
+root loop needs candidates `{order[0..i-1]} & N(order[i])`, computable without
+the sequential prefix removal, so root branches are independent. Measured on
+satellite k10's five costliest probes at 1/2/4/8 threads:
+- **Infeasibility proofs scale**: the 0.47 s probe → 0.14 s at 8T (**3.36×**),
+  node count identical (8314) at every thread count — an exhaustive proof
+  visits the same tree however it is divided, so the verdict stays
+  deterministic.
+- **Feasible probes do not**: 0.75-1.38×, and nodes inflate with threads
+  (2259 → 6727 at 8T) as threads speculate on branches the serial descent
+  never reaches. The serial search already finds a witness quickly.
+- End to end this is worth ~1.2× on the one cell where search still dominates
+  (satellite k10: decide 6.65 s of 14.8 s wall, spread over ~35 probes, none
+  above 0.67 s), and it would make the *selection* thread-dependent — the one
+  package-wide invariant this solver's relaxed contract does not already
+  waive. Declined on that trade, not on the scaling.
+
+**Verification:**
+- Grid battery (56 cells): **0 mismatches** vs the fa482b3 baseline — score
+  bit-identical, `proven` identical, every witness independently valid.
+- Stretch cells: scores identical to baseline on all seven re-measured cells.
+- test-exact-reduce.R rewritten for the new kernel: verdict vs brute-force
+  clique enumeration over 240 random probes (exact agreement, not just
+  verdict-preservation, since the search is exhaustive); the targeted
+  structures; a **packing-IP oracle** at n = 30 via `highs`, past brute
+  force's reach; and the triangle scans against the R idioms they replace.
+- Full suite 6183 pass / 0 fail / 2 skip (Geo loader only).
+- `highs` and `Matrix` namespaces confirmed unloaded after an ExactMaxMin
+  solve; both stay in Suggests for ExactKCentre, MaxSum and the test oracle.
+
+**Result** (interleaved min-of-3 for the grid; single runs for the stretch
+cells, which are seconds to minutes):
+
+| cell | base s | new s | speedup |
+|------|-------:|------:|--------:|
+| grid, 56 cells | 6.5 | 0.9 | 7.2× |
+| breastcancer k10 (n=683) | 4.0 | 0.1 | ~40× |
+| pima k10 (n=768) | 3.6 | 0.1 | ~36× |
+| vehicle k10 (n=846) | 20.4 | 0.1 | ~200× |
+| vowel k10 (n=990) | 171.4 | 0.2 | ~860× |
+| spam k4 (n=4601) | 2.3 | 0.3 | 7.7× |
+| spam k10 | 2.4 | 0.5 | 4.8× |
+| satellite k4 (n=6435) | 4.5 | 1.0 | 4.5× |
+| satellite k10 | — | 13.1 | new reach |
+
+vowel k10 was round 11's one genuinely hard grid-family instance; it is no
+longer hard. Round 11's recorded leads on the IP formulation (DSATUR, MIP
+start via `start=`, per-probe threshold rescans) are **closed by deletion** —
+there is no IP and no rescan left to improve.
+
+**DropAdd, asked at the same time.** Round 10 (2026-08-13) certified the
+matrix kernel serial-at-limit and shipped the points path's blocked fills and
+mc.cores threading; nothing in that area has changed since, so the answer
+comes from that record plus one new measurement prompted by PR #6's benchmark
+comment. Interleaved local A/B of the four CI cells, **PR #6 head vs its
+actual base `perf/farfirst`** (5 reps each, mc.cores unset as on the runner):
+
+| cell | base ms | PR ms | change |
+|------|--------:|------:|-------:|
+| `FarFirst(20, d2000)` | 6.468 | 6.428 | +0.6% |
+| `FarFirst(20, d2000, diameter)` | 5.752 | 5.842 | −1.6% |
+| `DropAdd(20, d500, plateau=2000)` | 7.654 | 7.651 | +0.0% |
+| `DropAdd(20, pts4000, plateau=1000)` | 145.9 | 125.3 | +14.2% |
+
+The FarFirst cells cannot move: the only FarFirst-path difference between
+those two trees is three deleted `// nocov` comment lines in `src/maximin.cpp`.
+The runner's −12.81% and +12.88% on them are noise, as is the +9.09% on the
+matrix DropAdd cell — round 10 shipped nothing for that kernel. The one real
+movement is the points cell, which the runner understated (+2.73% vs +14.2%).
+**The suite has no cell in the regime round 10 optimised**: mc.cores threading
+engages at n >= 16384 and the blocked fills pay most at higher dim and large
+m, while the cells are n = 4000, dim 8, m = 20. Remaining DropAdd leads are
+unchanged from round 10: lazy second-minimum record (<=1.3×, one regime, large
+exactness surface), K-row coordinate pre-gather (~8% of one branch), and
+symmetric-transpose reads — **blocked on a maintainer decision** about whether
+`.AsDistMatrix`'s documented acceptance of asymmetric matrices is a contract.
+
+**Recorded leads (unmeasured):** warm-start quality at large n — satellite k10
+spends ~35 probes because the heuristic bound sits far below the optimum, so a
+stronger seed would cut both the gallop and the bisection, and it is now 8% of
+that cell's wall in its own right; parallelising the O(n²) edge scan (21% of
+satellite k10) is deterministic by construction if chunk fills are ordered.
+
+Status: Area 4 → OPTIMISED (rounds 5, 11, 12). Drivers: exact-grid.R (highs
+dependency dropped), exact-large.R. Cleanup: scratch libs and dumped probe
+graphs deleted post-round.
+
 last_focus: 2

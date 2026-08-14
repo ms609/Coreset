@@ -13,7 +13,7 @@
 #'     coordinate embedding), with a choice of peripheral seeding strategies and
 #'     a robust ensemble default.}
 #'   \item{[DropAdd()]}{DropAdd tabu search heuristic.}
-#'   \item{[ExactMaxMin()]}{Exact node-packing optimum (needs \pkg{highs}).}
+#'   \item{[ExactMaxMin()]}{Exact node-packing optimum.}
 #' #'   \item{[MinDist()]}{The k-centre objective (minimum pairwise distance).}
 #' }
 #'

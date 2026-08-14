@@ -45,9 +45,33 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// ThresholdReduce_cpp
-List ThresholdReduce_cpp(IntegerVector hi, IntegerVector hj, int n, int k);
-RcppExport SEXP _MaxMin_ThresholdReduce_cpp(SEXP hiSEXP, SEXP hjSEXP, SEXP nSEXP, SEXP kSEXP) {
+// TriangleAtLeast_cpp
+NumericVector TriangleAtLeast_cpp(NumericMatrix d, double lowest);
+RcppExport SEXP _MaxMin_TriangleAtLeast_cpp(SEXP dSEXP, SEXP lowestSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type d(dSEXP);
+    Rcpp::traits::input_parameter< double >::type lowest(lowestSEXP);
+    rcpp_result_gen = Rcpp::wrap(TriangleAtLeast_cpp(d, lowest));
+    return rcpp_result_gen;
+END_RCPP
+}
+// EdgesAtLeast_cpp
+List EdgesAtLeast_cpp(NumericMatrix d, double lambda);
+RcppExport SEXP _MaxMin_EdgesAtLeast_cpp(SEXP dSEXP, SEXP lambdaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type d(dSEXP);
+    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
+    rcpp_result_gen = Rcpp::wrap(EdgesAtLeast_cpp(d, lambda));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ThresholdDecide_cpp
+List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj, int n, int k, double maxSeconds);
+RcppExport SEXP _MaxMin_ThresholdDecide_cpp(SEXP hiSEXP, SEXP hjSEXP, SEXP nSEXP, SEXP kSEXP, SEXP maxSecondsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -55,7 +79,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< IntegerVector >::type hj(hjSEXP);
     Rcpp::traits::input_parameter< int >::type n(nSEXP);
     Rcpp::traits::input_parameter< int >::type k(kSEXP);
-    rcpp_result_gen = Rcpp::wrap(ThresholdReduce_cpp(hi, hj, n, k));
+    Rcpp::traits::input_parameter< double >::type maxSeconds(maxSecondsSEXP);
+    rcpp_result_gen = Rcpp::wrap(ThresholdDecide_cpp(hi, hj, n, k, maxSeconds));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -310,7 +335,9 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_MaxMin_DropAdd_cpp", (DL_FUNC) &_MaxMin_DropAdd_cpp, 7},
     {"_MaxMin_DropAdd_points_cpp", (DL_FUNC) &_MaxMin_DropAdd_points_cpp, 8},
-    {"_MaxMin_ThresholdReduce_cpp", (DL_FUNC) &_MaxMin_ThresholdReduce_cpp, 4},
+    {"_MaxMin_TriangleAtLeast_cpp", (DL_FUNC) &_MaxMin_TriangleAtLeast_cpp, 2},
+    {"_MaxMin_EdgesAtLeast_cpp", (DL_FUNC) &_MaxMin_EdgesAtLeast_cpp, 2},
+    {"_MaxMin_ThresholdDecide_cpp", (DL_FUNC) &_MaxMin_ThresholdDecide_cpp, 5},
     {"_MaxMin_Grasp_cpp", (DL_FUNC) &_MaxMin_Grasp_cpp, 9},
     {"_MaxMin_IsSymmetric_cpp", (DL_FUNC) &_MaxMin_IsSymmetric_cpp, 2},
     {"_MaxMin_KCentreCandidates_cpp", (DL_FUNC) &_MaxMin_KCentreCandidates_cpp, 1},

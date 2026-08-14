@@ -31,7 +31,7 @@ specialized solvers.
 |---|---|---|
 | `DropAdd()` | DropAdd tabu search (Porumbel et al. 2011) | ~99%-optimal heuristic |
 | `Grasp()` |  GRASP with path-relinking metaheuristic (Resende et al. 2010) | Slower but powerful heuristic |
-| `ExactMaxMin()` | Node-packing integer program (Sayyady & Fathi 2016) | Proven optimum, small `k` (needs `highs`) |
+| `ExactMaxMin()` | Node-packing threshold search (Sayyady & Fathi 2016), each probe decided by clique search | Proven optimum, small `k` |
 
 ### *k*-centre (min-max covering)
 
