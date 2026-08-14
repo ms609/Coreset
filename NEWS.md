@@ -3,6 +3,8 @@
 - A distance matrix whose triangles differ only by rounding has them averaged,
   with a warning; `options(MaxMin.symmetryTolerance = )` sets how large a
   discrepancy is repaired rather than refused.
+- `FarFirst()` and `PickPoint()` score a distance matrix as written, so they no
+  longer pay to reconcile its triangles.
 
 # MaxMin 0.0.0.9011 (development)
 

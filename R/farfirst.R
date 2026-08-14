@@ -358,7 +358,10 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
     points <- .AsPointsMatrix(points)
     nPts <- nrow(points)
   } else {
-    d <- .AsDistMatrix(d)
+    # Every Gonzalez path reads whole d(., centre) columns, and the seeding
+    # scans cover the full matrix rather than taking a triangle, so d is scored
+    # as written and the O(n^2) reconciliation would cost more than the solve.
+    d <- .AsDistMatrix(d, symmetric = FALSE)
     nPts <- nrow(d)
   }
   # Pre-check before as.integer(): a finite, length-1, non-negative value.

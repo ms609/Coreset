@@ -246,9 +246,10 @@ static inline void OffDiagMaxChunk(const double* dp, int n, int cLo, int cHi,
 //   dOff <- d; diag(dOff) <- -Inf
 //   dMax <- max(dOff); arrayInd(which.max(dOff), dim(dOff))[1L, 1L]
 // which copies the full N x N matrix and then scans it twice more. Unlike
-// DiameterFromPoints_cpp, the FULL matrix is scanned: `.AsDistMatrix`
-// silently accepts asymmetric matrices, where an upper-triangle cell can be
-// the winner, so the symmetric lower-triangle shortcut would be wrong here.
+// DiameterFromPoints_cpp, the FULL matrix is scanned: the Gonzalez paths take
+// `d` as written rather than paying to reconcile its triangles, and in an
+// asymmetric `d` an upper-triangle cell can be the winner, so the symmetric
+// lower-triangle shortcut would be wrong here.
 //
 // Returns c(max, row); row is 0 (and max -Inf) when there is no
 // off-diagonal cell (N < 2), letting the R caller take its degenerate-data

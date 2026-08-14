@@ -1610,6 +1610,26 @@ The k-centre solvers' own `IsSymmetric_cpp` guard went with it: it ran after
 `.AsDistMatrix()`, whose guarantee is strictly the stronger one, so it could
 no longer fire.
 
+**The guard is only paid where symmetry is exploited.** It sweeps the whole
+matrix — 3.0-3.5 ms at n = 2000, the single-core memory-bandwidth floor for
+32 MB (12.5 GB/s measured) — which is more work than an O(nk) solve does in
+total: `FarFirst(20L, d2000)` measured 6.0 ms without it and 14.0 ms with
+(interleaved min-of-4, three clean `--preclean` builds). So the callers that
+take `d` as written opt out with `symmetric = FALSE`: `FarFirst()`,
+`PickPoint()`, `.GonzEnsemble()` (whole-column reads, and `MatrixOffDiagMax_cpp`
+already scans in full rather than shortcutting to a triangle), `KCentreRadius()`,
+`MaxMean()`/`MeanDist()`. It stays for DropAdd (the lever), Grasp and the
+k-centre solvers, which do take a triangle — and whose kernels dominate it.
+`FarFirst(20L, d2000)` returns to 6.0 ms against a 6.0 ms base; the
+`"diameter"` seed to 5.0 ms against 5.5 ms.
+
+Threading the sweep is the lever left: a full-matrix scan takes 2.0 ms at one
+thread and 0.5 ms at four, and both the max and the OR-reduction are
+order-independent. Not taken -- `.NThreads()` is 1 unless the user sets
+`mc.cores`, so it would not move the default path. Fusing the finiteness and
+symmetry sweeps (one 32 MB pass, not two) would save ~2 ms on the callers that
+still check; also untaken, and larger than it looks only for Grasp.
+
 **Verification.** The 295-case trajectory battery is **bit-identical** to the
 pre-change kernel — after its asymmetric axis was replaced with a second
 symmetric tie-dense shape, since asymmetric input is no longer supported
