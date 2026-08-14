@@ -66,41 +66,15 @@ To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
 
 \section{Parallelism}{
 
-When the package is built with OpenMP support (the default on Linux and
-Windows), the greedy pass and the \eqn{O(N^2)} seeding anchors (\code{diameter},
-\code{medoid}, \code{anti_medoid}, \code{rowsum}, \code{rownorm}) run on multiple threads. The
-number of threads is controlled by the standard \code{"mc.cores"} option:
+To parallelize computation when OpenMP is available, set the \code{"mc.cores"}
+option:
 
-\if{html}{\out{<div class="sourceCode r">}}\preformatted{options(mc.cores = parallel::detectCores())  # use all available cores
-options(mc.cores = 4L)                        # or a fixed number
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{options(mc.cores = 2L)                       # use a fixed number of cores
+options(mc.cores = parallel::detectCores())  # or all available cores
 }\if{html}{\out{</div>}}
 
-The default is \code{1} (single-threaded). The kernels contain no random draws,
-each restart is an independent function of its seed, and every parallel
-reduction preserves the serial first-maximum tie rule, so \strong{the selection
-returned is identical at every thread count}: \code{mc.cores} trades wall-clock
-time only.
-
-Threads are put to whichever use suits the call:
-\itemize{
-\item A call that runs several starts — any multi-anchor \code{strategy}, or the
-default \code{"random_furthest"} with \code{nSeeds > 1} — runs one start per
-thread. Speed-up is capped at the number of distinct seeds, so \code{nSeeds}
-starts saturate \code{nSeeds} cores.
-\item A single greedy pass splits its own sweep across threads instead, but
-only past ~32,000 points: below that a step is too brief for the
-synchronisation to pay. Only the coordinate path reaches that size in
-practice, since a 32,000-point distance matrix already occupies 8 GB and
-the matrix pass measures faster serially at every smaller size. Past it,
-splitting one pass beats running the starts concurrently, so the starts
-run in turn.
-\item The \eqn{O(N^2)} seeding anchors (\code{diameter}, \code{medoid}, \code{anti_medoid},
-\code{rowsum}, \code{rownorm}) parallelise at any non-trivial size. They dominate an
-anchor ensemble, whose greedy passes are comparatively cheap.
-}
-
-The distance-column oracle path stays serial (it calls back into user R
-code).
+The main use case for parallelization is when \code{nSeeds} is a multiple of
+\code{mc.cores}, so each seed point can be evaluated in parallel.
 }
 
 \examples{
