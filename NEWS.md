@@ -1,5 +1,6 @@
 # MaxMin 0.0.0.9011 (development)
 
+- Seed `DropAdd()` via a two-sweep peripheral anchor.
 - `DropAdd()` is up to 1.75× faster on the dense-matrix path at large `k`.
 
 # MaxMin 0.0.0.9010 (development)

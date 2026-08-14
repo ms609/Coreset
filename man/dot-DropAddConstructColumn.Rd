@@ -27,8 +27,8 @@ distance matrix.
 }
 \section{Seed deviation}{
 
-The matrix kernel seeds at the max-row-sum point,
-\eqn{\mathrm{argmax}_x \sum_y d(x, y)}. Pass \code{DropAdd(seed=)} to override.
+The matrix kernel seeds at the O(n) two-sweep peripheral point (the same
+anchor as \code{PickPoint(d, "peripheral")}). Pass \code{DropAdd(seed=)} to override.
 }
 
 \references{

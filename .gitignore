@@ -38,3 +38,4 @@ dev/profiling/.Makevars.symboled
 # Other additions
 /*.Rcheck
 MaxMin_*.tar.gz
+*.gcda
