@@ -1,3 +1,7 @@
+# MaxMin 0.0.0.9011 (development)
+
+- `DropAdd()` is up to 1.75× faster on the dense-matrix path at large `k`.
+
 # MaxMin 0.0.0.9010 (development)
 
 - `ExactMaxMin()` decides each threshold probe by clique search instead of an

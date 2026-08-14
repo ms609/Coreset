@@ -278,7 +278,7 @@ PickPoint <- function(d = NULL, points = NULL,
     points <- .AsPointsMatrix(points)
     return(.PickPoints(points, strategy))
   }
-  d <- .AsDistMatrix(d)
+  d <- .AsDistMatrix(d, symmetric = FALSE)   # every strategy scans in full
   .PickPoint(d, strategy)
 }
 
@@ -300,7 +300,7 @@ PickPoint <- function(d = NULL, points = NULL,
 #' @return `.GonzEnsemble()` returns an integer vector of selected indices with attributes.
 #' @keywords internal
 .GonzEnsemble <- function(d, m, anchors = "peripheral", nSeeds = 3L) {
-  d <- .AsDistMatrix(d)
+  d <- .AsDistMatrix(d, symmetric = FALSE)   # as FarFirst(); column reads
   m <- as.integer(m)
   if (length(m) != 1L || is.na(m) || m < 0L) {
     stop("`m` must be a single non-negative integer")

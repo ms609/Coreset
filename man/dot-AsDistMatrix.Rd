@@ -5,10 +5,12 @@
 \title{Coerce distance input to a square matrix, skipping the round-trip when
 already a matrix.}
 \usage{
-.AsDistMatrix(d)
+.AsDistMatrix(d, symmetric = TRUE)
 }
 \arguments{
 \item{d}{A \code{dist} object or a square numeric matrix.}
+
+\item{symmetric}{Logical: reconcile the two triangles of \code{d}.}
 }
 \value{
 \code{.AsDistMatrix()} returns a square numeric matrix.
@@ -18,8 +20,6 @@ Coerce distance input to a square matrix, skipping the round-trip when
 already a matrix.
 }
 \details{
-Symmetry is not checked; an \code{O(N^2)} check is intentionally omitted.
-Asymmetric matrices are silently accepted, and the algorithm treats
-\eqn{d_{ij}} and \eqn{d_{ji}} as independent values.
+A \code{dist} object is symmetric by construction, so it bypasses the check.
 }
 \keyword{internal}

@@ -52,6 +52,17 @@ element to its nearest selected element ('centre').
 }
 }
 
+\section{Options}{
+
+The solvers need \code{d[i, j]} and \code{d[j, i]} to agree exactly, being free to
+read whichever is the cheaper memory access. A matrix that misses this only
+through rounding has its triangles averaged, with a warning;
+\code{options(MaxMin.symmetryTolerance = )} sets how large a discrepancy — scaled
+by \verb{max(1, |d[i, j]|, |d[j, i]|)} — is repaired rather than refused. It
+defaults to \code{100 * .Machine$double.eps}, as R's own \code{isSymmetric()} does;
+set it to \code{0} to have any inexact matrix refused.
+}
+
 \section{Relation to \pkg{maximin}}{
 
 Not to be confused with the CRAN package \pkg{maximin}, which constructs

@@ -38,6 +38,15 @@
 #'   \item{[KCentreRadius()]}{Covering radius (the k-centre objective).}
 #' }
 #'
+#' @section Options:
+#' The solvers need `d[i, j]` and `d[j, i]` to agree exactly, being free to
+#' read whichever is the cheaper memory access. A matrix that misses this only
+#' through rounding has its triangles averaged, with a warning;
+#' `options(MaxMin.symmetryTolerance = )` sets how large a discrepancy — scaled
+#' by `max(1, |d[i, j]|, |d[j, i]|)` — is repaired rather than refused. It
+#' defaults to `100 * .Machine$double.eps`, as R's own `isSymmetric()` does;
+#' set it to `0` to have any inexact matrix refused.
+#'
 #' @section Relation to \pkg{maximin}:
 #' Not to be confused with the CRAN package \pkg{maximin}, which constructs
 #' continuous space-filling designs by generating *new* points in a coordinate

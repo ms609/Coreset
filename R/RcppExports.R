@@ -25,10 +25,6 @@ Grasp_cpp <- function(dmat, m, max_no_improve, max_iter, elite_size, alpha, time
     .Call(`_MaxMin_Grasp_cpp`, dmat, m, max_no_improve, max_iter, elite_size, alpha, time_budget_s, n_threads, progress_cb)
 }
 
-IsSymmetric_cpp <- function(d, tol) {
-    .Call(`_MaxMin_IsSymmetric_cpp`, d, tol)
-}
-
 KCentreCandidates_cpp <- function(d) {
     .Call(`_MaxMin_KCentreCandidates_cpp`, d)
 }
@@ -99,5 +95,13 @@ MaxMean_cpp <- function(dmat, time_budget_s, iter_budget, alpha_depth, T_min, T_
 
 AllFinite_cpp <- function(x, n_threads = 1L) {
     .Call(`_MaxMin_AllFinite_cpp`, x, n_threads)
+}
+
+SymmetryScan_cpp <- function(d, n_threads = 1L) {
+    .Call(`_MaxMin_SymmetryScan_cpp`, d, n_threads)
+}
+
+Symmetrised_cpp <- function(d) {
+    .Call(`_MaxMin_Symmetrised_cpp`, d)
 }
 

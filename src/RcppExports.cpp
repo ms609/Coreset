@@ -103,18 +103,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// IsSymmetric_cpp
-bool IsSymmetric_cpp(Rcpp::NumericMatrix d, double tol);
-RcppExport SEXP _MaxMin_IsSymmetric_cpp(SEXP dSEXP, SEXP tolSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type d(dSEXP);
-    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
-    rcpp_result_gen = Rcpp::wrap(IsSymmetric_cpp(d, tol));
-    return rcpp_result_gen;
-END_RCPP
-}
 // KCentreCandidates_cpp
 Rcpp::NumericVector KCentreCandidates_cpp(Rcpp::NumericMatrix d);
 RcppExport SEXP _MaxMin_KCentreCandidates_cpp(SEXP dSEXP) {
@@ -351,6 +339,29 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// SymmetryScan_cpp
+Rcpp::List SymmetryScan_cpp(Rcpp::NumericMatrix d, int n_threads);
+RcppExport SEXP _MaxMin_SymmetryScan_cpp(SEXP dSEXP, SEXP n_threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type d(dSEXP);
+    Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(SymmetryScan_cpp(d, n_threads));
+    return rcpp_result_gen;
+END_RCPP
+}
+// Symmetrised_cpp
+Rcpp::NumericMatrix Symmetrised_cpp(Rcpp::NumericMatrix d);
+RcppExport SEXP _MaxMin_Symmetrised_cpp(SEXP dSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type d(dSEXP);
+    rcpp_result_gen = Rcpp::wrap(Symmetrised_cpp(d));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_MaxMin_DropAdd_cpp", (DL_FUNC) &_MaxMin_DropAdd_cpp, 7},
@@ -359,7 +370,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MaxMin_EdgesAtLeast_cpp", (DL_FUNC) &_MaxMin_EdgesAtLeast_cpp, 2},
     {"_MaxMin_ThresholdDecide_cpp", (DL_FUNC) &_MaxMin_ThresholdDecide_cpp, 5},
     {"_MaxMin_Grasp_cpp", (DL_FUNC) &_MaxMin_Grasp_cpp, 9},
-    {"_MaxMin_IsSymmetric_cpp", (DL_FUNC) &_MaxMin_IsSymmetric_cpp, 2},
     {"_MaxMin_KCentreCandidates_cpp", (DL_FUNC) &_MaxMin_KCentreCandidates_cpp, 1},
     {"_MaxMin_KCentreCDSh_cpp", (DL_FUNC) &_MaxMin_KCentreCDSh_cpp, 5},
     {"_MaxMin_MaxEntropyGreedy_cpp", (DL_FUNC) &_MaxMin_MaxEntropyGreedy_cpp, 3},
@@ -378,6 +388,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MaxMin_DiameterFromPoints_cpp", (DL_FUNC) &_MaxMin_DiameterFromPoints_cpp, 2},
     {"_MaxMin_MaxMean_cpp", (DL_FUNC) &_MaxMin_MaxMean_cpp, 10},
     {"_MaxMin_AllFinite_cpp", (DL_FUNC) &_MaxMin_AllFinite_cpp, 2},
+    {"_MaxMin_SymmetryScan_cpp", (DL_FUNC) &_MaxMin_SymmetryScan_cpp, 2},
+    {"_MaxMin_Symmetrised_cpp", (DL_FUNC) &_MaxMin_Symmetrised_cpp, 1},
     {NULL, NULL, 0}
 };
 

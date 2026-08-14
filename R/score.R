@@ -62,14 +62,12 @@ MeanDist <- function(d, idx) {
   idx <- as.integer(idx)
   if (anyNA(idx)) stop("`idx` must not contain NA")
   if (anyDuplicated(idx)) stop("`idx` must not contain duplicate indices")
-  d <- .AsDistMatrix(d)
+  d <- .AsDistMatrix(d, symmetric = FALSE)   # each pair averaged below
   k <- length(idx)
   if (k < 2L) return(NA_real_)
   sub <- d[idx, idx, drop = FALSE]
-  # Sum over unordered pairs, symmetrizing any asymmetry as the MaxMean()
-  # C++ kernel does.
-  # Keeps MeanDist() in agreement with MaxMean()'s reported score on the
-  # asymmetric matrices .AsDistMatrix() silently accepts.
+  # Sum over unordered pairs, symmetrizing any asymmetry as MaxMean() does, so
+  # the two agree on the asymmetric matrices both admit.
   # Return:
   (sum(sub) - sum(diag(sub))) / 2 / k
 }
