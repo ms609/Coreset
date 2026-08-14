@@ -1,3 +1,7 @@
+# MaxMin 0.0.0.9009 (development)
+
+- `ExactMaxMin()` parallelized and optimized.
+
 # MaxMin 0.0.0.9008 (development)
 
 - `DropAdd()` parallelized and optimized.

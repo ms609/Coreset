@@ -85,21 +85,17 @@ To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
 
 \section{Parallelism}{
 
-When the package is built with OpenMP support (the default on Linux and
-Windows), the coordinate (\verb{points =}) path runs its per-iteration passes
-on multiple threads past ~16,000 points, controlled by the standard
-\code{"mc.cores"} option (default 1, single-threaded). The kernel draws no
-random numbers and every parallel reduction preserves the serial
-tie-breaking rules, so \strong{the selection returned is identical at every
-thread count}: \code{mc.cores} trades wall-clock time only. The matrix and
-distance-column paths are single-threaded — the matrix kernel's
-per-iteration cost is dominated by streaming matrix columns from main
-memory, which additional threads do not accelerate.
+To parallelize computation when OpenMP is available, set the \code{"mc.cores"}
+option:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{options(mc.cores = 2L)                       # use a fixed number of cores
+options(mc.cores = parallel::detectCores())  # or all available cores
+}\if{html}{\out{</div>}}
 }
 
-\section{Distance-column oracle}{
+\section{Distance function}{
 
-When \code{d} is a \strong{function}, \code{d(i)} must return the distances from element \code{i}
+When \code{d} is a function, \code{d(i)} must return the distances from element \code{i}
 to every element (length \code{N}, with the self-distance ignored)
 or to every \emph{other} element (length \code{N - 1}, in order).
 \code{N} is required, and memory is \eqn{O(N)}.

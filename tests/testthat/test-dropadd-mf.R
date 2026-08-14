@@ -213,3 +213,94 @@ test_that("DropAdd points path C++: main-loop ADD covers tie-break (304-307) and
   res <- DropAdd(4L, points = pts7)
   expect_length(res, 4L)
 })
+
+# ---------------------------------------------------------------------------
+# 8. Blocked column fills: every arm of the dimension dispatch
+#
+# FillSqRange walks `dim` in blocks of four and dispatches the 1-4 column
+# remainder on (remainder, is-this-the-first-block). Each arm is a distinct
+# FillSqBlock instantiation, so each needs its own `dim`: 1 is a lone
+# first block, 7 is a full first block plus a 3-column continuation, and 0
+# is the degenerate no-coordinate case. Every arm must reproduce
+# stats::dist(), which the recomputed objective checks.
+# ---------------------------------------------------------------------------
+
+test_that("DropAdd points path C++: one-dimensional coordinates", {
+  # Gaps 5, 6, 7, 8, 9, 10 along a line: the best 3-subset is the two ends
+  # plus the point that maximises the smaller of the two gaps it creates.
+  pts1 <- matrix(c(0, 5, 11, 18, 26, 35, 45), ncol = 1L)
+  res <- DropAdd(3L, points = pts1, plateau = 20L)
+  expect_identical(as.integer(res), c(1L, 5L, 7L))
+  expect_equal(attr(res, "score"), 19)
+})
+
+test_that("DropAdd points path C++: a dimension that needs a block continuation", {
+  # dim = 7 = one four-column block then a three-column remainder, the only
+  # shape that reaches the non-first three-column instantiation.
+  set.seed(4)
+  pts7d <- matrix(rnorm(40 * 7), ncol = 7L)
+  res <- DropAdd(4L, points = pts7d, plateau = 20L)
+  expect_length(res, 4L)
+  expect_equal(attr(res, "score"), .MaxminPts(res, pts7d), tolerance = 1e-12)
+})
+
+test_that("DropAdd points path C++: zero-dimension input stays defined", {
+  # With no coordinates every distance is 0, so no selection beats any other:
+  # each argmax keeps the earliest index and the objective is 0.
+  pts0 <- matrix(numeric(0), nrow = 6L, ncol = 0L)
+  res <- DropAdd(3L, points = pts0, plateau = 5L)
+  expect_identical(as.integer(res), 1:3)
+  expect_identical(attr(res, "score"), 0)
+  expect_identical(attr(res, "secondary"), 0)
+})
+
+# ---------------------------------------------------------------------------
+# 9. The two argmax merges, on inputs whose ties are exact
+#
+# Integer coordinates make the ties portable: equal integer squared sums are
+# the same double everywhere, so sqrt() of them compares equal on any
+# toolchain, unlike an incidental coincidence in Gaussian data.
+# ---------------------------------------------------------------------------
+
+test_that("DropAdd points path C++: recompute merge resolves both kinds of tie", {
+  # The unit square scaled to side 4, (+-2, +-2), plus (3,4)/(-3,4) to fix the
+  # seed and (-5,2) to break the mirror symmetry of the whole set. Every
+  # corner of the square is exactly 4 from two others, so min_dist ties at 4
+  # recur; the drop puts some corners into need_recompute while the pass
+  # winner comes from outside it, and the deferred merge must then settle the
+  # tie on sum_dist and, failing that, on the smaller index. Both arms arise
+  # here: sum_dist 11 vs 9 for (2,2) over (-2,-2), and an exact sum_dist tie
+  # at 4 + 4*sqrt(2) where (-2,2) takes the slot from (-2,-2) on index alone.
+  ptsSq <- rbind(c(2, 2), c(2, -2), c(3, 4),
+                 c(-2, 2), c(-2, -2), c(-3, 4), c(-5, 2))
+  res <- DropAdd(3L, points = ptsSq, plateau = 25L, maxCandidates = 0L)
+  expect_identical(as.integer(res), c(2L, 3L, 7L))
+  expect_equal(attr(res, "score"), .MaxminPts(res, ptsSq), tolerance = 1e-12)
+})
+
+test_that("DropAdd points path C++: chunk merge is invariant on a tied lattice", {
+  # A 128 x 128 integer lattice: n = 16384 engages the threaded pass regions,
+  # and lattice distances tie exactly, so chunk winners routinely reach the
+  # merge tied on min_dist and separated only by sum_dist. Both merge sites
+  # (construction and drop) take that arm at k = 8 and k = 20, at every
+  # thread count from 2 to 4. The merge exists to reproduce the serial
+  # lexicographic maximum, so the property to assert is that it does. CRAN
+  # caps tests at 2 cores.
+  side <- 128L
+  lat <- matrix(as.double(cbind(rep(seq_len(side), times = side),
+                                rep(seq_len(side), each = side))), ncol = 2L)
+  old <- options(mc.cores = NULL)
+  on.exit(options(old), add = TRUE)
+  StripTime <- function(x) {
+    attr(x, "time_s") <- NULL
+    x
+  }
+  for (k in c(8L, 20L)) {
+    options(mc.cores = 1L)
+    s1 <- DropAdd(k, points = lat, plateau = 30L, maxCandidates = 0L)
+    options(mc.cores = 2L)
+    s2 <- DropAdd(k, points = lat, plateau = 30L, maxCandidates = 0L)
+    expect_identical(StripTime(s1), StripTime(s2))
+    expect_equal(attr(s1, "score"), .MaxminPts(s1, lat), tolerance = 1e-12)
+  }
+})

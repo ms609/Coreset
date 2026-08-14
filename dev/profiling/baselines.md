@@ -197,6 +197,28 @@ Correctness: 56/56 proven optima bit-identical to OLD; brute-force oracle + full
 suite (598) green. Worst case tc20_zoo k=4 (n=101): 0.59→0.67 s (0.88×, warm-start
 overhead on a tiny instance; irrelevant at the n≥342 job sizes).
 
+### AFTER round 11 (combinatorial probe reduction + capped clique IPs)
+
+Base = perf/dropadd fb93c2d; R-devel 4.7.0; highs 1.14.0.2 (scratch lib);
+interleaved min-of-5 via `drivers/exact-grid.R` (seed 1000+cell). Scores and
+proven flags identical 56/56; witnesses free to differ (user contract).
+
+| measure | fb93c2d | round 11 | speedup |
+|------|------:|------:|--------:|
+| grid total (56 cells) | 10.40 s | 5.42 s | 1.92× |
+| tc11_ionosphere k=10 | 920 ms | 170 ms | 5.4× |
+| tc22_penguins k=4 | 680 ms | 340 ms | 2.0× |
+| tc10_glass k=10 | 180 ms | 10 ms | 18× |
+| tc8_highdim_gaussians k=6 | 670 ms | 500 ms | 1.34× |
+| tc1_uniform k=10 (known trade) | 140 ms | 270 ms | 0.52× |
+
+Stretch (single pass, 600 s budget, shipping build with setup lever;
+interleaved min-of-3 for the spam/satellite comparisons): breastcancer k10
+4.0 s, pima k10 3.6 s, vehicle k10 20.6 s, vowel k10 172 s; spam n=4601
+k4/10 = 1.8/2.0 s (fb93c2d: 201 s and 8.9 GB peak at k=4); satellite
+n=6435 k=4 = 3.9 s (fb93c2d model ≈16 GB: not attempted). Spam and
+satellite decide every probe combinatorially — no IP is ever posed.
+
 ## Area 5 — KCentre (CDSh) — AFTER T-010 (cache reorder + C++ candidates)
 
 Clustered Gaussian n=2004, dim=10, k=20; per-call median (6 reps), `-O2`.

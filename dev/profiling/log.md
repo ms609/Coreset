@@ -1207,7 +1207,114 @@ OPTIMISED serial + mc.cores points path; matrix kernel AT-LIMIT. Drivers:
 dropadd-battery.R, dropadd-timing.R, dropadd-vtune10.R,
 dropadd-invariance.R. Cleanup: result_da10/ and scratch libs deleted
 post-round.
-last_focus: 2
+
+## Round 11 — 2026-08-14 — Area 4: ExactMaxMin probe reduction (user-directed)
+
+**User steer:** any provably-optimal witness is acceptable — only the proven
+objective and the proof itself are load-bearing. That admits
+verdict-preserving reductions (not alpha- or witness-preserving ones), which
+round 5's bit-identity gate forbade.
+
+**Baseline:** perf/dropadd tip fb93c2d; R-devel 4.7.0; highs 1.14.0.2 in a
+scratch lib (highs had dropped out of the local libraries in an R upgrade,
+so the exact tests had been skipping silently on this box). Grid = 14
+ground-truth cases × k∈{2,4,6,10}: 56/56 proven+valid, 12.7 s single pass,
+10.40 s interleaved min-of-5.
+
+**Triage (Rprof, warmed):** highs solver_run 81–95% of wall on every
+profiled cell (penguins k4 95%, ionosphere k10 93%, zoo k4 81%); Grasp warm
+start 1.5–13.5%; R-side probe assembly noise. The process's FIRST IP pays
+~0.5–0.6 s one-time highs init — it moves between cells across builds and
+must be discounted in per-cell comparisons.
+
+**Reduction-potential audit** (scratch audit-core.R): at the certifying
+threshold — the smallest candidate above the heuristic warm-start value —
+peeling the complement graph H (pairs ≥ λ) to its (k−1)-core plus a greedy
+colouring settles 21 of the 60 real k∈{4,6,10} probes outright (k=2 cells
+never probe: the warm start attains the diameter); where an IP survives,
+greedy χ sits at k+0..3, so colour-class rows collapse the LP bound from
+~n/2 to ~χ. tc21_spam (n=4601) is verdict-free at every k (cores 0/0/26);
+tc14_satellite (n=6435) at k=4. An R-vector peel prototype cost 13–64 s at
+n=6435 → the kernel had to be C++.
+
+**Levers shipped (verified together as the round's delta):**
+1. `ThresholdReduce_cpp` (src/exact_reduce.cpp): CSR adjacency, bucket
+   (k−1)-core peel, component split, Welsh–Powell colouring, greedy-clique
+   feasibility shortcut, and emission of the reduced per-component model
+   (colour-class rows + cross-colour G-edges). Tie-breaks by vertex index
+   throughout → deterministic output.
+2. `.MaxISVerdict` reduce-first rewrite: empty reduction ⇒ infeasible with
+   no IP; greedy k-clique ⇒ feasible with no IP; otherwise one IP per
+   surviving component — colour-class clique rows (sum ≤ 1 each) plus
+   cross-colour edge rows, same integer feasible set as all-pairs.
+   Witnesses still validated against `d` independently of solver status.
+3. Cap row sum(x) ≤ k on every component IP: the probe only asks α ≥ k, so
+   feasible components stop at the first k-incumbent and infeasible ones
+   prove bound < k without closing to their true α.
+4. Setup-path vectorisation (post-IP-collapse Rprof on spam n=4601 showed
+   the solve wall was ~50% `sort(unique(ud))` and ~30%
+   `which(upper.tri)`+`arrayInd`, the IP entirely gone): direct
+   column-major triangle index construction (`sequence`/`rep.int`) and
+   radix sort + adjacent dedupe for the candidate grid — the identical
+   `ui`/`uj`/`ud`/`cand` vectors. Stretch cells 1.26–1.38× (spam k4
+   2.4→1.9 s, k10 2.6→2.0 s, satellite k4 5.4→3.9 s, interleaved
+   min-of-3); grid cells unaffected (setup is µs at n ≤ 351).
+
+**Formulation A/B (interleaved min-of-5, whole grid):**
+- reduce + class rows, no cap: 5.88 s (1.77×) — but gaussians k6 0.66×,
+  uniform k10 0.70× vs base.
+- reduce + class rows + cap (SHIPPED): 5.42 s (**1.92×**); cap fixes
+  gaussians k6 (1010→500 ms).
+- reduce + all-edge rows + cap (classes deleted): 6.32 s — REFUTED: the
+  colour-class rows beat highs' own presolve clique detection on nearly
+  every IP cell (penguins 1.29–1.60×, density 1.55–1.58× relative);
+  all-edges wins only uniform k10 (0.81×).
+- Known trade: uniform k10 140→270 ms is the one cell the shipped
+  formulation regresses (χ=11 vs k=10; highs' internal cover happened to
+  beat Welsh–Powell there). Not chased: per-cell formulation switching
+  would overfit this box.
+
+**Verification stack:**
+- test-exact-reduce.R (726 assertions, no highs needed for the reduction
+  verdicts): kernel vs brute-force clique enumeration over random probes —
+  verdict agreement, proper colouring, every G-edge covered by a class row
+  or an emitted edge row, emitted rows exactly the cross-colour G-edges;
+  targeted structures (peel cascade to empty, K222 colouring kill at the
+  certifying-probe shape, K5 greedy stop at k, single-edge k=2,
+  determinism); .MaxISVerdict IP-branch verdicts (C5 refute,
+  bridged-triangle feasible where greedy misses, two-C5 refute-all,
+  refute-then-feasible component order).
+- Grid battery (drivers/exact-grid.R, NEW): 56/56 scores bit-identical to
+  base, proven flags identical, witnesses independently valid. Scores stay
+  bit-identical under witness changes because any optimal witness's min
+  pairwise distance is the same double — cand[bestIdx] realised in `d`.
+- Full suite on the shipping build; RNG contract test #4 (same-seed
+  reproducibility) green — the reduction draws no random numbers.
+
+**Result:** grid 10.40 → 5.42 s interleaved min-of-5 (**1.92×**); cell
+extremes ionosphere k4/6/10 ≈5–7×, glass k4/6/10 ≈16×, five cells to ~0 ms
+(verdict-free). **Reach:** spam n=4601 proven optimal at every
+k∈{4,6,10} in ~2 s (1.9–2.0 s after lever 4) — the baseline build needed
+201 s and 8.9 GB peak at k=4 (~100×, and the per-probe memory wall is
+gone); satellite n=6435 k=4 proven in 3.9 s (baseline model ≈16 GB: not
+attempted). Both stretch cases decide every probe combinatorially, so they
+are formulation-invariant. The 683–990 k=10 targets on the shipping build:
+breastcancer 4.0 s, pima 3.6 s, vehicle 20.6 s, vowel 172 s — vowel is the
+one grid-family instance whose certifying IP stays genuinely hard
+(core = n, χ = 13 vs k = 10).
+
+**Recorded leads (unmeasured, not pursued):** per-probe O(n²) threshold
+rescans (`ud < lambda` per probe); warm-start restart-count scaling at
+large n (RNG-stream change now permitted); DSATUR in place of
+Welsh–Powell (χ−k gap is 0–3 where IPs survive; a 1–2-colour improvement
+would convert more probes to verdict-free); MIP start via highs_solve's
+`start=` (wrapper supports it; incumbent value ≤ k−1 at the certifying
+probe).
+
+Status: Area 4 → OPTIMISED (rounds 5+11). Drivers: exact-grid.R (battery +
+timing cells), exact-large.R (stretch, refreshed to the (k, d) API).
+Cleanup: scratch libs lib-r11* deleted post-round; audit script + rds in
+session scratchpad only.
 
 ## Round 10 — 2026-08-14 — Area 1 (FarFirst): restart-level parallelism shipped
 
@@ -1280,8 +1387,6 @@ strategy_results record per label. Drivers: farfirst-timing.R gains three
 ens-default cells. Baselines refreshed (area 1 round-10 rows).
 last_focus unchanged (user-targeted round on area 1).
 
----
-
 ## Round — 2026-08-14 — Area 6: MaxMean maxIter guard  [user: /profile MaxMean]
 
 **Question:** the new `maxIter` feature (this branch) added a per-iteration
@@ -1325,4 +1430,5 @@ baseline to overwrite it with. Aside: `-g -fno-omit-frame-pointer` itself costs
 to fix; the maxIter guard is confirmed free.
 
 - cleanup: all `dev/profiling/.vtune-lib-*` builds deleted.
-last_focus unchanged (targeted /profile MaxMean run).
+
+last_focus: 2

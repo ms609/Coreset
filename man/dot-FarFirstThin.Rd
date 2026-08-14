@@ -38,15 +38,7 @@ supplied solver on the restriction, and maps the returned indices back to the
 original numbering.
 }
 \details{
-The coreset is built with the deterministic \code{"peripheral"} seed, so it draws
-\strong{no} session RNG: it cannot perturb the random stream the downstream solver
-(or the user) draws from, and it is bit-reproducible without \code{set.seed()} --
-both required by the package's bit-identical-selection contract.
-
-Only the integer index \emph{values} returned by the solver need remapping: the
-\code{score} (and any other distance-derived attribute) is already valid in the
-original space, because subsetting preserves pairwise distances. The result
-is re-sorted ascending to keep the \code{\link[=DropAdd]{DropAdd()}} / \code{\link[=Grasp]{Grasp()}} sorted-output
-contract, carrying the solver's class and attributes across unchanged.
+Only the integer index values returned by the solver need remapping.
+The result is sorted ascending.
 }
 \keyword{internal}
