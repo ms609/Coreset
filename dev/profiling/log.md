@@ -1161,3 +1161,50 @@ ensemble certifying that de-duplicated dispatch still yields one
 strategy_results record per label. Drivers: farfirst-timing.R gains three
 ens-default cells. Baselines refreshed (area 1 round-10 rows).
 last_focus unchanged (user-targeted round on area 1).
+
+---
+
+## Round — 2026-08-14 — Area 6: MaxMean maxIter guard  [user: /profile MaxMean]
+
+**Question:** the new `maxIter` feature (this branch) added a per-iteration
+`iter < iter_cap` guard to the hot tabu inner-loop condition in
+`src/maxmean.cpp`. Does that guard regress throughput (iters/s) — the metric that
+sets MaxMean solution quality, since the search is time-budgeted?
+
+**profvis / VTune skipped — deliberately.** The area-#6 round (2026-06-16) already
+mapped this loop: >99.9% pure C++ from the Rcpp boundary, self-time ~69% best-flip
+scan / ~31% P-array update, and a one-comparison edit does not move the hotspot
+map. The question here is a *verified delta*, not a hotspot location, so it goes
+straight to a controlled A/B (skill Step 6).
+
+**Method — on-machine controlled A/B, both `-O2 -g` (build-symboled-lib.ps1):**
+- A = HEAD (guard present: `while (depth < alpha_depth && iter < iter_cap)`).
+- B = guard removed (`while (depth < alpha_depth)`), one-line edit, `src/` restored
+  after the build. DLLs confirmed to differ; only `maxmean.o` changed, same flags.
+- Driver `drivers/maxmean.R` (signed n=500, useRL=FALSE, 3 s), 6 interleaved reps,
+  iters-in-3 s as the throughput proxy (interleaved min-of-N per this box's timing
+  noise).
+
+**Result — no regression.** A (with guard) measured *equal-or-faster* than B in
+5/6 reps (median iters ratio A/B = 1.19; range 0.97–1.22). Since B does strictly
+less work in the loop condition, "B slower" is logically impossible as a real
+effect → the delta is codegen/layout, and the guard's true cost (one
+predicted-taken compare per O(n) iteration, < 1 %) sits below the combined
+run + layout noise. **The maxIter guard is throughput-neutral.**
+
+**Absolute-throughput note (NOT a regression).** A clean plain `-O2` build
+(default Makevars, no `-g`/frame-pointer) re-measured a stable ~0.97–0.98M iters/s
+— below the T-012 round's 1.16M baseline but far above the 786k pre-optimisation
+baseline, with the same solution output (f = 54.5405, |S| = 138; matches T-012's
+54.541). The gap is cross-session machine variance (this box: ±20–35 % on timing
+cells), NOT the maxIter change (the on-machine A/B isolates that) and NOT lost
+optimisation (identical solution + >786k throughput confirm T-012 intact).
+`baselines.md` left at 1.16M — an environmentally depressed reading is not a clean
+baseline to overwrite it with. Aside: `-g -fno-omit-frame-pointer` itself costs
+~9 % throughput (0.98M → 0.89M), noted for future symboled rounds.
+
+**Verdict:** area #6 remains OPTIMISED (near AT-LIMIT). No issue filed — nothing
+to fix; the maxIter guard is confirmed free.
+
+- cleanup: all `dev/profiling/.vtune-lib-*` builds deleted.
+last_focus unchanged (targeted /profile MaxMean run).
