@@ -280,6 +280,26 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// MaxMean_cpp
+List MaxMean_cpp(NumericMatrix dmat, double time_budget_s, double iter_budget, int alpha_depth, int T_min, int T_max, double epsilon, double alpha_rl, double gamma_rl, bool use_rl);
+RcppExport SEXP _MaxMin_MaxMean_cpp(SEXP dmatSEXP, SEXP time_budget_sSEXP, SEXP iter_budgetSEXP, SEXP alpha_depthSEXP, SEXP T_minSEXP, SEXP T_maxSEXP, SEXP epsilonSEXP, SEXP alpha_rlSEXP, SEXP gamma_rlSEXP, SEXP use_rlSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type dmat(dmatSEXP);
+    Rcpp::traits::input_parameter< double >::type time_budget_s(time_budget_sSEXP);
+    Rcpp::traits::input_parameter< double >::type iter_budget(iter_budgetSEXP);
+    Rcpp::traits::input_parameter< int >::type alpha_depth(alpha_depthSEXP);
+    Rcpp::traits::input_parameter< int >::type T_min(T_minSEXP);
+    Rcpp::traits::input_parameter< int >::type T_max(T_maxSEXP);
+    Rcpp::traits::input_parameter< double >::type epsilon(epsilonSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha_rl(alpha_rlSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma_rl(gamma_rlSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_rl(use_rlSEXP);
+    rcpp_result_gen = Rcpp::wrap(MaxMean_cpp(dmat, time_budget_s, iter_budget, alpha_depth, T_min, T_max, epsilon, alpha_rl, gamma_rl, use_rl));
+    return rcpp_result_gen;
+END_RCPP
+}
 // AllFinite_cpp
 bool AllFinite_cpp(SEXP x, int n_threads);
 RcppExport SEXP _MaxMin_AllFinite_cpp(SEXP xSEXP, SEXP n_threadsSEXP) {
@@ -314,6 +334,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MaxMin_RowSumsSqFromPoints_cpp", (DL_FUNC) &_MaxMin_RowSumsSqFromPoints_cpp, 2},
     {"_MaxMin_EuclidColFromPoints_cpp", (DL_FUNC) &_MaxMin_EuclidColFromPoints_cpp, 2},
     {"_MaxMin_DiameterFromPoints_cpp", (DL_FUNC) &_MaxMin_DiameterFromPoints_cpp, 2},
+    {"_MaxMin_MaxMean_cpp", (DL_FUNC) &_MaxMin_MaxMean_cpp, 10},
     {"_MaxMin_AllFinite_cpp", (DL_FUNC) &_MaxMin_AllFinite_cpp, 2},
     {NULL, NULL, 0}
 };

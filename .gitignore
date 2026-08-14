@@ -31,6 +31,8 @@ dev/profiling/verify-*.rds
 dev/profiling/.libdir
 dev/profiling/.libdir-new
 dev/profiling/drivers/*profvis*
+dev/profiling/.build-symboled.tar.gz
+dev/profiling/.Makevars.symboled
 
 
 # Other additions

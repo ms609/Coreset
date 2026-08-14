@@ -81,6 +81,10 @@ DiameterFromPoints_cpp <- function(points, n_threads = 1L) {
     .Call(`_MaxMin_DiameterFromPoints_cpp`, points, n_threads)
 }
 
+MaxMean_cpp <- function(dmat, time_budget_s, iter_budget, alpha_depth, T_min, T_max, epsilon, alpha_rl, gamma_rl, use_rl) {
+    .Call(`_MaxMin_MaxMean_cpp`, dmat, time_budget_s, iter_budget, alpha_depth, T_min, T_max, epsilon, alpha_rl, gamma_rl, use_rl)
+}
+
 AllFinite_cpp <- function(x, n_threads = 1L) {
     .Call(`_MaxMin_AllFinite_cpp`, x, n_threads)
 }
