@@ -45,6 +45,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// ThresholdReduce_cpp
+List ThresholdReduce_cpp(IntegerVector hi, IntegerVector hj, int n, int k);
+RcppExport SEXP _MaxMin_ThresholdReduce_cpp(SEXP hiSEXP, SEXP hjSEXP, SEXP nSEXP, SEXP kSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type hi(hiSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type hj(hjSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    rcpp_result_gen = Rcpp::wrap(ThresholdReduce_cpp(hi, hj, n, k));
+    return rcpp_result_gen;
+END_RCPP
+}
 // Grasp_cpp
 List Grasp_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter, int elite_size, double alpha, double time_budget_s, int n_threads, Rcpp::Nullable<Rcpp::Function> progress_cb);
 RcppExport SEXP _MaxMin_Grasp_cpp(SEXP dmatSEXP, SEXP mSEXP, SEXP max_no_improveSEXP, SEXP max_iterSEXP, SEXP elite_sizeSEXP, SEXP alphaSEXP, SEXP time_budget_sSEXP, SEXP n_threadsSEXP, SEXP progress_cbSEXP) {
@@ -268,6 +282,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_MaxMin_DropAdd_cpp", (DL_FUNC) &_MaxMin_DropAdd_cpp, 7},
     {"_MaxMin_DropAdd_points_cpp", (DL_FUNC) &_MaxMin_DropAdd_points_cpp, 8},
+    {"_MaxMin_ThresholdReduce_cpp", (DL_FUNC) &_MaxMin_ThresholdReduce_cpp, 4},
     {"_MaxMin_Grasp_cpp", (DL_FUNC) &_MaxMin_Grasp_cpp, 9},
     {"_MaxMin_IsSymmetric_cpp", (DL_FUNC) &_MaxMin_IsSymmetric_cpp, 2},
     {"_MaxMin_KCentreCandidates_cpp", (DL_FUNC) &_MaxMin_KCentreCandidates_cpp, 1},

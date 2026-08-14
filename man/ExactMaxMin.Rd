@@ -43,7 +43,10 @@ The search is warm-started from a heuristic lower bound (the best of several
 \code{\link[=Grasp]{Grasp()}} restarts and a \code{\link[=DropAdd]{DropAdd()}} pass), then gallops upward from that
 bound to the first infeasible threshold and bisects the resulting bracket.
 When a heuristic already attains the optimum, a single infeasibility solve
-certifies it. The indices chosen may vary based on the value of the random
+certifies it. Each feasibility probe is first reduced combinatorially --
+the complement graph is peeled to its \eqn{(k-1)}-core and greedily
+coloured -- which settles many probes, often all of them, without invoking
+the solver. The indices chosen may vary based on the value of the random
 seed when several subsets attain the optimum.
 }
 \section{Progress bar}{

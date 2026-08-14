@@ -97,77 +97,125 @@
 # Solve one maximum-independent-set feasibility probe on the threshold graph
 # G(lambda) and classify the result against the target size k.
 #
-# `ei`, `ej` are the endpoint index vectors of the edges (pairs with
-# d(i, j) < lambda), supplied by the caller from a one-off upper-triangle
-# precompute. The packing constraint x_i + x_j <= 1 is assembled as a SPARSE
-# matrix (two non-zeros per edge), then sum x is maximised over binary
-# variables. The returned witness is validated independently of the solver
-# status: x is rounded, the selected set is checked to contain no G(lambda)
-# edge, and its size is compared to k. This makes the classification robust to
-# solver status-code or time-limit quirks.
+# `ui`, `uj` index the endpoints of every vertex pair (upper triangle);
+# `gEdge` flags the pairs with d(i, j) < lambda -- the G(lambda) edges. The
+# complement pairs form H, in which an independent k-set of G is a k-clique.
+# The probe is reduced combinatorially first (ThresholdReduce_cpp): H is
+# peeled to its (k-1)-core, split into components, and greedily coloured.
+# Nothing surviving proves infeasibility with no IP solve; a greedy k-clique
+# proves feasibility likewise. Each surviving component is then solved as its
+# own packing IP whose rows are one sum(x) <= 1 row per multi-member colour
+# class (a G-clique) plus the cross-colour G-edges: the same integer feasible
+# set as the all-pairs formulation, with an LP bound of ~chi rather than
+# ~n/2.
+#
+# Witnesses are validated against `d` independently of what produced them:
+# the selected set is checked to contain no G(lambda) edge and its size is
+# compared to k. This keeps the classification robust to solver status-code
+# or time-limit quirks.
 #
 # Returns list(verdict, witness) where verdict is one of:
 #   "feasible"     -- a validated independent set of size >= k was found
 #                     (witness = its vertex indices; min-distance >= lambda),
-#   "infeasible"   -- the IP was solved to proven optimality and the maximum
-#                     independent set has size < k (witness = integer(0)),
+#   "infeasible"   -- every component was refuted, by reduction or by an IP
+#                     solved to proven optimality (witness = integer(0)),
 #   "inconclusive" -- the budget expired before either could be established
 #                     (witness = integer(0)).
-.MaxISVerdict <- function(d, n, ei, ej, lambda, k, timeLimit) {
+.MaxISVerdict <- function(d, n, ui, uj, gEdge, lambda, k, timeLimit) {
+  t0 <- proc.time()[[3L]]
   if (!is.finite(timeLimit) || timeLimit <= 0) { # nocov start
     return(list(verdict = "inconclusive", witness = integer(0)))
   } # nocov end
-  nEdge <- length(ei)
 
-  if (nEdge == 0L) {
+  if (!any(gEdge)) {
     # Empty graph: every vertex is independent, so alpha = n. Feasible
     # whenever k <= n (guaranteed by the caller's guard). No solve needed.
     return(list(verdict = "feasible", witness = seq_len(n)))
   }
 
-  # One row per edge: x_i + x_j <= 1. Sparse: exactly two non-zeros per row.
-  A <- Matrix::sparseMatrix(
-    i = rep.int(seq_len(nEdge), 2L),
-    j = c(ei, ej),
-    x = 1, dims = c(nEdge, n)
-  )
-
-  res <- highs::highs_solve(
-    L       = rep.int(1, n),
-    lower   = rep.int(0, n),
-    upper   = rep.int(1, n),
-    A       = A,
-    lhs     = rep.int(-Inf, nEdge),
-    rhs     = rep.int(1, nEdge),
-    types   = rep.int("I", n),                # integer var on [0,1] = binary
-    maximum = TRUE,
-    control = list(
-      threads    = 1L,                        # determinism
-      time_limit = timeLimit
-    )
-  )
-
-  # Independent validation of the witness -- never trust the status alone.
-  sel <- which(res$primal_solution > 0.5)
-  isValidIndependent <- if (length(sel) < 2L) {
-    TRUE  # nocov                         # 0 or 1 vertex: trivially independent
-  } else {
-    sub <- d[sel, sel, drop = FALSE]
-    !any(sub[upper.tri(sub)] < lambda)
+  Valid <- function(sel) {
+    if (length(sel) < 2L) {
+      TRUE  # nocov                       # 0 or 1 vertex: trivially independent
+    } else {
+      sub <- d[sel, sel, drop = FALSE]
+      !any(sub[upper.tri(sub)] < lambda)
+    }
   }
 
-  if (isValidIndependent && length(sel) >= k) {
-    return(list(verdict = "feasible", witness = sel))
+  red <- ThresholdReduce_cpp(ui[!gEdge], uj[!gEdge], n, k)
+  clique <- red[["clique"]]
+  if (length(clique) >= k) {
+    if (!Valid(clique)) { # nocov start
+      stop("Internal error: reduction clique violates threshold ", lambda)
+    } # nocov end
+    return(list(verdict = "feasible", witness = clique))
   }
-
-  # Infeasibility is provable ONLY when the IP reached optimality and the
-  # certified maximum independent set is still smaller than k. A time-limit
-  # hit with a too-small (or empty) incumbent proves nothing.
-  optimal <- identical(res$status_message, "Optimal")
-  if (optimal && isValidIndependent && length(sel) < k) {
+  comps <- red[["comps"]]
+  if (!length(comps)) {
+    # The peel and colouring bound left no component that could host a
+    # k-clique of H: infeasible with no IP solve.
     return(list(verdict = "infeasible", witness = integer(0)))
   }
-  list(verdict = "inconclusive", witness = integer(0))  # nocov
+
+  for (cp in comps) {
+    remaining <- timeLimit - (proc.time()[[3L]] - t0)
+    if (remaining <= 0) { # nocov start
+      return(list(verdict = "inconclusive", witness = integer(0)))
+    } # nocov end
+    vars <- cp[["vars"]]
+    nv <- length(vars)
+    bigCls <- which(tabulate(cp[["cls"]]) >= 2L)
+    nCls <- length(bigCls)
+    clsRow <- match(cp[["cls"]], bigCls)          # NA for singleton classes
+    inCls <- !is.na(clsRow)
+    nEdgeRow <- length(cp[["ei"]])
+    if (nCls + nEdgeRow == 0L) { # nocov start
+      # Unconstrained component (an H-clique): the greedy clique above finds
+      # these, so this is defensive only.
+      sel <- vars
+      optimal <- TRUE
+    } else { # nocov end
+      # The probe only asks whether alpha >= k, so a final row sum(x) <= k
+      # caps the objective: a feasible component proves optimality as soon
+      # as a k-incumbent appears, and an infeasible one proves the bound
+      # < k without closing the gap to its true alpha.
+      nRow <- nCls + nEdgeRow + 1L
+      res <- highs::highs_solve(
+        L       = rep.int(1, nv),
+        lower   = rep.int(0, nv),
+        upper   = rep.int(1, nv),
+        A       = Matrix::sparseMatrix(
+          i = c(clsRow[inCls], rep.int(nCls + seq_len(nEdgeRow), 2L),
+                rep.int(nRow, nv)),
+          j = c(which(inCls), cp[["ei"]], cp[["ej"]], seq_len(nv)),
+          x = 1, dims = c(nRow, nv)
+        ),
+        lhs     = rep.int(-Inf, nRow),
+        rhs     = c(rep.int(1, nRow - 1L), k),
+        types   = rep.int("I", nv),             # integer var on [0,1] = binary
+        maximum = TRUE,
+        control = list(
+          threads    = 1L,                      # determinism
+          time_limit = remaining
+        )
+      )
+      sel <- vars[res$primal_solution > 0.5]
+      optimal <- identical(res$status_message, "Optimal")
+    }
+
+    ok <- Valid(sel)
+    if (ok && length(sel) >= k) {
+      return(list(verdict = "feasible", witness = sel))
+    }
+    # Refuting a component requires its IP solved to proven optimality with a
+    # validated maximum independent set still smaller than k. A time-limit
+    # hit with a too-small (or empty) incumbent proves nothing.
+    if (!(optimal && ok && length(sel) < k)) { # nocov start
+      return(list(verdict = "inconclusive", witness = integer(0)))
+    } # nocov end
+  }
+  # Every component refuted: no independent k-set exists anywhere.
+  list(verdict = "infeasible", witness = integer(0))
 }
 
 # ----- main -----------------------------------------------------------------
@@ -183,7 +231,10 @@
 #' [Grasp()] restarts and a [DropAdd()] pass), then gallops upward from that
 #' bound to the first infeasible threshold and bisects the resulting bracket.
 #' When a heuristic already attains the optimum, a single infeasibility solve
-#' certifies it. The indices chosen may vary based on the value of the random
+#' certifies it. Each feasibility probe is first reduced combinatorially --
+#' the complement graph is peeled to its \eqn{(k-1)}-core and greedily
+#' coloured -- which settles many probes, often all of them, without invoking
+#' the solver. The indices chosen may vary based on the value of the random
 #' seed when several subsets attain the optimum.
 #'
 #' @param k Integer: target subset size, between 2 and `nrow(d)`.
@@ -232,16 +283,19 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
 
   # Upper-triangle edge structure, precomputed ONCE: every probe is then a
   # threshold over `ud` (a vector compare) rather than a fresh n x n logical.
-  ut <- which(upper.tri(d))
-  rc <- arrayInd(ut, dim(d))
-  ui <- rc[, 1L]; uj <- rc[, 2L]; ud <- d[ut]
+  # Column-major upper-triangle order: pair t of column j has row ui[t] < j.
+  ui <- sequence(seq_len(n) - 1L)
+  uj <- rep.int(seq_len(n), c(0L, seq_len(n - 1L)))
+  ud <- d[upper.tri(d)]
 
   # Candidate thresholds: the achieved distinct pairwise distances, ascending.
   # The optimum is necessarily one of these (it is a realised distance), so
   # searching this finite grid is exact. cand[1] (the smallest distance) gives
   # an edgeless graph, feasible whenever k <= n -- the guaranteed lower bound,
-  # established without any IP solve.
-  cand <- sort(unique(ud))
+  # established without any IP solve. Radix sort then adjacent dedupe --
+  # exactly the ascending distinct values.
+  s <- sort.int(ud, method = "radix")
+  cand <- s[c(TRUE, s[-1L] != s[-length(s)])]
   nCand <- length(cand)
 
   if (progress) {
@@ -253,8 +307,7 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
   # independent set of size >= k?
   feas <- function(idx, remaining) {
     lambda <- cand[idx]
-    e <- (ud < lambda)
-    .MaxISVerdict(d, n, ui[e], uj[e], lambda, k, remaining)
+    .MaxISVerdict(d, n, ui, uj, ud < lambda, lambda, k, remaining)
   }
 
   # Helper to package a result for a proven-feasible candidate index.

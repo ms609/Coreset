@@ -9,6 +9,10 @@ DropAdd_points_cpp <- function(points, m, time_budget_s, max_iter, max_no_improv
     .Call(`_MaxMin_DropAdd_points_cpp`, points, m, time_budget_s, max_iter, max_no_improve, want_trace, seed0, n_threads)
 }
 
+ThresholdReduce_cpp <- function(hi, hj, n, k) {
+    .Call(`_MaxMin_ThresholdReduce_cpp`, hi, hj, n, k)
+}
+
 Grasp_cpp <- function(dmat, m, max_no_improve, max_iter, elite_size, alpha, time_budget_s, n_threads = 1L, progress_cb = NULL) {
     .Call(`_MaxMin_Grasp_cpp`, dmat, m, max_no_improve, max_iter, elite_size, alpha, time_budget_s, n_threads, progress_cb)
 }

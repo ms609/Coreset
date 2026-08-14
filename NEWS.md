@@ -1,3 +1,21 @@
+# MaxMin 0.0.0.9013 (development)
+
+## Performance
+
+- `ExactMaxMin()` decides most feasibility probes without an IP solve: each
+  probe's complement graph is peeled to its (k-1)-core, split into
+  components, and greedily coloured in C++, settling any probe whose core
+  empties or colours in fewer than `k` colours. Components that do reach
+  the solver are posed with one packing row per colour class (a clique in
+  the threshold graph) plus the remaining cross-class edges and a
+  `sum(x) <= k` cap -- the same integer feasible set, but an LP bound near
+  `k` rather than n/2. The proven optimum is bit-identical on all 56
+  ground-truth cells (the certified witness may be a different optimal
+  subset), the ground-truth grid solves ~1.9x faster, and instances far
+  beyond the previous n = 990 reach now certify in seconds where they
+  previously needed minutes and gigabytes (n = 4,601: ~2 s vs 201 s and
+  8.9 GB at k = 4, and k = 6, 10 alike; n = 6,435 at k = 4: ~4 s).
+
 # MaxMin 0.0.0.9012 (development)
 
 ## Performance
