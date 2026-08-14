@@ -1,3 +1,20 @@
+# MaxMin 0.0.0.9012 (development)
+
+## Performance
+
+- `FarFirst()` runs its restarts in parallel under `mc.cores > 1`: a call with
+  several starts — any multi-anchor `strategy`, or the default
+  `"random_furthest"` with `nSeeds > 1` — now solves one start per thread
+  instead of one after another. At the default `nSeeds = 3` and `N` = 6,000
+  this is 2.0x end-to-end on the distance-matrix path and 2.9x on the
+  coordinate path; `nSeeds = 8` reaches 3.5x and 4.4x on eight threads.
+  Speed-up is capped at the number of distinct seeds, which the greedy passes
+  cannot be split beyond. Past ~32,000 points a single pass can occupy every
+  thread on its own, so the starts run in turn there and the pass threads its
+  sweep as before. Single-threaded timings are unchanged, as are the
+  selections: identical at every thread count, on both paths and every
+  strategy (925-case battery).
+
 # MaxMin 0.0.0.9011 (development)
 
 ## Performance

@@ -94,20 +94,28 @@
 
 #' Resolve an expanded ensemble into the winning subset
 #'
-#' Shared tail of the two ensemble drivers: solves each expanded spec via the
-#' driver's `RunGonz` closure (which de-duplicates repeated seeds through its
-#' own cache), then returns the subset maximising \eqn{T_k}. The returned vector
-#' carries the `strategy_results` (one record per label) and `winning_strategy`
-#' (all tied-best labels) attributes.
+#' Shared tail of the two ensemble drivers: solves the specs' distinct seeds in
+#' one batch via the driver's `RunPasses` closure, then returns the subset
+#' maximising \eqn{T_k}. The returned vector carries the `strategy_results` (one
+#' record per label) and `winning_strategy` (all tied-best labels) attributes.
 #' @param expanded List of `list(label, s1)` specs from [.ExpandAnchors()].
 #' @param labels Character vector of labels (one per spec).
-#' @param RunGonz Closure mapping a seed `s1` to `list(idx, tK)`.
+#' @param RunPasses Closure mapping a vector of distinct seeds to a list of
+#'   `list(idx, tK)`, one per seed and in the same order.
 #' @return `.ResolveEnsemble()` returns an integer vector of selected indices with attributes.
 #' @keywords internal
-.ResolveEnsemble <- function(expanded, labels, RunGonz) {
-  strategyResults <- lapply(expanded, function(e) {
-    g <- RunGonz(e$s1)
-    list(s1 = e$s1, idx = g$idx, t_k = g$tK)
+.ResolveEnsemble <- function(expanded, labels, RunPasses) {
+  # Two anchors can resolve to the same seed (and a random draw can land on an
+  # anchor's), so the batch is de-duplicated before dispatch and mapped back
+  # after: each distinct seed is solved exactly once, and every label still
+  # gets its own record.
+  seeds    <- vapply(expanded, function(e) as.integer(e$s1), integer(1L))
+  distinct <- unique(seeds)
+  runs     <- RunPasses(distinct)
+  back     <- match(seeds, distinct)
+  strategyResults <- lapply(seq_along(expanded), function(i) {
+    g <- runs[[back[[i]]]]
+    list(s1 = expanded[[i]]$s1, idx = g$idx, t_k = g$tK)
   })
   names(strategyResults) <- labels
 
@@ -324,20 +332,10 @@ PickPoint <- function(d = NULL, points = NULL,
     lazy$medoid
   }
 
-  gonzCache <- new.env(parent = emptyenv())
-  RunGonz <- function(s1) {
-    key <- as.character(s1)
-    gonzCache[[key]] %||% {
-      idx <- .MaximinFrom(d, m, first = s1)
-      # The kernel computes T_k (min pairwise distance) for free during the
-      # greedy pass; read it rather than re-scoring with a d[idx, idx] subset.
-      tK  <- attr(idx, "t_k") %||% NA_real_
-      attr(idx, "t_k") <- NULL
-      res  <- list(idx = idx, tK = tK)
-      gonzCache[[key]] <- res
-      res
-    }
-  }
+  # One batched call: the kernel runs the passes one per thread and reports
+  # each one's T_k (computed for free during its greedy pass), so nothing here
+  # re-scores with a d[idx, idx] subset.
+  RunPasses <- function(seeds) .MaximinMulti(m, seeds, d = d)
 
   AnchorSeed <- function(name) {
     switch(name,
@@ -373,7 +371,7 @@ PickPoint <- function(d = NULL, points = NULL,
   }
   expanded <- .ExpandAnchors(anchors, rfSeeds, AnchorSeed)
   labels   <- vapply(expanded, `[[`, character(1L), "label")
-  .ResolveEnsemble(expanded, labels, RunGonz)
+  .ResolveEnsemble(expanded, labels, RunPasses)
 }
 
 #' Coordinate (matrix-free) multi-anchor Gonzalez ensemble
@@ -437,21 +435,10 @@ PickPoint <- function(d = NULL, points = NULL,
     lazy$medoid
   }
 
-  gonzCache <- new.env(parent = emptyenv())
-  RunGonz <- function(s1) {
-    key <- as.character(s1)
-    gonzCache[[key]] %||% {
-      idx <- .MaximinFromPoints(points, m, first = s1)
-      # The kernel computes T_k (min pairwise distance) for free during the
-      # greedy pass; read it rather than re-running stats::dist() on the
-      # selected sub-coordinates.
-      tK  <- attr(idx, "t_k") %||% NA_real_
-      attr(idx, "t_k") <- NULL
-      res <- list(idx = idx, tK = tK)
-      gonzCache[[key]] <- res
-      res
-    }
-  }
+  # One batched call: the kernel runs the passes one per thread and reports
+  # each one's T_k (computed for free during its greedy pass), so nothing here
+  # re-runs stats::dist() on the selected sub-coordinates.
+  RunPasses <- function(seeds) .MaximinMulti(m, seeds, points = points)
 
   AnchorSeed <- function(name) {
     switch(name,
@@ -489,5 +476,5 @@ PickPoint <- function(d = NULL, points = NULL,
   }
   expanded <- .ExpandAnchors(anchors, rfSeeds, AnchorSeed)
   labels   <- vapply(expanded, `[[`, character(1L), "label")
-  .ResolveEnsemble(expanded, labels, RunGonz)
+  .ResolveEnsemble(expanded, labels, RunPasses)
 }
