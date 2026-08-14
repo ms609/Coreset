@@ -268,10 +268,9 @@ test_that("DropAdd points path C++: recompute merge resolves both kinds of tie",
   # corner of the square is exactly 4 from two others, so min_dist ties at 4
   # recur; the drop puts some corners into need_recompute while the pass
   # winner comes from outside it, and the deferred merge must then settle the
-  # tie on sum_dist and, failing that, on the smaller index. Both arms fire
-  # here (verified on an instrumented build): sum_dist 11 vs 9 for (2,2) over
-  # (-2,-2), and an exact sum_dist tie at 4 + 4*sqrt(2) where (-2,2) takes the
-  # slot from (-2,-2) on index alone.
+  # tie on sum_dist and, failing that, on the smaller index. Both arms arise
+  # here: sum_dist 11 vs 9 for (2,2) over (-2,-2), and an exact sum_dist tie
+  # at 4 + 4*sqrt(2) where (-2,2) takes the slot from (-2,-2) on index alone.
   ptsSq <- rbind(c(2, 2), c(2, -2), c(3, 4),
                  c(-2, 2), c(-2, -2), c(-3, 4), c(-5, 2))
   res <- DropAdd(3L, points = ptsSq, plateau = 25L, maxCandidates = 0L)
@@ -283,10 +282,10 @@ test_that("DropAdd points path C++: chunk merge is invariant on a tied lattice",
   # A 128 x 128 integer lattice: n = 16384 engages the threaded pass regions,
   # and lattice distances tie exactly, so chunk winners routinely reach the
   # merge tied on min_dist and separated only by sum_dist. Both merge sites
-  # (construction and drop) take that arm at k = 8 and k = 20 (verified on an
-  # instrumented build, at 2, 3 and 4 threads). The merge exists to reproduce
-  # the serial lexicographic maximum, so the property to assert is that it
-  # does. CRAN caps tests at 2 cores.
+  # (construction and drop) take that arm at k = 8 and k = 20, at every
+  # thread count from 2 to 4. The merge exists to reproduce the serial
+  # lexicographic maximum, so the property to assert is that it does. CRAN
+  # caps tests at 2 cores.
   side <- 128L
   lat <- matrix(as.double(cbind(rep(seq_len(side), times = side),
                                 rep(seq_len(side), each = side))), ncol = 2L)
