@@ -43,22 +43,15 @@
 #' \eqn{\epsilon = 0.7}, learning rate \eqn{\alpha = 0.5}, discount
 #' \eqn{\gamma = 0.5}, maximum tabu tenure \eqn{120}, search depth 50&nbsp;000).
 #'
-#' @param d A `dist` object or square numeric matrix of pairwise distances.
-#'   Distances may be negative (the max-mean problem is defined for signed
-#'   distances; \insertCite{Dieudonne2020}{MaxMin}). An asymmetric matrix is
-#'   symmetrized to \eqn{(d_{ij} + d_{ji})/2} before solving.
-#' @param maxSeconds Numeric: wall-clock time budget in seconds.
-#' @param maxIter Numeric: cap on the total number of tabu-search iterations
-#'   (one-flip moves summed over all restarts). The search stops as soon as
-#'   *either* `maxSeconds` or `maxIter` is reached. Unlike `maxSeconds` (checked
-#'   every 256 iterations, so it may overshoot slightly), `maxIter` is an exact
-#'   cap: the reported `iters` never exceeds it. Pass `Inf` to disable the
-#'   iteration cap and budget by time alone.
-#' @param useRL Logical: enable the \eqn{Q}-learning layer that guides
-#'   initial-solution construction across restarts.  When `TRUE` (the default)
-#'   the learning and reward matrices each occupy \eqn{O(n^2)} memory, the same
-#'   order as the distance matrix itself.  Set `FALSE` for random restarts only
-#'   (\eqn{O(n)} auxiliary memory, marginally faster per restart).
+#' @param d A `dist` object or square numeric matrix of pairwise distances;
+#'   values may be negative, and an asymmetric matrix is symmetrized to
+#'   \eqn{(d_{ij} + d_{ji})/2} before solving.
+#' @param maxSeconds Numeric wall-clock time budget in seconds.
+#' @param maxIter Numeric cap on the total tabu-search iterations across
+#'   restarts; `Inf` budgets by wall-clock time alone.
+#' @param useRL Logical: enable the \eqn{Q}-learning layer guiding
+#'   initial-solution construction across restarts (`TRUE`, the default, costs
+#'   \eqn{O(n^2)} memory; `FALSE` uses random restarts only, \eqn{O(n)} memory).
 #' @templateVar progress_shows status messages are shown
 #' @template progress
 #'

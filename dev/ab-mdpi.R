@@ -44,7 +44,7 @@ for (nm in insts) {
   d <- ReadInstance(file.path("dev/_mdpi", paste0(nm, ".txt")))
   set.seed(1)
   # maxIter = Inf: budget purely by time (the n=500 paper protocol). Without
-  # this the new default maxIter = 1000 would stop far short of convergence.
+  # this the default maxIter = 1000 would stop far short of convergence.
   res <- MaxMean(d, maxSeconds = budget, maxIter = Inf, useRL = TRUE)
   f  <- attr(res, "score")
   bk <- best_known[[nm]]

@@ -7,25 +7,18 @@
 MaxMean(d, maxSeconds = 0.1, maxIter = 1000, useRL = TRUE)
 }
 \arguments{
-\item{d}{A \code{dist} object or square numeric matrix of pairwise distances.
-Distances may be negative (the max-mean problem is defined for signed
-distances; \insertCite{Dieudonne2020}{MaxMin}). An asymmetric matrix is
-symmetrized to \eqn{(d_{ij} + d_{ji})/2} before solving.}
+\item{d}{A \code{dist} object or square numeric matrix of pairwise distances;
+values may be negative, and an asymmetric matrix is symmetrized to
+\eqn{(d_{ij} + d_{ji})/2} before solving.}
 
-\item{maxSeconds}{Numeric: wall-clock time budget in seconds.}
+\item{maxSeconds}{Numeric wall-clock time budget in seconds.}
 
-\item{maxIter}{Numeric: cap on the total number of tabu-search iterations
-(one-flip moves summed over all restarts). The search stops as soon as
-\emph{either} \code{maxSeconds} or \code{maxIter} is reached. Unlike \code{maxSeconds} (checked
-every 256 iterations, so it may overshoot slightly), \code{maxIter} is an exact
-cap: the reported \code{iters} never exceeds it. Pass \code{Inf} to disable the
-iteration cap and budget by time alone.}
+\item{maxIter}{Numeric cap on the total tabu-search iterations across
+restarts; \code{Inf} budgets by wall-clock time alone.}
 
-\item{useRL}{Logical: enable the \eqn{Q}-learning layer that guides
-initial-solution construction across restarts.  When \code{TRUE} (the default)
-the learning and reward matrices each occupy \eqn{O(n^2)} memory, the same
-order as the distance matrix itself.  Set \code{FALSE} for random restarts only
-(\eqn{O(n)} auxiliary memory, marginally faster per restart).}
+\item{useRL}{Logical: enable the \eqn{Q}-learning layer guiding
+initial-solution construction across restarts (\code{TRUE}, the default, costs
+\eqn{O(n^2)} memory; \code{FALSE} uses random restarts only, \eqn{O(n)} memory).}
 }
 \value{
 \code{MaxMean()} returns an integer vector of selected 1-based indices
