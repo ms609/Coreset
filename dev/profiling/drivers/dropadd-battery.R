@@ -3,7 +3,8 @@
 # records the full drop/add sequence alongside indices, objective, secondary
 # and iters — any tie-break slip in a fused argmax shows up as a trajectory
 # divergence even when the final selection happens to coincide. Axes:
-# matrix path (Euclidean, TIE-DENSE integer-valued, and asymmetric inputs;
+# matrix path (Euclidean and two TIE-DENSE shapes, all symmetric as the
+# solvers require;
 # default and explicit seeds; small and large m), points path (dim 1/2/7/10),
 # plus two within-build invariants that need no baseline:
 #   * cross-path: matrix vs points kernels with the same explicit seed on
@@ -42,14 +43,17 @@ for (ds in 1:3) {
     dTie <- matrix(as.double(sample.int(5L, n * n, TRUE)), n, n)
     dTie <- pmax(dTie, t(dTie))          # symmetric, heavily tied
     diag(dTie) <- 0
-    dAsy <- matrix(runif(n * n), n, n)   # asymmetric (tolerated input)
-    diag(dAsy) <- 0
+    # A second symmetric tie-dense shape: continuous values rounded so that
+    # ties are common but the tied groups differ from dTie's.
+    dRnd <- matrix(round(runif(n * n), 2L), n, n)
+    dRnd <- pmin(dRnd, t(dRnd))
+    diag(dRnd) <- 0
     ms <- unique(c(2L, 5L, n %/% 4L, n %/% 2L, n - 1L))
     for (m in ms) {
       key <- paste("da", ds, n, m, sep = "_")
       res[[paste0(key, "_eu")]]  <- recM(dEu,  m, 30L, -1L)
       res[[paste0(key, "_tie")]] <- recM(dTie, m, 30L, -1L)
-      res[[paste0(key, "_asy")]] <- recM(dAsy, m, 30L, -1L)
+      res[[paste0(key, "_rnd")]] <- recM(dRnd, m, 30L, -1L)
       res[[paste0(key, "_eu_s3")]] <- recM(dEu, m, 30L, 2L)  # explicit seed
       # Points kernel (its own anti-centroid default seed) + cross-path
       # trajectory identity at an explicit shared seed.

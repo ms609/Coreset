@@ -47,6 +47,14 @@
   if (!is.matrix(d) || !is.numeric(d) || nrow(d) != ncol(d)) {
     stop("`d` must be a `dist` object or a square numeric matrix")
   }
+  # The warm start calls Grasp() and DropAdd() inside a tryCatch, so their own
+  # symmetry guard would surface only as an empty heuristic pool and a silent
+  # fall back to the trivial bound. A non-finite entry fails a symmetry test on
+  # its own terms (NA != NA), so it is left to the guard that names it.
+  scan <- SymmetryScan_cpp(d, .NThreads())
+  if (scan[["finite"]]) {
+    d <- .Symmetrise(d, scan[["deviation"]])
+  }
   d
 }
 

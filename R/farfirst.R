@@ -1,26 +1,73 @@
 # farfirst.R
 
+#' Reconcile the two triangles of a distance matrix
+#'
+#' Internal helper: returns `d` unchanged when its triangles already agree,
+#' averages them when they differ by no more than `tolerance`, and errors
+#' beyond it.
+#'
+#' @param d A square numeric matrix, known finite.
+#' @param dev Numeric: its scaled asymmetry, from `SymmetryScan_cpp()`.
+#' @param tolerance Numeric: largest scaled discrepancy to repair.
+#' @return `.Symmetrise()` returns an exactly symmetric matrix.
+#' @details
+#' Averaging costs one `n * n` copy per call: repair `d` yourself if calling a
+#' solver in a loop.
+#' @keywords internal
+.Symmetrise <- function(d, dev, tolerance = .SymmetryTolerance()) {
+  if (dev == 0) {
+    return(d)
+  }
+  if (dev > tolerance) {
+    stop("`d` must be symmetric: d[i, j] and d[j, i] differ by ",
+         format(dev, digits = 3), " relative to their magnitude, beyond the ",
+         "tolerance of ", format(tolerance, digits = 3),
+         " set by `options(MaxMin.symmetryTolerance=)`")
+  }
+  warning("`d` is symmetric only to rounding; averaging d[i, j] with d[j, i]. ",
+          "Pass `(d + t(d)) / 2` to silence this.", immediate. = TRUE)
+  Symmetrised_cpp(d)
+}
+
+# Largest scaled discrepancy repaired rather than refused; 0 refuses anything
+# inexact. The default is what R's own `isSymmetric()` allows.
+.SymmetryTolerance <- function() {
+  tol <- getOption("MaxMin.symmetryTolerance", 100 * .Machine$double.eps)
+  if (length(tol) != 1L || !is.numeric(tol) || is.na(tol) || tol < 0) {
+    stop("`options(MaxMin.symmetryTolerance=)` must be a single ",
+         "non-negative number")
+  }
+  tol
+}
+
 #' Coerce distance input to a square matrix, skipping the round-trip when
 #' already a matrix.
 #' @param d A `dist` object or a square numeric matrix.
+#' @param symmetric Logical: reconcile the two triangles of `d`.
 #' @return `.AsDistMatrix()` returns a square numeric matrix.
 #' @details
-#' Symmetry is not checked; an `O(N^2)` check is intentionally omitted.
-#' Asymmetric matrices are silently accepted, and the algorithm treats
-#' \eqn{d_{ij}} and \eqn{d_{ji}} as independent values.
+#' A `dist` object is symmetric by construction, so it bypasses the check.
 #' @keywords internal
-.AsDistMatrix <- function(d) {
-  if (inherits(d, "dist")) {
+.AsDistMatrix <- function(d, symmetric = TRUE) {
+  wasDist <- inherits(d, "dist")
+  if (wasDist) {
     d <- as.matrix(d)
   } else if (!is.matrix(d) || !is.numeric(d) || nrow(d) != ncol(d)) {
     stop("`d` must be a `dist` object or a square numeric matrix")
   }
   # NA/NaN/Inf propagate silently through pmin.int()/which.max() and can yield a
-  # repeated index in the selection; reject them up front.
-  if (!AllFinite_cpp(d, .NThreads())) {
+  # repeated index in the selection, so they are rejected up front.
+  if (!symmetric || wasDist) {
+    if (!AllFinite_cpp(d, .NThreads())) {
+      stop("distance matrix must not contain NA/NaN/Inf")
+    }
+    return(d)
+  }
+  scan <- SymmetryScan_cpp(d, .NThreads())
+  if (!scan[["finite"]]) {
     stop("distance matrix must not contain NA/NaN/Inf")
   }
-  d
+  .Symmetrise(d, scan[["deviation"]])
 }
 
 #' Gonzalez maximin from a single starting index
@@ -317,7 +364,10 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
     points <- .AsPointsMatrix(points)
     nPts <- nrow(points)
   } else {
-    d <- .AsDistMatrix(d)
+    # Every Gonzalez path reads whole d(., centre) columns, and the seeding
+    # scans cover the full matrix rather than taking a triangle, so d is scored
+    # as written and the O(n^2) reconciliation would cost more than the solve.
+    d <- .AsDistMatrix(d, symmetric = FALSE)
     nPts <- nrow(d)
   }
   # Pre-check before as.integer(): a finite, length-1, non-negative value.

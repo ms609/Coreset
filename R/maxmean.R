@@ -85,15 +85,13 @@
 MaxMean <- function(d, maxSeconds = 0.1, maxIter = 1000, useRL = TRUE) {
   progress <- getOption("MaxMin.progress", interactive())
 
-  dmat <- .AsDistMatrix(d)
+  dmat <- .AsDistMatrix(d, symmetric = FALSE)
   n    <- nrow(dmat)
-  # The max-mean objective is defined for symmetric distances, but
-  # .AsDistMatrix() does not enforce symmetry (the O(n^2) check is avoided as
-  # elsewhere in the package). Symmetrize once here so the incremental
-  # contribution array in the C++ kernel stays exact and the reported `score`
-  # agrees with MeanDist(). For an already-symmetric matrix this is a
-  # bit-identical no-op: (x + x) * 0.5 == x for finite x.
-  dmat <- (dmat + t(dmat)) * 0.5
+  # The max-mean objective is defined for symmetric distances. Averaging the
+  # triangles unconditionally keeps the C++ kernel's incremental contribution
+  # array exact and the reported `score` in agreement with MeanDist(), at no
+  # cost on symmetric input: the mean of two equal doubles is that double.
+  dmat <- Symmetrised_cpp(dmat)
   # Zero the diagonal so the C++ kernel can drop its per-element `j != i` guards
   # (a no-op for the objective, which never includes a self-distance, but it
   # lets the O(n) contribution-array updates run branchless). For a `dist`

@@ -1560,4 +1560,103 @@ to fix; the maxIter guard is confirmed free.
 
 - cleanup: all `dev/profiling/.vtune-lib-*` builds deleted.
 
+## Round 13 — 2026-08-14 — Area 2 (DropAdd): symmetric-read recompute, on a
+contract the user settled
+
+**Trigger:** user decision. Round 10 recorded the symmetric-transpose lever as
+blocked on whether `.AsDistMatrix`'s documented acceptance of asymmetric
+matrices was a contract; asked, the answer was that it is not.
+
+**The lever.** Each recomputed point `xx` needs `d(xx, S[j])` for every
+surviving `j`, and a symmetric `d` offers both layouts. Which is cheaper is a
+cache-line count: reading a row of each of the m columns of S touches m lines
+(one useful double per line), while sweeping the m rows of column `xx` touches
+`min(m, n/8)` lines. Column-major reads therefore win exactly when `m > n/8` —
+and the measurement matched the model on both sides of it, so the kernel picks
+per call. The construction's own-record scan transposes unconditionally: it
+reads a single column either way, so the column form is never worse.
+
+**Measured** (interleaved min-of-3, kernel-direct, n = 4000, objectives
+identical on every cell):
+
+| cell | base s | new s | |
+|------|-------:|------:|---|
+| m=10 construct | 0.0100 | 0.0100 | flat |
+| m=10 search1500 | 0.0500 | 0.0500 | flat |
+| m=400 search1500 (below n/8) | 0.0733 | 0.0733 | flat, original order |
+| m=600 search1500 (above n/8) | 0.0867 | 0.0700 | 1.24× |
+| m=2000 construct | 0.0500 | 0.0300 | 1.67× |
+| m=2000 search1500 | 0.1400 | 0.0800 | **1.75×** |
+
+The unconditional transpose was measured first and **regressed small m**
+(m=10 search 0.0500 → 0.0700): S's m columns are the same every iteration and
+stay resident, while the recomputed points' columns are cold. That is what the
+`m > n/8` switch exists for, and it is why the lever ships as a switch rather
+than a replacement.
+
+**Contract.** The matrix the kernel receives from `.AsDistMatrix()` is now
+exactly symmetric, since the kernel reads whichever triangle is cheaper and
+that choice depends on `m`: a matrix symmetric only to rounding could
+otherwise answer differently for different `k`. `SymmetryScan_cpp`
+measures the largest discrepancy tile-by-tile (so a tile and its transpose are
+resident together); zero passes through untouched, anything up to
+`options(MaxMin.symmetryTolerance=)` has its triangles averaged with an
+immediate warning, and the rest is refused. The finiteness scan runs first,
+since `NA != NA` would otherwise report a missing value as asymmetry.
+`MaxMean()`/`MeanDist()` pass `symmetric = FALSE`: they average the two
+triangles themselves, which is documented behaviour and unaffected by this.
+
+The k-centre solvers' own `IsSymmetric_cpp` guard went with it: it ran after
+`.AsDistMatrix()`, whose guarantee is strictly the stronger one, so it could
+no longer fire.
+
+**The guard is only paid where symmetry is exploited.** It sweeps the whole
+matrix — 3.0-3.5 ms at n = 2000, the single-core memory-bandwidth floor for
+32 MB (12.5 GB/s measured) — which is more work than an O(nk) solve does in
+total: `FarFirst(20L, d2000)` measured 6.0 ms without it and 14.0 ms with
+(interleaved min-of-4, three clean `--preclean` builds). So the callers that
+take `d` as written opt out with `symmetric = FALSE`: `FarFirst()`,
+`PickPoint()`, `.GonzEnsemble()` (whole-column reads, and `MatrixOffDiagMax_cpp`
+already scans in full rather than shortcutting to a triangle), `KCentreRadius()`,
+`MaxMean()`/`MeanDist()`. It stays for DropAdd (the lever), Grasp and the
+k-centre solvers, which do take a triangle — and whose kernels dominate it.
+`FarFirst(20L, d2000)` returns to 6.0 ms against a 6.0 ms base; the
+`"diameter"` seed to 5.0 ms against 5.5 ms.
+
+**The two sweeps are fused.** `SymmetryScan_cpp` answers finiteness and
+asymmetry from one pass, so the callers that check symmetry read the matrix
+once rather than twice: intake at n = 2000 7.0 -> 5.0 ms, `Grasp(20L, d2000)`
+25 -> 20 ms. It carries `AllFinite_cpp`'s bitwise exponent test into the pair
+loop and scans the diagonal separately, the pair sweep stepping over it. Both
+reductions are order-independent, so it threads with `.NThreads()` at no cost
+to reproducibility (a full-matrix scan is 2.0 ms at one thread, 0.5 ms at
+four) -- though `mc.cores` is 1 by default, so that is upside, not the
+default path.
+
+**No benchmark cell exercised the round-13 lever.** `DropAdd(20L, d500)` has
+m = 20 against n/8 = 62.5, and the points cell never reaches the matrix
+kernel, so CI could only ever report NSD on the transposed reads -- which it
+did. A cell at m = n/2 is added: `DropAdd(250L, d500, plateau = 2000L)`,
+measured 15.5 -> 12.5 ms against the pre-round-13 base.
+
+**Verification.** The 295-case trajectory battery is **bit-identical** to the
+pre-change kernel — after its asymmetric axis was replaced with a second
+symmetric tie-dense shape, since asymmetric input is no longer supported
+input. Run against the OLD battery the change matches on all 267 symmetric
+cases and differs on 28 of the 45 asymmetric ones: the lever is exact exactly
+where the contract now holds. Full suite 6304 pass / 0 fail / 2 skip.
+
+**Leads left on the table, with their estimates now stale:**
+- Lazy second-minimum record. Round 10 estimated ≤1.3× against a recompute
+  branch that was ~37% of the m = n/2 profile; that branch has just become
+  1.75× cheaper, so the remaining upside is smaller than the estimate and the
+  exactness surface (count semantics reproducing rescanned values) is
+  unchanged. Re-measure the branch share before building it.
+- K-row coordinate pre-gather for the points recompute (~8% of the m = 10⁴
+  profile, exact by copy). Untouched by this round.
+
+Status: Area 2 → OPTIMISED; the matrix kernel's serial-at-limit certification
+from round 10 stands for its passes (argmax fusion and threading both measured
+flat there) but not for the recompute branch, which this round moved.
+
 last_focus: 2

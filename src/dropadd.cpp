@@ -117,11 +117,12 @@ List DropAdd_cpp(NumericMatrix dmat, int m, double time_budget_s,
         ++min_dist_count[i];
       }
     }
-    // x_new's own min_dist over S[0..h-1].
+    // x_new's own min_dist over S[0..h-1], read down column x_new (symmetric d)
+    // rather than one row of each of h columns.
     double mn = R_PosInf;
     int cnt = 0;
     for (int j = 0; j < h; ++j) {
-      double dv = D(x_new, S[j]);
+      double dv = col[S[j]];
       if (dv < mn) { mn = dv; cnt = 1; }
       else if (dv == mn) ++cnt;
     }
@@ -202,22 +203,44 @@ List DropAdd_cpp(NumericMatrix dmat, int m, double time_budget_s,
     }
 
     // Recompute min_dist/count for points whose nearest peer just vanished.
-    // Iterate columns S[j] (contiguous in the inner over need_recompute) so
-    // every dmat read is sequential within the cached column.
+    // Each recomputed point xx needs d(xx, S[j]) for every surviving j, and a
+    // symmetric d offers both layouts for it. Which one is cheaper is a
+    // cache-line count: reading a row of each of the m columns of S touches m
+    // lines, while sweeping the m rows of column xx touches min(m, n/8) of
+    // that column's lines (8 doubles to a line). So column-major reads win
+    // exactly when m exceeds n/8 -- at m = n/2 the sweep is every other
+    // element of one 32 KB column, against 2000 columns touched once each.
+    // Both orders visit j ascending, so the values compare in the same
+    // sequence and the tie-breaks are unchanged.
     if (!need_recompute.empty()) {
       const int K = static_cast<int>(need_recompute.size());
       std::vector<double> mns(K, R_PosInf);
       std::vector<int>    cnts(K, 0);
-      for (int j = 0; j < m; ++j) {
-        if (j == head) continue;
-        const int sj = S[j];
-        const double *col = dp + sj * n;
+      if ((std::size_t)m * 8 > (std::size_t)n) {
         for (int r = 0; r < K; ++r) {
           const int xx = need_recompute[r];
-          if (xx == sj) continue;     // self mask for in-S need_recompute entries
-          const double dv = col[xx];
-          if (dv < mns[r]) { mns[r] = dv; cnts[r] = 1; }
-          else if (dv == mns[r]) ++cnts[r];
+          const double *col = dp + (std::size_t)xx * n;
+          for (int j = 0; j < m; ++j) {
+            if (j == head) continue;
+            const int sj = S[j];
+            if (xx == sj) continue;   // self mask for in-S need_recompute entries
+            const double dv = col[sj];
+            if (dv < mns[r]) { mns[r] = dv; cnts[r] = 1; }
+            else if (dv == mns[r]) ++cnts[r];
+          }
+        }
+      } else {
+        for (int j = 0; j < m; ++j) {
+          if (j == head) continue;
+          const int sj = S[j];
+          const double *col = dp + (std::size_t)sj * n;
+          for (int r = 0; r < K; ++r) {
+            const int xx = need_recompute[r];
+            if (xx == sj) continue;
+            const double dv = col[xx];
+            if (dv < mns[r]) { mns[r] = dv; cnts[r] = 1; }
+            else if (dv == mns[r]) ++cnts[r];
+          }
         }
       }
       for (int r = 0; r < K; ++r) {

@@ -195,6 +195,10 @@ test_that("KCentre and ExactKCentre reject asymmetric distance matrices (KC-002)
   d <- as.matrix(stats::dist(matrix(rnorm(20L), ncol = 2L)))
   d[1L, 2L] <- d[1L, 2L] + 1                       # break symmetry (still finite)
   expect_error(KCentre(d = d, 3L), "symmetric")
+  # KCentreRadius() is the exception: it reads whole d(point, centre) columns,
+  # so it scores the matrix as written.
+  expect_identical(KCentreRadius(d, c(1L, 4L)),
+                   max(pmin(d[, 1L], d[, 4L])))
   skip_if_not_installed("highs")
   skip_if_not_installed("Matrix")
   expect_error(ExactKCentre(d = d, 3L), "symmetric")

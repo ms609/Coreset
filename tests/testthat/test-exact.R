@@ -179,3 +179,13 @@ test_that("ExactMaxMin returns the documented fields", {
   expect_identical(attr(res, "k"), 3L)
   expect_type(attr(res, "time_s"), "double")
 })
+
+test_that("ExactMaxMin rejects an asymmetric matrix loudly", {
+  # The warm start collects Grasp()/DropAdd() results through tryCatch, so a
+  # contract error raised only there would be swallowed into an empty pool and
+  # a silent fall back to the trivial bound.
+  set.seed(1)
+  d <- as.matrix(stats::dist(matrix(stats::rnorm(40L), ncol = 2L)))
+  d[2L, 5L] <- d[2L, 5L] + 1
+  expect_error(ExactMaxMin(3L, d), "must be symmetric")
+})
