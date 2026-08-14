@@ -75,6 +75,15 @@ jobs:
           path: pr
           output: pr2
 
+      # Both trees are measured twice, alternating, so the comparison can size
+      # its noise band from replicates of each: a single sample of the target
+      # cannot tell a real change from the runner's between-step drift.
+      - name: Benchmark target again
+        uses: ms609/actions/benchmark-step@main
+        with:
+          path: main
+          output: main2
+
       - run: dir pr-benchmark-results
         working-directory: pr
       - run: dir main-benchmark-results
