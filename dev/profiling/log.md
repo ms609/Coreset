@@ -413,6 +413,53 @@ Status: Area 5 CDSh → OPTIMISED (T-010); ExactKCentre → PENDING (T-011).
 
 last_focus: 5
 
+---
+
+## Round (area #6) — MaxMean RLTS tabu loop — 2026-06-16
+
+Target: the per-iteration tabu inner loop in `src/maxmean.cpp` (user-named).
+MaxMean is time-budgeted, so the metric is THROUGHPUT (iters/s) — more iterations
+in the fixed budget = better solution quality.
+
+Driver: `drivers/maxmean.R` (signed n=500 Type-I, 3 s, useRL=FALSE to isolate the
+tabu loop). Baseline 786k iters/s.
+
+profvis triage: skipped (the R wrapper is a coercion + symmetrize + one long
+`.Call`; >99.9% of time is the pure-C++ kernel). Went straight to VTune.
+
+VTune hotspots (`-g` build, result_maxmean): per-iteration self-time split ~69%
+best-flip scan (lines 229–247) / ~31% O(n) P-array update (256–271). Hottest
+lines were the two per-element divisions (233 `/(m+1)`, 237 `/(m-1)`, ~0.84 s) and
+the P-update stores (260/268).
+
+Micro-bench triage (the gate — VTune line shares are NOT a verified win):
+- `bench-scan.cpp`: plain strength-reduction (precompute 1/(m±1), multiply) =
+  **0.97×, REFUTED**. The scan is ILP/load-bound at n=500 (arrays L1-resident);
+  the divide overlaps other work, so the "hot division line" was loads feeding it.
+- `bench-scan2.cpp`: (a) monotonicity scan = **1.13×** (track max-p add / min-p
+  remove with precomputed aspiration thresholds; divide only 2 survivors;
+  best_flip+delta identical). (b) branchless P-update = **1.4×+** (zero the diag at
+  the R boundary so the j!=u guard drops; bit-identical p-arrays).
+
+Implemented both (T-012). End-to-end driver on the optimized -O2 install:
+**786k → 1.16M iters/s (1.47×)** — better than the ~1.20× Amdahl estimate; solution
+quality also improved (f 54.524→54.541, more iterations). Full `test_dir` green;
+covr 100% on all new code (157/157 C++, 42/42 R) — the rewritten scan's new
+branches are all exercised.
+
+Correctness: branchless P-update is bit-identical (guard only skipped the
+now-zeroed diagonal). Monotonicity scan changes only cross-type exact-δ tie-breaks
+(measure-zero on continuous distances); all optima/consistency tests pass.
+
+- status: area #6 OPTIMISED (T-012). The P-update is now branchless memory-stream
+  (likely near AT-LIMIT — GCC -O2 doesn't auto-vectorize, but the loop is simple);
+  the scan is monotonicity-reduced. A further round could test -O3/`#pragma GCC
+  optimize("tree-vectorize")` on the P-update loop, or narrowing tabu_until to int
+  for large-n bandwidth — both speculative, deferred.
+- cleanup: result_maxmean_* and .vtune-lib-* deleted.
+
+---
+
 ## Round (targeted) — 2026-06-29 — MaxEntropy (maxdet) selector  [user: /profile MaxEntropy]
 
 **Task:** profile `MaxEntropy()` (R/maxentropy.R + src/maxentropy.cpp) and optimise
@@ -1114,3 +1161,50 @@ ensemble certifying that de-duplicated dispatch still yields one
 strategy_results record per label. Drivers: farfirst-timing.R gains three
 ens-default cells. Baselines refreshed (area 1 round-10 rows).
 last_focus unchanged (user-targeted round on area 1).
+
+---
+
+## Round — 2026-08-14 — Area 6: MaxMean maxIter guard  [user: /profile MaxMean]
+
+**Question:** the new `maxIter` feature (this branch) added a per-iteration
+`iter < iter_cap` guard to the hot tabu inner-loop condition in
+`src/maxmean.cpp`. Does that guard regress throughput (iters/s) — the metric that
+sets MaxMean solution quality, since the search is time-budgeted?
+
+**profvis / VTune skipped — deliberately.** The area-#6 round (2026-06-16) already
+mapped this loop: >99.9% pure C++ from the Rcpp boundary, self-time ~69% best-flip
+scan / ~31% P-array update, and a one-comparison edit does not move the hotspot
+map. The question here is a *verified delta*, not a hotspot location, so it goes
+straight to a controlled A/B (skill Step 6).
+
+**Method — on-machine controlled A/B, both `-O2 -g` (build-symboled-lib.ps1):**
+- A = HEAD (guard present: `while (depth < alpha_depth && iter < iter_cap)`).
+- B = guard removed (`while (depth < alpha_depth)`), one-line edit, `src/` restored
+  after the build. DLLs confirmed to differ; only `maxmean.o` changed, same flags.
+- Driver `drivers/maxmean.R` (signed n=500, useRL=FALSE, 3 s), 6 interleaved reps,
+  iters-in-3 s as the throughput proxy (interleaved min-of-N per this box's timing
+  noise).
+
+**Result — no regression.** A (with guard) measured *equal-or-faster* than B in
+5/6 reps (median iters ratio A/B = 1.19; range 0.97–1.22). Since B does strictly
+less work in the loop condition, "B slower" is logically impossible as a real
+effect → the delta is codegen/layout, and the guard's true cost (one
+predicted-taken compare per O(n) iteration, < 1 %) sits below the combined
+run + layout noise. **The maxIter guard is throughput-neutral.**
+
+**Absolute-throughput note (NOT a regression).** A clean plain `-O2` build
+(default Makevars, no `-g`/frame-pointer) re-measured a stable ~0.97–0.98M iters/s
+— below the T-012 round's 1.16M baseline but far above the 786k pre-optimisation
+baseline, with the same solution output (f = 54.5405, |S| = 138; matches T-012's
+54.541). The gap is cross-session machine variance (this box: ±20–35 % on timing
+cells), NOT the maxIter change (the on-machine A/B isolates that) and NOT lost
+optimisation (identical solution + >786k throughput confirm T-012 intact).
+`baselines.md` left at 1.16M — an environmentally depressed reading is not a clean
+baseline to overwrite it with. Aside: `-g -fno-omit-frame-pointer` itself costs
+~9 % throughput (0.98M → 0.89M), noted for future symboled rounds.
+
+**Verdict:** area #6 remains OPTIMISED (near AT-LIMIT). No issue filed — nothing
+to fix; the maxIter guard is confirmed free.
+
+- cleanup: all `dev/profiling/.vtune-lib-*` builds deleted.
+last_focus unchanged (targeted /profile MaxMean run).

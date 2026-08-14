@@ -10,7 +10,6 @@ coreset
 cpp
 determinantal
 doi
-Díaz
 DropAdd
 Duarte
 ejor
@@ -20,13 +19,11 @@ FastPAM
 FasterPAM
 Fathi
 Gallego
-García
-Glover
 Gonzalez
-Gramacy
 GRASP
 Hao
 Kulesza
+jimo
 lex
 Marti
 maxdet
@@ -41,6 +38,7 @@ MMDP
 MMDPo
 medoid
 medoids
+Nijimbere
 OpenMP
 ORCID
 parametrise
@@ -61,9 +59,7 @@ SOTA
 subsample
 subsampling
 summands
-Tamir
 Taskar
 tabu
 TS
-Vassilvitskii
 WIP

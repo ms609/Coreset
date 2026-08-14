@@ -35,6 +35,7 @@ print(FarFirst(5L, dist(pts)))
 Other reporting functions:
 \code{\link{print.KCentre}},
 \code{\link{print.MaxEntropy}},
+\code{\link[=print.MaxMeanSelection]{print.MaxMeanSelection()}},
 \code{\link{print.MaxSum}},
 \code{\link{summary.MaxMin}}
 }

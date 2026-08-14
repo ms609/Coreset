@@ -32,6 +32,7 @@ ExactMaxSum(3L, dist(matrix(rnorm(20), ncol = 2)))
 Other reporting functions:
 \code{\link{print.KCentre}},
 \code{\link{print.MaxEntropy}},
+\code{\link[=print.MaxMeanSelection]{print.MaxMeanSelection()}},
 \code{\link{print.MaxMin}},
 \code{\link{summary.MaxMin}}
 }

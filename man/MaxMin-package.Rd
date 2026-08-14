@@ -4,34 +4,59 @@
 \name{MaxMin-package}
 \alias{MaxMin}
 \alias{MaxMin-package}
-\title{MaxMin: Maximum-Minimum Diversity and Dispersion Subset Selection}
+\title{MaxMin: Maximum-Minimum Diversity, Discrete k-Centre, and Max-Mean
+Dispersion Subset Selection}
 \description{
-Selects a maximally dispersed subset of a fixed candidate set under the
-Max-Min Diversity Problem (MMDP, the discrete \emph{p}-dispersion objective):
-maximise the minimum pairwise distance within the chosen subset. The solvers
-operate on a distance matrix, on Euclidean coordinates (without
-materialising the matrix), or on an on-demand distance-column oracle.
+Selects a representative subset of a fixed candidate set.
 }
-\section{Solvers}{
+\section{Max-Min diversity solvers}{
 
+The Max-Min Diversity Problem (MMDP) maximises the minimum pairwise distance
+within a subset (the discrete \emph{p}-dispersion objective).
 \describe{
 \item{\code{\link[=FarFirst]{FarFirst()}}}{Greedy farthest-first selection from a distance matrix,
 a coordinate matrix, or a distance-column oracle (for spaces with no
 coordinate embedding), with a choice of peripheral seeding strategies and
 a robust ensemble default.}
 \item{\code{\link[=DropAdd]{DropAdd()}}}{DropAdd tabu search heuristic.}
+\item{\code{\link[=Grasp]{Grasp()}}}{GRASP with path relinking.}
 \item{\code{\link[=ExactMaxMin]{ExactMaxMin()}}}{Exact node-packing optimum (needs \pkg{highs}).}
-#'   \item{\code{\link[=MinDist]{MinDist()}}}{The k-centre objective (minimum pairwise distance).}
+}
+}
+
+\section{Max-Mean dispersion solver}{
+
+The Max-Mean Dispersion Problem selects a subset of a size that maximises
+the mean pairwise distance.
+\describe{
+\item{\code{\link[=MaxMean]{MaxMean()}}}{Reinforcement-learning tabu search.}
+}
+}
+
+\section{k-centre solvers}{
+
+The discrete \emph{k}-centre problem minimises the largest distance from any
+element to its nearest selected element ('centre').
+\describe{
+\item{\code{\link[=KCentre]{KCentre()}}}{CDSh covering heuristic.}
+\item{\code{\link[=ExactKCentre]{ExactKCentre()}}}{Exact minimum-cover optimum (needs \pkg{highs}).}
+}
+}
+
+\section{Scoring}{
+
+\describe{
+\item{\code{\link[=MinDist]{MinDist()}}}{Minimum pairwise distance (the max-min objective).}
+\item{\code{\link[=MeanDist]{MeanDist()}}}{Mean pairwise dispersion (the max-mean objective).}
+\item{\code{\link[=KCentreRadius]{KCentreRadius()}}}{Covering radius (the k-centre objective).}
 }
 }
 
 \section{Relation to \pkg{maximin}}{
 
-Not to be confused with the CRAN package \pkg{maximin} (Sun & Gramacy),
-which constructs continuous \emph{space-filling designs} — it generates new
-points in a coordinate region to maximise the minimum inter-point distance.
-\code{MaxMin} instead \emph{selects a subset} from a \emph{fixed} candidate set under an
-arbitrary distance, a combinatorial problem on a different footing.
+Not to be confused with the CRAN package \pkg{maximin}, which constructs
+continuous space-filling designs by generating \emph{new} points in a coordinate
+region to maximise the minimum inter-point distance.
 }
 
 \seealso{

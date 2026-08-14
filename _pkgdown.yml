@@ -22,6 +22,9 @@ reference:
       - DropAdd
       - Grasp
       - ExactMaxMin
+  - title: Max-Mean dispersion problem solver
+    contents:
+      - MaxMean
   - title: k-centre solvers
     contents:
       - KCentre
@@ -29,6 +32,7 @@ reference:
   - title: Scoring
     contents:
       - MinDist
+      - MeanDist
       - KCentreRadius
   - title: Reporting
     contents:

@@ -42,3 +42,34 @@ MinDist <- function(d = NULL, idx, points = NULL) {
   d <- .AsDistMatrix(d)
   .SubsetScore(d, idx, objective = "min_pairwise")
 }
+
+#' Mean dispersion of a selection
+#'
+#' `MeanDist()` reports the sum of pairwise distances divided by the number of
+#' selected elements,
+#' \deqn{f(S) = \frac{\displaystyle\sum_{i < j,\, i,j \in S} d_{ij}}{|S|}},
+#' the objective maximised by [MaxMean()].
+#'
+#' @param d Pairwise distance matrix or `dist` object.
+#' @param idx Integer vector of selected row/col indices.
+#' @return `MeanDist()` returns a numeric scalar, or `NA_real_` if
+#'   `length(idx) < 2`.
+#' @seealso [MaxMean()] which maximises this objective; [MinDist()] for the
+#'   max-min (MMDP) analogue.
+#' @inherit MaxMean examples
+#' @export
+MeanDist <- function(d, idx) {
+  idx <- as.integer(idx)
+  if (anyNA(idx)) stop("`idx` must not contain NA")
+  if (anyDuplicated(idx)) stop("`idx` must not contain duplicate indices")
+  d <- .AsDistMatrix(d)
+  k <- length(idx)
+  if (k < 2L) return(NA_real_)
+  sub <- d[idx, idx, drop = FALSE]
+  # Sum over unordered pairs, symmetrizing any asymmetry as the MaxMean()
+  # C++ kernel does.
+  # Keeps MeanDist() in agreement with MaxMean()'s reported score on the
+  # asymmetric matrices .AsDistMatrix() silently accepts.
+  # Return:
+  (sum(sub) - sum(diag(sub))) / 2 / k
+}

@@ -19,7 +19,7 @@ library("MaxMin")
 ```
 
 The MaxMin package selects a subset that represents a fixed pool of *N* items,
-based on one of two complementary objectives:
+based on one of three complementary objectives:
 
 The **Max-Min Diversity Problem** (MMDP, the discrete *p*-dispersion objective)
 selects $k$ elements such that the minimum distance between any pair of selected elements is as large as possible; the chosen elements are maximally separated.
@@ -28,20 +28,25 @@ This objective is suited to defining a representative sample from a fixed
 pool: picking biological specimens for sequencing that span available diversity,
 or choosing a representative subset of protein structures from a database.
 
+The **Max-Mean Dispersion Problem** instead maximizes the *average* distance
+between selected elements: the sum of pairwise distances divided by the number
+of elements selected, which is not specified in advance.
+
 The **discrete *k*-centre problem** selects $k$ elements such that the maximum
 distance from any element in the original set to a selected element is as small
 as possible.
-In ensuring that each point has a nearby representative, this objective can 
+In ensuring that each point has a nearby representative, this objective can
 select points that reflect a central compromise, rather than selections that
 are closer to more local points.
 This objective is useful when selecting centres that represent each point in
 a dataset: for example, siting fire stations to guarantee that all buildings
 can be reached within a given response time.
 
-An approximate selection that satisfies both objectives within a factor of two
-of their respective optima can be attained by a greedy farthest-first algorithm
-[@Gonzalez1985], though the exact optima typically differ; dispersion spreads to
-the extremes, whereas covering gravitates into the interior.
+An approximate selection that satisfies the max-min and *k*-centre objectives
+within a factor of two of their respective optima can be attained by a greedy
+farthest-first algorithm [@Gonzalez1985], though the exact optima typically
+differ; dispersion spreads to the extremes, whereas covering gravitates into
+the interior.
 MaxMin provides approximate and exact solvers for each objective.
 
 
@@ -88,16 +93,18 @@ MaxMin provides solvers for each objective:
 
 | Function | Objective | Quality | Speed | Stochastic? |
 |---|---|---|---|---|
-| `FarFirst()` | both | Good (2-approximation) | Very fast | No |
-| `DropAdd()` | MMDP | High (≈ 99 % optimal) | Fast | No |
-| `Grasp()` | MMDP | Highest | Moderate | Yes (`set.seed()`) |
-| `ExactMaxMin()` | MMDP | Optimal (NP-hard) | Slow | No |
-| `KCentre()` | k-centre | Near-optimal (CDSh) | Fast | No |
+| `FarFirst()` | max-min / k-centre | Good (2-approximation) | Very fast | No |
+| `DropAdd()` | MMDP (max-min) | High (≈ 99 % optimal) | Fast | No |
+| `Grasp()` | MMDP (max-min) | Highest | Moderate | Yes (`set.seed()`) |
+| `ExactMaxMin()` | MMDP (max-min) | Optimal (NP-hard) | Slow | No |
+| `MaxMean()` | max-mean | High | Time-budgeted | Yes (`set.seed()`) |
+| `KCentre()` | k-centre | Near-optimal | Fast | No |
 | `ExactKCentre()` | k-centre | Optimal (NP-hard) | Slow | No |
 
 
 To compute the score for an arbitrary selection of points under each objective,
-use `MinDist()` (MMDP) and `KCentreRadius()` (k-centre).
+use `MinDist()` (max-min), `MeanDist()` (max-mean) and `KCentreRadius()`
+(k-centre).
 
 
 ## Fast greedy selection
@@ -336,6 +343,49 @@ MinDist(points = pts, idx = ffPick)                # from coordinates
 ```
 
 
+## Max-mean dispersion
+
+The Max-Mean Dispersion Problem maximizes the sum of pairwise distances divided
+by the number of selected elements, which is chosen by the algorithm.
+
+`MaxMean()` implements reinforcement-learning tabu search [@Dieudonne2020]: 
+each restart constructs a candidate selection, randomly at first, then guided by
+a *Q*-learning memory of which elements proved valuable.
+The selection is refined with a one-flip tabu search that adds or removes a
+single element at a time.  The search continues until its time budget expires.
+
+The objective is only interesting when negative distances occur: otherwise the
+optimal selection tends to include all points.
+
+```{r}
+#| label: maxmean-data
+set.seed(1)
+affinity <- matrix(runif(30L * 30L, min = -10, max = 10), nrow = 30L)
+affinity <- (affinity + t(affinity)) / 2   # symmetric
+diag(affinity) <- 0
+```
+
+```{r}
+#| label: maxmean
+set.seed(1)
+mmPick <- MaxMean(affinity, maxSeconds = 2)
+mmPick
+attr(mmPick, "size")              # the algorithm chose this subset size
+attr(mmPick, "score")             # achieved mean-dispersion objective
+```
+
+`MaxMean()` chooses the subset size to retaining only the elements that
+raise the average separation.
+`MeanDist()` scores any index set under the same objective, so a hand-picked
+selection can be compared directly:
+
+```{r}
+#| label: meandist
+MeanDist(affinity, mmPick)        # matches attr(mmPick, "score")
+MeanDist(affinity, 1:30)          # the full set scores lower
+```
+
+
 ## Covering: the k-centre problem
 
 The above methods seek to spread the selection such that its members are
@@ -421,6 +471,15 @@ For **dispersion** (spread the selection; maximize T~k~):
 | Arbitrary metric with no coordinate embedding | `FarFirst(<column function>, N = ...)` |
 | Proven optimum, N ≤ ~ 25–30, **highs** installed | `ExactMaxMin()` |
 | Score a selection's T~k~ | `MinDist()` |
+
+For **average dispersion** (select a subset of the size that maximizes mean
+separation):
+
+| Scenario | Recommended |
+|---|---|
+| Maximize mean pairwise distance, size unfixed | `MaxMean()` |
+| Distances may be negative | `MaxMean()` |
+| Score a selection's max-mean objective | `MeanDist()` |
 
 For **covering** (minimise the radius; no point far from a centre):
 
