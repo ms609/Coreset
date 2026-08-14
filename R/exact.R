@@ -224,8 +224,8 @@
 #'
 #' `ExactMaxMin()` finds the optimal solution to the Max-Min Diversity Problem
 #' (discrete _p_-dispersion) by iterated node-packing
-#' \insertCite{Sayyady2016}{MaxMin}.
-#' As this problem is NP-hard, it is feasible only for small sets.
+#' \insertCite{Sayyady2016}{MaxMin} (which may be slow or intractable on large
+#' sets).
 #'
 #' The search is warm-started from a heuristic lower bound (the best of several
 #' [Grasp()] restarts and a [DropAdd()] pass), then gallops upward from that
@@ -234,7 +234,7 @@
 #' certifies it.
 #' Each feasibility probe is first reduced to its \eqn{(k-1)}-core and greedily
 #' coloured; where this does not settle the probe, an algebraic solver is
-#' launched.
+#' launched, using multiple cores if `options("mc.cores") > 1`.
 #'
 #' @param k Integer: target subset size, between 2 and `nrow(d)`.
 #' @param d `dist` object or a square symmetric numeric distance matrix.
