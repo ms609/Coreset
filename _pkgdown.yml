@@ -22,6 +22,9 @@ reference:
       - DropAdd
       - Grasp
       - ExactMaxMin
+  - title: Max-Sum diversity problem solver
+    contents:
+      - ExactMaxSum
   - title: Max-Mean dispersion problem solver
     contents:
       - MaxMean
@@ -29,6 +32,9 @@ reference:
     contents:
       - KCentre
       - ExactKCentre
+  - title: Maximum-entropy (maxdet) selection
+    contents:
+      - MaxEntropy
   - title: Scoring
     contents:
       - MinDist

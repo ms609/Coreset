@@ -19,7 +19,7 @@ library("MaxMin")
 ```
 
 The MaxMin package selects a subset that represents a fixed pool of *N* items,
-based on one of three complementary objectives:
+based on one of five complementary objectives:
 
 The **Max-Min Diversity Problem** (MMDP, the discrete *p*-dispersion objective)
 selects $k$ elements such that the minimum distance between any pair of selected elements is as large as possible; the chosen elements are maximally separated.
@@ -27,6 +27,13 @@ This can reward selections that leave the interior of the set unrepresented.
 This objective is suited to defining a representative sample from a fixed
 pool: picking biological specimens for sequencing that span available diversity,
 or choosing a representative subset of protein structures from a database.
+
+The **Max-Sum Diversity Problem** (the "maximum diversity problem") instead
+selects $k$ elements that maximize the *total* pairwise distance they contain.
+Unlike the MMDP, whose objective is set by a single closest pair, every pair
+in the selection contributes to the max-sum score, so the optimum tends to
+favour elements spread across the whole extent of the pool rather than
+elements that merely avoid a single close neighbour.
 
 The **Max-Mean Dispersion Problem** instead maximizes the *average* distance
 between selected elements: the sum of pairwise distances divided by the number
@@ -41,6 +48,14 @@ are closer to more local points.
 This objective is useful when selecting centres that represent each point in
 a dataset: for example, siting fire stations to guarantee that all buildings
 can be reached within a given response time.
+
+The **maximum-entropy (maxdet) sampling** objective selects $k$ elements that
+maximize the log-determinant of a similarity kernel built from the distances
+between them -- the spanned volume of the selection. A redundant element lies
+in the span of those already chosen and adds no volume, so this objective is
+"density-blind": it never rewards clusters of near-duplicate elements, without
+requiring the explicit pairwise-distance thresholds that the other objectives
+rely on.
 
 An approximate selection that satisfies the max-min and *k*-centre objectives
 within a factor of two of their respective optima can be attained by a greedy
@@ -97,14 +112,18 @@ MaxMin provides solvers for each objective:
 | `DropAdd()` | MMDP (max-min) | High (≈ 99 % optimal) | Fast | No |
 | `Grasp()` | MMDP (max-min) | Highest | Moderate | Yes (`set.seed()`) |
 | `ExactMaxMin()` | MMDP (max-min) | Optimal (NP-hard) | Slow | No |
+| `ExactMaxSum()` | Max-Sum Diversity | Optimal (NP-hard) | Slow | No |
 | `MaxMean()` | max-mean | High | Time-budgeted | Yes (`set.seed()`) |
 | `KCentre()` | k-centre | Near-optimal | Fast | No |
 | `ExactKCentre()` | k-centre | Optimal (NP-hard) | Slow | No |
+| `MaxEntropy()` | maxdet (max log-det) | High / Optimal for small `k` | Fast | No |
 
 
 To compute the score for an arbitrary selection of points under each objective,
 use `MinDist()` (max-min), `MeanDist()` (max-mean) and `KCentreRadius()`
-(k-centre).
+(k-centre). `ExactMaxSum()` and `MaxEntropy()` report their own objective value
+(total pairwise distance and log-determinant respectively) as the `score`
+attribute of the selection they return.
 
 
 ## Fast greedy selection
@@ -329,6 +348,39 @@ c(exact    = attr(exPick, "score"),
 of points exceeds ~30 candidates, or to switch to a heuristic method.
 
 
+## Max-sum diversity (maximum diversity)
+
+The **Max-Sum Diversity Problem** is the max-sum counterpart of the MMDP: it
+selects the $k$-subset maximising the *total* pairwise distance it contains,
+rather than the single minimum pairwise distance.
+`ExactMaxSum()` solves it exactly via per-node integer-program linearisation
+[@Kuo1993], floored by a multi-start 1-swap local search that both warms the
+lower bound and is returned when the integer program cannot prove optimality
+within `maxSeconds`.
+Like `ExactMaxMin()`, it uses the **highs** solver and is a small-instance,
+NP-hard tool.
+
+```{r}
+#| label: exact-maxsum
+#| eval: !expr requireNamespace("highs", quietly = TRUE)
+smPick <- ExactMaxSum(6L, d30, maxSeconds = 30L)
+
+attr(smPick, "proven")      # TRUE  ⟹  objective is the global optimum
+attr(smPick, "score")       # total pairwise distance within the selection
+```
+
+Because every pair in the selection, not just the closest, contributes to the
+max-sum objective, `ExactMaxSum()` and `ExactMaxMin()` can select different
+subsets from the same instance.
+
+```{r}
+#| label: maxsum-vs-maxmin
+#| eval: !expr requireNamespace("highs", quietly = TRUE)
+smPick   # optimal for total pairwise distance
+exPick   # optimal for the minimum pairwise distance
+```
+
+
 ## Scoring
 
 `MinDist()` computes the T~k~ objective for any index set.
@@ -458,6 +510,40 @@ labels(eurodist)[kc]    # covering: pulled toward the interior
 ```
 
 
+## Maximum-entropy (maxdet) selection
+
+`MaxEntropy()` selects the $k$-subset that maximizes the log-determinant of
+its kernel block, $\log\det K_S$ -- the maximum-entropy sampling criterion
+[@Shewry1987], equivalently the maximum-a-posteriori mode of a determinantal
+point process [@Kulesza2012].
+A radial-basis kernel is built from the distance matrix and repaired to be
+positive semi-definite where needed, since an arbitrary distance is not
+guaranteed to be of negative type.
+Because a redundant point lies in the span of those already chosen and adds
+no volume, it is never selected: the objective is exactly density-blind,
+unlike the distance-based objectives above.
+
+```{r}
+#| label: maxentropy
+mePick <- MaxEntropy(4L, eurodist)
+labels(eurodist)[mePick]
+attr(mePick, "logDet")     # the achieved log-determinant
+attr(mePick, "exact")      # TRUE if certified by exact enumeration
+```
+
+The selection is built greedily by pivoted Cholesky, substituting exact
+enumeration when $\binom{n}{k}$ does not exceed `maxCombos` -- as here, where
+the search is certified optimal.
+`negMass` reports the fraction of spectral mass removed by the
+positive-semidefinite repair, so a caller can see when that approximation is
+doing real work:
+
+```{r}
+#| label: maxentropy-negmass
+attr(mePick, "negMass")
+```
+
+
 ## When to use which method
 
 For **dispersion** (spread the selection; maximize T~k~):
@@ -471,6 +557,13 @@ For **dispersion** (spread the selection; maximize T~k~):
 | Arbitrary metric with no coordinate embedding | `FarFirst(<column function>, N = ...)` |
 | Proven optimum, N ≤ ~ 25–30, **highs** installed | `ExactMaxMin()` |
 | Score a selection's T~k~ | `MinDist()` |
+
+For **total dispersion** (fixed-size subset maximizing the *sum* of pairwise
+distances):
+
+| Scenario | Recommended |
+|---|---|
+| Proven optimum, N ≤ ~ 25–30, **highs** installed | `ExactMaxSum()` |
 
 For **average dispersion** (select a subset of the size that maximizes mean
 separation):
@@ -489,6 +582,13 @@ For **covering** (minimise the radius; no point far from a centre):
 | Quick 2-approximation baseline | `FarFirst(strategy = "peripheral")` |
 | Proven optimum, small N, **highs** installed | `ExactKCentre()` |
 | Score a centre set's covering radius (matrix-free at large N) | `KCentreRadius(points = ...)` |
+
+For **maximum-entropy (maxdet) selection** (density-blind volume maximization):
+
+| Scenario | Recommended |
+|---|---|
+| Maximize spanned volume / avoid near-duplicate selections | `MaxEntropy()` |
+| Proven optimum, `choose(n, k)` small | `MaxEntropy(exact = TRUE)` |
 
 
 ## Related problems

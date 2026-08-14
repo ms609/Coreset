@@ -7,7 +7,7 @@
 <!-- badges: end -->
 
 `MaxMin` implements algorithms that select a dispersed subsample of points that
-maximizes coverage of a larger set, under one of two objectives:
+maximizes coverage of a larger set, under one of several objectives:
 
 The **Max-Min Diversity Problem** (MMDP, the discrete *p*-dispersion objective)
 selects $k$ elements such that the minimum distance between any pair of selected elements is as large as possible; the chosen elements are maximally separated.
@@ -33,6 +33,12 @@ specialized solvers.
 | `Grasp()` |  GRASP with path-relinking metaheuristic | Slower but powerful heuristic |
 | `ExactMaxMin()` | Node-packing integer program | Proven optimum, small `k` (needs `highs`) |
 
+### Max-sum dispersion (maximum diversity)
+
+| Function | Method | Use |
+|---|---|---|
+| `ExactMaxSum()` | Per-node MILP linearisation, floored by multi-start local search | Proven optimum for total pairwise distance, small `k` (needs `highs`) |
+
 ### Max-mean dispersion
 
 | Function | Method | Use |
@@ -45,6 +51,12 @@ specialized solvers.
 |---|---|---|
 | `KCentre()` | Critical Dominating Set heuristic | ~1–3.5% of optimum at $O(N^2 \log N)$, typically far tighter than `FarFirst()` |
 | `ExactKCentre()` | Min-cover integer program | Proven optimum, small `k` (needs `highs`) |
+
+### Maximum-entropy (maxdet) selection
+
+| Function | Method | Use |
+|---|---|---|
+| `MaxEntropy()` | Greedy pivoted-Cholesky selection, with exact enumeration for small instances | Maximize the log-determinant (spanned volume) of a similarity kernel; density-blind |
 
 Solvers support precomputed distance matrices (`dist` objects),
 matrices of Euclidian coordinates, or lists of elements from which distances
