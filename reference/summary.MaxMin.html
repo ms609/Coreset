@@ -17,7 +17,7 @@ FarFirst() ensemble – the per-strategy \(T_k\) table."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">MaxMin</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9003</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9009</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -76,7 +76,10 @@ followed by the achieved objective(s), search effort, and – for a
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p>Other reporting functions:
 <code><a href="print.KCentre.html">print.KCentre</a></code>,
-<code><a href="print.MaxMin.html">print.MaxMin</a></code></p></div>
+<code><a href="print.MaxEntropy.html">print.MaxEntropy</a></code>,
+<code><a href="print.MaxMeanSelection.html">print.MaxMeanSelection()</a></code>,
+<code><a href="print.MaxMin.html">print.MaxMin</a></code>,
+<code><a href="print.MaxSum.html">print.MaxSum</a></code></p></div>
     </div>
 
     <div class="section level2">
@@ -84,14 +87,12 @@ followed by the achieved objective(s), search effort, and – for a
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">pts</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">60</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="fl">5L</span>, <span class="fu"><a href="https://rdrr.io/r/stats/dist.html" class="external-link">dist</a></span><span class="op">(</span><span class="va">pts</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (4 14 26 5 28) selected by farthest-first (best of 5 strategies, 3 tied: random_furthest1, random_furthest2, random_furthest3), each at distance &gt;= 1.765</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   strategies tried (5), best marked *:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (14 4 26 5 28) selected by farthest-first (best of 3 strategies, winner random_furthest1), each at distance &gt;= 1.765</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   strategies tried (3), best marked *:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     strategy           seed  T_k</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   * random_furthest1      4  1.765</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   * random_furthest2      5  1.765</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   * random_furthest3     14  1.765</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     random_furthest4     24  1.701</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     random_furthest5     26  1.468</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   * random_furthest1     14  1.765</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     random_furthest2     24  1.701</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     random_furthest3     26  1.468</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
@@ -103,7 +104,7 @@ followed by the achieved objective(s), search effort, and – for a
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

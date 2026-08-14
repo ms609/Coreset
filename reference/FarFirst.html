@@ -19,7 +19,7 @@ iteratively selects the point furthest from the current selection to yield a
 
     <a class="navbar-brand me-2" href="../index.html">MaxMin</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9003</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9009</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -61,7 +61,7 @@ iteratively selects the point furthest from the current selection to yield a
 <span>  points <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  N <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  strategy <span class="op">=</span> <span class="st">"random_furthest"</span>,</span>
-<span>  nSeeds <span class="op">=</span> <span class="fl">8L</span></span>
+<span>  nSeeds <span class="op">=</span> <span class="fl">3L</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -102,7 +102,11 @@ to run each strategy and return the best solution.</p></dd>
 
 <dt id="arg-nseeds">nSeeds<a class="anchor" aria-label="anchor" href="#arg-nseeds"></a></dt>
 <dd><p>Integer: number of distinct seeds to draw under the (default)
-<code>"random_furthest"</code> strategy.</p></dd>
+<code>"random_furthest"</code> strategy. Three starts captures most of the gain from
+restarting — the improvement curve bends early (knee at n ≈ 3–4 across
+benchmarks) and additional restarts add little. For higher-quality
+solutions, prefer <code><a href="DropAdd.html">DropAdd()</a></code>: tabu search escapes the farthest-first
+construction family where restarts plateau.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -120,6 +124,17 @@ optimal score.</p></li>
 
 <p>In interactive sessions, the distance-column path shows a progress bar.
 To toggle, set <code>options("MaxMin.progress" = FALSE)</code> (or <code>TRUE</code>).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="parallelism">Parallelism<a class="anchor" aria-label="anchor" href="#parallelism"></a></h2>
+
+
+<p>To parallelize computation when OpenMP is available, set the <code>"mc.cores"</code>
+option:</p>
+<p></p><div class="sourceCode r"><pre><code><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>mc.cores <span class="op">=</span> <span class="fl">2L</span><span class="op">)</span>                       <span class="co"># use a fixed number of cores</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>mc.cores <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>  <span class="co"># or all available cores</span></span></code></pre><p></p></div>
+<p>The main use case for parallelization is when <code>nSeeds</code> is a multiple of
+<code>mc.cores</code>, so each seed point can be evaluated in parallel.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -145,9 +160,9 @@ To toggle, set <code>options("MaxMin.progress" = FALSE)</code> (or <code>TRUE</c
 <span class="r-in"><span><span class="va">pts</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">60</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/dist.html" class="external-link">dist</a></span><span class="op">(</span><span class="va">pts</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Default: best of eight random-furthest starts (set.seed for reproducibility):</span></span></span>
+<span class="r-in"><span><span class="co"># Default: best of three random-furthest starts (set.seed for reproducibility):</span></span></span>
 <span class="r-in"><span><span class="fu">FarFirst</span><span class="op">(</span><span class="fl">5L</span>, <span class="va">d</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (4 14 26 5 28) selected by farthest-first (best of 5 strategies, 3 tied: random_furthest1, random_furthest2, random_furthest3), each at distance &gt;= 1.765</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (14 4 26 5 28) selected by farthest-first (best of 3 strategies, winner random_furthest1), each at distance &gt;= 1.765</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># More random-furthest starts:</span></span></span>
 <span class="r-in"><span><span class="fu">FarFirst</span><span class="op">(</span><span class="fl">5L</span>, <span class="va">d</span>, nSeeds <span class="op">=</span> <span class="fl">15L</span><span class="op">)</span></span></span>
@@ -194,7 +209,7 @@ To toggle, set <code>options("MaxMin.progress" = FALSE)</code> (or <code>TRUE</c
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

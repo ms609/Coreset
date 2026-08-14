@@ -9,7 +9,7 @@ the matrix path on Euclidean data.
 ## Usage
 
 ``` r
-.GonzEnsembleFromPoints(points, m, anchors = "random_furthest", nSeeds = 8L)
+.GonzEnsembleFromPoints(points, m, anchors = "random_furthest", nSeeds = 3L)
 ```
 
 ## Arguments

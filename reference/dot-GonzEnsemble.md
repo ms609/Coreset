@@ -14,7 +14,7 @@ labelled `random_furthest1`, `random_furthest2`, ...) attributes.
 ## Usage
 
 ``` r
-.GonzEnsemble(d, m, anchors = "peripheral", nSeeds = 8L)
+.GonzEnsemble(d, m, anchors = "peripheral", nSeeds = 3L)
 ```
 
 ## Arguments

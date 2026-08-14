@@ -1,12 +1,11 @@
-# MaxMin: Maximum-Minimum Diversity and Dispersion Subset Selection
+# MaxMin: Maximum-Minimum Diversity, Discrete k-Centre, and Max-Mean Dispersion Subset Selection
 
-Selects a maximally dispersed subset of a fixed candidate set under the
-Max-Min Diversity Problem (MMDP, the discrete *p*-dispersion objective):
-maximise the minimum pairwise distance within the chosen subset. The
-solvers operate on a distance matrix, on Euclidean coordinates (without
-materialising the matrix), or on an on-demand distance-column oracle.
+Selects a representative subset of a fixed candidate set.
 
-## Solvers
+## Max-Min diversity solvers
+
+The Max-Min Diversity Problem (MMDP) maximises the minimum pairwise
+distance within a subset (the discrete *p*-dispersion objective).
 
 - [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md):
 
@@ -19,27 +18,61 @@ materialising the matrix), or on an on-demand distance-column oracle.
 
   DropAdd tabu search heuristic.
 
+- [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md):
+
+  GRASP with path relinking.
+
 - [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md):
 
   Exact node-packing optimum (needs highs).
 
+## Max-Mean dispersion solver
+
+The Max-Mean Dispersion Problem selects a subset of a size that
+maximises the mean pairwise distance.
+
+- [`MaxMean()`](https://ms609.github.io/MaxMin/reference/MaxMean.md):
+
+  Reinforcement-learning tabu search.
+
+## k-centre solvers
+
+The discrete *k*-centre problem minimises the largest distance from any
+element to its nearest selected element ('centre').
+
+- [`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md):
+
+  CDSh covering heuristic.
+
+- [`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md):
+
+  Exact minimum-cover optimum (needs highs).
+
+## Scoring
+
 - [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md):
 
-  The k-centre objective (minimum pairwise distance).
+  Minimum pairwise distance (the max-min objective).
+
+- [`MeanDist()`](https://ms609.github.io/MaxMin/reference/MeanDist.md):
+
+  Mean pairwise dispersion (the max-mean objective).
+
+- [`KCentreRadius()`](https://ms609.github.io/MaxMin/reference/KCentreRadius.md):
+
+  Covering radius (the k-centre objective).
 
 ## Relation to maximin
 
-Not to be confused with the CRAN package maximin (Sun & Gramacy), which
-constructs continuous *space-filling designs* — it generates new points
-in a coordinate region to maximise the minimum inter-point distance.
-`MaxMin` instead *selects a subset* from a *fixed* candidate set under
-an arbitrary distance, a combinatorial problem on a different footing.
+Not to be confused with the CRAN package maximin, which constructs
+continuous space-filling designs by generating *new* points in a
+coordinate region to maximise the minimum inter-point distance.
 
 ## See also
 
 Useful links:
 
-- <https://ms609.github.com/MaxMin/>
+- <https://ms609.github.io/MaxMin/>
 
 - Report bugs at <https://github.com/ms609/MaxMin/issues>
 

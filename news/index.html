@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">MaxMin</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9003</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9009</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,6 +39,43 @@
       <small>Source: <a href="https://github.com/ms609/MaxMin/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.0.0.9009" id="maxmin-0009009-development">MaxMin 0.0.0.9009 (development)<a class="anchor" aria-label="anchor" href="#maxmin-0009009-development"></a></h2>
+<ul><li>
+<code><a href="../reference/ExactMaxMin.html">ExactMaxMin()</a></code> parallelized and optimized.</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.0.0.9008" id="maxmin-0009008-development">MaxMin 0.0.0.9008 (development)<a class="anchor" aria-label="anchor" href="#maxmin-0009008-development"></a></h2>
+<ul><li>
+<code><a href="../reference/DropAdd.html">DropAdd()</a></code> parallelized and optimized.</li>
+<li>
+<code><a href="../reference/MaxMean.html">MaxMean()</a></code> solves the Max-Mean Dispersion Problem.</li>
+<li>
+<code><a href="../reference/MeanDist.html">MeanDist()</a></code> scores an arbitrary selection under the max-mean objective.</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.0.0.9007" id="maxmin-0009007-development">MaxMin 0.0.0.9007 (development)<a class="anchor" aria-label="anchor" href="#maxmin-0009007-development"></a></h2>
+<ul><li>
+<code><a href="../reference/FarFirst.html">FarFirst()</a></code> parallelized and optimized.</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.0.0.9006" id="maxmin-0009006-development">MaxMin 0.0.0.9006 (development)<a class="anchor" aria-label="anchor" href="#maxmin-0009006-development"></a></h2>
+<ul><li>
+<code><a href="../reference/Grasp.html">Grasp()</a></code> no longer discards its best-known solution, is ~10.0× faster, and may be parallelized.</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.0.0.9005" id="maxmin-0009005-development">MaxMin 0.0.0.9005 (development)<a class="anchor" aria-label="anchor" href="#maxmin-0009005-development"></a></h2>
+<ul><li>
+<code><a href="../reference/DropAdd.html">DropAdd()</a></code> can now compute distances between pairs on the fly, rather than needing a complete matrix <em>a priori</em>.</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.0.0.9004" id="maxmin-0009004-development">MaxMin 0.0.0.9004 (development)<a class="anchor" aria-label="anchor" href="#maxmin-0009004-development"></a></h2>
+<ul><li><p>New <code><a href="../reference/MaxEntropy.html">MaxEntropy()</a></code>: maximum-entropy (maxdet) subset selection.</p></li>
+<li><p>New <code><a href="../reference/ExactMaxSum.html">ExactMaxSum()</a></code>: exact solver for the Max-Sum Diversity Problem.</p></li>
+<li><p><code><a href="../reference/DropAdd.html">DropAdd()</a></code> and <code><a href="../reference/Grasp.html">Grasp()</a></code> gain a <code>maxCandidates</code> argument.</p></li>
+<li><p><code><a href="../reference/FarFirst.html">FarFirst()</a></code>’s default <code>nSeeds</code> is reduced from <code>8</code> to <code>3</code>.</p></li>
+<li><p><code><a href="../reference/DropAdd.html">DropAdd()</a></code> gains a <code>seed</code> argument.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.0.0.9003" id="maxmin-0009003-development">MaxMin 0.0.0.9003 (development)<a class="anchor" aria-label="anchor" href="#maxmin-0009003-development"></a></h2>
 <ul><li>
@@ -85,7 +122,7 @@
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.0.0.9000" id="maxmin-0009000-development">MaxMin 0.0.0.9000 (development)<a class="anchor" aria-label="anchor" href="#maxmin-0009000-development"></a></h2>
-<ul><li>Initial release: a tiered toolbox for the Max-Min Diversity Problem (MMDP / discrete p-dispersion), extracted from the <code>FurthestPoint</code> study package so that it can be depended on by CRAN packages (e.g. <code>TreeSearch</code>).</li>
+<ul><li>Initial release: a tiered toolbox for the Max-Min Diversity Problem (MMDP / discrete p-dispersion).</li>
 <li>
 <code><a href="../reference/FarFirst.html">FarFirst()</a></code>: deterministic farthest-first selection from a distance matrix, Euclidean coordinates (<code>points =</code>), or an on-demand <strong>distance-column oracle</strong> (pass a column function as <code>d</code>, with <code>N =</code>) for spaces with no coordinate embedding; the oracle may report the self-distance (length <code>N</code>) or omit it (length <code>N - 1</code>), whichever is simpler to compute. The default <code>seed</code> runs a best-of-three ensemble of <code>"random_furthest"</code> starts (whose pivots are drawn with the session RNG; set a seed for a reproducible selection, or supply them via the <code>pivots</code> argument) and keeps the best by <code><a href="../reference/MinDist.html">MinDist()</a></code>. The deterministic O(<em>N</em>) anchors (<code>"anti_centroid"</code>, <code>"peripheral"</code>) and the costlier O(<em>N</em>²) anchors (<code>"diameter"</code>, <code>"anti_medoid"</code>, <code>"medoid"</code>, <code>"rowsum"</code>, <code>"rownorm"</code>) are available as opt-in strategies.</li>
 <li>
@@ -108,7 +145,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">MaxMin</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9003</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9009</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -46,7 +46,7 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">.GraspConstruct</span><span class="op">(</span><span class="va">d</span>, <span class="va">k</span>, <span class="va">alpha</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">.GraspConstruct</span><span class="op">(</span><span class="va">d</span>, <span class="va">k</span>, <span class="va">alpha</span>, <span class="va">us</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -64,6 +64,16 @@
 <dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>
 <dd><p>RCL threshold parameter (alpha=1 -&gt; greedy, alpha=0 -&gt; random).</p></dd>
 
+
+<dt id="arg-us">us<a class="anchor" aria-label="anchor" href="#arg-us"></a></dt>
+<dd><p>Numeric vector of <code>k</code> pre-drawn uniforms. <code>us[[1]]</code> picks the
+first vertex and <code>us[[h]]</code> step <code>h</code>'s RCL member, as
+<code>floor(u * size)</code> clamped to <code>size - 1</code> — exactly the kernel's mapping,
+so R and C++ stay bit-identical. Steps whose RCL is a singleton (or
+empty; see below) leave their uniform unused: consumption is fixed at
+<code>k</code> draws either way, which is what lets whole batches be drawn up
+front and constructions run on threads that must not touch R's RNG.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -79,7 +89,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

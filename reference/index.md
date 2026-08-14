@@ -18,6 +18,16 @@ Farthest-first (Gonzalez) selection and its seeding strategies.
 - [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
   : Exact Max-Min Diversity Problem solution
 
+## Max-Sum diversity problem solver
+
+- [`ExactMaxSum()`](https://ms609.github.io/MaxMin/reference/ExactMaxSum.md)
+  : Exact Maximum Diversity Problem (max-sum) solution
+
+## Max-Mean dispersion problem solver
+
+- [`MaxMean()`](https://ms609.github.io/MaxMin/reference/MaxMean.md) :
+  Max-Mean Dispersion Problem solver
+
 ## k-centre solvers
 
 - [`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md)
@@ -27,10 +37,17 @@ Farthest-first (Gonzalez) selection and its seeding strategies.
   [`ExactKCenter()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md)
   : Exact discrete k-centre optimum on small instances
 
+## Maximum-entropy (maxdet) selection
+
+- [`MaxEntropy()`](https://ms609.github.io/MaxMin/reference/MaxEntropy.md)
+  : Maximum-entropy (maxdet) subset selection
+
 ## Scoring
 
 - [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md) :
   Minimum pairwise distance within a selection
+- [`MeanDist()`](https://ms609.github.io/MaxMin/reference/MeanDist.md) :
+  Mean dispersion of a selection
 - [`KCentreRadius()`](https://ms609.github.io/MaxMin/reference/KCentreRadius.md)
   [`KCenterRadius()`](https://ms609.github.io/MaxMin/reference/KCentreRadius.md)
   : Covering radius of a set of centres
@@ -42,8 +59,18 @@ Farthest-first (Gonzalez) selection and its seeding strategies.
   [`format(`*`<KCentreExact>`*`)`](https://ms609.github.io/MaxMin/reference/print.KCentre.md)
   [`print(`*`<KCentreExact>`*`)`](https://ms609.github.io/MaxMin/reference/print.KCentre.md)
   : Format and print k-centre solver results
+- [`format(`*`<MaxEntropySelection>`*`)`](https://ms609.github.io/MaxMin/reference/print.MaxEntropy.md)
+  [`print(`*`<MaxEntropySelection>`*`)`](https://ms609.github.io/MaxMin/reference/print.MaxEntropy.md)
+  : Format and print maximum-entropy (maxdet) solver results
+- [`format(`*`<MaxMeanSelection>`*`)`](https://ms609.github.io/MaxMin/reference/print.MaxMeanSelection.md)
+  [`print(`*`<MaxMeanSelection>`*`)`](https://ms609.github.io/MaxMin/reference/print.MaxMeanSelection.md)
+  [`summary(`*`<MaxMeanSelection>`*`)`](https://ms609.github.io/MaxMin/reference/print.MaxMeanSelection.md)
+  : Format and print Max-Mean solver results
 - [`format(`*`<MaxMinSelection>`*`)`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md)
   [`print(`*`<MaxMinSelection>`*`)`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md)
   : Format and print MaxMin solver results
+- [`format(`*`<MaxSumSelection>`*`)`](https://ms609.github.io/MaxMin/reference/print.MaxSum.md)
+  [`print(`*`<MaxSumSelection>`*`)`](https://ms609.github.io/MaxMin/reference/print.MaxSum.md)
+  : Format and print Max-Sum (maximum diversity) solver results
 - [`summary(`*`<MaxMinSelection>`*`)`](https://ms609.github.io/MaxMin/reference/summary.MaxMin.md)
   : Detailed summaries of MaxMin solver results

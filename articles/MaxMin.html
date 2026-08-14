@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">MaxMin</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9003</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9009</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -58,7 +58,7 @@
       <h1>Introduction to MaxMin</h1>
 
       <p class="author">Martin R. Smith</p>
-      <p class="date">2026-06-15</p>
+      <p class="date">2026-08-14</p>
 
       <small class="dont-index">Source: <a href="https://github.com/ms609/MaxMin/blob/main/vignettes/MaxMin.qmd" class="external-link"><code>vignettes/MaxMin.qmd</code></a></small>
       <div class="d-none name"><code></code></div>
@@ -69,10 +69,12 @@
 
 
 
-    <p>The MaxMin package selects a subset that represents a fixed pool of <em>N</em> items, based on one of two complementary objectives:</p>
+    <p>The MaxMin package selects a subset that represents a fixed pool of <em>N</em> items, based on approximate and exact solutions to a suite of objectives:</p>
 <p>The <strong>Max-Min Diversity Problem</strong> (MMDP, the discrete <em>p</em>-dispersion objective) selects <span class="math inline">\(k\)</span> elements such that the minimum distance between any pair of selected elements is as large as possible; the chosen elements are maximally separated. This can reward selections that leave the interior of the set unrepresented. This objective is suited to defining a representative sample from a fixed pool: picking biological specimens for sequencing that span available diversity, or choosing a representative subset of protein structures from a database.</p>
-<p>The <strong>discrete <em>k</em>-centre problem</strong> selects <span class="math inline">\(k\)</span> elements such that the maximum distance from any element in the original set to a selected element is as small as possible. In ensuring that each point has a nearby representative, this objective can select points that reflect a central compromise, rather than selections that are closer to more local points. This objective is useful when selecting centres that represent each point in a dataset: for example, siting fire stations to guarantee that all buildings can be reached within a given response time.</p>
-<p>An approximate selection that satisfies both objectives within a factor of two of their respective optima can be attained by a greedy farthest-first algorithm <span class="citation" data-cites="Gonzalez1985">(<a href="#ref-Gonzalez1985" role="doc-biblioref">González, 1985</a>)</span>, though the exact optima typically differ; dispersion spreads to the extremes, whereas covering gravitates into the interior. MaxMin provides approximate and exact solvers for each objective.</p>
+<p>The <strong>Max-Sum Diversity Problem</strong> (the “maximum diversity problem”) selects <span class="math inline">\(k\)</span> elements that maximize the <em>total</em> pairwise distance they contain. As every pair in the selection contributes to the max-sum score, the optimum tends to favour elements spread across the whole extent of the pool rather than elements that merely avoid a single close neighbour.</p>
+<p>The <strong>Max-Mean Dispersion Problem</strong> maximizes the <em>average</em> distance between selected elements; this differs from the Max Sum objective in that the number of elements to be selected is not specified in advance.</p>
+<p>The <strong>discrete <em>k</em>-centre problem</strong> selects <span class="math inline">\(k\)</span> elements such that the maximum distance from any element in the original set to a selected element is as small as possible. In ensuring that each point has a nearby representative, this objective can select points that reflect a central compromise, rather than selections that are closer to more local points. Whereas dispersion spreads to the extremes, covering gravitates into the interior. This objective is useful when selecting centres that represent each point in a dataset: for example, siting fire stations to guarantee that all buildings can be reached within a given response time.</p>
+<p>The <strong>maximum-entropy (maxdet) sampling</strong> objective selects the <span class="math inline">\(k\)</span> least redundant elements: that is, those that maximize the log-determinant of a similarity kernel built from the distances between them, and thus that together occupy the largest volume.</p>
 <section class="level2"><h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <p>Install from CRAN with:</p>
@@ -111,6 +113,13 @@
 </h2>
 <p>MaxMin provides solvers for each objective:</p>
 <table class="table caption-top">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
 <thead><tr class="header">
 <th>Function</th>
 <th>Objective</th>
@@ -121,36 +130,50 @@
 <tbody>
 <tr class="odd">
 <td><code><a href="../reference/FarFirst.html">FarFirst()</a></code></td>
-<td>both</td>
+<td>max-min / k-centre</td>
 <td>Good (2-approximation)</td>
 <td>Very fast</td>
 <td>No</td>
 </tr>
 <tr class="even">
 <td><code><a href="../reference/DropAdd.html">DropAdd()</a></code></td>
-<td>MMDP</td>
+<td>MMDP (max-min)</td>
 <td>High (≈ 99 % optimal)</td>
 <td>Fast</td>
 <td>No</td>
 </tr>
 <tr class="odd">
 <td><code><a href="../reference/Grasp.html">Grasp()</a></code></td>
-<td>MMDP</td>
+<td>MMDP (max-min)</td>
 <td>Highest</td>
 <td>Moderate</td>
 <td>Yes (<code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code>)</td>
 </tr>
 <tr class="even">
 <td><code><a href="../reference/ExactMaxMin.html">ExactMaxMin()</a></code></td>
-<td>MMDP</td>
+<td>MMDP (max-min)</td>
 <td>Optimal (NP-hard)</td>
 <td>Slow</td>
 <td>No</td>
 </tr>
 <tr class="odd">
+<td><code><a href="../reference/ExactMaxSum.html">ExactMaxSum()</a></code></td>
+<td>Max-Sum Diversity</td>
+<td>Optimal (NP-hard)</td>
+<td>Slow</td>
+<td>No</td>
+</tr>
+<tr class="even">
+<td><code><a href="../reference/MaxMean.html">MaxMean()</a></code></td>
+<td>max-mean</td>
+<td>High</td>
+<td>Time-budgeted</td>
+<td>Yes (<code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code>)</td>
+</tr>
+<tr class="odd">
 <td><code><a href="../reference/KCentre.html">KCentre()</a></code></td>
 <td>k-centre</td>
-<td>Near-optimal (CDSh)</td>
+<td>Near-optimal</td>
 <td>Fast</td>
 <td>No</td>
 </tr>
@@ -161,20 +184,28 @@
 <td>Slow</td>
 <td>No</td>
 </tr>
+<tr class="odd">
+<td><code><a href="../reference/MaxEntropy.html">MaxEntropy()</a></code></td>
+<td>maxdet (max log-det)</td>
+<td>High / Optimal for small <code>k</code>
+</td>
+<td>Fast</td>
+<td>No</td>
+</tr>
 </tbody>
 </table>
-<p>To compute the score for an arbitrary selection of points under each objective, use <code><a href="../reference/MinDist.html">MinDist()</a></code> (MMDP) and <code><a href="../reference/KCentreRadius.html">KCentreRadius()</a></code> (k-centre).</p>
+<p>To compute the score for an arbitrary selection of points under each objective, use <code><a href="../reference/MinDist.html">MinDist()</a></code> (max-min), <code><a href="../reference/MeanDist.html">MeanDist()</a></code> (max-mean) and <code><a href="../reference/KCentreRadius.html">KCentreRadius()</a></code> (k-centre). <code><a href="../reference/ExactMaxSum.html">ExactMaxSum()</a></code> and <code><a href="../reference/MaxEntropy.html">MaxEntropy()</a></code> report their own objective value (total pairwise distance and log-determinant respectively) as the <code>score</code> attribute of the selection they return.</p>
 </section><section class="level2"><h2 id="fast-greedy-selection">Fast greedy selection<a class="anchor" aria-label="anchor" href="#fast-greedy-selection"></a>
 </h2>
 <p>The <span class="citation" data-cites="Gonzalez1985">González (<a href="#ref-Gonzalez1985" role="doc-biblioref">1985</a>)</span> algorithm builds the selection greedily: start from a seed point, then repeatedly add whichever unselected point is farthest from the current selection. This greedy rule guarantees a 2-approximation to the optimal T<sub>k</sub> and runs in O(<em>N</em> · <em>m</em>) time.</p>
 <p>The choice of seed point influences the quality of the selection. Peripheral seeds are more likely than central seeds to represent extremes of the data, and hence to feature in the optimal selection. <code><a href="../reference/FarFirst.html">FarFirst()</a></code> supports several methods for identifying starting points for the greedy search.</p>
 <p>The default is a two-step strategy that starts from a random selects a point at random, then starts greedy search from the point furthest from</p>
-<p>By default <code><a href="../reference/FarFirst.html">FarFirst()</a></code> runs eight <code>"random_furthest"</code> starts, each of which takes a randomly selected point, moves to the point furthest from it, and begins the farthest-first sweep from there. The results of the pass with the highest T<sub>k</sub> are returned.</p>
+<p>By default <code><a href="../reference/FarFirst.html">FarFirst()</a></code> runs three <code>"random_furthest"</code> starts, each of which takes a randomly selected point, moves to the point furthest from it, and begins the farthest-first sweep from there. The results of the pass with the highest T<sub>k</sub> are returned. Three starts captures most of the quality gain from restarting — on benchmarks across a wide range of datasets the improvement curve bends early (knee at n ≈ 3–4); for higher-quality results, prefer <code><a href="../reference/DropAdd.html">DropAdd()</a></code>, whose tabu search escapes the plateau that restarts cannot.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="fl">6L</span>, <span class="va">eurodist</span><span class="op">)</span>   <span class="co"># default: best of eight random starts</span></span>
-<span><span class="co">#&gt; 6 elements (1 12 20 16 5 2) selected by farthest-first (best of 4 strategies, 4 tied: random_furthest1, random_furthest2, random_furthest3, random_furthest4), each at distance &gt;= 1014</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="fl">6L</span>, <span class="va">eurodist</span><span class="op">)</span>   <span class="co"># default: best of three random starts</span></span>
+<span><span class="co">#&gt; 6 elements (1 12 20 16 5 2) selected by farthest-first (best of 3 strategies, 3 tied: random_furthest1, random_furthest2, random_furthest3), each at distance &gt;= 1014</span></span></code></pre></div>
 </div>
 <p>The number of random starts can be configured via the <code>nSeeds</code> argument.</p>
 <div class="cell">
@@ -341,6 +372,47 @@
 <span><span class="fu"><a href="../reference/MinDist.html">MinDist</a></span><span class="op">(</span>points <span class="op">=</span> <span class="va">pts</span>, idx <span class="op">=</span> <span class="va">ffPick</span><span class="op">)</span>                <span class="co"># from coordinates</span></span>
 <span><span class="co">#&gt; [1] 1.271123</span></span></code></pre></div>
 </div>
+</section><section class="level2"><h2 id="max-sum-diversity-and-max-mean-dispersion">Max-sum diversity and Max-mean dispersion<a class="anchor" aria-label="anchor" href="#max-sum-diversity-and-max-mean-dispersion"></a>
+</h2>
+<p>The Max-Sum Diversity Problem selects the <span class="math inline">\(k\)</span>-subset with the highest total pairwise distance. <code><a href="../reference/ExactMaxSum.html">ExactMaxSum()</a></code> finds an optimal solution via per-node integer-program linearisation <span class="citation" data-cites="Kuo1993">(<a href="#ref-Kuo1993" role="doc-biblioref">Kuo et al., 1993</a>)</span>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">smPick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ExactMaxSum.html">ExactMaxSum</a></span><span class="op">(</span><span class="fl">6L</span>, <span class="va">d30</span>, maxSeconds <span class="op">=</span> <span class="fl">30L</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">smPick</span>, <span class="st">"proven"</span><span class="op">)</span>      <span class="co"># TRUE  ⟹  objective is the global optimum</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">smPick</span>, <span class="st">"score"</span><span class="op">)</span>       <span class="co"># total pairwise distance within the selection</span></span>
+<span><span class="co">#&gt; [1] 41.00517</span></span></code></pre></div>
+</div>
+<p>Where the number of elements is not specified <em>a priori</em>, Max-Sum diversity generalizes to the Max-Mean Dispersion Problem, which maximizes the sum of pairwise distances divided by the number of selected elements.</p>
+<p><code><a href="../reference/MaxMean.html">MaxMean()</a></code> implements reinforcement-learning tabu search <span class="citation" data-cites="Dieudonne2020">(<a href="#ref-Dieudonne2020" role="doc-biblioref">Nijimbere et al., 2020</a>)</span>: each restart constructs a candidate selection, randomly at first, then guided by a <em>Q</em>-learning memory of which elements proved valuable. The selection is refined with a one-flip tabu search that adds or removes a single element at a time. The search continues until its time budget expires.</p>
+<p>The objective is only interesting when negative distances occur: otherwise the optimal selection tends to include all points.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
+<span><span class="va">affinity</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">30L</span> <span class="op">*</span> <span class="fl">30L</span>, min <span class="op">=</span> <span class="op">-</span><span class="fl">10</span>, max <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">30L</span><span class="op">)</span></span>
+<span><span class="va">affinity</span> <span class="op">&lt;-</span> <span class="op">(</span><span class="va">affinity</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">affinity</span><span class="op">)</span><span class="op">)</span> <span class="op">/</span> <span class="fl">2</span>   <span class="co"># symmetric</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="va">affinity</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fl">0</span></span></code></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
+<span><span class="va">mmPick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/MaxMean.html">MaxMean</a></span><span class="op">(</span><span class="va">affinity</span>, maxSeconds <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span><span class="va">mmPick</span></span>
+<span><span class="co">#&gt; 10 elements (9 11 14 15 19 20 21 24 26 28) selected by MaxMean RLTS, f = 12.14</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">mmPick</span>, <span class="st">"size"</span><span class="op">)</span>              <span class="co"># the algorithm chose this subset size</span></span>
+<span><span class="co">#&gt; [1] 10</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">mmPick</span>, <span class="st">"score"</span><span class="op">)</span>             <span class="co"># achieved mean-dispersion objective</span></span>
+<span><span class="co">#&gt; [1] 12.1435</span></span></code></pre></div>
+</div>
+<p><code><a href="../reference/MaxMean.html">MaxMean()</a></code> chooses the subset size to retaining only the elements that raise the average separation. <code><a href="../reference/MeanDist.html">MeanDist()</a></code> scores any index set under the same objective, so a hand-picked selection can be compared directly:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/MeanDist.html">MeanDist</a></span><span class="op">(</span><span class="va">affinity</span>, <span class="va">mmPick</span><span class="op">)</span>        <span class="co"># matches attr(mmPick, "score")</span></span>
+<span><span class="co">#&gt; [1] 12.1435</span></span>
+<span><span class="fu"><a href="../reference/MeanDist.html">MeanDist</a></span><span class="op">(</span><span class="va">affinity</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">30</span><span class="op">)</span>          <span class="co"># the full set scores lower</span></span>
+<span><span class="co">#&gt; [1] -0.342487</span></span></code></pre></div>
+</div>
 </section><section class="level2"><h2 id="covering-the-k-centre-problem">Covering: the k-centre problem<a class="anchor" aria-label="anchor" href="#covering-the-k-centre-problem"></a>
 </h2>
 <p>The above methods seek to spread the selection such that its members are mutually far apart. The k-centre problem instead minimizes the covering radius <span class="math inline">\(R\)</span>, the largest distance from any point to its nearest chosen centre, such that no point of the pool is left far from a representative <span class="citation" data-cites="Gonzalez1985 Hochbaum1985">(<a href="#ref-Gonzalez1985" role="doc-biblioref">González, 1985</a>; <a href="#ref-Hochbaum1985" role="doc-biblioref">Hochbaum &amp; Shmoys, 1985</a>)</span>, typically resulting in selections that reach further into the interior of a sample.</p>
@@ -348,7 +420,7 @@
 </h3>
 <p><code><a href="../reference/FarFirst.html">FarFirst()</a></code> is the quickest approximation to the K-centres problem. The CDSh algorithm implemented in <code>KCentres()</code> gives a more sophisticated heuristic <span class="citation" data-cites="GarciaDiaz2019 GarciaDiaz2017">(<a href="#ref-GarciaDiaz2017" role="doc-biblioref">García-Díaz et al., 2017</a>; <a href="#ref-GarciaDiaz2019" role="doc-biblioref">García-Díaz et al., 2019</a>)</span>; its solutions are typically within 1–3.5 % of the optimum, compared to ~10% for <code><a href="../reference/FarFirst.html">FarFirst()</a></code>.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">centres</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/KCentre.html">KCentre</a></span><span class="op">(</span><span class="fl">4L</span>, <span class="va">eurodist</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/labels.html" class="external-link">labels</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span><span class="op">[</span><span class="va">centres</span><span class="op">]</span></span>
 <span><span class="co">#&gt; [1] "Cologne"    "Copenhagen" "Madrid"     "Rome"</span></span>
@@ -357,7 +429,7 @@
 </div>
 <p><code><a href="../reference/KCentreRadius.html">KCentreRadius()</a></code> scores any centre set by its covering radius (lower is better). CDSh covers at least as tightly as the Gonzalez 2-approximation baseline:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ff</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FarFirst.html">FarFirst</a></span><span class="op">(</span><span class="fl">4L</span>, <span class="va">eurodist</span>, strategy <span class="op">=</span> <span class="st">"peripheral"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>KCentre  <span class="op">=</span> <span class="fu"><a href="../reference/KCentreRadius.html">KCentreRadius</a></span><span class="op">(</span><span class="va">eurodist</span>, <span class="va">centres</span><span class="op">)</span>,</span>
 <span>  FarFirst <span class="op">=</span> <span class="fu"><a href="../reference/KCentreRadius.html">KCentreRadius</a></span><span class="op">(</span><span class="va">eurodist</span>, <span class="va">ff</span><span class="op">)</span><span class="op">)</span></span>
@@ -369,7 +441,7 @@
 </h3>
 <p>For small instances, <code><a href="../reference/ExactKCentre.html">ExactKCentre()</a></code> finds the optimal solution, using a minimum-set-cover integer program approach akin to <code><a href="../reference/ExactMaxMin.html">ExactMaxMin()</a></code>, and using again the <strong>highs</strong> solver.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">kc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ExactKCentre.html">ExactKCentre</a></span><span class="op">(</span><span class="fl">4L</span>, <span class="va">eurodist</span><span class="op">)</span></span>
 <span><span class="va">kc</span></span>
 <span><span class="co">#&gt; 4 centres (6 7 14 19) by exact MILP (highs), proven optimal, covering radius = 1011</span></span>
@@ -379,14 +451,33 @@
 <p>The covering optimum is sometimes attained by fewer centres (once every point is covered, extra centres cannot lower the radius); <code>indices</code> then has length below the requested number, and the reported <code>radius</code> is still the proven optimum. <code><a href="../reference/ExactKCentre.html">ExactKCentre()</a></code> is NP-hard, so — like <code><a href="../reference/ExactMaxMin.html">ExactMaxMin()</a></code> — it is a ground-truth reference for small instances, not a scalable method.</p>
 <p>The dispersion and covering optima differ even on this small example: dispersion selects cities at the rim of the map, while covering pulls inward to keep every city near a centre.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">disp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ExactMaxMin.html">ExactMaxMin</a></span><span class="op">(</span><span class="fl">4L</span>, <span class="va">eurodist</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/labels.html" class="external-link">labels</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span><span class="op">[</span><span class="va">disp</span><span class="op">]</span>  <span class="co"># dispersion: pushed to the extremes</span></span>
 <span><span class="co">#&gt; [1] "Athens"    "Lisbon"    "Milan"     "Stockholm"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/labels.html" class="external-link">labels</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span><span class="op">[</span><span class="va">kc</span><span class="op">]</span>    <span class="co"># covering: pulled toward the interior</span></span>
 <span><span class="co">#&gt; [1] "Cologne"    "Copenhagen" "Madrid"     "Rome"</span></span></code></pre></div>
 </div>
-</section></section><section class="level2"><h2 id="when-to-use-which-method">When to use which method<a class="anchor" aria-label="anchor" href="#when-to-use-which-method"></a>
+</section></section><section class="level2"><h2 id="maximum-entropy-maxdet-selection">Maximum-entropy (maxdet) selection<a class="anchor" aria-label="anchor" href="#maximum-entropy-maxdet-selection"></a>
+</h2>
+<p><code><a href="../reference/MaxEntropy.html">MaxEntropy()</a></code> selects the <span class="math inline">\(k\)</span>-subset that maximizes the log-determinant of its kernel block, <span class="math inline">\(\log\det K_S\)</span> – the maximum-entropy sampling criterion <span class="citation" data-cites="Shewry1987">(<a href="#ref-Shewry1987" role="doc-biblioref">Shewry &amp; Wynn, 1987</a>)</span>, equivalently the maximum-a-posteriori mode of a determinantal point process <span class="citation" data-cites="Kulesza2012">(<a href="#ref-Kulesza2012" role="doc-biblioref">Kulesza &amp; Taskar, 2012</a>)</span>. A radial-basis kernel is built from the distance matrix and repaired to be positive semi-definite where needed, since an arbitrary distance is not guaranteed to be of negative type. Because a redundant point lies in the span of those already chosen and adds no volume, it is never selected: the objective is exactly density-blind, unlike the distance-based objectives above.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">mePick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/MaxEntropy.html">MaxEntropy</a></span><span class="op">(</span><span class="fl">4L</span>, <span class="va">eurodist</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/labels.html" class="external-link">labels</a></span><span class="op">(</span><span class="va">eurodist</span><span class="op">)</span><span class="op">[</span><span class="va">mePick</span><span class="op">]</span></span>
+<span><span class="co">#&gt; [1] "Athens"    "Geneva"    "Lisbon"    "Stockholm"</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">mePick</span>, <span class="st">"logDet"</span><span class="op">)</span>     <span class="co"># the achieved log-determinant</span></span>
+<span><span class="co">#&gt; [1] 0.02885061</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">mePick</span>, <span class="st">"exact"</span><span class="op">)</span>      <span class="co"># TRUE if certified by exact enumeration</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+</div>
+<p>The selection is built greedily by pivoted Cholesky, substituting exact enumeration when <span class="math inline">\(\binom{n}{k}\)</span> does not exceed <code>maxCombos</code> – as here, where the search is certified optimal. <code>negMass</code> reports the fraction of spectral mass removed by the positive-semidefinite repair, so a caller can see when that approximation is doing real work:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">mePick</span>, <span class="st">"negMass"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0.04210186</span></span></code></pre></div>
+</div>
+</section><section class="level2"><h2 id="when-to-use-which-method">When to use which method<a class="anchor" aria-label="anchor" href="#when-to-use-which-method"></a>
 </h2>
 <p>For <strong>dispersion</strong> (spread the selection; maximize T<sub>k</sub>):</p>
 <table class="table caption-top">
@@ -433,6 +524,38 @@
 </tr>
 </tbody>
 </table>
+<p>For <strong>total dispersion</strong> (fixed-size subset maximizing the <em>sum</em> of pairwise distances):</p>
+<table class="table caption-top">
+<thead><tr class="header">
+<th>Scenario</th>
+<th>Recommended</th>
+</tr></thead>
+<tbody><tr class="odd">
+<td>Proven optimum, N ≤ ~ 25–30, <strong>highs</strong> installed</td>
+<td><code><a href="../reference/ExactMaxSum.html">ExactMaxSum()</a></code></td>
+</tr></tbody>
+</table>
+<p>For <strong>average dispersion</strong> (select a subset of the size that maximizes mean separation):</p>
+<table class="table caption-top">
+<thead><tr class="header">
+<th>Scenario</th>
+<th>Recommended</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Maximize mean pairwise distance, size unfixed</td>
+<td><code><a href="../reference/MaxMean.html">MaxMean()</a></code></td>
+</tr>
+<tr class="even">
+<td>Distances may be negative</td>
+<td><code><a href="../reference/MaxMean.html">MaxMean()</a></code></td>
+</tr>
+<tr class="odd">
+<td>Score a selection’s max-mean objective</td>
+<td><code><a href="../reference/MeanDist.html">MeanDist()</a></code></td>
+</tr>
+</tbody>
+</table>
 <p>For <strong>covering</strong> (minimise the radius; no point far from a centre):</p>
 <table class="table caption-top">
 <colgroup>
@@ -460,6 +583,27 @@
 <tr class="even">
 <td>Score a centre set’s covering radius (matrix-free at large N)</td>
 <td><code>KCentreRadius(points = ...)</code></td>
+</tr>
+</tbody>
+</table>
+<p>For <strong>maximum-entropy (maxdet) selection</strong> (density-blind volume maximization):</p>
+<table class="table caption-top">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead><tr class="header">
+<th>Scenario</th>
+<th>Recommended</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Maximize spanned volume / avoid near-duplicate selections</td>
+<td><code><a href="../reference/MaxEntropy.html">MaxEntropy()</a></code></td>
+</tr>
+<tr class="even">
+<td>Proven optimum, <code>choose(n, k)</code> small</td>
+<td><code>MaxEntropy(exact = TRUE)</code></td>
 </tr>
 </tbody>
 </table></section><section class="level2"><h2 id="related-problems">Related problems<a class="anchor" aria-label="anchor" href="#related-problems"></a>
@@ -496,6 +640,15 @@ González, T. F. (1985). Clustering to minimize the maximum intercluster distanc
 <div id="ref-Hochbaum1985" class="csl-entry" role="listitem">
 Hochbaum, D. S., &amp; Shmoys, D. B. (1985). A best possible heuristic for the <span class="nocase"><span class="math inline">\(k\)</span>-center</span> problem. <em>Mathematics of Operations Research</em>, <em>10</em>(2), 180–184. <a href="https://doi.org/10.1287/moor.10.2.180" class="external-link">https://doi.org/10.1287/moor.10.2.180</a>
 </div>
+<div id="ref-Kulesza2012" class="csl-entry" role="listitem">
+Kulesza, A., &amp; Taskar, B. (2012). Determinantal point processes for machine learning. <em>Foundations and Trends in Machine Learning</em>, <em>5</em>(2–3), 123–286. <a href="https://doi.org/10.1561/2200000044" class="external-link">https://doi.org/10.1561/2200000044</a>
+</div>
+<div id="ref-Kuo1993" class="csl-entry" role="listitem">
+Kuo, C.-C., Glover, F., &amp; Dhir, K. S. (1993). Analyzing and modeling the maximum diversity problem by zero-one programming. <em>Decision Sciences</em>, <em>24</em>(6), 1171–1185. <a href="https://doi.org/10.1111/j.1540-5915.1993.tb00509.x" class="external-link">https://doi.org/10.1111/j.1540-5915.1993.tb00509.x</a>
+</div>
+<div id="ref-Dieudonne2020" class="csl-entry" role="listitem">
+Nijimbere, D., Zhao, S., Gu, X., Esangbedo, M. O., &amp; Dominique, N. (2020). Tabu search guided by reinforcement learning for the max-mean dispersion problem. <em>Journal of Industrial &amp; Management Optimization</em>, <em>17</em>, 3223–3254. <a href="https://doi.org/10.3934/jimo.2020115" class="external-link">https://doi.org/10.3934/jimo.2020115</a>
+</div>
 <div id="ref-Porumbel2011" class="csl-entry" role="listitem">
 Porumbel, D., Hao, J.-K., &amp; Glover, F. (2011). A simple and effective algorithm for the <span>MaxMin</span> diversity problem. <em>Annals of Operations Research</em>, <em>186</em>, 275–293. <a href="https://doi.org/10.1007/s10479-011-0898-z" class="external-link">https://doi.org/10.1007/s10479-011-0898-z</a>
 </div>
@@ -504,6 +657,9 @@ Resende, M. G. C., Martí, R., Gallego, M., &amp; Duarte, A. (2010). <span>GRASP
 </div>
 <div id="ref-Sayyady2016" class="csl-entry" role="listitem">
 Sayyady, F., &amp; Fathi, Y. (2016). An integer programming approach for solving the p-dispersion problem. <em>European Journal of Operational Research</em>, <em>253</em>(1), 216–225. <a href="https://doi.org/10.1016/j.ejor.2016.02.026" class="external-link">https://doi.org/10.1016/j.ejor.2016.02.026</a>
+</div>
+<div id="ref-Shewry1987" class="csl-entry" role="listitem">
+Shewry, M. C., &amp; Wynn, H. P. (1987). Maximum entropy sampling. <em>Journal of Applied Statistics</em>, <em>14</em>(2), 165–170. <a href="https://doi.org/10.1080/02664768700000020" class="external-link">https://doi.org/10.1080/02664768700000020</a>
 </div>
 </div>
 </section><script id="quarto-html-after-body" type="application/javascript">
@@ -599,7 +755,7 @@ Sayyady, F., &amp; Fathi, Y. (2016). An integer programming approach for solving
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

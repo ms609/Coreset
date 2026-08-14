@@ -14,7 +14,7 @@ FarFirst(
   points = NULL,
   N = NULL,
   strategy = "random_furthest",
-  nSeeds = 8L
+  nSeeds = 3L
 )
 ```
 
@@ -54,7 +54,13 @@ FarFirst(
 - nSeeds:
 
   Integer: number of distinct seeds to draw under the (default)
-  `"random_furthest"` strategy.
+  `"random_furthest"` strategy. Three starts captures most of the gain
+  from restarting — the improvement curve bends early (knee at n ≈ 3–4
+  across benchmarks) and additional restarts add little. For
+  higher-quality solutions, prefer
+  [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md):
+  tabu search escapes the farthest-first construction family where
+  restarts plateau.
 
 ## Value
 
@@ -73,6 +79,17 @@ report:
 
 In interactive sessions, the distance-column path shows a progress bar.
 To toggle, set `options("MaxMin.progress" = FALSE)` (or `TRUE`).
+
+## Parallelism
+
+To parallelize computation when OpenMP is available, set the
+`"mc.cores"` option:
+
+    options(mc.cores = 2L)                       # use a fixed number of cores
+    options(mc.cores = parallel::detectCores())  # or all available cores
+
+The main use case for parallelization is when `nSeeds` is a multiple of
+`mc.cores`, so each seed point can be evaluated in parallel.
 
 ## References
 
@@ -101,9 +118,9 @@ set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
 
-# Default: best of eight random-furthest starts (set.seed for reproducibility):
+# Default: best of three random-furthest starts (set.seed for reproducibility):
 FarFirst(5L, d)
-#> 5 elements (4 14 26 5 28) selected by farthest-first (best of 5 strategies, 3 tied: random_furthest1, random_furthest2, random_furthest3), each at distance >= 1.765
+#> 5 elements (14 4 26 5 28) selected by farthest-first (best of 3 strategies, winner random_furthest1), each at distance >= 1.765
 
 # More random-furthest starts:
 FarFirst(5L, d, nSeeds = 15L)

@@ -35,6 +35,9 @@ the achieved \\T_k\\.
 
 Other reporting functions:
 [`print.KCentre`](https://ms609.github.io/MaxMin/reference/print.KCentre.md),
+[`print.MaxEntropy`](https://ms609.github.io/MaxMin/reference/print.MaxEntropy.md),
+[`print.MaxMeanSelection()`](https://ms609.github.io/MaxMin/reference/print.MaxMeanSelection.md),
+[`print.MaxSum`](https://ms609.github.io/MaxMin/reference/print.MaxSum.md),
 [`summary.MaxMin`](https://ms609.github.io/MaxMin/reference/summary.MaxMin.md)
 
 ## Examples
@@ -43,5 +46,5 @@ Other reporting functions:
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 print(FarFirst(5L, dist(pts)))
-#> 5 elements (4 14 26 5 28) selected by farthest-first (best of 5 strategies, 3 tied: random_furthest1, random_furthest2, random_furthest3), each at distance >= 1.765
+#> 5 elements (14 4 26 5 28) selected by farthest-first (best of 3 strategies, winner random_furthest1), each at distance >= 1.765
 ```

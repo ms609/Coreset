@@ -23,7 +23,7 @@ neighbour-evaluation tricks
 
     <a class="navbar-brand me-2" href="../index.html">MaxMin</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9003</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9009</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -61,7 +61,16 @@ neighbour-evaluation tricks
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">DropAdd</span><span class="op">(</span><span class="va">k</span>, d <span class="op">=</span> <span class="cn">NULL</span>, plateau <span class="op">=</span> <span class="fl">5000L</span>, maxSeconds <span class="op">=</span> <span class="cn">Inf</span>, points <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">DropAdd</span><span class="op">(</span></span>
+<span>  <span class="va">k</span>,</span>
+<span>  d <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  plateau <span class="op">=</span> <span class="fl">5000L</span>,</span>
+<span>  maxSeconds <span class="op">=</span> <span class="cn">Inf</span>,</span>
+<span>  points <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  maxCandidates <span class="op">=</span> <span class="fl">46340L</span>,</span>
+<span>  seed <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  N <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -69,15 +78,16 @@ neighbour-evaluation tricks
 
 
 <dl><dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
-<dd><p>Integer; subset size, \(2 \le k \le N\).</p></dd>
+<dd><p>Integer: subset size, \(2 \le k \le N\).</p></dd>
 
 
 <dt id="arg-d">d<a class="anchor" aria-label="anchor" href="#arg-d"></a></dt>
-<dd><p>A <code>dist</code> object or square symmetric numeric matrix.</p></dd>
+<dd><p>A <code>dist</code> object, a square symmetric numeric matrix, or a
+distance-column function (see §<em>Distance-column function</em>).</p></dd>
 
 
 <dt id="arg-plateau">plateau<a class="anchor" aria-label="anchor" href="#arg-plateau"></a></dt>
-<dd><p>Integer; stop after this many consecutive drop-add
+<dd><p>Integer: stop after this many consecutive drop-add
 iterations do not improve the score.</p></dd>
 
 
@@ -93,6 +103,32 @@ Must be complete (no <code>NA</code>).
 Ignored if <code>d</code> specified.
 Avoids creating an \(N \times N\) distance matrix, enabling use at
 \(N \ge 46340\)).</p></dd>
+
+
+<dt id="arg-maxcandidates">maxCandidates<a class="anchor" aria-label="anchor" href="#arg-maxcandidates"></a></dt>
+<dd><p>Integer: a composable-coreset tractability cap. When the
+number of candidate points <code>N</code> exceeds <code>maxCandidates</code>, <code><a href="FarFirst.html">FarFirst()</a></code> thins
+the candidates to a <code>maxCandidates</code>-point coreset (with the deterministic,
+RNG-free <code>"peripheral"</code> seed, so no random stream is perturbed), the solver
+runs on the coreset, and the chosen indices are mapped back to the original
+numbering. This lets the solver produce a solution at scales where it would
+otherwise be intractable. <code>maxCandidates = 0</code> (or <code>Inf</code>) disables thinning
+and runs on the full problem; a cap at or above <code>N</code> is a no-op. A cap below
+<code>k</code> is an error. The default is <code>46340L</code>, the dense-distance-matrix feasibility ceiling
+Thinning is <strong>on by default</strong>: an input larger than the cap is thinned (and
+a warning is emitted) unless <code>maxCandidates = 0</code> is passed.</p></dd>
+
+
+<dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
+<dd><p>Optional integer: a 1-based start index that overrides the
+construction's default warm-start seed.
+<code>NULL</code> (default) keeps the method's own seed. Not supported when
+<code>maxCandidates = 0L</code>.</p></dd>
+
+
+<dt id="arg-n">N<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
+<dd><p>Integer: the total number of elements. Required only if <code>d</code> is a
+function.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -126,6 +162,28 @@ construction phase).</p></dd>
 To toggle, set <code>options("MaxMin.progress" = FALSE)</code> (or <code>TRUE</code>).</p>
     </div>
     <div class="section level2">
+    <h2 id="parallelism">Parallelism<a class="anchor" aria-label="anchor" href="#parallelism"></a></h2>
+
+
+<p>To parallelize computation when OpenMP is available, set the <code>"mc.cores"</code>
+option:</p>
+<p></p><div class="sourceCode r"><pre><code><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>mc.cores <span class="op">=</span> <span class="fl">2L</span><span class="op">)</span>                       <span class="co"># use a fixed number of cores</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>mc.cores <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>  <span class="co"># or all available cores</span></span></code></pre><p></p></div>
+    </div>
+    <div class="section level2">
+    <h2 id="distance-function">Distance function<a class="anchor" aria-label="anchor" href="#distance-function"></a></h2>
+
+
+<p>When <code>d</code> is a function, <code>d(i)</code> must return the distances from element <code>i</code>
+to every element (length <code>N</code>, with the self-distance ignored)
+or to every <em>other</em> element (length <code>N - 1</code>, in order).
+<code>N</code> is required, and memory is \(O(N)\).
+This suits metrics where no stored matrix or coordinate embedding is available.</p>
+<p>It is likely that <code>d</code> will be called many times; unless <code>d</code> implements
+caching, specifying a distance matrix is likely to require less calculation
+than the multiple calls to <code>d</code>, where memory permits.</p>
+    </div>
+    <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
     <p>Porumbel D, Hao J, Glover F (2011).
 “A simple and effective algorithm for the MaxMin diversity problem.”
@@ -134,6 +192,45 @@ To toggle, set <code>options("MaxMin.progress" = FALSE)</code> (or <code>TRUE</c
 .</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">pts</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">200</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">DropAdd</span><span class="op">(</span><span class="fl">5L</span>, <span class="fu"><a href="https://rdrr.io/r/stats/dist.html" class="external-link">dist</a></span><span class="op">(</span><span class="va">pts</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (14 41 56 87 97) selected by DropAdd tabu search, each at distance &gt;= 2.293</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Composable coreset: thin to 40 candidates with farthest-first, then run</span></span></span>
+<span class="r-in"><span><span class="co"># DropAdd on the coreset. Returned indices are original-space row indices.</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span><span class="fu">DropAdd</span><span class="op">(</span><span class="fl">5L</span>, points <span class="op">=</span> <span class="va">pts</span>, maxCandidates <span class="op">=</span> <span class="fl">40L</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (14 41 56 87 97) selected by DropAdd tabu search, each at distance &gt;= 2.293</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Disable thinning on the full problem</span></span></span>
+<span class="r-in"><span><span class="fu">DropAdd</span><span class="op">(</span><span class="fl">5L</span>, points <span class="op">=</span> <span class="va">pts</span>, maxCandidates <span class="op">=</span> <span class="fl">0L</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 elements (14 41 56 87 97) selected by DropAdd tabu search, each at distance &gt;= 2.293</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Distance function; `cache` memoizes the columns to reduce computation.</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"USArrests"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ArrestDist</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">dat</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="va">scaled</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/scale.html" class="external-link">scale</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span><span class="op">)</span>                 <span class="co"># derived once</span></span></span>
+<span class="r-in"><span>  <span class="va">cache</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/environment.html" class="external-link">new.env</a></span><span class="op">(</span>parent <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/environment.html" class="external-link">emptyenv</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="kw">function</span><span class="op">(</span><span class="va">i</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>    <span class="va">key</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">i</span><span class="op">)</span></span></span>
+<span class="r-in"><span>    <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="va">cache</span><span class="op">[[</span><span class="va">key</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>      <span class="va">cache</span><span class="op">[[</span><span class="va">key</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowSums</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sweep.html" class="external-link">sweep</a></span><span class="op">(</span><span class="va">scaled</span>, <span class="fl">2</span>, <span class="va">scaled</span><span class="op">[</span><span class="va">i</span>, <span class="op">]</span>, <span class="st">"-"</span><span class="op">)</span> <span class="op">^</span> <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span>    <span class="op">}</span></span></span>
+<span class="r-in"><span>    <span class="va">cache</span><span class="op">[[</span><span class="va">key</span><span class="op">]</span><span class="op">]</span></span></span>
+<span class="r-in"><span>  <span class="op">}</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-in"><span><span class="va">arrests</span> <span class="op">&lt;-</span> <span class="va">USArrests</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Murder"</span>, <span class="st">"Assault"</span>, <span class="st">"Rape"</span><span class="op">)</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu">DropAdd</span><span class="op">(</span><span class="fl">4L</span>, <span class="fu">ArrestDist</span><span class="op">(</span><span class="va">arrests</span><span class="op">)</span>, N <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">arrests</span><span class="op">)</span>, plateau <span class="op">=</span> <span class="fl">200L</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">USArrests</span><span class="op">[</span><span class="va">idx</span>, <span class="op">]</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              Murder Assault UrbanPop Rape</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Alaska         10.0     263       48 44.5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Delaware        5.9     238       72 15.8</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Georgia        17.4     211       60 25.8</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> North Dakota    0.8      45       44  7.3</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 
@@ -143,7 +240,7 @@ To toggle, set <code>options("MaxMin.progress" = FALSE)</code> (or <code>TRUE</c
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

@@ -1,15 +1,15 @@
 # Resolve an expanded ensemble into the winning subset
 
-Shared tail of the two ensemble drivers: solves each expanded spec via
-the driver's `RunGonz` closure (which de-duplicates repeated seeds
-through its own cache), then returns the subset maximising \\T_k\\. The
-returned vector carries the `strategy_results` (one record per label)
-and `winning_strategy` (all tied-best labels) attributes.
+Shared tail of the two ensemble drivers: solves the specs' distinct
+seeds in one batch via the driver's `RunPasses` closure, then returns
+the subset maximising \\T_k\\. The returned vector carries the
+`strategy_results` (one record per label) and `winning_strategy` (all
+tied-best labels) attributes.
 
 ## Usage
 
 ``` r
-.ResolveEnsemble(expanded, labels, RunGonz)
+.ResolveEnsemble(expanded, labels, RunPasses)
 ```
 
 ## Arguments
@@ -23,9 +23,10 @@ and `winning_strategy` (all tied-best labels) attributes.
 
   Character vector of labels (one per spec).
 
-- RunGonz:
+- RunPasses:
 
-  Closure mapping a seed `s1` to `list(idx, tK)`.
+  Closure mapping a vector of distinct seeds to a list of
+  `list(idx, tK)`, one per seed and in the same order.
 
 ## Value
 

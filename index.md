@@ -1,7 +1,7 @@
 # MaxMin
 
 `MaxMin` implements algorithms that select a dispersed subsample of
-points that maximizes coverage of a larger set, under one of two
+points that maximizes coverage of a larger set, under one of several
 objectives:
 
 The **Max-Min Diversity Problem** (MMDP, the discrete *p*-dispersion
@@ -28,16 +28,34 @@ by specialized solvers.
 
 | Function | Method | Use |
 |----|----|----|
-| [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) | DropAdd tabu search (Porumbel et al. 2011) | ~99%-optimal heuristic |
-| [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) | GRASP with path-relinking metaheuristic (Resende et al. 2010) | Slower but powerful heuristic |
-| [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md) | Node-packing integer program (Sayyady & Fathi 2016) | Proven optimum, small `k` (needs `highs`) |
+| [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) | DropAdd tabu search | ~99%-optimal heuristic |
+| [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) | GRASP with path-relinking metaheuristic | Slower but powerful heuristic |
+| [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md) | Node-packing integer program | Proven optimum, small `k` (needs `highs`) |
+
+### Max-sum dispersion (maximum diversity)
+
+| Function | Method | Use |
+|----|----|----|
+| [`ExactMaxSum()`](https://ms609.github.io/MaxMin/reference/ExactMaxSum.md) | Per-node MILP linearisation, floored by multi-start local search | Proven optimum for total pairwise distance, small `k` (needs `highs`) |
+
+### Max-mean dispersion
+
+| Function | Method | Use |
+|----|----|----|
+| [`MaxMean()`](https://ms609.github.io/MaxMin/reference/MaxMean.md) | Reinforcement-learning tabu search | Maximize mean pairwise distance; subset size free; signed distances supported |
 
 ### *k*-centre (min-max covering)
 
 | Function | Method | Use |
 |----|----|----|
-| [`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md) | CDSh heuristic (García-Díaz et al. 2017, 2019) | ~1–3.5% of optimum at \\O(N^2 \log N)\\, typically far tighter than [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) |
+| [`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md) | Critical Dominating Set heuristic | ~1–3.5% of optimum at \\O(N^2 \log N)\\, typically far tighter than [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) |
 | [`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md) | Min-cover integer program | Proven optimum, small `k` (needs `highs`) |
+
+### Maximum-entropy (maxdet) selection
+
+| Function | Method | Use |
+|----|----|----|
+| [`MaxEntropy()`](https://ms609.github.io/MaxMin/reference/MaxEntropy.md) | Greedy pivoted-Cholesky selection, with exact enumeration for small instances | Maximize the log-determinant (spanned volume) of a similarity kernel; density-blind |
 
 Solvers support precomputed distance matrices (`dist` objects), matrices
 of Euclidian coordinates, or lists of elements from which distances can
@@ -45,7 +63,9 @@ be calculated.
 
 [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md)
 returns the minimum pairwise distance within a selection (the MMDP
-objective) and
+objective),
+[`MeanDist()`](https://ms609.github.io/MaxMin/reference/MeanDist.md) its
+mean pairwise dispersion (the max-mean objective), and
 [`KCentreRadius()`](https://ms609.github.io/MaxMin/reference/KCentreRadius.md)
 returns its covering radius (the *k*-centre objective).
 

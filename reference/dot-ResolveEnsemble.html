@@ -5,15 +5,13 @@
       fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
     }
   };
-</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Resolve an expanded ensemble into the winning subset — .ResolveEnsemble"><meta name="description" content="Shared tail of the two ensemble drivers: solves each expanded spec via the
-driver's RunGonz closure (which de-duplicates repeated seeds through its
-own cache), then returns the subset maximising \(T_k\). The returned vector
-carries the strategy_results (one record per label) and winning_strategy
-(all tied-best labels) attributes."><meta property="og:description" content="Shared tail of the two ensemble drivers: solves each expanded spec via the
-driver's RunGonz closure (which de-duplicates repeated seeds through its
-own cache), then returns the subset maximising \(T_k\). The returned vector
-carries the strategy_results (one record per label) and winning_strategy
-(all tied-best labels) attributes."></head><body>
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Resolve an expanded ensemble into the winning subset — .ResolveEnsemble"><meta name="description" content="Shared tail of the two ensemble drivers: solves the specs' distinct seeds in
+one batch via the driver's RunPasses closure, then returns the subset
+maximising \(T_k\). The returned vector carries the strategy_results (one
+record per label) and winning_strategy (all tied-best labels) attributes."><meta property="og:description" content="Shared tail of the two ensemble drivers: solves the specs' distinct seeds in
+one batch via the driver's RunPasses closure, then returns the subset
+maximising \(T_k\). The returned vector carries the strategy_results (one
+record per label) and winning_strategy (all tied-best labels) attributes."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -21,7 +19,7 @@ carries the strategy_results (one record per label) and winning_strategy
 
     <a class="navbar-brand me-2" href="../index.html">MaxMin</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9003</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9009</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,16 +47,15 @@ carries the strategy_results (one record per label) and winning_strategy
     </div>
 
     <div class="ref-description section level2">
-    <p>Shared tail of the two ensemble drivers: solves each expanded spec via the
-driver's <code>RunGonz</code> closure (which de-duplicates repeated seeds through its
-own cache), then returns the subset maximising \(T_k\). The returned vector
-carries the <code>strategy_results</code> (one record per label) and <code>winning_strategy</code>
-(all tied-best labels) attributes.</p>
+    <p>Shared tail of the two ensemble drivers: solves the specs' distinct seeds in
+one batch via the driver's <code>RunPasses</code> closure, then returns the subset
+maximising \(T_k\). The returned vector carries the <code>strategy_results</code> (one
+record per label) and <code>winning_strategy</code> (all tied-best labels) attributes.</p>
     </div>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">.ResolveEnsemble</span><span class="op">(</span><span class="va">expanded</span>, <span class="va">labels</span>, <span class="va">RunGonz</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">.ResolveEnsemble</span><span class="op">(</span><span class="va">expanded</span>, <span class="va">labels</span>, <span class="va">RunPasses</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -73,8 +70,9 @@ carries the <code>strategy_results</code> (one record per label) and <code>winni
 <dd><p>Character vector of labels (one per spec).</p></dd>
 
 
-<dt id="arg-rungonz">RunGonz<a class="anchor" aria-label="anchor" href="#arg-rungonz"></a></dt>
-<dd><p>Closure mapping a seed <code>s1</code> to <code>list(idx, tK)</code>.</p></dd>
+<dt id="arg-runpasses">RunPasses<a class="anchor" aria-label="anchor" href="#arg-runpasses"></a></dt>
+<dd><p>Closure mapping a vector of distinct seeds to a list of
+<code>list(idx, tK)</code>, one per seed and in the same order.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -91,7 +89,7 @@ carries the <code>strategy_results</code> (one record per label) and <code>winni
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

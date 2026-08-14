@@ -1,5 +1,56 @@
 # Changelog
 
+## MaxMin 0.0.0.9009 (development)
+
+- [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
+  parallelized and optimized.
+
+## MaxMin 0.0.0.9008 (development)
+
+- [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md)
+  parallelized and optimized.
+- [`MaxMean()`](https://ms609.github.io/MaxMin/reference/MaxMean.md)
+  solves the Max-Mean Dispersion Problem.
+- [`MeanDist()`](https://ms609.github.io/MaxMin/reference/MeanDist.md)
+  scores an arbitrary selection under the max-mean objective.
+
+## MaxMin 0.0.0.9007 (development)
+
+- [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
+  parallelized and optimized.
+
+## MaxMin 0.0.0.9006 (development)
+
+- [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) no
+  longer discards its best-known solution, is ~10.0× faster, and may be
+  parallelized.
+
+## MaxMin 0.0.0.9005 (development)
+
+- [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) can
+  now compute distances between pairs on the fly, rather than needing a
+  complete matrix *a priori*.
+
+## MaxMin 0.0.0.9004 (development)
+
+- New
+  [`MaxEntropy()`](https://ms609.github.io/MaxMin/reference/MaxEntropy.md):
+  maximum-entropy (maxdet) subset selection.
+
+- New
+  [`ExactMaxSum()`](https://ms609.github.io/MaxMin/reference/ExactMaxSum.md):
+  exact solver for the Max-Sum Diversity Problem.
+
+- [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) and
+  [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) gain a
+  `maxCandidates` argument.
+
+- [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)’s
+  default `nSeeds` is reduced from `8` to `3`.
+
+- [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md)
+  gains a `seed` argument.
+
 ## MaxMin 0.0.0.9003 (development)
 
 - [`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md) /
@@ -124,9 +175,7 @@
 ## MaxMin 0.0.0.9000 (development)
 
 - Initial release: a tiered toolbox for the Max-Min Diversity Problem
-  (MMDP / discrete p-dispersion), extracted from the `FurthestPoint`
-  study package so that it can be depended on by CRAN packages
-  (e.g. `TreeSearch`).
+  (MMDP / discrete p-dispersion).
 - [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md):
   deterministic farthest-first selection from a distance matrix,
   Euclidean coordinates (`points =`), or an on-demand **distance-column

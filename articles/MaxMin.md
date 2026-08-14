@@ -1,7 +1,8 @@
 # Introduction to MaxMin
 
 The MaxMin package selects a subset that represents a fixed pool of *N*
-items, based on one of two complementary objectives:
+items, based on approximate and exact solutions to a suite of
+objectives:
 
 The **Max-Min Diversity Problem** (MMDP, the discrete *p*-dispersion
 objective) selects \\k\\ elements such that the minimum distance between
@@ -12,21 +13,32 @@ defining a representative sample from a fixed pool: picking biological
 specimens for sequencing that span available diversity, or choosing a
 representative subset of protein structures from a database.
 
+The **Max-Sum Diversity Problem** (the “maximum diversity problem”)
+selects \\k\\ elements that maximize the *total* pairwise distance they
+contain. As every pair in the selection contributes to the max-sum
+score, the optimum tends to favour elements spread across the whole
+extent of the pool rather than elements that merely avoid a single close
+neighbour.
+
+The **Max-Mean Dispersion Problem** maximizes the *average* distance
+between selected elements; this differs from the Max Sum objective in
+that the number of elements to be selected is not specified in advance.
+
 The **discrete *k*-centre problem** selects \\k\\ elements such that the
 maximum distance from any element in the original set to a selected
 element is as small as possible. In ensuring that each point has a
 nearby representative, this objective can select points that reflect a
 central compromise, rather than selections that are closer to more local
-points. This objective is useful when selecting centres that represent
-each point in a dataset: for example, siting fire stations to guarantee
-that all buildings can be reached within a given response time.
+points. Whereas dispersion spreads to the extremes, covering gravitates
+into the interior. This objective is useful when selecting centres that
+represent each point in a dataset: for example, siting fire stations to
+guarantee that all buildings can be reached within a given response
+time.
 
-An approximate selection that satisfies both objectives within a factor
-of two of their respective optima can be attained by a greedy
-farthest-first algorithm ([González, 1985](#ref-Gonzalez1985)), though
-the exact optima typically differ; dispersion spreads to the extremes,
-whereas covering gravitates into the interior. MaxMin provides
-approximate and exact solvers for each objective.
+The **maximum-entropy (maxdet) sampling** objective selects the \\k\\
+least redundant elements: that is, those that maximize the
+log-determinant of a similarity kernel built from the distances between
+them, and thus that together occupy the largest volume.
 
 ## Installation
 
@@ -78,19 +90,30 @@ MaxMin provides solvers for each objective:
 
 | Function | Objective | Quality | Speed | Stochastic? |
 |----|----|----|----|----|
-| [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) | both | Good (2-approximation) | Very fast | No |
-| [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) | MMDP | High (≈ 99 % optimal) | Fast | No |
-| [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) | MMDP | Highest | Moderate | Yes ([`set.seed()`](https://rdrr.io/r/base/Random.html)) |
-| [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md) | MMDP | Optimal (NP-hard) | Slow | No |
-| [`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md) | k-centre | Near-optimal (CDSh) | Fast | No |
+| [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) | max-min / k-centre | Good (2-approximation) | Very fast | No |
+| [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) | MMDP (max-min) | High (≈ 99 % optimal) | Fast | No |
+| [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) | MMDP (max-min) | Highest | Moderate | Yes ([`set.seed()`](https://rdrr.io/r/base/Random.html)) |
+| [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md) | MMDP (max-min) | Optimal (NP-hard) | Slow | No |
+| [`ExactMaxSum()`](https://ms609.github.io/MaxMin/reference/ExactMaxSum.md) | Max-Sum Diversity | Optimal (NP-hard) | Slow | No |
+| [`MaxMean()`](https://ms609.github.io/MaxMin/reference/MaxMean.md) | max-mean | High | Time-budgeted | Yes ([`set.seed()`](https://rdrr.io/r/base/Random.html)) |
+| [`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md) | k-centre | Near-optimal | Fast | No |
 | [`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md) | k-centre | Optimal (NP-hard) | Slow | No |
+| [`MaxEntropy()`](https://ms609.github.io/MaxMin/reference/MaxEntropy.md) | maxdet (max log-det) | High / Optimal for small `k` | Fast | No |
 
 To compute the score for an arbitrary selection of points under each
 objective, use
 [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md)
-(MMDP) and
+(max-min),
+[`MeanDist()`](https://ms609.github.io/MaxMin/reference/MeanDist.md)
+(max-mean) and
 [`KCentreRadius()`](https://ms609.github.io/MaxMin/reference/KCentreRadius.md)
 (k-centre).
+[`ExactMaxSum()`](https://ms609.github.io/MaxMin/reference/ExactMaxSum.md)
+and
+[`MaxEntropy()`](https://ms609.github.io/MaxMin/reference/MaxEntropy.md)
+report their own objective value (total pairwise distance and
+log-determinant respectively) as the `score` attribute of the selection
+they return.
 
 ## Fast greedy selection
 
@@ -112,16 +135,21 @@ point at random, then starts greedy search from the point furthest from
 
 By default
 [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
-runs eight `"random_furthest"` starts, each of which takes a randomly
+runs three `"random_furthest"` starts, each of which takes a randomly
 selected point, moves to the point furthest from it, and begins the
 farthest-first sweep from there. The results of the pass with the
-highest T_(k) are returned.
+highest T_(k) are returned. Three starts captures most of the quality
+gain from restarting — on benchmarks across a wide range of datasets the
+improvement curve bends early (knee at n ≈ 3–4); for higher-quality
+results, prefer
+[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md),
+whose tabu search escapes the plateau that restarts cannot.
 
 ``` r
 
 set.seed(1)
-FarFirst(6L, eurodist)   # default: best of eight random starts
-#> 6 elements (1 12 20 16 5 2) selected by farthest-first (best of 4 strategies, 4 tied: random_furthest1, random_furthest2, random_furthest3, random_furthest4), each at distance >= 1014
+FarFirst(6L, eurodist)   # default: best of three random starts
+#> 6 elements (1 12 20 16 5 2) selected by farthest-first (best of 3 strategies, 3 tied: random_furthest1, random_furthest2, random_furthest3), each at distance >= 1014
 ```
 
 The number of random starts can be configured via the `nSeeds` argument.
@@ -349,6 +377,75 @@ MinDist(points = pts, idx = ffPick)                # from coordinates
 #> [1] 1.271123
 ```
 
+## Max-sum diversity and Max-mean dispersion
+
+The Max-Sum Diversity Problem selects the \\k\\-subset with the highest
+total pairwise distance.
+[`ExactMaxSum()`](https://ms609.github.io/MaxMin/reference/ExactMaxSum.md)
+finds an optimal solution via per-node integer-program linearisation
+([Kuo et al., 1993](#ref-Kuo1993)).
+
+``` r
+
+smPick <- ExactMaxSum(6L, d30, maxSeconds = 30L)
+
+attr(smPick, "proven")      # TRUE  ⟹  objective is the global optimum
+#> [1] TRUE
+attr(smPick, "score")       # total pairwise distance within the selection
+#> [1] 41.00517
+```
+
+Where the number of elements is not specified *a priori*, Max-Sum
+diversity generalizes to the Max-Mean Dispersion Problem, which
+maximizes the sum of pairwise distances divided by the number of
+selected elements.
+
+[`MaxMean()`](https://ms609.github.io/MaxMin/reference/MaxMean.md)
+implements reinforcement-learning tabu search ([Nijimbere et al.,
+2020](#ref-Dieudonne2020)): each restart constructs a candidate
+selection, randomly at first, then guided by a *Q*-learning memory of
+which elements proved valuable. The selection is refined with a one-flip
+tabu search that adds or removes a single element at a time. The search
+continues until its time budget expires.
+
+The objective is only interesting when negative distances occur:
+otherwise the optimal selection tends to include all points.
+
+``` r
+
+set.seed(1)
+affinity <- matrix(runif(30L * 30L, min = -10, max = 10), nrow = 30L)
+affinity <- (affinity + t(affinity)) / 2   # symmetric
+diag(affinity) <- 0
+```
+
+``` r
+
+set.seed(1)
+mmPick <- MaxMean(affinity, maxSeconds = 2)
+mmPick
+#> 10 elements (9 11 14 15 19 20 21 24 26 28) selected by MaxMean RLTS, f = 12.14
+attr(mmPick, "size")              # the algorithm chose this subset size
+#> [1] 10
+attr(mmPick, "score")             # achieved mean-dispersion objective
+#> [1] 12.1435
+```
+
+[`MaxMean()`](https://ms609.github.io/MaxMin/reference/MaxMean.md)
+chooses the subset size to retaining only the elements that raise the
+average separation.
+[`MeanDist()`](https://ms609.github.io/MaxMin/reference/MeanDist.md)
+scores any index set under the same objective, so a hand-picked
+selection can be compared directly:
+
+``` r
+
+MeanDist(affinity, mmPick)        # matches attr(mmPick, "score")
+#> [1] 12.1435
+MeanDist(affinity, 1:30)          # the full set scores lower
+#> [1] -0.342487
+```
+
 ## Covering: the k-centre problem
 
 The above methods seek to spread the selection such that its members are
@@ -438,6 +535,43 @@ labels(eurodist)[kc]    # covering: pulled toward the interior
 #> [1] "Cologne"    "Copenhagen" "Madrid"     "Rome"
 ```
 
+## Maximum-entropy (maxdet) selection
+
+[`MaxEntropy()`](https://ms609.github.io/MaxMin/reference/MaxEntropy.md)
+selects the \\k\\-subset that maximizes the log-determinant of its
+kernel block, \\\log\det K_S\\ – the maximum-entropy sampling criterion
+([Shewry & Wynn, 1987](#ref-Shewry1987)), equivalently the
+maximum-a-posteriori mode of a determinantal point process ([Kulesza &
+Taskar, 2012](#ref-Kulesza2012)). A radial-basis kernel is built from
+the distance matrix and repaired to be positive semi-definite where
+needed, since an arbitrary distance is not guaranteed to be of negative
+type. Because a redundant point lies in the span of those already chosen
+and adds no volume, it is never selected: the objective is exactly
+density-blind, unlike the distance-based objectives above.
+
+``` r
+
+mePick <- MaxEntropy(4L, eurodist)
+labels(eurodist)[mePick]
+#> [1] "Athens"    "Geneva"    "Lisbon"    "Stockholm"
+attr(mePick, "logDet")     # the achieved log-determinant
+#> [1] 0.02885061
+attr(mePick, "exact")      # TRUE if certified by exact enumeration
+#> [1] TRUE
+```
+
+The selection is built greedily by pivoted Cholesky, substituting exact
+enumeration when \\\binom{n}{k}\\ does not exceed `maxCombos` – as here,
+where the search is certified optimal. `negMass` reports the fraction of
+spectral mass removed by the positive-semidefinite repair, so a caller
+can see when that approximation is doing real work:
+
+``` r
+
+attr(mePick, "negMass")
+#> [1] 0.04210186
+```
+
 ## When to use which method
 
 For **dispersion** (spread the selection; maximize T_(k)):
@@ -452,6 +586,22 @@ For **dispersion** (spread the selection; maximize T_(k)):
 | Proven optimum, N ≤ ~ 25–30, **highs** installed | [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md) |
 | Score a selection’s T_(k) | [`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md) |
 
+For **total dispersion** (fixed-size subset maximizing the *sum* of
+pairwise distances):
+
+| Scenario | Recommended |
+|----|----|
+| Proven optimum, N ≤ ~ 25–30, **highs** installed | [`ExactMaxSum()`](https://ms609.github.io/MaxMin/reference/ExactMaxSum.md) |
+
+For **average dispersion** (select a subset of the size that maximizes
+mean separation):
+
+| Scenario | Recommended |
+|----|----|
+| Maximize mean pairwise distance, size unfixed | [`MaxMean()`](https://ms609.github.io/MaxMin/reference/MaxMean.md) |
+| Distances may be negative | [`MaxMean()`](https://ms609.github.io/MaxMin/reference/MaxMean.md) |
+| Score a selection’s max-mean objective | [`MeanDist()`](https://ms609.github.io/MaxMin/reference/MeanDist.md) |
+
 For **covering** (minimise the radius; no point far from a centre):
 
 | Scenario | Recommended |
@@ -460,6 +610,14 @@ For **covering** (minimise the radius; no point far from a centre):
 | Quick 2-approximation baseline | `FarFirst(strategy = "peripheral")` |
 | Proven optimum, small N, **highs** installed | [`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md) |
 | Score a centre set’s covering radius (matrix-free at large N) | `KCentreRadius(points = ...)` |
+
+For **maximum-entropy (maxdet) selection** (density-blind volume
+maximization):
+
+| Scenario | Recommended |
+|----|----|
+| Maximize spanned volume / avoid near-duplicate selections | [`MaxEntropy()`](https://ms609.github.io/MaxMin/reference/MaxEntropy.md) |
+| Proven optimum, `choose(n, k)` small | `MaxEntropy(exact = TRUE)` |
 
 ## Related problems
 
@@ -516,6 +674,19 @@ Hochbaum, D. S., & Shmoys, D. B. (1985). A best possible heuristic for
 the \\k\\-center problem. *Mathematics of Operations Research*, *10*(2),
 180–184. <https://doi.org/10.1287/moor.10.2.180>
 
+Kulesza, A., & Taskar, B. (2012). Determinantal point processes for
+machine learning. *Foundations and Trends in Machine Learning*,
+*5*(2–3), 123–286. <https://doi.org/10.1561/2200000044>
+
+Kuo, C.-C., Glover, F., & Dhir, K. S. (1993). Analyzing and modeling the
+maximum diversity problem by zero-one programming. *Decision Sciences*,
+*24*(6), 1171–1185. <https://doi.org/10.1111/j.1540-5915.1993.tb00509.x>
+
+Nijimbere, D., Zhao, S., Gu, X., Esangbedo, M. O., & Dominique, N.
+(2020). Tabu search guided by reinforcement learning for the max-mean
+dispersion problem. *Journal of Industrial & Management Optimization*,
+*17*, 3223–3254. <https://doi.org/10.3934/jimo.2020115>
+
 Porumbel, D., Hao, J.-K., & Glover, F. (2011). A simple and effective
 algorithm for the MaxMin diversity problem. *Annals of Operations
 Research*, *186*, 275–293. <https://doi.org/10.1007/s10479-011-0898-z>
@@ -529,3 +700,7 @@ Sayyady, F., & Fathi, Y. (2016). An integer programming approach for
 solving the p-dispersion problem. *European Journal of Operational
 Research*, *253*(1), 216–225.
 <https://doi.org/10.1016/j.ejor.2016.02.026>
+
+Shewry, M. C., & Wynn, H. P. (1987). Maximum entropy sampling. *Journal
+of Applied Statistics*, *14*(2), 165–170.
+<https://doi.org/10.1080/02664768700000020>

@@ -2,8 +2,7 @@
 
 `ExactMaxMin()` finds the optimal solution to the Max-Min Diversity
 Problem (discrete *p*-dispersion) by iterated node-packing (Sayyady and
-Fathi 2016) . As this problem is NP-hard, it is feasible only for small
-sets.
+Fathi 2016) (which may be slow or intractable on large sets).
 
 ## Usage
 
@@ -39,9 +38,8 @@ ascending) with class `"MaxMinSelection"`, carrying attributes:
 
 - score:
 
-  Achieved `T_k` – the minimum pairwise distance within the selection.
-  When `proven` is `TRUE` this is the true optimum; otherwise a lower
-  bound.
+  The minimum pairwise distance within the selection. When `proven` is
+  `TRUE` this is the optimum; otherwise a lower bound.
 
 - proven:
 
@@ -67,9 +65,10 @@ restarts and a
 [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md)
 pass), then gallops upward from that bound to the first infeasible
 threshold and bisects the resulting bracket. When a heuristic already
-attains the optimum, a single infeasibility solve certifies it. The
-indices chosen may vary based on the value of the random seed when
-several subsets attain the optimum.
+attains the optimum, a single infeasibility solve certifies it. Each
+feasibility probe is first reduced to its \\(k-1)\\-core and greedily
+coloured; where this does not settle the probe, an algebraic solver is
+launched, using multiple cores if `options("mc.cores") > 1`.
 
 ## Progress bar
 
@@ -90,5 +89,5 @@ the p-dispersion problem.” *European Journal of Operational Research*,
 set.seed(1)
 pts <- matrix(rnorm(18), ncol = 2)
 ExactMaxMin(3L, dist(pts))
-#> 3 elements (3 4 5) selected by exact solver, proven optimal, each at distance >= 2.035
+#> 3 elements (4 5 6) selected by exact solver, proven optimal, each at distance >= 2.035
 ```

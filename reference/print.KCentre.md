@@ -43,7 +43,10 @@ covering radius (with proof status for the exact solver).
 ## See also
 
 Other reporting functions:
+[`print.MaxEntropy`](https://ms609.github.io/MaxMin/reference/print.MaxEntropy.md),
+[`print.MaxMeanSelection()`](https://ms609.github.io/MaxMin/reference/print.MaxMeanSelection.md),
 [`print.MaxMin`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md),
+[`print.MaxSum`](https://ms609.github.io/MaxMin/reference/print.MaxSum.md),
 [`summary.MaxMin`](https://ms609.github.io/MaxMin/reference/summary.MaxMin.md)
 
 ## Examples

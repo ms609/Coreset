@@ -8,7 +8,15 @@ this package, and attains correspondingly high-quality selections.
 ## Usage
 
 ``` r
-Grasp(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8, maxSeconds = Inf)
+Grasp(
+  k,
+  d,
+  plateau = 100L,
+  eliteSize = 10L,
+  alpha = 0.8,
+  maxSeconds = Inf,
+  maxCandidates = 2000L
+)
 ```
 
 ## Arguments
@@ -42,6 +50,23 @@ Grasp(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8, maxSeconds = Inf)
 - maxSeconds:
 
   Numeric specifying wall-clock ceiling, in seconds.
+
+- maxCandidates:
+
+  Integer: a composable-coreset tractability cap. When the number of
+  candidate points `N` exceeds `maxCandidates`,
+  [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
+  thins the candidates to a `maxCandidates`-point coreset (with the
+  deterministic, RNG-free `"peripheral"` seed, so no random stream is
+  perturbed), the solver runs on the coreset, and the chosen indices are
+  mapped back to the original numbering. This lets the solver produce a
+  solution at scales where it would otherwise be intractable.
+  `maxCandidates = 0` (or `Inf`) disables thinning and runs on the full
+  problem; a cap at or above `N` is a no-op. A cap below `k` is an
+  error. The default is `2000L`, conservative because `Grasp()` is
+  matrix-only, so Thinning is **on by default**: an input larger than
+  the cap is thinned (and a warning is emitted) unless
+  `maxCandidates = 0` is passed.
 
 ## Value
 
@@ -82,6 +107,14 @@ elapsed.
 This method will fail if the complete \\N \times N\\ distance matrix is
 too large to fit into memory.
 
+## Parallelism
+
+To parallelize computation when OpenMP is available, set the
+`"mc.cores"` option:
+
+    options(mc.cores = 2L)                       # use a fixed number of cores
+    options(mc.cores = parallel::detectCores())  # or all available cores
+
 ## Progress bar
 
 In interactive sessions, a bar tracks how close the search is to its
@@ -110,5 +143,10 @@ for the proven optimum on small instances.
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 Grasp(5L, dist(pts), plateau = 20L, eliteSize = 4L)
+#> 5 elements (3 4 5 24 25) selected by GRASP with path-relinking, each at distance >= 1.778
+
+# Composable coreset: thin to 20 candidates with farthest-first, then run
+# GRASP on the coreset. Returned indices are original-space row indices.
+suppressWarnings(Grasp(5L, dist(pts), plateau = 20L, maxCandidates = 20L))
 #> 5 elements (3 4 5 24 25) selected by GRASP with path-relinking, each at distance >= 1.778
 ```

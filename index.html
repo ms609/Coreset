@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Maximum-Minimum Diversity and Discrete k-Centre Subset Selection • MaxMin</title>
+<title>Maximum-Minimum Diversity, Discrete k-Centre, and Max-Mean Dispersion Subset Selection • MaxMin</title>
 <!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
   window.MathJax = {
     chtml: {
@@ -16,9 +16,9 @@
 <link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Maximum-Minimum Diversity and Discrete k-Centre Subset Selection">
-<meta name="description" content="Solves discrete location objectives on a distance matrix or Euclidean coordinate set. The Max-Min Diversity (MMDP / p-dispersion) objective, which maximizes the minimum pairwise distance within a selection of k items, is solved by farthest-first selection (Gonzalez 1985) &lt;doi:10.1016/0304-3975(85)90224-5&gt;; the DropAdd tabu-search heuristic (Porumbel, Hao &amp; Glover 2011) &lt;doi:10.1007/s10479-011-0898-z&gt;, GRASP with path-relinking (Resende, Marti, Gallego &amp; Duarte 2010) &lt;doi:10.1016/j.cor.2008.05.011&gt;, and an exact node-packing integer program (Sayyady &amp; Fathi 2016) &lt;doi:10.1016/j.ejor.2016.02.026&gt;. The discrete k-centre (min-max covering / facility location) objective, which chooses k centres to minimise the largest distance from any point to its nearest centre, is solved via the CDSh heuristic (Garcia-Diaz et al. 2017 &lt;doi:10.1007/s10732-017-9345-x&gt;, 2019 &lt;doi:10.1109/ACCESS.2019.2933875&gt;), and an exact minimum-cover integer program.">
-<meta property="og:description" content="Solves discrete location objectives on a distance matrix or Euclidean coordinate set. The Max-Min Diversity (MMDP / p-dispersion) objective, which maximizes the minimum pairwise distance within a selection of k items, is solved by farthest-first selection (Gonzalez 1985) &lt;doi:10.1016/0304-3975(85)90224-5&gt;; the DropAdd tabu-search heuristic (Porumbel, Hao &amp; Glover 2011) &lt;doi:10.1007/s10479-011-0898-z&gt;, GRASP with path-relinking (Resende, Marti, Gallego &amp; Duarte 2010) &lt;doi:10.1016/j.cor.2008.05.011&gt;, and an exact node-packing integer program (Sayyady &amp; Fathi 2016) &lt;doi:10.1016/j.ejor.2016.02.026&gt;. The discrete k-centre (min-max covering / facility location) objective, which chooses k centres to minimise the largest distance from any point to its nearest centre, is solved via the CDSh heuristic (Garcia-Diaz et al. 2017 &lt;doi:10.1007/s10732-017-9345-x&gt;, 2019 &lt;doi:10.1109/ACCESS.2019.2933875&gt;), and an exact minimum-cover integer program.">
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Maximum-Minimum Diversity, Discrete k-Centre, and Max-Mean Dispersion Subset Selection">
+<meta name="description" content="Solves discrete location objectives on a distance matrix or Euclidean coordinate set. The Max-Min Diversity (MMDP / p-dispersion) objective, which maximizes the minimum pairwise distance within a selection of k items, is solved by farthest-first selection (Gonzalez 1985) &lt;doi:10.1016/0304-3975(85)90224-5&gt;; the DropAdd tabu-search heuristic (Porumbel, Hao &amp; Glover 2011) &lt;doi:10.1007/s10479-011-0898-z&gt;, GRASP with path-relinking (Resende, Marti, Gallego &amp; Duarte 2010) &lt;doi:10.1016/j.cor.2008.05.011&gt;, and an exact node-packing integer program (Sayyady &amp; Fathi 2016) &lt;doi:10.1016/j.ejor.2016.02.026&gt;. The Max-Mean Dispersion objective, which selects a subset of unrestricted size maximising the sum of its pairwise distances divided by the number of selected elements, is solved by reinforcement-learning-guided tabu search (Nijimbere et al. 2020) &lt;doi:10.3934/jimo.2020115&gt;. The discrete k-centre (min-max covering / facility location) objective, which chooses k centres to minimise the largest distance from any point to its nearest centre, is solved via the CDSh heuristic (Garcia-Diaz et al. 2017 &lt;doi:10.1007/s10732-017-9345-x&gt;, 2019 &lt;doi:10.1109/ACCESS.2019.2933875&gt;), and an exact minimum-cover integer program. The maximum-entropy (maxdet) objective, which maximises the log-determinant of a similarity kernel built from the distances (Shewry &amp; Wynn 1987 &lt;doi:10.1080/02664768700000020&gt;; the mode of a determinantal point process, Kulesza &amp; Taskar 2012 &lt;doi:10.1561/2200000044&gt;), is solved by greedy pivoted-Cholesky selection and, for small instances, exact enumeration.">
+<meta property="og:description" content="Solves discrete location objectives on a distance matrix or Euclidean coordinate set. The Max-Min Diversity (MMDP / p-dispersion) objective, which maximizes the minimum pairwise distance within a selection of k items, is solved by farthest-first selection (Gonzalez 1985) &lt;doi:10.1016/0304-3975(85)90224-5&gt;; the DropAdd tabu-search heuristic (Porumbel, Hao &amp; Glover 2011) &lt;doi:10.1007/s10479-011-0898-z&gt;, GRASP with path-relinking (Resende, Marti, Gallego &amp; Duarte 2010) &lt;doi:10.1016/j.cor.2008.05.011&gt;, and an exact node-packing integer program (Sayyady &amp; Fathi 2016) &lt;doi:10.1016/j.ejor.2016.02.026&gt;. The Max-Mean Dispersion objective, which selects a subset of unrestricted size maximising the sum of its pairwise distances divided by the number of selected elements, is solved by reinforcement-learning-guided tabu search (Nijimbere et al. 2020) &lt;doi:10.3934/jimo.2020115&gt;. The discrete k-centre (min-max covering / facility location) objective, which chooses k centres to minimise the largest distance from any point to its nearest centre, is solved via the CDSh heuristic (Garcia-Diaz et al. 2017 &lt;doi:10.1007/s10732-017-9345-x&gt;, 2019 &lt;doi:10.1109/ACCESS.2019.2933875&gt;), and an exact minimum-cover integer program. The maximum-entropy (maxdet) objective, which maximises the log-determinant of a similarity kernel built from the distances (Shewry &amp; Wynn 1987 &lt;doi:10.1080/02664768700000020&gt;; the mode of a determinantal point process, Kulesza &amp; Taskar 2012 &lt;doi:10.1561/2200000044&gt;), is solved by greedy pivoted-Cholesky selection and, for small instances, exact enumeration.">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="index.html">MaxMin</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9003</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9009</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -58,7 +58,7 @@
 </h1></div>
 <!-- badges: start -->
 
-<p><code>MaxMin</code> implements algorithms that select a dispersed subsample of points that maximizes coverage of a larger set, under one of two objectives:</p>
+<p><code>MaxMin</code> implements algorithms that select a dispersed subsample of points that maximizes coverage of a larger set, under one of several objectives:</p>
 <p>The <strong>Max-Min Diversity Problem</strong> (MMDP, the discrete <em>p</em>-dispersion objective) selects <span class="math inline">\(k\)</span> elements such that the minimum distance between any pair of selected elements is as large as possible; the chosen elements are maximally separated.</p>
 <p>The <strong>discrete <em>k</em>-centre problem</strong> selects <span class="math inline">\(k\)</span> elements such that the maximum distance from any element in the original set to a selected element is as small as possible.</p>
 <div class="section level2">
@@ -83,20 +83,62 @@
 <tbody>
 <tr>
 <td><code><a href="reference/DropAdd.html">DropAdd()</a></code></td>
-<td>DropAdd tabu search (Porumbel et al. 2011)</td>
+<td>DropAdd tabu search</td>
 <td>~99%-optimal heuristic</td>
 </tr>
 <tr>
 <td><code><a href="reference/Grasp.html">Grasp()</a></code></td>
-<td>GRASP with path-relinking metaheuristic (Resende et al. 2010)</td>
+<td>GRASP with path-relinking metaheuristic</td>
 <td>Slower but powerful heuristic</td>
 </tr>
 <tr>
 <td><code><a href="reference/ExactMaxMin.html">ExactMaxMin()</a></code></td>
-<td>Node-packing integer program (Sayyady &amp; Fathi 2016)</td>
+<td>Node-packing integer program</td>
 <td>Proven optimum, small <code>k</code> (needs <code>highs</code>)</td>
 </tr>
 </tbody>
+</table>
+</div>
+<div class="section level3">
+<h3 id="max-sum-dispersion-maximum-diversity">Max-sum dispersion (maximum diversity)<a class="anchor" aria-label="anchor" href="#max-sum-dispersion-maximum-diversity"></a>
+</h3>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr>
+<th>Function</th>
+<th>Method</th>
+<th>Use</th>
+</tr></thead>
+<tbody><tr>
+<td><code><a href="reference/ExactMaxSum.html">ExactMaxSum()</a></code></td>
+<td>Per-node MILP linearisation, floored by multi-start local search</td>
+<td>Proven optimum for total pairwise distance, small <code>k</code> (needs <code>highs</code>)</td>
+</tr></tbody>
+</table>
+</div>
+<div class="section level3">
+<h3 id="max-mean-dispersion">Max-mean dispersion<a class="anchor" aria-label="anchor" href="#max-mean-dispersion"></a>
+</h3>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr>
+<th>Function</th>
+<th>Method</th>
+<th>Use</th>
+</tr></thead>
+<tbody><tr>
+<td><code><a href="reference/MaxMean.html">MaxMean()</a></code></td>
+<td>Reinforcement-learning tabu search</td>
+<td>Maximize mean pairwise distance; subset size free; signed distances supported</td>
+</tr></tbody>
 </table>
 </div>
 <div class="section level3">
@@ -117,7 +159,7 @@
 <tbody>
 <tr>
 <td><code><a href="reference/KCentre.html">KCentre()</a></code></td>
-<td>CDSh heuristic (García-Díaz et al. 2017, 2019)</td>
+<td>Critical Dominating Set heuristic</td>
 <td>~1–3.5% of optimum at <span class="math inline">\(O(N^2 \log N)\)</span>, typically far tighter than <code><a href="reference/FarFirst.html">FarFirst()</a></code>
 </td>
 </tr>
@@ -128,8 +170,29 @@
 </tr>
 </tbody>
 </table>
+</div>
+<div class="section level3">
+<h3 id="maximum-entropy-maxdet-selection">Maximum-entropy (maxdet) selection<a class="anchor" aria-label="anchor" href="#maximum-entropy-maxdet-selection"></a>
+</h3>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr>
+<th>Function</th>
+<th>Method</th>
+<th>Use</th>
+</tr></thead>
+<tbody><tr>
+<td><code><a href="reference/MaxEntropy.html">MaxEntropy()</a></code></td>
+<td>Greedy pivoted-Cholesky selection, with exact enumeration for small instances</td>
+<td>Maximize the log-determinant (spanned volume) of a similarity kernel; density-blind</td>
+</tr></tbody>
+</table>
 <p>Solvers support precomputed distance matrices (<code>dist</code> objects), matrices of Euclidian coordinates, or lists of elements from which distances can be calculated.</p>
-<p><code><a href="reference/MinDist.html">MinDist()</a></code> returns the minimum pairwise distance within a selection (the MMDP objective) and <code><a href="reference/KCentreRadius.html">KCentreRadius()</a></code> returns its covering radius (the <em>k</em>-centre objective).</p>
+<p><code><a href="reference/MinDist.html">MinDist()</a></code> returns the minimum pairwise distance within a selection (the MMDP objective), <code><a href="reference/MeanDist.html">MeanDist()</a></code> its mean pairwise dispersion (the max-mean objective), and <code><a href="reference/KCentreRadius.html">KCentreRadius()</a></code> returns its covering radius (the <em>k</em>-centre objective).</p>
 </div>
 </div>
 <div class="section level2">
@@ -217,7 +280,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

@@ -32,7 +32,10 @@ summary(object, ...)
 
 Other reporting functions:
 [`print.KCentre`](https://ms609.github.io/MaxMin/reference/print.KCentre.md),
-[`print.MaxMin`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md)
+[`print.MaxEntropy`](https://ms609.github.io/MaxMin/reference/print.MaxEntropy.md),
+[`print.MaxMeanSelection()`](https://ms609.github.io/MaxMin/reference/print.MaxMeanSelection.md),
+[`print.MaxMin`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md),
+[`print.MaxSum`](https://ms609.github.io/MaxMin/reference/print.MaxSum.md)
 
 ## Examples
 
@@ -40,12 +43,10 @@ Other reporting functions:
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 summary(FarFirst(5L, dist(pts)))
-#> 5 elements (4 14 26 5 28) selected by farthest-first (best of 5 strategies, 3 tied: random_furthest1, random_furthest2, random_furthest3), each at distance >= 1.765
-#>   strategies tried (5), best marked *:
+#> 5 elements (14 4 26 5 28) selected by farthest-first (best of 3 strategies, winner random_furthest1), each at distance >= 1.765
+#>   strategies tried (3), best marked *:
 #>     strategy           seed  T_k
-#>   * random_furthest1      4  1.765
-#>   * random_furthest2      5  1.765
-#>   * random_furthest3     14  1.765
-#>     random_furthest4     24  1.701
-#>     random_furthest5     26  1.468
+#>   * random_furthest1     14  1.765
+#>     random_furthest2     24  1.701
+#>     random_furthest3     26  1.468
 ```
