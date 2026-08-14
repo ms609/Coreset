@@ -18,9 +18,6 @@
   } else if (!is.matrix(d) || !is.numeric(d) || nrow(d) != ncol(d)) {
     stop("`d` must be a `dist` object or a square numeric matrix")
   }
-  # NA/NaN/Inf propagate silently through pmin.int()/which.max() and can yield a
-  # repeated index in the selection; reject them up front. Checked before
-  # symmetry, which NA would fail on its own terms (NA != NA).
   if (!AllFinite_cpp(d, .NThreads())) {
     stop("distance matrix must not contain NA/NaN/Inf")
   }

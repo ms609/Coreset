@@ -49,9 +49,7 @@
   }
   # The warm start calls Grasp() and DropAdd() inside a tryCatch, so their own
   # symmetry guard would surface only as an empty heuristic pool and a silent
-  # fall back to the trivial bound; the check belongs here. A non-finite entry
-  # fails a symmetry test on its own terms (NA != NA), so it is left to the
-  # guard that names it.
+  # fall back to the trivial bound.
   if (AllFinite_cpp(d, .NThreads()) && !IsExactlySymmetric_cpp(d)) {
     stop("`d` must be symmetric: d[i, j] and d[j, i] must be equal. ",
          "Use `(d + t(d)) / 2` if rounding has made them differ.")

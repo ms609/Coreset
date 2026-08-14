@@ -1,8 +1,6 @@
 # MaxMin 0.0.0.9011 (development)
 
-- Distance matrices must now be exactly symmetric; `(d + t(d)) / 2` if rounding
-  has made the triangles differ. `MaxMean()` and `MeanDist()`, which average
-  them, are unaffected.
+- Distance matrices must now be exactly symmetric.
 - `DropAdd()` is up to 1.75× faster on the dense-matrix path at large `k`.
 
 # MaxMin 0.0.0.9010 (development)
