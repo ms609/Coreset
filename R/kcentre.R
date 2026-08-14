@@ -40,8 +40,6 @@
 # an asymmetric `d` would give a silently wrong covering radius (KC-002).
 # `.AsDistMatrix()` returns a matrix whose triangles agree exactly, which is
 # that guarantee; the solvers below need no guard of their own.
-# (`KCentreRadius()` is correct for asymmetric input regardless: it reads true
-# d(point, centre) columns.)
 
 # Above this many candidate radii the exhaustive CDS scan (O(nCand * n^2)) is too
 # costly, so KCentre falls back to binary-search CDSh; below it the full scan is
@@ -99,7 +97,9 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
     }
     return(max(nn))
   }
-  d <- .AsDistMatrix(d)
+  # Nearest-centre distances are read as whole columns, so d(point, centre) is
+  # taken as written and asymmetry needs no reconciling.
+  d <- .AsDistMatrix(d, symmetric = FALSE)
   # Without this guard `d[, 0L]` (or an out-of-range column) yields an empty
   # column and `max()` returns -Inf with only a warning -- the coordinate path
   # already errors. Reject out-of-range indices on both paths (KC-003).
