@@ -6,7 +6,7 @@ already a matrix.
 ## Usage
 
 ``` r
-.AsDistMatrix(d)
+.AsDistMatrix(d, symmetric = TRUE)
 ```
 
 ## Arguments
@@ -15,12 +15,14 @@ already a matrix.
 
   A `dist` object or a square numeric matrix.
 
+- symmetric:
+
+  Logical: reconcile the two triangles of `d`.
+
 ## Value
 
 `.AsDistMatrix()` returns a square numeric matrix.
 
 ## Details
 
-Symmetry is not checked; an `O(N^2)` check is intentionally omitted.
-Asymmetric matrices are silently accepted, and the algorithm treats
-\\d\_{ij}\\ and \\d\_{ji}\\ as independent values.
+A `dist` object is symmetric by construction, so it bypasses the check.

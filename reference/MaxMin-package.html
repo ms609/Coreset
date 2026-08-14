@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">MaxMin</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9010</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9011</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -105,6 +105,18 @@ element to its nearest selected element ('centre').</p><dl><dt><code><a href="KC
 
 
 </dl></div>
+    <div class="section level2">
+    <h2 id="options">Options<a class="anchor" aria-label="anchor" href="#options"></a></h2>
+
+
+<p>The solvers need <code>d[i, j]</code> and <code>d[j, i]</code> to agree exactly, being free to
+read whichever is the cheaper memory access. A matrix that misses this only
+through rounding has its triangles averaged, with a warning;
+<code>options(MaxMin.symmetryTolerance = )</code> sets how large a discrepancy — scaled
+by <code>max(1, |d[i, j]|, |d[j, i]|)</code> — is repaired rather than refused. It
+defaults to <code>100 * .Machine$double.eps</code>, as R's own <code><a href="https://rdrr.io/r/base/isSymmetric.html" class="external-link">isSymmetric()</a></code> does;
+set it to <code>0</code> to have any inexact matrix refused.</p>
+    </div>
     <div class="section level2">
     <h2 id="relation-to-maximin">Relation to <span class="pkg">maximin</span><a class="anchor" aria-label="anchor" href="#relation-to-maximin"></a></h2>
 

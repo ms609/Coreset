@@ -1,5 +1,10 @@
 # Changelog
 
+## MaxMin 0.0.0.9011 (development)
+
+- [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) is
+  up to 1.75× faster on the dense-matrix path at large `k`.
+
 ## MaxMin 0.0.0.9010 (development)
 
 - [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
