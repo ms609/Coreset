@@ -47,12 +47,11 @@
   if (!is.matrix(d) || !is.numeric(d) || nrow(d) != ncol(d)) {
     stop("`d` must be a `dist` object or a square numeric matrix")
   }
-  # The same symmetry the other solvers require, enforced here too: the warm
-  # start calls Grasp() and DropAdd(), whose own guard would raise this error
-  # inside the tryCatch that collects their results -- leaving an empty
-  # heuristic pool and a silent fall back to the trivial bound. A non-finite
-  # entry fails the symmetry test on its own terms (NA != NA), so it is left
-  # to the guard that names it.
+  # The warm start calls Grasp() and DropAdd() inside a tryCatch, so their own
+  # symmetry guard would surface only as an empty heuristic pool and a silent
+  # fall back to the trivial bound; the check belongs here. A non-finite entry
+  # fails a symmetry test on its own terms (NA != NA), so it is left to the
+  # guard that names it.
   if (AllFinite_cpp(d, .NThreads()) && !IsExactlySymmetric_cpp(d)) {
     stop("`d` must be symmetric: d[i, j] and d[j, i] must be equal. ",
          "Use `(d + t(d)) / 2` if rounding has made them differ.")

@@ -3,10 +3,7 @@
 #' Coerce distance input to a square matrix, skipping the round-trip when
 #' already a matrix.
 #' @param d A `dist` object or a square numeric matrix.
-#' @param symmetric Logical: require `d` to be exactly symmetric. `TRUE` for the
-#' min-based solvers, whose kernels read whichever of \eqn{d_{ij}} and
-#' \eqn{d_{ji}} is the cheaper memory access; `FALSE` for the mean- and
-#' sum-based ones, which average the two.
+#' @param symmetric Logical: require `d` to be exactly symmetric.
 #' @return `.AsDistMatrix()` returns a square numeric matrix.
 #' @details
 #' Under `symmetric = TRUE` the two triangles must hold equal values, since the

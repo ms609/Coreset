@@ -10,10 +10,7 @@ already a matrix.}
 \arguments{
 \item{d}{A \code{dist} object or a square numeric matrix.}
 
-\item{symmetric}{Logical: require \code{d} to be exactly symmetric. \code{TRUE} for the
-min-based solvers, whose kernels read whichever of \eqn{d_{ij}} and
-\eqn{d_{ji}} is the cheaper memory access; \code{FALSE} for the mean- and
-sum-based ones, which average the two.}
+\item{symmetric}{Logical: require \code{d} to be exactly symmetric.}
 }
 \value{
 \code{.AsDistMatrix()} returns a square numeric matrix.
