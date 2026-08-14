@@ -97,7 +97,10 @@ static void MaximinPass(const double* dp, int nPts, int n, int first0,
       int nb;
       double nbv;
 #ifdef _OPENMP
-      if (nthr > 1 && nPts >= GONZ_PAR_MIN) {
+      // nocov: no input reaches this branch, for the reason given at
+      // GONZ_PAR_MIN above. Its coordinate counterpart is exercised at 32k+
+      // points (maximin_points.cpp).
+      if (nthr > 1 && nPts >= GONZ_PAR_MIN) {            // # nocov start
         const int C = nthr;
 #pragma omp parallel for num_threads(nthr) schedule(static, 1)
         for (int t = 0; t < C; t++) {
@@ -109,7 +112,7 @@ static void MaximinPass(const double* dp, int nPts, int n, int first0,
         for (int t = 1; t < C; t++) {
           if (tnbv[t] > nbv) { nbv = tnbv[t]; nb = tnb[t]; }
         }
-      } else
+      } else                                             // # nocov end
 #endif
       {
         PminArgmaxChunk(col, md, 0, nPts, &nb, &nbv);

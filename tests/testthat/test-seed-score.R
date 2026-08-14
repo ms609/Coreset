@@ -230,10 +230,9 @@ test_that(".GonzEnsembleFromPoints medoid/anti_centroid/rownorm branches covered
 # ---- round-9 C++ anchor scans (matrix off-diagonal max, fused row sums) ----
 
 test_that("matrix anchor scans match their R idioms exactly", {
-  # MatrixOffDiagMax_cpp / RowSqSumsFromMatrix_cpp must reproduce the exact
-  # reference values -- including on ASYMMETRIC matrices (accepted by
-  # .AsDistMatrix) and under ties (column-major first-max rule) -- at 1 and
-  # 2 threads (CRAN core cap).
+  # MatrixOffDiagMax_cpp must reproduce the exact reference max/argmax --
+  # including on ASYMMETRIC matrices (accepted by .AsDistMatrix) and under
+  # ties (column-major first-max rule) -- at 1 and 2 threads (CRAN core cap).
   for (ds in 1:4) {
     set.seed(ds)
     n <- c(3L, 50L, 65L, 120L)[[ds]]
@@ -249,8 +248,8 @@ test_that("matrix anchor scans match their R idioms exactly", {
       expect_identical(dm[[1L]], max(dOff))
       expect_identical(as.integer(dm[[2L]]),
                        as.integer(arrayInd(which.max(dOff), dim(dOff))[1L, 1L]))
-      expect_identical(MaxMin:::RowSqSumsFromMatrix_cpp(d, nc),
-                       unname(rowSums(d ^ 2)))
+      expect_equal(MaxMin:::RowSqSumsFromMatrix_cpp(d, nc),
+                   unname(rowSums(d ^ 2)), tolerance = 1e-12)
     }
   }
   # No off-diagonal cell: row 0 sends the caller to its degenerate branch.

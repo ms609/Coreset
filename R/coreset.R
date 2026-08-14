@@ -60,16 +60,8 @@
 #' supplied solver on the restriction, and maps the returned indices back to the
 #' original numbering.
 #'
-#' The coreset is built with the deterministic `"peripheral"` seed, so it draws
-#' **no** session RNG: it cannot perturb the random stream the downstream solver
-#' (or the user) draws from, and it is bit-reproducible without `set.seed()` --
-#' both required by the package's bit-identical-selection contract.
-#'
-#' Only the integer index *values* returned by the solver need remapping: the
-#' `score` (and any other distance-derived attribute) is already valid in the
-#' original space, because subsetting preserves pairwise distances. The result
-#' is re-sorted ascending to keep the [DropAdd()] / [Grasp()] sorted-output
-#' contract, carrying the solver's class and attributes across unchanged.
+#' Only the integer index values returned by the solver need remapping.
+#' The result is sorted ascending.
 #'
 #' @param k Integer: target subset size.
 #' @param m Integer: coreset size (`k <= m < N`, as returned by [.ResolveCap()]).
