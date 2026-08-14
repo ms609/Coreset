@@ -11,14 +11,15 @@ MaxMean(d, maxSeconds = 0.1, maxIter = 1000, useRL = TRUE)
 values may be negative, and an asymmetric matrix is symmetrized to
 \eqn{(d_{ij} + d_{ji})/2} before solving.}
 
-\item{maxSeconds}{Numeric wall-clock time budget in seconds.}
+\item{maxSeconds}{Numeric: wall-clock time budget, in seconds.}
 
-\item{maxIter}{Numeric cap on the total tabu-search iterations across
-restarts; \code{Inf} budgets by wall-clock time alone.}
+\item{maxIter}{Numeric: cap on the total tabu-search iterations across
+restarts.}
 
 \item{useRL}{Logical: enable the \eqn{Q}-learning layer guiding
-initial-solution construction across restarts (\code{TRUE}, the default, costs
-\eqn{O(n^2)} memory; \code{FALSE} uses random restarts only, \eqn{O(n)} memory).}
+initial-solution construction across restarts. \code{TRUE} costs
+\eqn{O(n^2)} memory; \code{FALSE} uses random restarts only, costing \eqn{O(n)}
+memory.}
 }
 \value{
 \code{MaxMean()} returns an integer vector of selected 1-based indices
@@ -48,11 +49,9 @@ to maximise the mean dispersion.
 algorithm of \insertCite{Dieudonne2020}{MaxMin}.
 An initial solution is constructed randomly for the first restart and
 via \eqn{Q}-learning thereafter; each initial solution is then refined by a
-tabu search using one-flip moves (adding or removing one element per step),
-with efficient \eqn{O(n)} neighbourhood evaluation via the contribution
-array \eqn{P_i = \sum_{j \in S,\, j \ne i} d_{ij}}.  Restarts continue until
-the \code{maxSeconds} or \code{maxIter} budget is reached, whichever comes first; the
-best solution found is returned.
+tabu search using one-flip moves (adding or removing one element per step).
+Restarts continue until either the \code{maxSeconds} or \code{maxIter} budget is
+reached.
 
 The reinforcement-learning and tabu hyperparameters are fixed at the tuned
 values reported by \insertCite{Dieudonne2020}{MaxMin} (greedy factor

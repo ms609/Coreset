@@ -32,11 +32,9 @@
 #' algorithm of \insertCite{Dieudonne2020}{MaxMin}.
 #' An initial solution is constructed randomly for the first restart and
 #' via \eqn{Q}-learning thereafter; each initial solution is then refined by a
-#' tabu search using one-flip moves (adding or removing one element per step),
-#' with efficient \eqn{O(n)} neighbourhood evaluation via the contribution
-#' array \eqn{P_i = \sum_{j \in S,\, j \ne i} d_{ij}}.  Restarts continue until
-#' the `maxSeconds` or `maxIter` budget is reached, whichever comes first; the
-#' best solution found is returned.
+#' tabu search using one-flip moves (adding or removing one element per step).
+#' Restarts continue until either the `maxSeconds` or `maxIter` budget is
+#' reached.
 #'
 #' The reinforcement-learning and tabu hyperparameters are fixed at the tuned
 #' values reported by \insertCite{Dieudonne2020}{MaxMin} (greedy factor
@@ -46,12 +44,12 @@
 #' @param d A `dist` object or square numeric matrix of pairwise distances;
 #'   values may be negative, and an asymmetric matrix is symmetrized to
 #'   \eqn{(d_{ij} + d_{ji})/2} before solving.
-#' @param maxSeconds Numeric wall-clock time budget in seconds.
-#' @param maxIter Numeric cap on the total tabu-search iterations across
-#'   restarts; `Inf` budgets by wall-clock time alone.
-#' @param useRL Logical: enable the \eqn{Q}-learning layer guiding
-#'   initial-solution construction across restarts (`TRUE`, the default, costs
-#'   \eqn{O(n^2)} memory; `FALSE` uses random restarts only, \eqn{O(n)} memory).
+#' @param maxSeconds Numeric: wall-clock time budget, in seconds.
+#' @param maxIter Numeric: cap on the total tabu-search iterations across
+#'   restarts.
+#' @param useRL Logical: if `TRUE` (the default) a \eqn{Q}-learning layer guides
+#'   initial-solution construction across restarts; if `FALSE`, each restart
+#'   starts from a random solution.
 #' @templateVar progress_shows status messages are shown
 #' @template progress
 #'
