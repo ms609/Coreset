@@ -195,7 +195,7 @@
         types   = rep.int("I", nv),             # integer var on [0,1] = binary
         maximum = TRUE,
         control = list(
-          threads    = 1L,                      # determinism
+          threads    = .NThreads(),
           time_limit = remaining
         )
       )
