@@ -2,7 +2,7 @@
 % Please edit documentation in R/score.R
 \name{MeanDist}
 \alias{MeanDist}
-\title{Mean dispersion of a selection (max-mean objective)}
+\title{Mean dispersion of a selection}
 \usage{
 MeanDist(d, idx)
 }
@@ -16,14 +16,20 @@ MeanDist(d, idx)
 \code{length(idx) < 2}.
 }
 \description{
-Returns the max-mean objective value for a selection:
-\deqn{f(S) = \frac{\displaystyle\sum_{i < j,\, i,j \in S} d_{ij}}{|S|}}
-This is the sum of pairwise distances divided by the number of selected
-elements, the objective maximised by \code{\link[=MaxMean]{MaxMean()}}.
+\code{MeanDist()} reports the sum of pairwise distances divided by the number of
+selected elements,
+\deqn{f(S) = \frac{\displaystyle\sum_{i < j,\, i,j \in S} d_{ij}}{|S|}},
+the objective maximised by \code{\link[=MaxMean]{MaxMean()}}.
 }
 \examples{
-d <- dist(matrix(rnorm(20), ncol = 2))
-MeanDist(d, 1:4)
+# The max-mean problem is defined for signed dissimilarities; with these the
+# optimal subset has an interior size, chosen to maximise mean dispersion.
+set.seed(1)
+x <- matrix(runif(100, -5, 5), 10)
+d <- (x + t(x)) / 2          # symmetric, signed
+selection <- MaxMean(d)
+selection                    # 5 of the 10 elements: {2, 5, 6, 8, 10}
+MeanDist(d, selection)       # 2.714 — equals attr(selection, "score")
 }
 \seealso{
 \code{\link[=MaxMean]{MaxMean()}} which maximises this objective; \code{\link[=MinDist]{MinDist()}} for the
