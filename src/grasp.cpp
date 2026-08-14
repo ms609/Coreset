@@ -148,40 +148,6 @@ struct LSScratch {
 
 // One randomised greedy construction; matches .GraspConstruct. Returns
 // ascending sel.
-//
-// T-021: consumes m PRE-DRAWN uniforms from `u` — u[0] picks the first
-// vertex, u[h] step h's RCL member — as index = floor(u * size), clamped to
-// size-1 against the (never-observed) u*size == size rounding edge. Steps
-// whose RCL is a singleton (or empty; see below) leave their uniform unused:
-// consumption is FIXED at m draws either way, which is what lets the caller
-// pre-draw whole batches on the main thread and run constructions on worker
-// threads that must never touch R's RNG. floor(u * size) departs from
-// R_unif_index's rejection-sampled unbiased index: the bias is O(size/2^53),
-// unobservable at any real problem size, and the pure-R reference mirrors
-// the floor exactly (see .GraspConstruct), so parity is preserved.
-//
-// T-019: the gmax/gmin/argmax scan folds into the PREVIOUS step's g-update
-// pass, which already touches every live entry — setting g[pick] = NEG_INF
-// before that pass makes the fold read exactly the values the standalone
-// scan would, in the same ascending order (same first-index tie semantics).
-// One standalone scan seeds the loop. Three O(n) passes per step become
-// two, and the RCL buffer is reused across steps instead of reallocated.
-//
-// Round 6: g lives in W.min1, with a witness (the pick that set each entry)
-// kept alongside in W.arg1, and the final pick's column — whose update
-// T-019 skipped as dead — is folded back in by one lean pass. On return the
-// scratch therefore holds exactly the candidate summary the local search
-// needs: min1 = min distance to the FINAL selection (min is exact
-// arithmetic, so accumulating it in pick order equals the local search's
-// old column-order init bit for bit), arg1 a selected witness at exactly
-// that distance. Selected entries hold the NEG_INF placeholder, which the
-// local search never reads while a vertex is selected and refreshes when
-// one leaves. The witness settles on the FIRST pick to reach the minimum
-// (strict <) rather than the lowest index — a different but equally valid
-// witness under ties, which routes the odd rescan differently while every
-// value read stays identical, so results do not move. The m-column init
-// re-read disappears from the construct → local-search path; path-relinked
-// starts (no construction) still run the plain init.
 static std::vector<int> grasp_construct(const double* d, int n, int m,
                                         double alpha, const double* u,
                                         LSScratch& W) {
