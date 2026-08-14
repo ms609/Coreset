@@ -424,21 +424,9 @@ Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
 }
 
 # Pure-R reference implementation of Grasp, used as the parity oracle for
-# the compiled kernel (see tests/testthat/test-grasp.R). It mirrors
-# Grasp_cpp() step for step — including the T-021 batched RNG protocol:
-# uniforms are drawn in whole batches (eliteSize x k for phase A, 32 x k per
-# phase-B batch, matching the kernel's GRASP_BATCH) BEFORE the batch's
-# constructions run, and batch results merge into the elite set in iteration
-# order with every stopping rule evaluated at merge time. From a common
-# `set.seed()` the two therefore agree bit for bit, at any thread count the
-# kernel is given (worker threads never draw). Not exported; callers use
-# Grasp().
-#
-# Termination is the deterministic stagnation rule: stop after
-# `plateau` consecutive iterations that do not raise the best elite
-# objective esZ[1] (which is monotone non-decreasing under .GraspTryInsert()).
-# `maxIter` is an optional hard cap; `maxSeconds` an optional ceiling
-# (Inf = off) that leaves the result reproducible.
+# the compiled kernel (see tests/testthat/test-grasp.R).
+# Because it mirrors Grasp_cpp() step for step, the two agree bit for bit
+# for a given `set.seed()`.
 #' @keywords internal
 .Grasp_R <- function(k, d, plateau, maxIter = .Machine$integer.max,
                        eliteSize = 10L, alpha = 0.8, maxSeconds = Inf) {
@@ -450,7 +438,7 @@ Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
   t0 <- proc.time()[[3L]]
 
   # Phase A: build initial elite set. Uniforms for the whole phase are drawn
-  # up front, one column per construction, mirroring the kernel's batch draw.
+  # up front, one column per construction.
   ES <- vector("list", eliteSize)
   esZ <- numeric(eliteSize)
   usA <- matrix(runif(eliteSize * k), nrow = k)
@@ -469,7 +457,7 @@ Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
   prCalls <- 0L
   on.exit(setTimeLimit(), add = TRUE)
   # The wall-clock ceiling is the only stopping criterion that survives when
-  # both `plateau` and `maxIter` are disabled, so it must actually fire.
+  # both `plateau` and `maxIter` are disabled.
   # setTimeLimit() alone cannot be trusted for this: a non-positive `elapsed`
   # *removes* the limit, so once Phase A has already overrun a tiny budget,
   # `maxSeconds - elapsed <= 0` would silently disable it and Phase B would
@@ -485,12 +473,10 @@ Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
   }
 
   # Phase B: GRASP iterations until `plateau` consecutive non-improving
-  # iterations (the deterministic criterion), an optional iteration cap, or an
-  # optional wall-clock ceiling. Batched to mirror the kernel: each batch's
-  # uniforms are drawn before its constructions run, and results merge in
-  # iteration order with the stopping rules evaluated at merge time —
-  # iterations past the stopping point are computed but discarded, exactly
-  # as the kernel discards them.
+  # iterations, an optional iteration cap, or an optional wall-clock ceiling.
+  # Batched to mirror the kernel: each batch's uniforms are drawn before its
+  # constructions run, and results merge in iteration order with the stopping
+  # rules evaluated at merge time.
   batchSize <- 32L                     # == GRASP_BATCH in src/grasp.cpp
   tryCatch({
     noImprove <- 0L
