@@ -420,8 +420,16 @@
 #'   The vector has class `"MaxMinSelection"` and prints as a one-line summary
 #'   (see [print.MaxMinSelection()]); it is otherwise an ordinary integer vector.
 #'
-#' @section Distance-column oracle:
-#' When `d` is a **function**, `d(i)` must return the distances from element `i`
+#' @section Parallelism:
+#' To parallelize computation when OpenMP is available, set the `"mc.cores"`
+#' option:
+#'
+#' ```r
+#' options(mc.cores = 2L)                       # use a fixed number of cores
+#' options(mc.cores = parallel::detectCores())  # or all available cores
+#'
+#' @section Distance function:
+#' When `d` is a function, `d(i)` must return the distances from element `i`
 #' to every element (length `N`, with the self-distance ignored)
 #' or to every *other* element (length `N - 1`, in order).
 #' `N` is required, and memory is \eqn{O(N)}.
@@ -579,7 +587,8 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
       )
     }
     out <- DropAdd_points_cpp(points, k, as.double(maxSeconds),
-                                .Machine$integer.max, plateau, FALSE, seed0)
+                                .Machine$integer.max, plateau, FALSE, seed0,
+                                .NThreads())
     timeS <- proc.time()[[3L]] - t0
     if (progress) {
       itersMsg <- as.integer(out$iters)

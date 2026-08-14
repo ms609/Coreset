@@ -83,9 +83,19 @@ In interactive sessions, status messages are shown.
 To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
 }
 
-\section{Distance-column oracle}{
+\section{Parallelism}{
 
-When \code{d} is a \strong{function}, \code{d(i)} must return the distances from element \code{i}
+To parallelize computation when OpenMP is available, set the \code{"mc.cores"}
+option:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{options(mc.cores = 2L)                       # use a fixed number of cores
+options(mc.cores = parallel::detectCores())  # or all available cores
+}\if{html}{\out{</div>}}
+}
+
+\section{Distance function}{
+
+When \code{d} is a function, \code{d(i)} must return the distances from element \code{i}
 to every element (length \code{N}, with the self-distance ignored)
 or to every \emph{other} element (length \code{N - 1}, in order).
 \code{N} is required, and memory is \eqn{O(N)}.

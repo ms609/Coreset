@@ -1,5 +1,10 @@
+# MaxMin 0.0.0.9009 (development)
+
+- `ExactMaxMin()` parallelized and optimized.
+
 # MaxMin 0.0.0.9008 (development)
 
+- `DropAdd()` parallelized and optimized.
 - `MaxMean()` solves the Max-Mean Dispersion Problem.
 - `MeanDist()` scores an arbitrary selection under the max-mean objective.
 

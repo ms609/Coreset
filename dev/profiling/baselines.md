@@ -28,6 +28,29 @@ Median wall time, `bench::mark`, R-devel, `-O2`. Refresh each round.
 
 (Pre-fix construction: 116 ms / 293 ms → 11.3× / 13.1×.)
 
+### AFTER round 10 (blocked fills + fused-pass mc.cores, 2026-08-13)
+
+All trajectories bit-identical (295-case battery incl. drop/add sequences;
+nCores-invariant). Kernel-direct cells, `drivers/dropadd-timing.R`,
+interleaved minima; regress against THESE rows. Threads engage on the
+points kernel only at n ≥ 16384 (the matrix kernel is serial by
+measurement — see log.md round 10).
+
+| case | 1 thread ms | 8 threads ms |
+|------|---:|---:|
+| matrix n=4e3 m=10 construct (maxIter=0) | 8 | — |
+| matrix n=4e3 m=2000 construct (maxIter=0) | 45 | — |
+| matrix n=4e3 m=10 search1500 | 50 | — |
+| matrix n=4e3 m=2000 search1500 | 130 | — |
+| points n=2e4 d2 m=10 search1000 | 217 | ~180 |
+| points n=2e4 d10 m=10 search600 | 277 | ~210 |
+| points n=2e4 d10 m=1e4 construct | 1460 | 610 |
+| points n=2e4 d10 m=1e4 search600 total | 1670 | — |
+
+(Pre-round-10 points cells: 233 / 327 / 1860 / 2110 ms. The 8-thread
+figures are from the same-code experiment build and the public-API run;
+mc.cores end-to-end at n=2e4 m=2000 plateau-capped: 320 → 180 ms, 1.75×.)
+
 ## Area 3 — Grasp — AFTER T-007 (base_z min-edge witness hoist)
 
 | case | metric | ms |
@@ -173,6 +196,28 @@ k=2 solves need **zero** IP solves (heuristic attains the diameter) → ~100–1
 Correctness: 56/56 proven optima bit-identical to OLD; brute-force oracle + full
 suite (598) green. Worst case tc20_zoo k=4 (n=101): 0.59→0.67 s (0.88×, warm-start
 overhead on a tiny instance; irrelevant at the n≥342 job sizes).
+
+### AFTER round 11 (combinatorial probe reduction + capped clique IPs)
+
+Base = perf/dropadd fb93c2d; R-devel 4.7.0; highs 1.14.0.2 (scratch lib);
+interleaved min-of-5 via `drivers/exact-grid.R` (seed 1000+cell). Scores and
+proven flags identical 56/56; witnesses free to differ (user contract).
+
+| measure | fb93c2d | round 11 | speedup |
+|------|------:|------:|--------:|
+| grid total (56 cells) | 10.40 s | 5.42 s | 1.92× |
+| tc11_ionosphere k=10 | 920 ms | 170 ms | 5.4× |
+| tc22_penguins k=4 | 680 ms | 340 ms | 2.0× |
+| tc10_glass k=10 | 180 ms | 10 ms | 18× |
+| tc8_highdim_gaussians k=6 | 670 ms | 500 ms | 1.34× |
+| tc1_uniform k=10 (known trade) | 140 ms | 270 ms | 0.52× |
+
+Stretch (single pass, 600 s budget, shipping build with setup lever;
+interleaved min-of-3 for the spam/satellite comparisons): breastcancer k10
+4.0 s, pima k10 3.6 s, vehicle k10 20.6 s, vowel k10 172 s; spam n=4601
+k4/10 = 1.8/2.0 s (fb93c2d: 201 s and 8.9 GB peak at k=4); satellite
+n=6435 k=4 = 3.9 s (fb93c2d model ≈16 GB: not attempted). Spam and
+satellite decide every probe combinatorially — no IP is ever posed.
 
 ## Area 5 — KCentre (CDSh) — AFTER T-010 (cache reorder + C++ candidates)
 

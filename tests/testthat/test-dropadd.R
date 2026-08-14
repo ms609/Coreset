@@ -376,3 +376,24 @@ test_that("DropAdd seed= validates its range and rejects candidate thinning", {
             maxCandidates = 8L, seed = 1L),
     "thinning")
 })
+
+test_that("DropAdd points results are invariant to mc.cores (round 10)", {
+  # n above the kernel threads-engagement threshold (~16k), so the fused
+  # parallel pass regions really run chunked; the chunk argmax merge and
+  # the ordered need_recompute concatenation must reproduce the serial
+  # trajectory exactly. CRAN caps tests at 2 cores.
+  set.seed(31)
+  pts <- matrix(rnorm(17000L * 3L), ncol = 3L)
+  old <- options(mc.cores = NULL)
+  on.exit(options(old), add = TRUE)
+  options(mc.cores = 1L)
+  s1 <- DropAdd(10L, points = pts, plateau = 60L, maxCandidates = 0L)
+  options(mc.cores = 2L)
+  s2 <- DropAdd(10L, points = pts, plateau = 60L, maxCandidates = 0L)
+  # time_s is wall-clock and legitimately differs; everything else must not.
+  StripTime <- function(x) {
+    attr(x, "time_s") <- NULL
+    x
+  }
+  expect_identical(StripTime(s1), StripTime(s2))
+})

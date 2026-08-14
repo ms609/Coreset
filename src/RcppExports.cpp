@@ -28,8 +28,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // DropAdd_points_cpp
-List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s, int max_iter, int max_no_improve, bool want_trace, int seed0);
-RcppExport SEXP _MaxMin_DropAdd_points_cpp(SEXP pointsSEXP, SEXP mSEXP, SEXP time_budget_sSEXP, SEXP max_iterSEXP, SEXP max_no_improveSEXP, SEXP want_traceSEXP, SEXP seed0SEXP) {
+List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s, int max_iter, int max_no_improve, bool want_trace, int seed0, int n_threads);
+RcppExport SEXP _MaxMin_DropAdd_points_cpp(SEXP pointsSEXP, SEXP mSEXP, SEXP time_budget_sSEXP, SEXP max_iterSEXP, SEXP max_no_improveSEXP, SEXP want_traceSEXP, SEXP seed0SEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -40,7 +40,22 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type max_no_improve(max_no_improveSEXP);
     Rcpp::traits::input_parameter< bool >::type want_trace(want_traceSEXP);
     Rcpp::traits::input_parameter< int >::type seed0(seed0SEXP);
-    rcpp_result_gen = Rcpp::wrap(DropAdd_points_cpp(points, m, time_budget_s, max_iter, max_no_improve, want_trace, seed0));
+    Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(DropAdd_points_cpp(points, m, time_budget_s, max_iter, max_no_improve, want_trace, seed0, n_threads));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ThresholdReduce_cpp
+List ThresholdReduce_cpp(IntegerVector hi, IntegerVector hj, int n, int k);
+RcppExport SEXP _MaxMin_ThresholdReduce_cpp(SEXP hiSEXP, SEXP hjSEXP, SEXP nSEXP, SEXP kSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type hi(hiSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type hj(hjSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    rcpp_result_gen = Rcpp::wrap(ThresholdReduce_cpp(hi, hj, n, k));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -314,7 +329,8 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_MaxMin_DropAdd_cpp", (DL_FUNC) &_MaxMin_DropAdd_cpp, 7},
-    {"_MaxMin_DropAdd_points_cpp", (DL_FUNC) &_MaxMin_DropAdd_points_cpp, 7},
+    {"_MaxMin_DropAdd_points_cpp", (DL_FUNC) &_MaxMin_DropAdd_points_cpp, 8},
+    {"_MaxMin_ThresholdReduce_cpp", (DL_FUNC) &_MaxMin_ThresholdReduce_cpp, 4},
     {"_MaxMin_Grasp_cpp", (DL_FUNC) &_MaxMin_Grasp_cpp, 9},
     {"_MaxMin_IsSymmetric_cpp", (DL_FUNC) &_MaxMin_IsSymmetric_cpp, 2},
     {"_MaxMin_KCentreCandidates_cpp", (DL_FUNC) &_MaxMin_KCentreCandidates_cpp, 1},

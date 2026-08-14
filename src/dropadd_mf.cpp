@@ -3,6 +3,9 @@
 #include <chrono>
 #include <algorithm>
 #include <cmath>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 // Matrix-free (coordinate-based) DropAdd Tabu Search for the MaxMin Diversity
 // Problem (Porumbel, Hao & Glover 2011) — C++ inner loop.
@@ -48,6 +51,15 @@
 
 using namespace Rcpp;
 
+// Threads engage on the per-pass regions only past this many points: below
+// it a pass is a few tens of microseconds and the per-pass barrier costs
+// more than it buys. Results are identical at every thread count (see the
+// chunk notes in the kernel), so this is a pure tuning constant. The
+// matrix kernel has no parallel path at all: its per-iteration cost is
+// streaming matrix columns from main memory, which one core saturates
+// (evidence in dev/profiling/log.md).
+static const int DA_PAR_MIN = 16384;
+
 // Squared-Euclidean accumulated in double over columns, matching dist's order;
 // see src/maximin_points.cpp for the bit-equivalence argument and the FP-flag
 // caveat (a ~/.R/Makevars with -Ofast / FMA can break bit-identity with R's
@@ -62,14 +74,89 @@ static inline double EuclidCol(const double* P, int nPts, int dim,
   return std::sqrt(s);
 }
 
+// One sweep over all points covering the NB (1..4) dimensions starting at
+// column j0, accumulating each point's running squared sum in a register.
+// FIRST starts the sum at the block's first squared deviation (equal to
+// EuclidCol's `0.0 + dev*dev` bit-for-bit); a continuation resumes from the
+// stored sum. Each point's chain is the identical left-associated sequence
+// EuclidCol produces — a store/load round-trip of a double is exact — so
+// the final squared value, and the sqrt applied to it below, match
+// EuclidCol's exactly. The payoff is the access shape: contiguous streams
+// down up to four coordinate columns at once, instead of EuclidCol's
+// per-point gather across all `dim` columns (cf. SweepBlock in
+// maximin_points.cpp).
+template <int NB, bool FIRST>
+static inline void FillSqBlock(const double* P, int nPts, int c, int j0,
+                               double* col, int lo, int hi) {
+  const double* p0 = P + (R_xlen_t)j0 * nPts;
+  const double* p1 = NB > 1 ? p0 + nPts : p0;
+  const double* p2 = NB > 2 ? p1 + nPts : p1;
+  const double* p3 = NB > 3 ? p2 + nPts : p2;
+  const double c0 = p0[c], c1 = p1[c], c2 = p2[c], c3 = p3[c];
+  for (int i = lo; i < hi; ++i) {
+    double dev = p0[i] - c0;
+    double s = FIRST ? dev * dev : col[i] + dev * dev;
+    if (NB > 1) { dev = p1[i] - c1; s += dev * dev; }
+    if (NB > 2) { dev = p2[i] - c2; s += dev * dev; }
+    if (NB > 3) { dev = p3[i] - c3; s += dev * dev; }
+    col[i] = s;
+  }
+}
+
+// Fill col[i] = SQUARED distance from every point to point c: dimension
+// blocks of up to four via FillSqBlock. The consumer applies std::sqrt to
+// each element as it reads it — the record-update loops are scalar and
+// branchy anyway (the errno-guarded sqrt would only de-vectorise a loop
+// that cannot vectorise), while these fills stay pure SIMD streams and no
+// extra column round-trip is spent on a separate sqrt pass. Every distance
+// is sqrt() of the identical squared double EuclidCol feeds it, so each is
+// the same double bit-for-bit. Serves the three whole-column fill sites
+// (construction seed and add, search drop and add); the recompute branch
+// keeps per-pair EuclidCol (it reads scattered rows, not whole columns).
+static void FillSqRange(const double* P, int nPts, int dim, int c,
+                        double* col, int lo, int hi) {
+  if (dim == 0) {
+    // Degenerate zero-column input: EuclidCol's sum is 0.
+    for (int i = lo; i < hi; ++i) col[i] = 0.0;
+    return;
+  }
+  int j0 = 0;
+  bool first = true;
+  while (dim - j0 > 4) {
+    if (first) {
+      FillSqBlock<4, true>(P, nPts, c, j0, col, lo, hi);
+    } else {
+      FillSqBlock<4, false>(P, nPts, c, j0, col, lo, hi);
+    }
+    first = false;
+    j0 += 4;
+  }
+  switch ((dim - j0 - 1) * 2 + (first ? 1 : 0)) {
+    case 0: FillSqBlock<1, false>(P, nPts, c, j0, col, lo, hi); break;
+    case 1: FillSqBlock<1, true>(P, nPts, c, j0, col, lo, hi); break;
+    case 2: FillSqBlock<2, false>(P, nPts, c, j0, col, lo, hi); break;
+    case 3: FillSqBlock<2, true>(P, nPts, c, j0, col, lo, hi); break;
+    case 4: FillSqBlock<3, false>(P, nPts, c, j0, col, lo, hi); break;
+    case 5: FillSqBlock<3, true>(P, nPts, c, j0, col, lo, hi); break;
+    case 6: FillSqBlock<4, false>(P, nPts, c, j0, col, lo, hi); break;
+    default: FillSqBlock<4, true>(P, nPts, c, j0, col, lo, hi); break;
+  }
+}
+
+static void FillSqColumn(const double* P, int nPts, int dim, int c,
+                         double* col) {
+  FillSqRange(P, nPts, dim, c, col, 0, nPts);
+}
+
 // [[Rcpp::export]]
 List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
                           int max_iter, int max_no_improve, bool want_trace,
-                          int seed0 = -1) {
+                          int seed0 = -1, int n_threads = 1) {
   const int n   = points.nrow();
   const int dim = points.ncol();
   if (m < 2 || m > n) stop("m must satisfy 2 <= m <= nrow(points)");
   const double *P = points.begin();    // column-major double storage
+  const int nthr = n_threads < 1 ? 1 : n_threads;
 
   // The public DropAdd() guards NA/NaN via .AsPointsMatrix(); guard here too so
   // a direct `:::DropAdd_points_cpp()` call cannot degrade the argmax (leaving
@@ -122,56 +209,131 @@ List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
 
   S[0] = seed;
   in_S[seed] = 1;
+
+  // Per-thread scratch for the fused pass regions (preallocated once: an
+  // allocation inside a parallel region would contend). Each pass splits
+  // into one contiguous chunk per thread; every element is computed by
+  // exactly one thread with the identical operation chain, chunk argmax
+  // winners merge in ascending chunk order (an earlier chunk's winner has
+  // a smaller index than everything after it — first-max preserved), and
+  // chunk-local need_recompute lists concatenate in ascending chunk order
+  // (= the serial ascending push order). Results are therefore identical
+  // at every thread count.
+  const bool usePar =
+#ifdef _OPENMP
+    nthr > 1 && n >= DA_PAR_MIN;
+#else
+    false;
+#endif
+  std::vector<int> t_fa(nthr, -1);
+  std::vector<double> t_md(nthr), t_sd(nthr);
+  std::vector<std::vector<int>> nr_local(nthr);
+  for (int t = 0; t < nthr; ++t) nr_local[t].reserve(32);
+
+  // The ADD argmax — the lexicographic max of (min_dist, sum_dist, smaller
+  // index) over the unselected elements — rides each record pass, which
+  // already reads every element's final post-update record: strict > on
+  // each component preserves the standalone scan's first-maximum rule, and
+  // the newly added element is excluded before its own (later-set) record
+  // could be read. fa_* carry the winner into the next step.
+  int fa_idx = -1;
+  double fa_md = R_NegInf, fa_sd = R_NegInf;
+
+  FillSqColumn(P, n, dim, seed, col.data());
   for (int i = 0; i < n; ++i) {
-    double dv = EuclidCol(P, n, dim, i, seed);
+    double dv = std::sqrt(col[i]);
     min_dist[i] = dv;
     sum_dist[i] = dv;
     min_dist_count[i] = 1;
+    if (i == seed) continue;
+    // min_dist == sum_dist == dv for every element here, so a tie on the
+    // first component ties both and the earlier index keeps the slot.
+    if (dv > fa_md) {
+      fa_md = dv;
+      fa_sd = dv;
+      fa_idx = i;
+    }
   }
   min_dist[seed] = R_PosInf;          // mask self
   min_dist_count[seed] = 0;
 
   for (int h = 1; h < m; ++h) {
-    // ADD: argmax (min_dist, sum_dist) over !in_S, ties → smallest idx.
-    int x_new = -1;
-    double best_md = R_NegInf, best_sd = R_NegInf;
-    for (int i = 0; i < n; ++i) {
-      if (in_S[i]) continue;
-      double md = min_dist[i];
-      if (md > best_md) {
-        best_md = md;
-        best_sd = sum_dist[i];
-        x_new = i;
-      } else if (md == best_md) {
-        double sd = sum_dist[i];
-        if (sd > best_sd) {
-          best_sd = sd;
-          x_new = i;
-        }
-      }
-    }
+    // ADD: the argmax accumulated during the previous record pass.
+    int x_new = fa_idx;
     S[h] = x_new;
     in_S[x_new] = 1;
 
-    // Update records for ADD. Recompute the d(., x_new) column once into `col`.
-    for (int i = 0; i < n; ++i) col[i] = EuclidCol(P, n, dim, i, x_new);
-    for (int i = 0; i < n; ++i) {
-      double dv = col[i];
-      sum_dist[i] += dv;
-      if (i == x_new) continue;
-      double mdi = min_dist[i];
-      if (dv < mdi) {
-        min_dist[i] = dv;
-        min_dist_count[i] = 1;
-      } else if (dv == mdi) {
-        ++min_dist_count[i];
+    // Update records for ADD (squared column filled per range, sqrt at
+    // consumption), accumulating the next step's argmax in the same sweep
+    // (the final step's accumulation is simply never read). Adds never
+    // invalidate a record, so every element is final at visit time.
+    fa_idx = -1;
+    fa_md = R_NegInf;
+    fa_sd = R_NegInf;
+    auto CAddChunk = [&](int lo, int hi, int* fi, double* fmd, double* fsd) {
+      FillSqRange(P, n, dim, x_new, col.data(), lo, hi);
+      int l_fa = -1;
+      double l_md = R_NegInf, l_sd = R_NegInf;
+      for (int i = lo; i < hi; ++i) {
+        double dv = std::sqrt(col[i]);
+        sum_dist[i] += dv;
+        if (i == x_new) continue;
+        double mdi = min_dist[i];
+        if (dv < mdi) {
+          mdi = dv;
+          min_dist[i] = dv;
+          min_dist_count[i] = 1;
+        } else if (dv == mdi) {
+          ++min_dist_count[i];
+        }
+        if (in_S[i]) continue;
+        if (mdi > l_md) {
+          l_md = mdi;
+          l_sd = sum_dist[i];
+          l_fa = i;
+        } else if (mdi == l_md) {
+          double sd = sum_dist[i];
+          if (sd > l_sd) {
+            l_sd = sd;
+            l_fa = i;
+          }
+        }
       }
+      *fi = l_fa;
+      *fmd = l_md;
+      *fsd = l_sd;
+    };
+#ifdef _OPENMP
+    if (usePar) {
+      std::fill(t_fa.begin(), t_fa.end(), -1);
+#pragma omp parallel num_threads(nthr)
+      {
+        int nt = omp_get_num_threads();
+        int t  = omp_get_thread_num();
+        int lo = (int)((R_xlen_t)n * t / nt);
+        int hi = (int)((R_xlen_t)n * (t + 1) / nt);
+        if (hi > lo) CAddChunk(lo, hi, &t_fa[t], &t_md[t], &t_sd[t]);
+      }
+      for (int t = 0; t < nthr; ++t) {
+        if (t_fa[t] < 0) continue;
+        if (t_md[t] > fa_md) {
+          fa_md = t_md[t]; fa_sd = t_sd[t]; fa_idx = t_fa[t];
+        } else if (t_md[t] == fa_md && t_sd[t] > fa_sd) {
+          fa_sd = t_sd[t]; fa_idx = t_fa[t];
+        }
+      }
+    } else
+#endif
+    {
+      CAddChunk(0, n, &fa_idx, &fa_md, &fa_sd);
     }
-    // x_new's own min_dist over S[0..h-1] (reuse the cached column).
+    // x_new's own min_dist over S[0..h-1] (x_new is a member: never an
+    // argmax candidate, so setting its record after the sweep changes
+    // nothing; reuse the cached squared column).
     double mn = R_PosInf;
     int cnt = 0;
     for (int j = 0; j < h; ++j) {
-      double dv = col[S[j]];
+      double dv = std::sqrt(col[S[j]]);
       if (dv < mn) { mn = dv; cnt = 1; }
       else if (dv == mn) ++cnt;
     }
@@ -240,21 +402,83 @@ List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
     int x_hash = S[head];
     in_S[x_hash] = 0;
 
-    // Drop pass: recompute the d(., x_hash) column on the fly into d_xhash.
-    // Update sum_dist, decrement min_dist_count for points where
-    // d(., x_hash) <= min_dist[.] (those that had x_hash as a nearest peer).
-    // The cached column also serves the x_hash self-recompute below.
+    // Drop pass: recompute the SQUARED d(., x_hash) column on the fly into
+    // d_xhash (each element's true distance is sqrt'd as it is consumed —
+    // the same double either way). Update sum_dist, decrement
+    // min_dist_count for points where d(., x_hash) <= min_dist[.] (those
+    // that had x_hash as a nearest peer). The cached squared column also
+    // serves the x_hash self-recompute below. The ADD argmax rides the
+    // pass, skipping x_hash (the tabu rule), members, and count-zero
+    // elements — the latter's records rise in the recompute step and are
+    // merged into the argmax afterwards with the explicit triple, which is
+    // order-independent (a lexicographic maximum), so deferral cannot
+    // change the pick.
     need_recompute.clear();
-    {
-      for (int i = 0; i < n; ++i) d_xhash[i] = EuclidCol(P, n, dim, i, x_hash);
-      for (int i = 0; i < n; ++i) {
-        double dv = d_xhash[i];
+    fa_idx = -1;
+    fa_md = R_NegInf;
+    fa_sd = R_NegInf;
+    auto DropChunk = [&](int lo, int hi, std::vector<int>& nr,
+                         int* fi, double* fmd, double* fsd) {
+      FillSqRange(P, n, dim, x_hash, d_xhash.data(), lo, hi);
+      int l_fa = -1;
+      double l_md = R_NegInf, l_sd = R_NegInf;
+      for (int i = lo; i < hi; ++i) {
+        double dv = std::sqrt(d_xhash[i]);
         sum_dist[i] -= dv;
         if (i == x_hash) continue;
         if (dv <= min_dist[i]) {
-          if (--min_dist_count[i] == 0) need_recompute.push_back(i);
+          if (--min_dist_count[i] == 0) {
+            nr.push_back(i);
+            continue;                 // record not final; merged below
+          }
+        }
+        if (in_S[i]) continue;
+        double md = min_dist[i];
+        if (md > l_md) {
+          l_md = md;
+          l_sd = sum_dist[i];
+          l_fa = i;
+        } else if (md == l_md) {
+          double sd = sum_dist[i];
+          if (sd > l_sd) {
+            l_sd = sd;
+            l_fa = i;
+          }
         }
       }
+      *fi = l_fa;
+      *fmd = l_md;
+      *fsd = l_sd;
+    };
+#ifdef _OPENMP
+    if (usePar) {
+      std::fill(t_fa.begin(), t_fa.end(), -1);
+#pragma omp parallel num_threads(nthr)
+      {
+        int nt = omp_get_num_threads();
+        int t  = omp_get_thread_num();
+        int lo = (int)((R_xlen_t)n * t / nt);
+        int hi = (int)((R_xlen_t)n * (t + 1) / nt);
+        nr_local[t].clear();
+        if (hi > lo) DropChunk(lo, hi, nr_local[t],
+                               &t_fa[t], &t_md[t], &t_sd[t]);
+      }
+      for (int t = 0; t < nthr; ++t) {
+        if (t_fa[t] >= 0) {
+          if (t_md[t] > fa_md) {
+            fa_md = t_md[t]; fa_sd = t_sd[t]; fa_idx = t_fa[t];
+          } else if (t_md[t] == fa_md && t_sd[t] > fa_sd) {
+            fa_sd = t_sd[t]; fa_idx = t_fa[t];
+          }
+        }
+        for (size_t v = 0; v < nr_local[t].size(); ++v) {
+          need_recompute.push_back(nr_local[t][v]);
+        }
+      }
+    } else
+#endif
+    {
+      DropChunk(0, n, need_recompute, &fa_idx, &fa_md, &fa_sd);
     }
 
     // Recompute min_dist/count for points whose nearest peer just vanished.
@@ -287,13 +511,14 @@ List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
       }
     }
 
-    // x_hash's own record: distance to surviving peers S[j != head] (cached).
+    // x_hash's own record: distance to surviving peers S[j != head], from
+    // the cached squared column.
     {
       double mn = R_PosInf;
       int cnt = 0;
       for (int j = 0; j < m; ++j) {
         if (j == head) continue;
-        double dv = d_xhash[S[j]];     // cached, single read
+        double dv = std::sqrt(d_xhash[S[j]]);
         if (dv < mn) { mn = dv; cnt = 1; }
         else if (dv == mn) ++cnt;
       }
@@ -306,55 +531,80 @@ List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s,
       }                                              // # nocov end
     }
 
-    // 2. ADD: argmax (min_dist, sum_dist) over Add X(k) = Z - X(k), ties →
-    // smallest idx. x_hash is excluded for this iteration (Porumbel et al.
-    // 2011, p.281): the just-dropped point cannot be re-added immediately, the
-    // tabu rule that prevents looping. It is eligible again next iteration,
-    // once head has advanced.
-    int x_new = -1;
+    // 2. ADD: merge the recomputed elements into the argmax accumulated
+    // during the drop pass. x_hash was excluded there (Porumbel et al.
+    // 2011, p.281: the just-dropped point cannot be re-added immediately —
+    // the tabu rule; it is eligible again next iteration, once head has
+    // advanced) and is never in need_recompute (the drop pass skips it
+    // before the count logic). The explicit smaller-index clause
+    // reproduces the ascending scan's first-maximum rule for candidates
+    // that tie the running winner on both components from either side.
     {
-      double best_md = R_NegInf, best_sd = R_NegInf;
-      for (int i = 0; i < n; ++i) {
-        if (in_S[i] || i == x_hash) continue;
-        double md = min_dist[i];
-        if (md > best_md) {
-          best_md = md;
-          best_sd = sum_dist[i];
-          x_new = i;
-        } else if (md == best_md) {
-          double sd = sum_dist[i];
-          if (sd > best_sd) {
-            best_sd = sd;
-            x_new = i;
+      const int K = static_cast<int>(need_recompute.size());
+      for (int r = 0; r < K; ++r) {
+        const int xx = need_recompute[r];
+        if (in_S[xx]) continue;
+        double md = min_dist[xx];
+        if (md > fa_md) {
+          fa_md = md;
+          fa_sd = sum_dist[xx];
+          fa_idx = xx;
+        } else if (md == fa_md) {
+          double sd = sum_dist[xx];
+          if (sd > fa_sd) {
+            fa_sd = sd;
+            fa_idx = xx;
+          } else if (sd == fa_sd && xx < fa_idx) {
+            fa_idx = xx;
           }
         }
       }
     }
+    int x_new = fa_idx;
     in_S[x_new] = 1;
 
-    // Add pass: recompute the d(., x_new) column on the fly into `col`. Same
-    // case logic as ADD in construction.
+    // Add pass: recompute the SQUARED d(., x_new) column on the fly into
+    // `col` (sqrt at each consumption, as in the drop pass). Same case
+    // logic as ADD in construction; the next argmax rides the next drop
+    // pass, so no accumulation is needed here.
     {
-      for (int i = 0; i < n; ++i) col[i] = EuclidCol(P, n, dim, i, x_new);
-      for (int i = 0; i < n; ++i) {
-        double dv = col[i];
-        sum_dist[i] += dv;
-        if (i == x_new) continue;
-        double mdi = min_dist[i];
-        if (dv < mdi) {
-          min_dist[i] = dv;
-          min_dist_count[i] = 1;
-        } else if (dv == mdi) {
-          ++min_dist_count[i];
+      auto AddChunk = [&](int lo, int hi) {
+        FillSqRange(P, n, dim, x_new, col.data(), lo, hi);
+        for (int i = lo; i < hi; ++i) {
+          double dv = std::sqrt(col[i]);
+          sum_dist[i] += dv;
+          if (i == x_new) continue;
+          double mdi = min_dist[i];
+          if (dv < mdi) {
+            min_dist[i] = dv;
+            min_dist_count[i] = 1;
+          } else if (dv == mdi) {
+            ++min_dist_count[i];
+          }
         }
+      };
+#ifdef _OPENMP
+      if (usePar) {
+#pragma omp parallel num_threads(nthr)
+        {
+          int nt = omp_get_num_threads();
+          int t  = omp_get_thread_num();
+          int lo = (int)((R_xlen_t)n * t / nt);
+          int hi = (int)((R_xlen_t)n * (t + 1) / nt);
+          if (hi > lo) AddChunk(lo, hi);
+        }
+      } else
+#endif
+      {
+        AddChunk(0, n);
       }
       // x_new's own min_dist over surviving peers (S \ {x_hash}); S[head] still
-      // holds x_hash here. Reuse the cached column.
+      // holds x_hash here. Reuse the cached squared column.
       double mn = R_PosInf;
       int cnt = 0;
       for (int j = 0; j < m; ++j) {
         if (j == head) continue;
-        double dv = col[S[j]];
+        double dv = std::sqrt(col[S[j]]);
         if (dv < mn) { mn = dv; cnt = 1; }
         else if (dv == mn) ++cnt;
       }

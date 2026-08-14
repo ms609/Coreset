@@ -22,8 +22,8 @@ solver.}
 \code{ExactMaxMin()} returns an integer vector of length \code{k} (sorted
 ascending) with class \code{"MaxMinSelection"}, carrying attributes:
 \describe{
-\item{score}{Achieved \code{T_k} -- the minimum pairwise distance within the
-selection. When \code{proven} is \code{TRUE} this is the true optimum; otherwise
+\item{score}{The minimum pairwise distance within the selection.
+When \code{proven} is \code{TRUE} this is the optimum; otherwise
 a lower bound.}
 \item{proven}{Logical: \code{TRUE} if the search certified optimality within
 the budget, \code{FALSE} if it returned an unproven incumbent.}
@@ -35,16 +35,18 @@ Prints as a terse summary via \code{\link[=print.MaxMinSelection]{print.MaxMinSe
 \description{
 \code{ExactMaxMin()} finds the optimal solution to the Max-Min Diversity Problem
 (discrete \emph{p}-dispersion) by iterated node-packing
-\insertCite{Sayyady2016}{MaxMin}.
-As this problem is NP-hard, it is feasible only for small sets.
+\insertCite{Sayyady2016}{MaxMin} (which may be slow or intractable on large
+sets).
 }
 \details{
 The search is warm-started from a heuristic lower bound (the best of several
 \code{\link[=Grasp]{Grasp()}} restarts and a \code{\link[=DropAdd]{DropAdd()}} pass), then gallops upward from that
 bound to the first infeasible threshold and bisects the resulting bracket.
 When a heuristic already attains the optimum, a single infeasibility solve
-certifies it. The indices chosen may vary based on the value of the random
-seed when several subsets attain the optimum.
+certifies it.
+Each feasibility probe is first reduced to its \eqn{(k-1)}-core and greedily
+coloured; where this does not settle the probe, an algebraic solver is
+launched, using multiple cores if \code{options("mc.cores") > 1}.
 }
 \section{Progress bar}{
 
