@@ -161,6 +161,32 @@ test_that("ThresholdDecide_cpp handles targeted structures", {
   expect_identical(.Decide(hi, hj, n, 3L), .Decide(hi, hj, n, 3L))
 })
 
+test_that("ThresholdDecide_cpp reports inconclusive when the budget expires", {
+  # The deadline is only checked every 1024 search nodes, so triggering it
+  # needs a single H-component whose exhaustive search takes >= 1024 Expand()
+  # calls. This instance reliably does (verified well above that floor) while
+  # still resolving in well under a second at a real budget.
+  set.seed(1350)
+  n <- 300L
+  m <- matrix(stats::runif(n * n), n, n)
+  hAdj <- (m + t(m)) > 1
+  diag(hAdj) <- FALSE
+  hi <- row(hAdj)[upper.tri(hAdj) & hAdj]
+  hj <- col(hAdj)[upper.tri(hAdj) & hAdj]
+
+  # A generous budget still proves infeasibility outright (`-O0 --coverage`
+  # builds run slower, so this stays well clear of the real deadline).
+  full <- .Decide(hi, hj, n, 16L, maxSeconds = 60)
+  expect_identical(full$status, "infeasible")
+  expect_identical(full$witness, integer(0))
+
+  # A budget that expires before the first deadline check can complete the
+  # search leaves the probe genuinely undecided.
+  expired <- .Decide(hi, hj, n, 16L, maxSeconds = 0)
+  expect_identical(expired$status, "inconclusive")
+  expect_identical(expired$witness, integer(0))
+})
+
 test_that("ThresholdDecide_cpp agrees with the packing IP past brute force", {
   testthat::skip_if_not_installed("highs")
   # alpha(G) >= k is the same question, asked algebraically: one row per

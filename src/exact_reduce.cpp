@@ -290,9 +290,12 @@ List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
 
   std::vector<int> loc(n, -1);
   for (int c = 1; c <= nComp; ++c) {
-    if (compSize[c - 1] < k) {
+    // Unreachable: every surviving vertex has >= need = k - 1 alive
+    // neighbours, all within its own component, so a surviving component
+    // always has >= k members.
+    if (compSize[c - 1] < k) {          // # nocov start
       continue;
-    }
+    }                                    // # nocov end
     // Highest surviving degree first: the colouring the search builds at each
     // node then follows Welsh-Powell order, which needs fewer colours and so
     // prunes harder.
