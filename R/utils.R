@@ -5,9 +5,7 @@
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
 # Worker-thread count for the OpenMP kernels, from the standard `"mc.cores"`
-# option (TreeDist convention). Defaults to 1 (single-threaded); anything
-# unusable collapses to 1. Every parallel kernel in this package returns
-# results identical at any thread count, so this only ever trades wall-clock.
+# option. Anything unusable collapses to the default of 1.
 # @noRd
 .NThreads <- function() {
   n <- suppressWarnings(as.integer(getOption("mc.cores", 1L)))

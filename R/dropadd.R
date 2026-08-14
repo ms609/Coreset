@@ -421,19 +421,15 @@
 #'   (see [print.MaxMinSelection()]); it is otherwise an ordinary integer vector.
 #'
 #' @section Parallelism:
-#' When the package is built with OpenMP support (the default on Linux and
-#' Windows), the coordinate (`points =`) path runs its per-iteration passes
-#' on multiple threads past ~16,000 points, controlled by the standard
-#' `"mc.cores"` option (default 1, single-threaded). The kernel draws no
-#' random numbers and every parallel reduction preserves the serial
-#' tie-breaking rules, so **the selection returned is identical at every
-#' thread count**: `mc.cores` trades wall-clock time only. The matrix and
-#' distance-column paths are single-threaded — the matrix kernel's
-#' per-iteration cost is dominated by streaming matrix columns from main
-#' memory, which additional threads do not accelerate.
+#' To parallelize computation when OpenMP is available, set the `"mc.cores"`
+#' option:
 #'
-#' @section Distance-column oracle:
-#' When `d` is a **function**, `d(i)` must return the distances from element `i`
+#' ```r
+#' options(mc.cores = 2L)                       # use a fixed number of cores
+#' options(mc.cores = parallel::detectCores())  # or all available cores
+#'
+#' @section Distance function:
+#' When `d` is a function, `d(i)` must return the distances from element `i`
 #' to every element (length `N`, with the self-distance ignored)
 #' or to every *other* element (length `N - 1`, in order).
 #' `N` is required, and memory is \eqn{O(N)}.

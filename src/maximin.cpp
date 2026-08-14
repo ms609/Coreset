@@ -42,33 +42,22 @@ static inline void PminArgmaxChunk(const double* col, double* md,
   *nbv_out = nbv;
 }
 
-// [[Rcpp::export]]
-Rcpp::IntegerVector MaximinFrom_cpp(Rcpp::NumericMatrix d, int n, int first,
-                                    int n_threads = 1) {
-  int nPts = d.nrow();
-  int nthr = n_threads < 1 ? 1 : n_threads;
-  if (n < 1 || n > nPts) {                  // defensive: public wrapper guards
-    Rcpp::stop("'n' must be in [1, %d]; got %d", nPts, n);
-  }
-  if (first < 1 || first > nPts) {
-    Rcpp::stop("'first' must be in [1, %d]; got %d", nPts, first);
-  }
-  Rcpp::IntegerVector selected(n);
-  selected[0] = first;
-
-  Rcpp::NumericVector min_dist(nPts);
-  double* md = min_dist.begin();
-  const double* dp = d.begin();
-  int first0 = first - 1;           // convert to 0-based once
+// One complete greedy pass from `first0`, writing the n selected 1-based
+// indices into `out` and the pass's T_k (NA for n < 2) into `tk_out`.
+// All storage is caller-owned: `md` is length-nPts scratch, and `tnb`/`tnbv`
+// are the length-nthr per-chunk argmax buffers, read only when the pass
+// threads its own sweep (nthr > 1 and nPts >= GONZ_PAR_MIN). Touches no R
+// API, so callers may run several passes concurrently on worker threads.
+static void MaximinPass(const double* dp, int nPts, int n, int first0,
+                        double* md, int* out, double* tk_out,
+                        int nthr, int* tnb, double* tnbv) {
+  out[0] = first0 + 1;              // back to 1-based
   for (int i = 0; i < nPts; i++) {
     md[i] = dp[i + (R_xlen_t)first0 * nPts];
   }
   md[first0] = R_NegInf;            // mask seed before entering loop
-#ifdef _OPENMP
-  std::vector<int> tnb(nthr);       // per-chunk argmax candidates (see below)
-  std::vector<double> tnbv(nthr);
-#else
-  (void)nthr;
+#ifndef _OPENMP
+  (void)nthr; (void)tnb; (void)tnbv;
 #endif
 
   // T_k = min over greedy steps of the chosen point's insertion distance
@@ -92,7 +81,7 @@ Rcpp::IntegerVector MaximinFrom_cpp(Rcpp::NumericMatrix d, int n, int first,
   }
 
   for (int k = 1; k < n; k++) {
-    selected[k] = best + 1;         // back to 1-based
+    out[k] = best + 1;              // back to 1-based
     if (best_val < tk) tk = best_val;   // running min insertion distance
 
     // Mask new point before pmin so d(best, best) = 0 cannot overwrite -Inf.
@@ -131,10 +120,102 @@ Rcpp::IntegerVector MaximinFrom_cpp(Rcpp::NumericMatrix d, int n, int first,
     // min_dist[best] stays -Inf: pmin(-Inf, d(best,best)=0) = -Inf. ✓
   }
 
+  *tk_out = (n >= 2 && R_finite(tk)) ? tk : NA_REAL;
+}
+
+// [[Rcpp::export]]
+Rcpp::IntegerVector MaximinFrom_cpp(Rcpp::NumericMatrix d, int n, int first,
+                                    int n_threads = 1) {
+  int nPts = d.nrow();
+  int nthr = n_threads < 1 ? 1 : n_threads;
+  if (n < 1 || n > nPts) {                  // defensive: public wrapper guards
+    Rcpp::stop("'n' must be in [1, %d]; got %d", nPts, n);
+  }
+  if (first < 1 || first > nPts) {
+    Rcpp::stop("'first' must be in [1, %d]; got %d", nPts, first);
+  }
+  Rcpp::IntegerVector selected(n);
+  std::vector<double> md(nPts);
+  std::vector<int> tnb(nthr);       // per-chunk argmax candidates
+  std::vector<double> tnbv(nthr);
+  double tk;
+  MaximinPass(d.begin(), nPts, n, first - 1, md.data(), selected.begin(), &tk,
+              nthr, tnb.data(), tnbv.data());
+
   // T_k (min pairwise distance of the selection), free; NA for n < 2.
-  selected.attr("t_k") = (n >= 2 && R_finite(tk)) ? tk : NA_REAL;
+  selected.attr("t_k") = tk;
 
   return selected;
+}
+
+// Several independent greedy passes over one distance matrix — the ensemble
+// path's restarts, run one per thread.
+//
+// Each pass is a self-contained function of its seed over a read-only `d`, so
+// restarts are the coarsest parallel axis available here and the only one the
+// matrix path can use: its per-step sweep is serial at every RAM-feasible N
+// (a matrix at GONZ_PAR_MIN already occupies 8 GB). Threads are capped at the
+// seed count, since a pass cannot be split across them.
+//
+// Returns `idx`, an n x nSeeds matrix whose column s is the selection seeded
+// by firsts[s], and `t_k`, that column's minimum pairwise distance.
+// [[Rcpp::export]]
+Rcpp::List MaximinMultiFrom_cpp(Rcpp::NumericMatrix d, int n,
+                                Rcpp::IntegerVector firsts,
+                                int n_threads = 1) {
+  const int nPts = d.nrow();
+  const int nS = firsts.size();
+  const int nthr = n_threads < 1 ? 1 : n_threads;
+  if (n < 1 || n > nPts) {                  // defensive: public wrapper guards
+    Rcpp::stop("'n' must be in [1, %d]; got %d", nPts, n);
+  }
+  if (nS < 1) {
+    Rcpp::stop("'firsts' must name at least one seed");
+  }
+  for (int s = 0; s < nS; s++) {
+    if (firsts[s] < 1 || firsts[s] > nPts) {
+      Rcpp::stop("'firsts' must lie in [1, %d]; got %d", nPts, firsts[s]);
+    }
+  }
+
+  // Every R allocation happens here, before any parallel region: worker
+  // threads run MaximinPass, which touches no R API.
+  Rcpp::IntegerMatrix selected(n, nS);
+  Rcpp::NumericVector tks(nS);
+  int* op = selected.begin();
+  double* tp = tks.begin();
+  const double* dp = d.begin();
+  std::vector<int> f0(nS);
+  for (int s = 0; s < nS; s++) f0[s] = firsts[s] - 1;
+
+#ifdef _OPENMP
+  const int seedThr = nthr < nS ? nthr : nS;
+  // Restart-parallel arm. Skipped once a single pass can use every thread
+  // itself: above GONZ_PAR_MIN, splitting one pass nthr ways beats running
+  // nS passes concurrently (each then serial), because nS is typically the
+  // smaller number.
+  if (seedThr > 1 && nPts < GONZ_PAR_MIN) {
+    std::vector<double> md((R_xlen_t)nPts * seedThr);   // one buffer per thread
+#pragma omp parallel for num_threads(seedThr) schedule(static, 1)
+    for (int s = 0; s < nS; s++) {
+      double* mine = md.data() + (R_xlen_t)nPts * omp_get_thread_num();
+      MaximinPass(dp, nPts, n, f0[s], mine, op + (R_xlen_t)s * n, tp + s,
+                  1, NULL, NULL);
+    }
+    return Rcpp::List::create(Rcpp::_["idx"] = selected,
+                              Rcpp::_["t_k"] = tks);
+  }
+#endif
+  {
+    std::vector<double> md(nPts);
+    std::vector<int> tnb(nthr);
+    std::vector<double> tnbv(nthr);
+    for (int s = 0; s < nS; s++) {
+      MaximinPass(dp, nPts, n, f0[s], md.data(), op + (R_xlen_t)s * n, tp + s,
+                  nthr, tnb.data(), tnbv.data());
+    }
+  }
+  return Rcpp::List::create(Rcpp::_["idx"] = selected, Rcpp::_["t_k"] = tks);
 }
 
 // One contiguous column range [cLo, cHi) of the off-diagonal first-maximum
