@@ -16,10 +16,7 @@
 // accumulating dev*dev in a plain double over dimensions in increasing column
 // order (R's R_euclidean in src/library/stats/src/distance.c).
 //
-// The greedy pass below makes every decision through which.max(min_dist) and an
-// elementwise pmin; both are monotone under sqrt, so the pass runs in SQUARED-
-// distance space (EuclidColSq, no per-element sqrt -- the dominant inner-loop
-// cost at low dim) and still selects the same indices. The squared accumulation
+// The squared accumulation
 // `sum_j dev*dev` is the exact argument R passes to sqrt, so the ordering of the
 // squared values matches the ordering of the matrix entries: argmax and pmin
 // resolve to the same indices, and the reported T_k (sqrt'd once at the end) is

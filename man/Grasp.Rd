@@ -77,6 +77,16 @@ elapsed.
 This method will fail if the complete \eqn{N \times N} distance matrix is
 too large to fit into memory.
 }
+\section{Parallelism}{
+
+To parallelize computation when OpenMP is available, set the \code{"mc.cores"}
+option:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{options(mc.cores = 2L)                       # use a fixed number of cores
+options(mc.cores = parallel::detectCores())  # or all available cores
+}\if{html}{\out{</div>}}
+}
+
 \section{Progress bar}{
 
 In interactive sessions, a bar tracks how close the search is to its \code{plateau} stopping criterion, snapping back each time a better solution is found.

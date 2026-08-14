@@ -492,3 +492,367 @@ figures for the manuscript belong on Hamilton, not this Windows box.
 **Cleanup:** scratch libraries and instrumented builds live under the session
 scratchpad, outside the repo; no instrumentation ships. last_focus unchanged (this
 was a targeted run, not a rotation slot).
+
+---
+
+## Round — 2026-08-13 — Area 3: Grasp round 4 (bit-identity lifted; kept anyway)
+
+**Question (user, via ROUND4_PLAN.md):** improve GRASP as much as possible with
+the bit-identity constraint explicitly lifted; quality per unit time is the
+metric; the designated lever is an incrementally-maintained nearest-selected
+summary (its §4), whose cost was assumed to be abandoning the
+extended-improvement tie-break — flagged as the round's quality risk (§7.1).
+
+**The central finding — the plan's premise is false in the favourable
+direction.** The tie-break is compatible with an O(n) screen. Maintaining, per
+out-of-selection point, `min1[s]` (distance to nearest selected) and `arg1[s]`
+(the vertex realising it), with strict-`<` updates, keeps `arg1` a true witness
+under FP ties; then for a candidate drop, `arg1[s] != drop` means the post-drop
+minimum IS `min1[s]` (the witness survives, and `min` re-selects the same
+matrix cell), and only the ~(n−m)/m candidates whose witness is being dropped
+rescan in O(m). Every candidate still gets its exact `nd` in the same ascending
+order, so the tie-break fires on the same candidates with the same values and
+the chosen swap — hence the whole trajectory — is bit-identical. What the
+plan's §3 actually rules out is *sub-linear* candidate skipping, not O(1)
+exact enumeration. That lands the round in the plan's own §1 fast lane
+("a change that only reduces work per iteration can be verified as before"),
+and its §7 decisions collapse: **tie-break kept exactly; `.Grasp_R` untouched
+(parity test still the oracle); the manuscript's cached GRASP figure data
+remains valid and no FurthestPoint re-pin is needed (§7.3 moot).**
+
+**Harness (built first, per plan §5):** `drivers/grasp-frontier.R` (78291a3) —
+mode (a) equal-plateau speed + objective identity at canonical n = 2000 shapes
+the battery's n ≤ 500 grid never reaches; mode (b) equal `maxSeconds` quality,
+plateau-off and canonical-512 sub-modes, 5 seeds/cell, mean AND worst per-seed
+deltas, `iters`/`pr_calls` recorded so budget-bound phase-C skipping is
+visible as mechanism. Real case: satellite (tc14) thinned to 2000 by
+farthest-first, mirroring the canonical coreset pipeline.
+
+**T-016 — LS nearest-selected screen (6ab0cb9):** dominant scan O(n·m) → O(n)
+per pass; maintenance under a swap is one contiguous column read plus rescans
+of the dropped vertex and its stranded witnesses. Verified: battery 1458/1458
+(indices, objective, `iters`, `pr_calls`), R↔C++ parity 324/324, suite
+4893/0/6. Clean-build timing (n = 2000, k = 100): plateau 8 0.47→0.22 s
+(2.1×), 64 2.21→0.62 s (3.6×), 256 10.49→2.58 s (4.1×); k = 10 flat — the
+T-015 small-m regression trap avoided. Instrumented counters (plateau 256):
+screen rescans 1.6% of candidates (≈ 1/m prediction), evictions ~30/swap,
+tie-arm fires 0.8% with 94% memo hits — all new branches exercised.
+
+**T-016b — LS header fold (eed52c7):** `dstar` IS the running `gmin`; the pair
+count becomes a reset-on-new-min counter inside the `di` sweep; the ≤2
+`objective_of(sel \ witness)` rescores become one lazy shared exclusion pass.
+Worth a small consistent win only where the header binds — plateau 256
+2.58→2.47 s, every T-016b run beating every lever-A run — flat elsewhere;
+kept on the T-004 precedent. **Method note:** a first single-chain best-of-3
+showed a phantom +36% regression at plateau 8 that did not reproduce; this box
+throws ±20–35% spikes on sub-second cells, so keep/reject timing calls were
+decided by interleaved min-of-N across separate invocations (the skill's
+"never a single run" guard, applied via interleaving).
+
+**T-017 — PR-walk cross-step maintenance (a5d1f48):** the walk's candidate
+lists, global-min-edge witness (per-member nearest-other summary `edi`/`earg`
+under the same witness invariant), and per-add-candidate `NearTwo` (now
+carrying an `arg2` witness so eviction is detectable) all persist across
+steps; witness drops rescore via the shared lazy exclusion sweep. Per-step
+unconditional O(m²) → O(m) plus rare rescans. Battery 1458/1458 incl.
+`pr_calls`. Interleaved min-of-3: plateau 8 0.20→0.12 s (1.7×), 64 1.1×,
+256 flat — the expected profile for the PR-bound low end.
+
+**Round result (cumulative vs PR3 tip fde54d9, n = 2000 k = 100):** equal
+plateau 8/64/256 = **3.9× / 4.3× / 4.4×** (timing minima; frontier sums say
+3.8×/4.2×/4.5×), satellite coreset 2.6–3.2× across capture rounds, k = 10
+1.0–1.2×, n = 500 k = 50 ~2×. **Objectives IDENTICAL on every equal-plateau
+frontier cell.** Equal-budget: **119/120 seeded cells win or tie**, mean T_k
++0.14% to +1.64% at k = 100 with the mechanism visible (4–5× the iterations
+per budget; path relinking reached inside budgets where the baseline got
+none). The single loss (k = 10, canon, 0.25 s) did not reproduce: a targeted
+3×5-seed rerun hit the best objective 15/15 on the new build while the
+baseline itself dropped seeds under its own budget noise.
+
+**Phase split after (instrumented, seed-42 instance, plateau 8/64/256):**
+construct 0.015/0.056/0.351 s, LS 0.084/0.228/1.335 s, PR 0.064/0.045/0.044 s
+(PR was 0.157/0.100/0.138 before T-017). **Next floor: the local search still
+dominates both ladder ends (52%/69%/77%).** Its remaining mandatory term is
+the per-pass m²/2 pair sweep that the extended-improvement pair count
+requires (di + count + witness now share that one sweep), plus the O(n·m)
+per-call summary init for PR-called LS (a construction `g`-handoff would
+remove it for phase-B calls only). §8's construction-binds prediction is not
+yet reached (construction 9–20%); its lazy-heap idea cannot beat
+construction's own O(n)-per-step update pass and was not attempted.
+
+**Findings placement (per the /profile skill):** all three levers were fixed
+in-round → no GitHub issues, and no new rows in the frozen `findings.md`
+archive; this entry and the commits are the record (T-016/T-017 are
+log-narrative labels, not issue ids; issue filing is in any case unavailable
+while `ms609-agent` is suspended).
+
+**Timing policy:** all ratios are Windows-local *relative* figures (clean
+builds, interleaved minima). No Linux/gcc cross-check this round — the levers
+are op-count reductions, not CRT artifacts — but per the skill, canonical
+wall-clock and any mission-wide claim await Hamilton.
+
+**Docs:** NEWS 0.0.0.9007 states plainly that selections are *unchanged*;
+DESCRIPTION bumped; baselines.md Area 3 refreshed to the round-4 build.
+
+**Cleanup:** no VTune result dirs created; scratch libraries and both
+instrumented builds live under the session scratchpad, outside the repo;
+no instrumentation ships (verified by reverting `src/grasp.cpp` to the
+committed state after each instrumented capture). last_focus unchanged
+(targeted run continuing round 3, not a rotation slot).
+
+**Coverage addendum (suite, not driver):** a cumulative branch-counter build
+run against `tests/testthat/test-grasp.R` alone (4266 pass / 0 fail) shows
+every branch added this round fires under the existing tests — LS screen
+rescans 297,878, witness evictions 120,756, dropped-vertex fresh scans
+26,968, exclusion pass 39,370 (both endpoint arms); PR exclusion pass 3,832
+(both arms), `edi` fresh/evict/adopt 4,298/4,336/16,312, NearTwo witness
+evictions 4,098 and O(1) inserts 4,276. No targeted test additions owed;
+CI codecov is expected green on the existing suite.
+
+---
+
+## Round — 2026-08-13 — Area 3: Grasp round 5 (to the ceiling, then across the cores)
+
+**Question (user):** the project compares heuristics on a time/quality
+frontier, so every implementation must be absolutely optimised — keep going
+until the ceiling, parallelism authorised with core count controlled per the
+`../TreeDist` convention. Design in ROUND5_PLAN.md; order was load-bearing
+(the RNG change invalidates the battery baseline, so exact levers landed
+first).
+
+**T-018 — member summaries across passes (cde916a).** Round 4's declared
+next floor — the per-pass m²/2 pair sweep — dies: each selected member
+carries (mmin1, mmin2, witnesses for both slots, and mcnt = #partners AT
+mmin1). dstar, its witness edge, the extended-improvement pair count
+(halved mcnt sum over members at dstar — even and exact) and the post-drop
+witness rescores (near_excl per member, O(m) per endpoint) all read off it;
+a swap adjusts O(m) entries plus rare witness-eviction rescans, with a tied
+departure decrementing mcnt BEFORE the entrant's insertion. All working
+arrays moved into an LSScratch allocated once per Grasp_cpp call. Battery
+1458/1458 bit-identical; interleaved min-of-3: plateau 8/64/256 =
+0.12→0.09 / 0.50→0.37 / 2.25→1.68 s (~1.35× uniformly, every run beating
+every round-4-tip run).
+
+**Tie coverage hole closed (de87ef9).** Continuous random data cannot
+produce two equal distances from different cells, so the tie arms
+(duplicate minima, mcnt > 1, the tie-decrement, multi-pair dstar) were
+unreachable by every existing test AND the battery. A lattice-points parity
+test supplies exact ties in bulk; branch counters confirm the suite now
+fires every T-018 branch (tie-decrement 9, duplicate-min insertions 681,
+multi-pair dstar 204). Suite 4897/0/6.
+
+**T-019 — construction scan fold (603c779).** The gmax/gmin/argmax scan
+merges into the previous step's g-update pass (g[pick] = -Inf set first;
+same values, same ascending order, same first-index ties); one standalone
+scan seeds the loop; the dead final update is skipped; the RCL buffer is
+reused. Bit-identical 1458/1458; ~1.09× overall (0.37→0.34, 1.69→1.55 s),
+every T-019 run beating every T-018 run.
+
+**T-020 — measured, dropped.** Post-T-018 the LS init (candidate summary +
+member seed) is 9–11% of total wall (tLSinit 0.091 of 0.996 s at plateau
+256). A construction-g handoff would save ≤ ~8% for real coupling; below
+the bar. Serial split after T-019: LS passes ~64%, construction 22%,
+PR 4%, LS init ~9% — AT-LIMIT-shaped (the screen's O(n) is mandated by the
+tie-break's enumeration requirement, construction by its own sequential
+update pass).
+
+**T-021 — nCores-invariant parallel GRASP (6295fb8).** The round's one
+deliberate trajectory change, landed last. Constructions consume uniforms
+pre-drawn on the main thread (floor-index, bias O(size/2^53), fixed m draws
+per construction; GRASP_BATCH = 32 is algorithm-defining since R-stream
+consumption depends on it); workers (OpenMP, schedule(dynamic), per-thread
+LSScratch pool) run construct + LS + objective with no R API; batches merge
+in iteration order with all stopping rules at merge time; phase C
+parallelises its pairs with a pair-order reduce. `mc.cores` (TreeDist
+convention, default 1) → n_threads. **Contract verified: one seed,
+nCores ∈ {1,2,8}, three shapes — bit-identical** (grasp-invariance.R).
+R↔C++ parity holds over the whole grasp suite (4271/0 incl. the lattice)
+because .Grasp_R mirrors the batch protocol draw for draw. Quality:
+equal-plateau deltas −0.24%…+0.54% (mean +0.2%); equal-budget k = 100 up to
++1.6% mean T_k with PR reached inside budgets the old build exhausted; two
+losing seeds only at the tightest k = 10 quarter-second budget (−0.33%
+mean). Scaling (16-core box, grasp-scaling.R): plateau 256 =
+0.83/0.43/0.23/0.14 s at 1/2/4/8 threads (**5.9× at 8**), objective
+constant across the row; per-iteration serial cost unchanged (~2.1 ms at
+plateau 256). New battery baseline captured (c5c-battery.rds pattern) —
+pre-T-021 captures are obsolete as anchors. The phase-C scan test was
+retuned (k=6, es=8, alpha=0.3, n=40): the old shape's scan contained no
+PR-improving case under the new stream in 400 seeds (replay verified exact
+— 0 ceiling violations — before retuning).
+
+**Environment trap (memory: makevars-pkgcxxflags-clobber):** the user-level
+`~/.R/Makevars.win` assigns bare `PKG_CXXFLAGS =`, which empties every
+package's own src/Makevars compile flags — OpenMP linked but never
+compiled, silently serial. Agent builds redirect R_MAKEVARS_USER to a
+scratch copy (ccache/-j8/-O2 kept, clobber dropped); the package ships
+canonical $(SHLIB_OPENMP_CXXFLAGS) in PKG_CXXFLAGS and PKG_LIBS. Reported
+to the user — their own local OpenMP builds (TreeDist included) are
+affected.
+
+**Round-5 result.** Serial: 2.25 → 1.55 s at the canonical plateau-256 cell
+(1.45×, bit-identical to round 4's trajectory), on top of round 4's 4.4×.
+Parallel: ×5.9 at 8 threads with seed-determinism independent of core
+count — the strongest reproducibility property the manuscript comparison
+can hold. Manuscript figure caches: invalidated ONCE by T-021 (the round-4
+"no re-pin needed" no longer stands); future re-runs are core-count-proof.
+
+**Ceiling statement.** Serial residue is at its structural floor: the
+extended-improvement rule requires enumerating every candidate (O(n) screen
+per critical drop), construction is bound by its own O(n)-per-step
+sequential update, the tie-arm memo is the last m²/2 term and fires ~2×
+per pass. The remaining axis is core count; real scaling curves and
+canonical wall-clock belong on Hamilton, with the Linux/gcc cross-check
+owed before any mission-wide claim (/profile skill).
+
+**Timing policy:** Windows-local relative figures throughout (interleaved
+min-of-N per the round-4 method note). **Cleanup:** no VTune dirs; scratch
+libs and instrumented builds in the session scratchpad; instrumentation
+reverted after each capture. last_focus unchanged (targeted continuation).
+
+**Round-5 closing addenda.** Full suite on the final build with the retuned
+test: **4898 / 0 fail / 6 known-err**; invariance additionally confirmed at
+nCores = 16 (the box's maximum). Coverage caveat: unlike T-018 (whose
+branches were counter-proven under the suite), T-021's mid-batch budget-skip
+and phase-C worker-skip branches need the wall clock to expire inside a
+batch — inherently flaky to test deterministically — and the two floor-index
+clamps are defensive-unreachable by design; codecov may flag those lines
+(`# nocov` markers are a reasonable PR-time answer). The OpenMP build has
+compiled and run only on Windows/MinGW so far — Linux/gcc is unexercised
+until a push triggers CI, and real scaling curves belong on Hamilton.
+
+
+## Round 6 — 2026-08-13 — Area 3 (Grasp): VTune certification + two exact levers
+
+**Trigger:** user mandate to eke out every remaining ounce before the PR.
+Rounds 4–5 optimised via timing + branch counters; the shipped 0.0.0.9008
+kernel had never been VTuned. First hotspots collection (symboled -O2 -g
+-fno-omit-frame-pointer build WITH $(SHLIB_OPENMP_CXXFLAGS) — the skill's
+stock recipe would have stripped OpenMP and profiled a kernel without its
+parallel regions) on the canonical serial shape (n=2000 dim=10 k=100
+plateau=256, 6 reps, 5.05 s bare): grasp_local_search 32.8%,
+grasp_construct 19.1%, **count_pairs_within 10.7% + count_to_set_le 6.6%**
+— the tie-arm, which round 5's ceiling statement had written off as
+structural, was the single biggest addressable residue.
+
+**Lever 1 — tie-break count derived, not counted (exact).** npc =
+#pairs(rem ∪ {s}) ≤ nd splits into rem×rem and s×rem halves whose floors
+are both already known exactly: base_z IS rem's pairwise floor, cross IS
+s's floor to rem, and nd = min(base_z, cross). So the rem half is
+(nd == base_z) ? #pairs in rem at exactly base_z : 0 — and that count is
+pair_count − mcnt[drop] when base_z == dstar (O(1) off the T-018
+summaries), else counted from the rows of the ≥2 members achieving the new
+floor (read off near_excl, O(m) each, once per drop, lazily). The s half is
+(nd == cross) ? #v ∈ rem at exactly cross : 0, a direct O(m) row count run
+only for win-or-tie candidates. Same integers from the same exact double
+comparisons ⇒ trajectories unchanged.
+
+**Lever 1a — REJECTED by measurement: maintained candidate tie count.** A
+cnt1[s] (#selected at exactly min1[s]) maintained through init/swap would
+make the s half O(1); it measured 1.17/1.11/1.19× on the k=100 ladder but
+0.82× at k=10 over 40-rep interleaved runs — the maintenance streams a
+second column (col_drop) per swap, a cost ∝ n that small-m tie-arms never
+repay, and even at k=100 it underperformed the stateless variant
+(1.25/1.21/1.32×). Dropped; the O(m) s-half count kept.
+
+**Lever 2 — construction→LS g-handoff (T-020 revisited, exact).**
+grasp_construct now keeps g in W.min1 with a pick-order witness in W.arg1,
+folds the final pick's column back in with one lean pass (T-019 had skipped
+it as dead), and the seeded local search skips its m-column candidate-init
+re-read. min accumulates exactly, so values are bit-equal to the old
+column-order init; the witness settles on first-pick-to-reach rather than
+lowest-index under ties — a different but valid witness that routes the odd
+rescan differently while every value read is identical. Phase-C local
+searches (path-relinked starts, no construction) keep the plain init.
+
+**Verification (each variant separately):** battery 1458/1458 bit-identical
+vs the clean 0.0.0.9008 build + R↔C++ parity 324/324, both levers; full
+suite on the final build 4898 / 0 fail / 6 known-err / 2 skip.
+
+**Measured (interleaved min-of-3, single-threaded, this box):**
+| shape | 0.0.0.9008 | round 6 | speedup |
+|---|---|---|---|
+| n=2000 k=100 plateau=8   | 0.14 s | 0.11 s | 1.27× |
+| n=2000 k=100 plateau=64  | 0.20 s | 0.15 s | 1.33× |
+| n=2000 k=100 plateau=256 | 0.84 s | 0.61 s | 1.38× |
+| n=2000 k=10 plateau=64 (40-rep) | 1.10 s | 1.02 s | 1.09× |
+| n=500 k=50 plateau=64    | 0.04 s | 0.04 s | ~1× |
+
+**Post-round VTune (same driver, 7 reps):** grasp_local_search 44.2%,
+grasp_construct 25.4%, grasp_path_relink 3.4%; the two counting functions
+are gone from the profile. **Revised ceiling statement:** every remaining
+hot loop is a single ordered pass the semantics require — the O(n)
+candidate screen per critical drop (extended-improvement rule), the O(n)
+per-step construction update (each step must stream the picked column), the
+O(m²/2) member-summary seed per LS entry, and the O(n) col_add maintenance
+per swap. No further sub-linear substitution is visible; serial is at its
+structural floor with VTune evidence this time. Remaining axes: cores and
+Hamilton.
+
+**In-round fixes, no issues filed** (skill rule); driver added:
+drivers/grasp-vtune6.R. Baselines refreshed (regress against round-6 rows).
+Cleanup done: result_grasp6*/ and .vtune-lib-* deleted post-round.
+Environment note: the user deleted the bare PKG_CXXFLAGS line from
+~/.R/Makevars.win this round (memory updated) — package OpenMP flags now
+flow to agent AND user builds without the R_MAKEVARS_USER workaround; the
+symboled VTune build still needs one (adds -g -fno-omit-frame-pointer via
+PKG_CXXFLAGS without losing $(SHLIB_OPENMP_CXXFLAGS)).
+last_focus unchanged (targeted continuation of area 3).
+
+
+
+## Round 8 — 2026-08-13 — Area 3 (Grasp): memory-layout stab, REFUTED — floor certified on the second axis
+
+**Trigger:** user-requested "one last stab" after PR #2 merged. The branch
+was first rebased onto post-#2 main (clean, no conflicts; interleaved
+re-measurement matched the round-6 baseline rows: 100/150/590 ms on the
+plateau 8/64/256 ladder — no regression from the rebase).
+
+**Candidate lever — symmetric-transpose reads (bit-identity preserved).**
+Round 6 certified the algorithmic passes but never the *orientation* of the
+matrix reads. Fresh line-level VTune on the rebased tip put three stride-n
+gather loops at ~29% of the 4.3 s kernel: the `arg1[s] == drop` cross
+rescan (grasp.cpp:446, 0.76 s ≈ 17% alone), the post-swap candidate rescan
+(:530, 0.40 s) and the floor-achievers count (:465, 0.11 s). `d` is
+symmetric by documented contract, so each `d(s, v)` can be read as
+`d(v, s)` — one contiguous walk down a single column instead of a gather
+across the m selected columns, the same doubles bit for bit. Implemented at
+all three sites (plus the s-half tie count sharing :446's shape);
+verified bit-identical before timing: battery 1458/1458 vs the rebased-tip
+build, R↔C++ parity 324/324, iters/objective identical on every ladder
+shape.
+
+**Measured — SLOWER at every shape; reverted.** Interleaved min-of-9
+ladder + 3×40-rep k=10 cell, single-threaded:
+| shape | base | transposed | ratio |
+|---|---|---|---|
+| n=2000 k=100 plateau=8   | 0.10 s | 0.14 s | 0.71× |
+| n=2000 k=100 plateau=64  | 0.15 s | 0.20 s | 0.75× |
+| n=2000 k=100 plateau=256 | 0.59 s | 0.86 s | 0.69× |
+| n=2000 k=10 plateau=64 (40 calls, seeds 1:40) | 1.58 s | 3.33 s | 0.47× (worst rep 0.33×) |
+| n=500 k=50 plateau=64    | 0.04 s | 0.04 s | ~1× |
+
+**Why the profile misled:** the "gathers" all land inside the m *selected*
+columns — an ~m·8n-byte working set (1.6 MB at the canonical shape) that
+every rescan and every swap re-touches, so it stays cache-resident and the
+VTune time on those lines is hot-set latency, not DRAM stalls. The
+transposed orientation reads each rescanned candidate's *own* column —
+~n/m fresh 16 KB columns per critical drop and per swap with no reuse
+across candidates or swaps (~3 MB/swap of cold traffic at k=10, where the
+regression peaks at 2–3×). The shipped orientation is the cache-optimal
+one of the two; no hybrid is worth carrying (the transposed arm wins
+nowhere measured).
+
+**Verdict: AT-LIMIT on the memory axis too.** Round 6 certified every hot
+loop as a semantics-mandated single pass (instruction axis); round 8
+certifies the access orientation of those passes (memory axis) by refuting
+the only alternative layout. Serial Grasp is at its floor with measured
+evidence on both axes; remaining axes stay cores + Hamilton. No code
+shipped (edit reverted), so no NEWS entry or version bump; no issues filed
+(in-round refutation, skill rule). Post-rebase full suite green before
+push. Drivers: committed grasp-timing.R/grasp-battery.R plus a scratch
+40-rep k=10 loop (seeds 1:40 — note this draws a different workload mix
+than round 6's fixed-seed 40-call row, so the two k=10 totals are not
+comparable; ladder rows are). Cleanup done: result_grasp8/, symboled and
+scratch libs deleted post-round.
+last_focus unchanged (targeted continuation of area 3).
+

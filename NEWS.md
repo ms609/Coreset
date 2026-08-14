@@ -1,6 +1,7 @@
 # MaxMin 0.0.0.9006 (development)
 
-- `Grasp()` no longer discards its best-known solution, and is ~2.0 faster.
+- `Grasp()` no longer discards its best-known solution, is ~10.0× faster,
+  and may be parallelized.
 
 # MaxMin 0.0.0.9005 (development)
 

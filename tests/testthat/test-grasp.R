@@ -45,13 +45,13 @@ test_that("Grasp_cpp == .Grasp_R across seeds and parameters", {
                    alpha = al)
 
     info <- sprintf("seed=%d mni=%d es=%d alpha=%g", s, mni, es, al)
-    # Drop the wall-clock `time_s` attribute: it is genuinely nondeterministic
-    # and never expected to match. Every other attribute is asserted below.
+    # Drop the wall-clock `time_s` attribute: it is never expected to match.
     attr(ker, "time_s") <- attr(ref, "time_s") <- NULL
-    expect_identical(ker,                    ref,                    info = info)
-    expect_equal(attr(ker, "score"),     attr(ref, "score"),     tolerance = 1e-14, info = info)
-    expect_identical(attr(ker, "iters"),     attr(ref, "iters"),     info = info)
-    expect_identical(attr(ker, "pr_calls"),  attr(ref, "pr_calls"),  info = info)
+    expect_identical(ker, ref, info = info)
+    expect_equal(attr(ker, "score"), attr(ref, "score"), tolerance = 1e-14,
+                 info = info)
+    expect_identical(attr(ker, "iters"), attr(ref, "iters"), info = info)
+    expect_identical(attr(ker, "pr_calls"), attr(ref, "pr_calls"), info = info)
   }
 })
 
@@ -117,9 +117,9 @@ test_that(".GraspPathRelink strictly improves on at least one pair", {
   found <- FALSE
   for (s in 1:100) {
     set.seed(s)
-    x <- MaxMin:::.GraspConstruct(d30m, 5L, 0.5)
+    x <- MaxMin:::.GraspConstruct(d30m, 5L, 0.5, runif(5L))
     set.seed(s + 100L)
-    y <- MaxMin:::.GraspConstruct(d30m, 5L, 0.5)
+    y <- MaxMin:::.GraspConstruct(d30m, 5L, 0.5, runif(5L))
     if (!identical(sort(x), sort(y))) {
       zx <- MaxMin:::.GraspObjective(d30m, x)
       zy <- MaxMin:::.GraspObjective(d30m, y)
@@ -142,10 +142,9 @@ test_that("Grasp validates maxSeconds", {
 
 # 8b. GRASP-01: empty-RCL at alpha = 1 no longer crashes ---------------------
 # At the documented alpha = 1 (pure greedy), FP rounding can push the RCL
-# threshold ~1 ULP past gmax and empty the RCL; pre-fix the C++ kernel indexed
-# rcl[0] on an empty vector and SIGSEGV'd (uncatchable, killed the session),
-# while the R path threw. A bare-greedy fallback (no RNG draw) now selects the
-# argmax-g candidate in both. Sweeping seeds 1:30 exercises the rounding case
+# threshold ~1 ULP past gmax and empty the RCL.
+# A bare-greedy fallback (no RNG draw) selects the argmax-g candidate in both.
+# Sweeping seeds 1:30 exercises the rounding case
 # and asserts the kernel still matches the R reference bit-for-bit.
 test_that("Grasp survives alpha = 1 (empty-RCL fallback) and matches the R reference", {
   for (s in 1:30) {
@@ -196,11 +195,7 @@ test_that(".GraspLocalSearch reduces pair count when T_k is unchanged", {
 #   P1=(0,0), P2=(1,0), P3=(0,0.5), P4=(0.3,0.5)
 #   d12=1.0  (z1), d34=0.3 (zb), d13=0.5 (selZ) with zb < selZ < z1
 #
-# Line 217 fires: selZ=0.5 > zb=0.3 and selZ <= z1=1.0, dmin=1 >= dth=1.
-# Tie-break on Hamming removes s2={3,4} (lowest z=0.3), leaving ES=[{1,2}].
-# pos = sum([1.0] >= 0.5) + 1 = 2 > 1 = length(remaining) → tail (233-234).
-
-test_that(".GraspTryInsert line 217 (second condition) and lines 233-234 (tail insert)", {
+test_that(".GraspTryInsert second condition and tail insert", {
   pts4 <- rbind(c(0, 0), c(1, 0), c(0, 0.5), c(0.3, 0.5))
   d4   <- as.matrix(dist(pts4))
 
@@ -289,20 +284,27 @@ test_that(".GraspTryInsert never lowers the elite best", {
 # Phase C is deterministic, so any gain must have fired those lines.
 
 test_that(".Grasp_R phase-C path relinking fires lines 422-423", {
-  k     <- 4L
-  es    <- 6L
-  alpha <- 0.8
+  # Shape retuned for the T-021 draw protocol: the old (k = 4, es = 6,
+  # alpha = 0.8, n = 30) scan no longer contains a PR-improving case in its
+  # first 400 seeds under the batched uniform stream; this shape fires by
+  # seed 4, leaving generous headroom in the 200-seed scan.
+  k     <- 6L
+  es    <- 8L
+  alpha <- 0.3
   found <- FALSE
   for (s in seq_len(200L)) {
     set.seed(s)
-    pts <- matrix(rnorm(30L * 2L), ncol = 2L)
+    pts <- matrix(rnorm(40L * 2L), ncol = 2L)
     d   <- as.matrix(dist(pts))
 
     # Replicate Phase A: same RNG, same constructions -> same Phase A ceiling.
+    # Phase A draws its uniforms in one up-front batch, so the replay must
+    # consume them the same way.
     set.seed(s)
+    usA <- matrix(runif(es * k), nrow = k)
     phaseABest <- -Inf
     for (b in seq_len(es)) {
-      x  <- MaxMin:::.GraspConstruct(d, k, alpha)
+      x  <- MaxMin:::.GraspConstruct(d, k, alpha, usA[, b])
       xp <- MaxMin:::.GraspLocalSearch(d, x)
       phaseABest <- max(phaseABest, MaxMin:::.GraspObjective(d, xp))
     }
@@ -385,4 +387,33 @@ test_that(".Grasp_R time budget halts execution (grasp.R line 397)", {
     limit = 5)
   # Need 2s to pass on memcheck runs
   expect_lte(attr(res, "time_s"), 2)
+})
+
+test_that("Grasp_cpp == .Grasp_R on a tie-rich lattice", {
+  latt <- as.matrix(expand.grid(x = 1:5, y = 1:5))
+  dl <- as.matrix(dist(latt))
+  for (s in c(3L, 11L)) {
+    for (al in c(0, 0.8)) {
+      set.seed(s)
+      ref <- MaxMin:::.Grasp_R(6L, dl, plateau = 15L, eliteSize = 4L,
+                               alpha = al)
+      set.seed(s)
+      ker <- Grasp(d = dl, k = 6L, plateau = 15L, eliteSize = 4L,
+                   alpha = al)
+      attr(ker, "time_s") <- attr(ref, "time_s") <- NULL
+      expect_identical(ker, ref, info = sprintf("seed=%d alpha=%g", s, al))
+    }
+  }
+})
+
+test_that("Grasp results are invariant to mc.cores", {
+  oldOpt <- options(mc.cores = 1L)
+  on.exit(options(oldOpt), add = TRUE)
+  set.seed(99)
+  serial <- Grasp(d = d30m, k = 6L, plateau = 30L, eliteSize = 4L)
+  options(mc.cores = 2L)
+  set.seed(99)
+  threaded <- Grasp(d = d30m, k = 6L, plateau = 30L, eliteSize = 4L)
+  attr(serial, "time_s") <- attr(threaded, "time_s") <- NULL
+  expect_identical(threaded, serial)
 })

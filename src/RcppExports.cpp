@@ -45,8 +45,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // Grasp_cpp
-List Grasp_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter, int elite_size, double alpha, double time_budget_s, Rcpp::Nullable<Rcpp::Function> progress_cb);
-RcppExport SEXP _MaxMin_Grasp_cpp(SEXP dmatSEXP, SEXP mSEXP, SEXP max_no_improveSEXP, SEXP max_iterSEXP, SEXP elite_sizeSEXP, SEXP alphaSEXP, SEXP time_budget_sSEXP, SEXP progress_cbSEXP) {
+List Grasp_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter, int elite_size, double alpha, double time_budget_s, int n_threads, Rcpp::Nullable<Rcpp::Function> progress_cb);
+RcppExport SEXP _MaxMin_Grasp_cpp(SEXP dmatSEXP, SEXP mSEXP, SEXP max_no_improveSEXP, SEXP max_iterSEXP, SEXP elite_sizeSEXP, SEXP alphaSEXP, SEXP time_budget_sSEXP, SEXP n_threadsSEXP, SEXP progress_cbSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -57,8 +57,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type elite_size(elite_sizeSEXP);
     Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< double >::type time_budget_s(time_budget_sSEXP);
+    Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::Function> >::type progress_cb(progress_cbSEXP);
-    rcpp_result_gen = Rcpp::wrap(Grasp_cpp(dmat, m, max_no_improve, max_iter, elite_size, alpha, time_budget_s, progress_cb));
+    rcpp_result_gen = Rcpp::wrap(Grasp_cpp(dmat, m, max_no_improve, max_iter, elite_size, alpha, time_budget_s, n_threads, progress_cb));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -213,7 +214,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_MaxMin_DropAdd_cpp", (DL_FUNC) &_MaxMin_DropAdd_cpp, 7},
     {"_MaxMin_DropAdd_points_cpp", (DL_FUNC) &_MaxMin_DropAdd_points_cpp, 7},
-    {"_MaxMin_Grasp_cpp", (DL_FUNC) &_MaxMin_Grasp_cpp, 8},
+    {"_MaxMin_Grasp_cpp", (DL_FUNC) &_MaxMin_Grasp_cpp, 9},
     {"_MaxMin_IsSymmetric_cpp", (DL_FUNC) &_MaxMin_IsSymmetric_cpp, 2},
     {"_MaxMin_KCentreCandidates_cpp", (DL_FUNC) &_MaxMin_KCentreCandidates_cpp, 1},
     {"_MaxMin_KCentreCDSh_cpp", (DL_FUNC) &_MaxMin_KCentreCDSh_cpp, 5},
