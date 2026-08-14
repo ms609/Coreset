@@ -314,21 +314,14 @@
 #'   The vector has class `"MaxMinSelection"` and prints as a one-line summary
 #'   (see [print.MaxMinSelection()]).
 #' @section Parallelism:
-#' When the package is built with OpenMP support (the default on Linux and
-#' Windows), the GRASP construction/local-search iterations and the
-#' path-relinking pairs run on multiple threads. The number of threads is
-#' controlled by the standard `"mc.cores"` option:
+#' To parallelize computation when OpenMP is available, set the `"mc.cores"`
+#' option:
 #'
 #' ```r
-#' options(mc.cores = parallel::detectCores())  # use all available cores
-#' options(mc.cores = 4L)                        # or a fixed number
+#' options(mc.cores = 2L)                       # use a fixed number of cores
+#' options(mc.cores = parallel::detectCores())  # or all available cores
 #' ```
 #'
-#' The default is `1` (single-threaded). Random draws happen only on the
-#' main thread, in fixed-size batches, and batch results are merged in a
-#' fixed order, so **the selection returned for a given seed is identical at
-#' every thread count**: `mc.cores` trades wall-clock time only, and
-#' published results remain reproducible whatever parallelism produced them.
 #'
 #' @templateVar progress_shows a bar tracks how close the search is to its `plateau` stopping criterion, snapping back each time a better solution is found
 #' @template progress
@@ -404,10 +397,6 @@ Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
     }
   }
 
-  # Thread count follows the house (TreeDist) convention: the standard
-  # "mc.cores" option, default 1. The result is identical at every thread
-  # count (see the kernel's determinism contract) -- mc.cores trades
-  # wall-clock only, so it is read here rather than surfaced as an argument.
   nThreads <- as.integer(getOption("mc.cores", 1L))
   if (is.na(nThreads) || nThreads < 1L) nThreads <- 1L
 
