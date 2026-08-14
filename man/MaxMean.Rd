@@ -45,7 +45,7 @@ to maximise the mean dispersion.
 }
 \details{
 \code{MaxMean()} implements the reinforcement-learning tabu search
-(\acronym{RLTS}) algorithm of \insertCite{Dieudonne2020}{MaxMin}.
+algorithm of \insertCite{Dieudonne2020}{MaxMin}.
 An initial solution is constructed randomly for the first restart and
 via \eqn{Q}-learning thereafter; each initial solution is then refined by a
 tabu search using one-flip moves (adding or removing one element per step),

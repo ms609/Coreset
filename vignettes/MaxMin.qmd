@@ -97,8 +97,8 @@ MaxMin provides solvers for each objective:
 | `DropAdd()` | MMDP (max-min) | High (≈ 99 % optimal) | Fast | No |
 | `Grasp()` | MMDP (max-min) | Highest | Moderate | Yes (`set.seed()`) |
 | `ExactMaxMin()` | MMDP (max-min) | Optimal (NP-hard) | Slow | No |
-| `MaxMean()` | max-mean | High (RLTS) | Time-budgeted | Yes (`set.seed()`) |
-| `KCentre()` | k-centre | Near-optimal (CDSh) | Fast | No |
+| `MaxMean()` | max-mean | High | Time-budgeted | Yes (`set.seed()`) |
+| `KCentre()` | k-centre | Near-optimal | Fast | No |
 | `ExactKCentre()` | k-centre | Optimal (NP-hard) | Slow | No |
 
 
@@ -349,9 +349,9 @@ The Max-Mean Dispersion Problem rewards the average separation; it maximizes
 the sum of pairwise distances divided by the number of selected elements,
 which is chosen by the algorithm.
 
-`MaxMean()` implements reinforcement-learning tabu search (RLTS) 
-[@Dieudonne2020]: each restart constructs a candidate selection, randomly at
-first, then guided by a *Q*-learning memory of which elements proved valuable.
+`MaxMean()` implements reinforcement-learning tabu search [@Dieudonne2020]: 
+each restart constructs a candidate selection, randomly at first, then guided by
+a *Q*-learning memory of which elements proved valuable.
 The selection is refined with a one-flip tabu search that adds or removes a
 single element at a time.  The search continues until its time budget expires.
 

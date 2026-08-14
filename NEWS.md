@@ -1,12 +1,6 @@
 # MaxMin 0.0.0.9008 (development)
 
-- `MaxMean()` solves the Max-Mean Dispersion Problem: choose a subset of
-  unrestricted size maximising the sum of pairwise distances divided by the
-  number of selected elements, via the RLTS algorithm
-  (Nijimbere et al. 2020, doi:10.3934/jimo.2020115). The search is budgeted by
-  wall-clock time (`maxSeconds`) and a cap on tabu iterations (`maxIter`,
-  default `1000`), stopping as soon as *either* is reached; pass `maxIter = Inf`
-  to budget by time alone.
+- `MaxMean()` solves the Max-Mean Dispersion Problem.
 - `MeanDist()` scores an arbitrary selection under the max-mean objective.
 
 # MaxMin 0.0.0.9007 (development)

@@ -29,21 +29,21 @@ specialized solvers.
 
 | Function | Method | Use |
 |---|---|---|
-| `DropAdd()` | DropAdd tabu search (Porumbel et al. 2011) | ~99%-optimal heuristic |
-| `Grasp()` |  GRASP with path-relinking metaheuristic (Resende et al. 2010) | Slower but powerful heuristic |
-| `ExactMaxMin()` | Node-packing integer program (Sayyady & Fathi 2016) | Proven optimum, small `k` (needs `highs`) |
+| `DropAdd()` | DropAdd tabu search | ~99%-optimal heuristic |
+| `Grasp()` |  GRASP with path-relinking metaheuristic | Slower but powerful heuristic |
+| `ExactMaxMin()` | Node-packing integer program | Proven optimum, small `k` (needs `highs`) |
 
 ### Max-mean dispersion
 
 | Function | Method | Use |
 |---|---|---|
-| `MaxMean()` | Reinforcement-learning tabu search (Nijimbere et al. 2020) | Maximize mean pairwise distance; subset size free; signed distances supported |
+| `MaxMean()` | Reinforcement-learning tabu search | Maximize mean pairwise distance; subset size free; signed distances supported |
 
 ### *k*-centre (min-max covering)
 
 | Function | Method | Use |
 |---|---|---|
-| `KCentre()` | CDSh heuristic (García-Díaz et al. 2017, 2019) | ~1–3.5% of optimum at $O(N^2 \log N)$, typically far tighter than `FarFirst()` |
+| `KCentre()` | Critical Dominating Set heuristic | ~1–3.5% of optimum at $O(N^2 \log N)$, typically far tighter than `FarFirst()` |
 | `ExactKCentre()` | Min-cover integer program | Proven optimum, small `k` (needs `highs`) |
 
 Solvers support precomputed distance matrices (`dist` objects),

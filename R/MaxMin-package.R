@@ -22,7 +22,7 @@
 #'
 #' @section Max-Mean dispersion solver:
 #' \describe{
-#'   \item{[MaxMean()]}{Reinforcement-learning tabu search (RLTS).}
+#'   \item{[MaxMean()]}{Reinforcement-learning tabu search.}
 #' }
 #'
 #' @section k-centre solvers:

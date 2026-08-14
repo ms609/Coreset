@@ -31,7 +31,7 @@ a robust ensemble default.}
 \section{Max-Mean dispersion solver}{
 
 \describe{
-\item{\code{\link[=MaxMean]{MaxMean()}}}{Reinforcement-learning tabu search (RLTS).}
+\item{\code{\link[=MaxMean]{MaxMean()}}}{Reinforcement-learning tabu search.}
 }
 }
 
