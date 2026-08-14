@@ -535,6 +535,56 @@ test_that("multi-seed kernels reject out-of-range arguments", {
                "'firsts' must lie")
 })
 
+test_that("single-seed kernels reject an out-of-range n", {
+  # Both single-pass kernels guard `n` behind FarFirst()'s own validation, so
+  # the guard only fires on a direct internal call -- as for the `first` guards
+  # above and the multi-seed pair's `n` guard.
+  dat <- MakeData(N = 20L)
+  expect_error(MaxMin:::MaximinFrom_cpp(dat$d, 0L, 1L, 1L), "'n' must be")
+  expect_error(MaxMin:::MaximinFrom_cpp(dat$d, 21L, 1L, 1L), "'n' must be")
+  expect_error(MaxMin:::MaximinFromPoints_cpp(dat$pts, 0L, 1L, 0L, 1L),
+               "'n' must be")
+  expect_error(MaxMin:::MaximinFromPoints_cpp(dat$pts, 21L, 1L, 0L, 1L),
+               "'n' must be")
+})
+
+test_that("the coordinate pass keeps a zero-dimension input defined", {
+  # With no coordinates every squared distance is 0, so the fused update
+  # degenerates to pmin(min_dist, 0) plus the argmax -- FusedUpdateChunk's own
+  # dim == 0 branch. The pass then walks the unmasked points in ascending
+  # order and every insertion distance is 0.
+  p0 <- matrix(numeric(0), nrow = 6L, ncol = 0L)
+  r1 <- MaxMin:::MaximinFromPoints_cpp(p0, 4L, 1L, 0L, 1L)
+  expect_identical(as.integer(r1), 1:4)
+  expect_identical(attr(r1, "t_k"), 0)
+  # A later seed is taken first, then skipped by the ascending scan.
+  r3 <- MaxMin:::MaximinFromPoints_cpp(p0, 4L, 3L, 0L, 1L)
+  expect_identical(as.integer(r3), c(3L, 1L, 2L, 4L))
+  expect_identical(attr(r3, "t_k"), 0)
+  # n < 2 never enters the update loop, so T_k stays NA.
+  expect_identical(attr(MaxMin:::MaximinFromPoints_cpp(p0, 1L, 2L, 0L, 1L),
+                        "t_k"), NA_real_)
+})
+
+test_that(".NThreads reads mc.cores and collapses anything unusable to 1", {
+  # Every kernel takes its thread count from the standard option; a value that
+  # is absent, non-numeric, vectorised or < 1 must degrade to serial rather
+  # than reach OpenMP with a nonsense count.
+  old <- options(mc.cores = NULL)
+  on.exit(options(old), add = TRUE)
+  expect_identical(MaxMin:::.NThreads(), 1L)   # unset -> the 1L default
+  options(mc.cores = 2L)
+  expect_identical(MaxMin:::.NThreads(), 2L)   # usable: passed straight through
+  options(mc.cores = 0L)
+  expect_identical(MaxMin:::.NThreads(), 1L)
+  options(mc.cores = -1L)
+  expect_identical(MaxMin:::.NThreads(), 1L)
+  options(mc.cores = "many")                   # as.integer() -> NA (warning)
+  expect_identical(MaxMin:::.NThreads(), 1L)
+  options(mc.cores = c(2L, 3L))                # length != 1
+  expect_identical(MaxMin:::.NThreads(), 1L)
+})
+
 test_that("restarts fall back to per-pass threading above the size threshold", {
   # Past ~32k points a single pass can occupy every thread itself, so the
   # kernel keeps the seed loop serial and threads the sweep instead. Only the
