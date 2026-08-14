@@ -112,7 +112,7 @@
     return(list(verdict = "inconclusive", witness = integer(0)))
   } # nocov end
 
-  if (length(hi) == n * (n - 1) / 2) {
+  if (length(hi) == as.double(n) * (n - 1) / 2) {  # n^2 overflows an integer
     # H holds every pair, so G(lambda) is edgeless: every vertex is
     # independent and alpha = n. Feasible whenever k <= n (the caller's
     # guard).
