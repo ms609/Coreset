@@ -75,16 +75,31 @@ number of threads is controlled by the standard \code{"mc.cores"} option:
 options(mc.cores = 4L)                        # or a fixed number
 }\if{html}{\out{</div>}}
 
-The default is \code{1} (single-threaded). The kernels contain no random draws
-and every parallel reduction preserves the serial first-maximum tie rule,
-so \strong{the selection returned is identical at every thread count}:
-\code{mc.cores} trades wall-clock time only. The greedy pass engages its
-threads only past ~32,000 points (below that a step is too brief for the
-synchronisation to pay) — a size only the coordinate path reaches in
+The default is \code{1} (single-threaded). The kernels contain no random draws,
+each restart is an independent function of its seed, and every parallel
+reduction preserves the serial first-maximum tie rule, so \strong{the selection
+returned is identical at every thread count}: \code{mc.cores} trades wall-clock
+time only.
+
+Threads are put to whichever use suits the call:
+\itemize{
+\item A call that runs several starts — any multi-anchor \code{strategy}, or the
+default \code{"random_furthest"} with \code{nSeeds > 1} — runs one start per
+thread. Speed-up is capped at the number of distinct seeds, so \code{nSeeds}
+starts saturate \code{nSeeds} cores.
+\item A single greedy pass splits its own sweep across threads instead, but
+only past ~32,000 points: below that a step is too brief for the
+synchronisation to pay. Only the coordinate path reaches that size in
 practice, since a 32,000-point distance matrix already occupies 8 GB and
-the matrix pass measures faster serially at every smaller size; the
-seeding anchors parallelise at any non-trivial size, and the
-distance-column oracle path stays serial (it calls back into user R
+the matrix pass measures faster serially at every smaller size. Past it,
+splitting one pass beats running the starts concurrently, so the starts
+run in turn.
+\item The \eqn{O(N^2)} seeding anchors (\code{diameter}, \code{medoid}, \code{anti_medoid},
+\code{rowsum}, \code{rownorm}) parallelise at any non-trivial size. They dominate an
+anchor ensemble, whose greedy passes are comparatively cheap.
+}
+
+The distance-column oracle path stays serial (it calls back into user R
 code).
 }
 

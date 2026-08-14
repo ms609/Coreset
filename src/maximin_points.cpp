@@ -1,6 +1,9 @@
 #include <Rcpp.h>
 #include <cmath>
 #include <vector>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 // Coordinate-based greedy furthest-point (maximin) selection.
 //
@@ -202,46 +205,29 @@ static inline void FusedUpdateChunk(const double* P, int nPts, int dim, int c,
   }
 }
 
-// [[Rcpp::export]]
-Rcpp::IntegerVector MaximinFromPoints_cpp(Rcpp::NumericMatrix points,
-                                          int n, int first, int mask,
-                                          int n_threads = 1) {
-  int nPts = points.nrow();
-  int dim  = points.ncol();
-  int nthr = n_threads < 1 ? 1 : n_threads;
-  if (n < 1 || n > nPts) {                  // defensive: public wrapper guards
-    Rcpp::stop("'n' must be in [1, %d]; got %d", nPts, n);
-  }
-  if (first < 1 || first > nPts) {
-    Rcpp::stop("'first' must be in [1, %d]; got %d", nPts, first);
-  }
-  if (mask < 0 || mask > nPts) {                    // # nocov start
-    Rcpp::stop("'mask' must be in [0, %d]; got %d", nPts, mask);
-  }                                                  // # nocov end
-  const double* P = points.begin();
+// One complete greedy pass from `first0`, writing the n selected 1-based
+// indices into `out` and the pass's T_k (NA for n < 2) into `tk_out`.
+// Coordinate counterpart of MaximinPass() in maximin.cpp; all storage is
+// caller-owned (`md` length nPts; `dc` length nPts when dim > 4, else unused;
+// `tnb`/`tnbv` length nthr, read only when the pass threads its own sweep).
+// Touches no R API, so callers may run several passes concurrently on worker
+// threads.
+static void MaximinPointsPass(const double* P, int nPts, int dim, int n,
+                              int first0, int mask,
+                              double* md, double* dc, int* out, double* tk_out,
+                              int nthr, int* tnb, double* tnbv) {
+  out[0] = first0 + 1;              // back to 1-based
 
-  Rcpp::IntegerVector selected(n);
-  selected[0] = first;
-  int first0 = first - 1;           // convert to 0-based once
-
-  // min_dist holds SQUARED nearest-selected distances throughout the pass; the
+  // md holds SQUARED nearest-selected distances throughout the pass; the
   // selection is identical to working in true distances (sqrt is monotone) but
   // skips n*N sqrt calls. T_k is recovered with a single sqrt at the end.
-  Rcpp::NumericVector min_dist(nPts);
-  double* md = min_dist.begin();
   EuclidColSqInto(P, nPts, dim, first0, md);
-  // Per-step running sums between dimension blocks; a single-block dim
-  // (<= 4) keeps the whole sum in registers and never touches it.
-  std::vector<double> dcol(dim > 4 ? nPts : 0);
-#ifdef _OPENMP
-  std::vector<int> tnb(nthr);       // per-chunk argmax candidates (see below)
-  std::vector<double> tnbv(nthr);
-#else
-  (void)nthr;
+#ifndef _OPENMP
+  (void)nthr; (void)tnb; (void)tnbv;
 #endif
-  min_dist[first0] = R_NegInf;      // mask seed before entering loop
+  md[first0] = R_NegInf;            // mask seed before entering loop
   if (mask >= 1) {                                   // # nocov start
-    min_dist[mask - 1] = R_NegInf;  // pin forbidden point (anti-medoid medoid)
+    md[mask - 1] = R_NegInf;        // pin forbidden point (anti-medoid medoid)
   }                                                  // # nocov end
 
   // T_k = min over greedy steps of the chosen point's insertion distance, which
@@ -264,13 +250,13 @@ Rcpp::IntegerVector MaximinFromPoints_cpp(Rcpp::NumericMatrix points,
   }
 
   for (int k = 1; k < n; k++) {
-    selected[k] = best + 1;         // back to 1-based
+    out[k] = best + 1;              // back to 1-based
     if (best_val < tk_sq) tk_sq = best_val;   // running min insertion distance
 
     // Mask new point before the pmin update so its self-distance (0) cannot
     // overwrite -Inf. A pinned `mask` point keeps -Inf for the same reason:
     // any non-negative distance is never < -Inf.
-    min_dist[best] = R_NegInf;
+    md[best] = R_NegInf;
 
     if (k + 1 < n) {
       // The new point's squared column, the pmin merge and the next argmax in
@@ -290,7 +276,7 @@ Rcpp::IntegerVector MaximinFromPoints_cpp(Rcpp::NumericMatrix points,
         for (int t = 0; t < C; t++) {
           int lo = (int)((R_xlen_t)nPts * t / C);
           int hi = (int)((R_xlen_t)nPts * (t + 1) / C);
-          FusedUpdateChunk(P, nPts, dim, c, md, dcol.data(), lo, hi,
+          FusedUpdateChunk(P, nPts, dim, c, md, dc, lo, hi,
                            &tnb[t], &tnbv[t]);
         }
         nb = tnb[0]; nbv = tnbv[0];
@@ -300,21 +286,122 @@ Rcpp::IntegerVector MaximinFromPoints_cpp(Rcpp::NumericMatrix points,
       } else
 #endif
       {
-        FusedUpdateChunk(P, nPts, dim, c, md, dcol.data(), 0, nPts, &nb, &nbv);
+        FusedUpdateChunk(P, nPts, dim, c, md, dc, 0, nPts, &nb, &nbv);
       }
       best = nb;
       best_val = nbv;
     }
   }
 
+  *tk_out = (n >= 2 && R_finite(tk_sq))
+    ? std::sqrt(tk_sq < 0.0 ? 0.0 : tk_sq) : NA_REAL;
+}
+
+// [[Rcpp::export]]
+Rcpp::IntegerVector MaximinFromPoints_cpp(Rcpp::NumericMatrix points,
+                                          int n, int first, int mask,
+                                          int n_threads = 1) {
+  int nPts = points.nrow();
+  int dim  = points.ncol();
+  int nthr = n_threads < 1 ? 1 : n_threads;
+  if (n < 1 || n > nPts) {                  // defensive: public wrapper guards
+    Rcpp::stop("'n' must be in [1, %d]; got %d", nPts, n);
+  }
+  if (first < 1 || first > nPts) {
+    Rcpp::stop("'first' must be in [1, %d]; got %d", nPts, first);
+  }
+  if (mask < 0 || mask > nPts) {                    // # nocov start
+    Rcpp::stop("'mask' must be in [0, %d]; got %d", nPts, mask);
+  }                                                  // # nocov end
+
+  Rcpp::IntegerVector selected(n);
+  std::vector<double> md(nPts);
+  // Per-step running sums between dimension blocks; a single-block dim
+  // (<= 4) keeps the whole sum in registers and never touches it.
+  std::vector<double> dcol(dim > 4 ? nPts : 0);
+  std::vector<int> tnb(nthr);       // per-chunk argmax candidates
+  std::vector<double> tnbv(nthr);
+  double tk;
+  MaximinPointsPass(points.begin(), nPts, dim, n, first - 1, mask,
+                    md.data(), dcol.data(), selected.begin(), &tk,
+                    nthr, tnb.data(), tnbv.data());
+
   // T_k (min pairwise distance of the selection), computed for free; NA for
   // n < 2. The ensemble driver reads this attribute instead of re-running a
   // full stats::dist() over the selection (see .GonzEnsembleFromPoints).
-  selected.attr("t_k") = (n >= 2 && R_finite(tk_sq))
-    ? std::sqrt(tk_sq < 0.0 ? 0.0 : tk_sq) : NA_REAL;
+  selected.attr("t_k") = tk;
 
   // Return:
   return selected;
+}
+
+// Several independent greedy passes over one coordinate matrix — the ensemble
+// path's restarts, run one per thread. Coordinate counterpart of
+// MaximinMultiFrom_cpp(); see its note on why restarts are the useful axis
+// below GONZ_PAR_MIN and the per-step sweep the useful axis above it.
+//
+// Returns `idx`, an n x nSeeds matrix whose column s is the selection seeded
+// by firsts[s], and `t_k`, that column's minimum pairwise distance.
+// [[Rcpp::export]]
+Rcpp::List MaximinMultiFromPoints_cpp(Rcpp::NumericMatrix points, int n,
+                                      Rcpp::IntegerVector firsts,
+                                      int n_threads = 1) {
+  const int nPts = points.nrow();
+  const int dim  = points.ncol();
+  const int nS = firsts.size();
+  const int nthr = n_threads < 1 ? 1 : n_threads;
+  if (n < 1 || n > nPts) {                  // defensive: public wrapper guards
+    Rcpp::stop("'n' must be in [1, %d]; got %d", nPts, n);
+  }
+  if (nS < 1) {
+    Rcpp::stop("'firsts' must name at least one seed");
+  }
+  for (int s = 0; s < nS; s++) {
+    if (firsts[s] < 1 || firsts[s] > nPts) {
+      Rcpp::stop("'firsts' must lie in [1, %d]; got %d", nPts, firsts[s]);
+    }
+  }
+
+  // Every R allocation happens here, before any parallel region: worker
+  // threads run MaximinPointsPass, which touches no R API.
+  Rcpp::IntegerMatrix selected(n, nS);
+  Rcpp::NumericVector tks(nS);
+  int* op = selected.begin();
+  double* tp = tks.begin();
+  const double* P = points.begin();
+  const int dcN = dim > 4 ? nPts : 0;
+  std::vector<int> f0(nS);
+  for (int s = 0; s < nS; s++) f0[s] = firsts[s] - 1;
+
+#ifdef _OPENMP
+  const int seedThr = nthr < nS ? nthr : nS;
+  if (seedThr > 1 && nPts < GONZ_PAR_MIN) {
+    std::vector<double> md((R_xlen_t)nPts * seedThr);   // one buffer per thread
+    std::vector<double> dc((R_xlen_t)dcN * seedThr);
+#pragma omp parallel for num_threads(seedThr) schedule(static, 1)
+    for (int s = 0; s < nS; s++) {
+      const int t = omp_get_thread_num();
+      MaximinPointsPass(P, nPts, dim, n, f0[s], 0,
+                        md.data() + (R_xlen_t)nPts * t,
+                        dc.data() + (R_xlen_t)dcN * t,
+                        op + (R_xlen_t)s * n, tp + s, 1, NULL, NULL);
+    }
+    return Rcpp::List::create(Rcpp::_["idx"] = selected,
+                              Rcpp::_["t_k"] = tks);
+  }
+#endif
+  {
+    std::vector<double> md(nPts);
+    std::vector<double> dcol(dcN);
+    std::vector<int> tnb(nthr);
+    std::vector<double> tnbv(nthr);
+    for (int s = 0; s < nS; s++) {
+      MaximinPointsPass(P, nPts, dim, n, f0[s], 0, md.data(), dcol.data(),
+                        op + (R_xlen_t)s * n, tp + s,
+                        nthr, tnb.data(), tnbv.data());
+    }
+  }
+  return Rcpp::List::create(Rcpp::_["idx"] = selected, Rcpp::_["t_k"] = tks);
 }
 
 // Row sums of the on-the-fly Euclidean distance matrix, for the 1-median

@@ -40,6 +40,34 @@
   MaximinFrom_cpp(d, as.integer(k), as.integer(first), .NThreads())
 }
 
+#' Gonzalez maximin from several starting indices at once
+#'
+#' Ensemble counterpart of [.MaximinFrom()] / [.MaximinFromPoints()]: solves
+#' one greedy pass per seed. Each pass is an independent function of its seed,
+#' so under `mc.cores > 1` the passes run concurrently, one per thread; a lone
+#' seed, or a problem large enough for a single pass to occupy every thread
+#' itself, falls back to the per-pass parallelism instead.
+#'
+#' @param k Integer: target subsample size (`>= 1`).
+#' @param firsts Integer vector of distinct first-selected indices, one per pass.
+#' @param d Square pairwise distance matrix, or `NULL` when `points` is given.
+#' @param points A `double` `N x dim` coordinate matrix, or `NULL`.
+#' @return `.MaximinMulti()` returns a list with one `list(idx, tK)` per element
+#'   of `firsts`, in that order.
+#' @keywords internal
+.MaximinMulti <- function(k, firsts, d = NULL, points = NULL) {
+  k <- as.integer(k)
+  firsts <- as.integer(firsts)
+  res <- if (is.null(points)) {
+    MaximinMultiFrom_cpp(d, k, firsts, .NThreads())
+  } else {
+    MaximinMultiFromPoints_cpp(points, k, firsts, .NThreads())
+  }
+  lapply(seq_along(firsts), function(j) {
+    list(idx = res[["idx"]][, j], tK = res[["t_k"]][[j]])
+  })
+}
+
 #' Coerce coordinate input for the on-the-fly (matrix-free) samplers
 #'
 #' The coordinate paths require a complete numeric `N x dim` matrix with
@@ -188,16 +216,30 @@
 #' options(mc.cores = 4L)                        # or a fixed number
 #' ```
 #'
-#' The default is `1` (single-threaded). The kernels contain no random draws
-#' and every parallel reduction preserves the serial first-maximum tie rule,
-#' so **the selection returned is identical at every thread count**:
-#' `mc.cores` trades wall-clock time only. The greedy pass engages its
-#' threads only past ~32,000 points (below that a step is too brief for the
-#' synchronisation to pay) — a size only the coordinate path reaches in
-#' practice, since a 32,000-point distance matrix already occupies 8 GB and
-#' the matrix pass measures faster serially at every smaller size; the
-#' seeding anchors parallelise at any non-trivial size, and the
-#' distance-column oracle path stays serial (it calls back into user R
+#' The default is `1` (single-threaded). The kernels contain no random draws,
+#' each restart is an independent function of its seed, and every parallel
+#' reduction preserves the serial first-maximum tie rule, so **the selection
+#' returned is identical at every thread count**: `mc.cores` trades wall-clock
+#' time only.
+#'
+#' Threads are put to whichever use suits the call:
+#'
+#' - A call that runs several starts — any multi-anchor `strategy`, or the
+#'   default `"random_furthest"` with `nSeeds > 1` — runs one start per
+#'   thread. Speed-up is capped at the number of distinct seeds, so `nSeeds`
+#'   starts saturate `nSeeds` cores.
+#' - A single greedy pass splits its own sweep across threads instead, but
+#'   only past ~32,000 points: below that a step is too brief for the
+#'   synchronisation to pay. Only the coordinate path reaches that size in
+#'   practice, since a 32,000-point distance matrix already occupies 8 GB and
+#'   the matrix pass measures faster serially at every smaller size. Past it,
+#'   splitting one pass beats running the starts concurrently, so the starts
+#'   run in turn.
+#' - The \eqn{O(N^2)} seeding anchors (`diameter`, `medoid`, `anti_medoid`,
+#'   `rowsum`, `rownorm`) parallelise at any non-trivial size. They dominate an
+#'   anchor ensemble, whose greedy passes are comparatively cheap.
+#'
+#' The distance-column oracle path stays serial (it calls back into user R
 #' code).
 #'
 #' @references \insertAllCited{}
