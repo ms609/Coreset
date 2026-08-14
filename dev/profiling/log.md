@@ -1559,6 +1559,5 @@ baseline to overwrite it with. Aside: `-g -fno-omit-frame-pointer` itself costs
 to fix; the maxIter guard is confirmed free.
 
 - cleanup: all `dev/profiling/.vtune-lib-*` builds deleted.
-last_focus unchanged (targeted /profile MaxMean run).
 
 last_focus: 2
