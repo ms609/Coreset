@@ -2,7 +2,7 @@
 % Please edit documentation in R/maxmean.R
 \name{MaxMean}
 \alias{MaxMean}
-\title{RLTS tabu search for the Max-Mean Dispersion Problem}
+\title{Max-Mean Dispersion Problem solver}
 \usage{
 MaxMean(d, maxSeconds = 0.1, maxIter = 1000, useRL = TRUE)
 }

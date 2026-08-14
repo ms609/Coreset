@@ -20,7 +20,7 @@
 .kMaxMeanAlpha   <- 0.50    # Q-learning rate
 .kMaxMeanGamma   <- 0.50    # Q discount factor
 
-#' RLTS tabu search for the Max-Mean Dispersion Problem
+#' Max-Mean Dispersion Problem solver
 #'
 #' `MaxMean()` selects a maximally dispersed subset of elements from a
 #' pairwise distance matrix, maximising the *max-mean* objective:

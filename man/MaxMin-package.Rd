@@ -54,11 +54,9 @@ a robust ensemble default.}
 
 \section{Relation to \pkg{maximin}}{
 
-Not to be confused with the CRAN package \pkg{maximin} (Sun & Gramacy),
-which constructs continuous \emph{space-filling designs} — it generates new
-points in a coordinate region to maximise the minimum inter-point distance.
-\code{MaxMin} instead \emph{selects a subset} from a \emph{fixed} candidate set under an
-arbitrary distance, a combinatorial problem on a different footing.
+Not to be confused with the CRAN package \pkg{maximin}, which constructs
+continuous space-filling designs by generating \emph{new} points in a coordinate
+region to maximise the minimum inter-point distance.
 }
 
 \seealso{
