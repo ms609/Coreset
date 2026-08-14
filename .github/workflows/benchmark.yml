@@ -49,6 +49,7 @@ jobs:
       - name: Install R dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          working-directory: pr
           dependencies: '"hard"'
           needs: benchmark
 
