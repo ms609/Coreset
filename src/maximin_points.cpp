@@ -10,8 +10,9 @@
 // most-recently-selected point; for Euclidean data that column is recomputed
 // from coordinates in O(N*dim), so the dense matrix is never built.
 //
-// Identical selection indices to the matrix path are required. stats::dist()
-// computes each Euclidean distance as
+// Selection indices match the matrix path bit-for-bit -- a testing
+// convenience, not a correctness requirement (ties could legitimately
+// break either way). stats::dist() computes each Euclidean distance as
 //   sqrt( sum_j (x[i,j] - x[c,j])^2 )
 // accumulating dev*dev in a plain double over dimensions in increasing column
 // order (R's R_euclidean in src/library/stats/src/distance.c).
