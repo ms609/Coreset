@@ -1,10 +1,8 @@
-# Grasp round 4 — performance with the bit-identity constraint deliberately relaxed
+# Grasp performance with NO bit-identity constraint
 
-**Status:** planned, not started. Handoff document — assume no prior context.
-
-**Goal from the user:** "another 5× from GRASP! Or the best you can do." The
-bit-identity constraint that governed rounds 1–3 is **explicitly lifted** for this
-round. GRASP is a heuristic; the user is after a good result quickly, and accepts
+**Goal:** Improve the performance of GRASP as much as you can.
+The bit-identity constraint that governed rounds 1–3 is **explicitly lifted**.
+GRASP is a heuristic; the user is after a good result quickly, and accepts
 that selections may change.
 
 ---
@@ -13,16 +11,9 @@ that selections may change.
 
 - **Branch:** `perf/grasp-unconstrained`
 - **Worktree:** `C:/Users/pjjg18/GitHub/worktrees/MaxMin/grasp-perf`
-- **Stacked on:** `fde54d9`, the tip of `fix/grasp-elite-eviction` = **open PR
-  [ms609/MaxMin#3](https://github.com/ms609/MaxMin/pull/3)**, which is *not merged*.
-  Rebase onto `main` once PR3 lands.
-- **Do NOT change the working tree of `C:/Users/pjjg18/GitHub/MaxMin`** — that is
-  the human's checkout, and `C:/Users/pjjg18/GitHub/worktrees/MaxMin/MaxMin-HUMAN`
-  holds their copy of the PR3 branch. Work only in your own worktree.
+- **Do NOT change the working tree of `C:/Users/pjjg18/GitHub/MaxMin`**
 
-PR3 already contains, and you are building on top of:
-- a bug fix: elite eviction no longer discards the incumbent best (results change
-  vs `main` deliberately);
+You are building on top of:
 - **T-014**: two bit-identical hoists giving 2.03–3.79× at k=100. See
   `dev/profiling/findings.md` rows T-014/T-015 and `dev/profiling/log.md`.
 
@@ -44,7 +35,7 @@ Consequences:
 
 ---
 
-## 2. Measured cost structure (post-T-014)
+## 2. Measured cost structure
 
 From an instrumented build, n=2000, dim=10, eliteSize=10 (the canonical shape:
 GRASP runs coreset-thinned at `maxCandidates = 2000`, k ∈ {10,100}, plateau ladder
