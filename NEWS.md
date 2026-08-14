@@ -1,16 +1,5 @@
-# MaxMin 0.0.0.9012 (development)
-
-- A distance matrix whose triangles differ only by rounding has them averaged,
-  with a warning; `options(MaxMin.symmetryTolerance = )` sets how large a
-  discrepancy is repaired rather than refused.
-- `FarFirst()` and `PickPoint()` score a distance matrix as written, so they no
-  longer pay to reconcile its triangles.
-- Solvers that do reconcile them check finiteness and symmetry in a single pass
-  over `d`, which `options(mc.cores = )` parallelizes.
-
 # MaxMin 0.0.0.9011 (development)
 
-- Distance matrices must now be exactly symmetric.
 - `DropAdd()` is up to 1.75× faster on the dense-matrix path at large `k`.
 
 # MaxMin 0.0.0.9010 (development)
