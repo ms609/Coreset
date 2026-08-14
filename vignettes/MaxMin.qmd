@@ -338,39 +338,6 @@ c(exact    = attr(exPick, "score"),
 of points exceeds ~30 candidates, or to switch to a heuristic method.
 
 
-## Max-sum diversity (maximum diversity)
-
-The **Max-Sum Diversity Problem** is the max-sum counterpart of the MMDP: it
-selects the $k$-subset maximising the *total* pairwise distance it contains,
-rather than the single minimum pairwise distance.
-`ExactMaxSum()` solves it exactly via per-node integer-program linearisation
-[@Kuo1993], floored by a multi-start 1-swap local search that both warms the
-lower bound and is returned when the integer program cannot prove optimality
-within `maxSeconds`.
-Like `ExactMaxMin()`, it uses the **highs** solver and is a small-instance,
-NP-hard tool.
-
-```{r}
-#| label: exact-maxsum
-#| eval: !expr requireNamespace("highs", quietly = TRUE)
-smPick <- ExactMaxSum(6L, d30, maxSeconds = 30L)
-
-attr(smPick, "proven")      # TRUE  ⟹  objective is the global optimum
-attr(smPick, "score")       # total pairwise distance within the selection
-```
-
-Because every pair in the selection, not just the closest, contributes to the
-max-sum objective, `ExactMaxSum()` and `ExactMaxMin()` can select different
-subsets from the same instance.
-
-```{r}
-#| label: maxsum-vs-maxmin
-#| eval: !expr requireNamespace("highs", quietly = TRUE)
-smPick   # optimal for total pairwise distance
-exPick   # optimal for the minimum pairwise distance
-```
-
-
 ## Scoring
 
 `MinDist()` computes the T~k~ objective for any index set.
@@ -385,10 +352,25 @@ MinDist(points = pts, idx = ffPick)                # from coordinates
 ```
 
 
-## Max-mean dispersion
 
-The Max-Mean Dispersion Problem maximizes the sum of pairwise distances divided
-by the number of selected elements, which is chosen by the algorithm.
+## Max-sum diversity and Max-mean dispersion
+
+The Max-Sum Diversity Problem selects the $k$-subset with the highest total
+pairwise distance. `ExactMaxSum()` finds an optimal solution via per-node
+integer-program linearisation [@Kuo1993].
+
+```{r}
+#| label: exact-maxsum
+#| eval: !expr requireNamespace("highs", quietly = TRUE)
+smPick <- ExactMaxSum(6L, d30, maxSeconds = 30L)
+
+attr(smPick, "proven")      # TRUE  ⟹  objective is the global optimum
+attr(smPick, "score")       # total pairwise distance within the selection
+```
+
+Where the number of elements is not specified _a priori_, Max-Sum diversity
+generalizes to the Max-Mean Dispersion Problem, which maximizes the sum of
+pairwise distances divided by the number of selected elements.
 
 `MaxMean()` implements reinforcement-learning tabu search [@Dieudonne2020]: 
 each restart constructs a candidate selection, randomly at first, then guided by
