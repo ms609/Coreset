@@ -39,11 +39,9 @@
 #' }
 #'
 #' @section Relation to \pkg{maximin}:
-#' Not to be confused with the CRAN package \pkg{maximin} (Sun & Gramacy),
-#' which constructs continuous *space-filling designs* — it generates new
-#' points in a coordinate region to maximise the minimum inter-point distance.
-#' `MaxMin` instead *selects a subset* from a *fixed* candidate set under an
-#' arbitrary distance, a combinatorial problem on a different footing.
+#' Not to be confused with the CRAN package \pkg{maximin}, which constructs
+#' continuous space-filling designs by generating *new* points in a coordinate
+#' region to maximise the minimum inter-point distance.
 #'
 #' @keywords internal
 #' @importFrom Rcpp sourceCpp
