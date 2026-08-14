@@ -6,7 +6,7 @@ source("benchmark/_init.R")
 d40 <- BenchDist(40L, 5L, seed = 1L)
 Benchmark(ExactMaxMin(8L, d40))
 
-# A size the packing IP could not certify quickly: the whole solve is the one
-# infeasibility proof at the certifying threshold.
+# A size at which the whole solve is the single infeasibility proof at the
+# certifying threshold, rather than the warm start and the setup scans.
 d400 <- BenchDist(400L, 8L, seed = 3L)
 Benchmark(ExactMaxMin(10L, d400))
