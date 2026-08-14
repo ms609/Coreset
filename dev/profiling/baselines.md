@@ -219,6 +219,28 @@ k4/10 = 1.8/2.0 s (fb93c2d: 201 s and 8.9 GB peak at k=4); satellite
 n=6435 k=4 = 3.9 s (fb93c2d model ≈16 GB: not attempted). Spam and
 satellite decide every probe combinatorially — no IP is ever posed.
 
+## Area 4 — ExactMaxMin — AFTER round 12 (clique search replaces the IP)
+
+Grid = 14 ground-truth cases × k∈{2,4,6,10}; interleaved min-of-3. Stretch
+cells are single runs. Base = perf/exact tip fa482b3 (round 11).
+
+| cell | base s | new s |
+|------|-------:|------:|
+| grid, 56 cells | 6.5 | 0.9 |
+| breastcancer k10 (n=683) | 4.0 | 0.1 |
+| pima k10 (n=768) | 3.6 | 0.1 |
+| vehicle k10 (n=846) | 20.4 | 0.1 |
+| vowel k10 (n=990) | 171.4 | 0.2 |
+| spam k4 (n=4601) | 2.3 | 0.3 |
+| spam k10 | 2.4 | 0.5 |
+| satellite k4 (n=6435) | 4.5 | 1.0 |
+| satellite k10 | — | 13.1 |
+
+56/56 scores bit-identical to base, `proven` identical, witnesses valid. No
+`highs` and no `Matrix` on the solve path. Root-branch parallelism measured
+(3.36× at 8T on infeasibility proofs, flat on feasible probes, ~1.2×
+end-to-end) and declined — see log.md round 12.
+
 ## Area 5 — KCentre (CDSh) — AFTER T-010 (cache reorder + C++ candidates)
 
 Clustered Gaussian n=2004, dim=10, k=20; per-call median (6 reps), `-O2`.

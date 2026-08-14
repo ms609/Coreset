@@ -20,7 +20,7 @@ coordinate embedding), with a choice of peripheral seeding strategies and
 a robust ensemble default.}
 \item{\code{\link[=DropAdd]{DropAdd()}}}{DropAdd tabu search heuristic.}
 \item{\code{\link[=Grasp]{Grasp()}}}{GRASP with path relinking.}
-\item{\code{\link[=ExactMaxMin]{ExactMaxMin()}}}{Exact node-packing optimum (needs \pkg{highs}).}
+\item{\code{\link[=ExactMaxMin]{ExactMaxMin()}}}{Exact node-packing optimum.}
 }
 }
 

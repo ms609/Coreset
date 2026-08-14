@@ -13,7 +13,6 @@
 #   Rscript exact-grid.R new.rds base.rds   # capture + compare
 lib <- Sys.getenv("FP_LIB", "")
 if (nzchar(lib)) library(MaxMin, lib.loc = lib) else library(MaxMin)
-suppressMessages(library(highs))
 options(MaxMin.progress = FALSE)
 args <- commandArgs(trailingOnly = TRUE)
 stopifnot(length(args) >= 1L)

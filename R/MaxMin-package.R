@@ -13,7 +13,7 @@
 #'     a robust ensemble default.}
 #'   \item{[DropAdd()]}{DropAdd tabu search heuristic.}
 #'   \item{[Grasp()]}{GRASP with path relinking.}
-#'   \item{[ExactMaxMin()]}{Exact node-packing optimum (needs \pkg{highs}).}
+#'   \item{[ExactMaxMin()]}{Exact node-packing optimum.}
 #' }
 #'
 #' @section Max-Mean dispersion solver:

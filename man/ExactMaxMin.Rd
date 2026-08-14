@@ -42,11 +42,15 @@ sets).
 The search is warm-started from a heuristic lower bound (the best of several
 \code{\link[=Grasp]{Grasp()}} restarts and a \code{\link[=DropAdd]{DropAdd()}} pass), then gallops upward from that
 bound to the first infeasible threshold and bisects the resulting bracket.
-When a heuristic already attains the optimum, a single infeasibility solve
+When a heuristic already attains the optimum, a single infeasibility proof
 certifies it.
 Each feasibility probe is first reduced to its \eqn{(k-1)}-core and greedily
-coloured; where this does not settle the probe, an algebraic solver is
-launched, using multiple cores if \code{options("mc.cores") > 1}.
+coloured, then searched exhaustively for a witness under a colouring bound.
+The search runs on one core: its branches parallelise, but measurably only
+for infeasibility proofs, and threads would make the reported subset
+thread-dependent.
+The indices returned may vary between releases where several subsets attain
+the optimum; the \code{score} does not.
 }
 \section{Progress bar}{
 

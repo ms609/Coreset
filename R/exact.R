@@ -10,35 +10,30 @@
 #   G(lambda) = (V, { (i, j) : d(i, j) < lambda })
 # admits an independent set of size >= k. An independent set in G(lambda) is
 # a set of points all pairwise >= lambda apart -- i.e. a feasible k-subset
-# with min-distance >= lambda. At each tested lambda we solve a maximum-
-# independent-set feasibility IP
-#   maximize sum_i x_i  s.t.  x_i + x_j <= 1 for every edge (i, j);  x in {0,1}
-# declaring lambda feasible iff the optimum (the independence number) >= k.
+# with min-distance >= lambda.
 #
 # Two structural choices make this practical well beyond toy sizes:
 #
-#   * Sparse packing matrix. The constraint matrix carries exactly two
-#     non-zeros per edge; it is built as a sparse `dgCMatrix` rather than a
-#     dense nEdge x n matrix. The dense form is O(nEdge * n) memory -- several
-#     gigabytes per solve once n is a few hundred -- and is the reason a naive
-#     node-packing solver stalls at a couple of hundred points.
+#   * Each probe is decided as a k-clique search on the complement graph H
+#     (pairs >= lambda apart), by the branch-and-bound in exact_reduce.cpp:
+#     peel to the (k-1)-core, split into components, and search each under a
+#     greedy-colouring bound. The equivalent packing IP spends its time
+#     closing an LP relaxation whose bound is far above k, and needs a
+#     constraint matrix of one row per G-edge.
 #
 #   * Heuristic warm start + galloping search. Rather than bisecting the whole
-#     sorted distance vector (~log2(n^2/2) solves, half of them splitting hairs
+#     sorted distance vector (~log2(n^2/2) probes, half of them splitting hairs
 #     around the optimum), we seed a provably-achievable lower bound from the
 #     package's own heuristics (Grasp restarts + DropAdd), then gallop upward
 #     from there to the first infeasible threshold and bisect the small
 #     bracket. When a heuristic attains the optimum -- common at the small k of
-#     interest -- a single infeasibility solve certifies it. The seed only sets
+#     interest -- a single infeasibility proof certifies it. The seed only sets
 #     the starting lower bound: the search still proves the true optimum
-#     regardless of seed quality (a loose seed merely costs extra solves, never
+#     regardless of seed quality (a loose seed merely costs extra probes, never
 #     a wrong answer).
 #
 # Used in the manuscript ONLY as an external ground-truth reference on small
 # instances -- it is NP-hard and not a scalable method.
-#
-# Solver: the `highs` package (Florian Schwendinger; HiGHS MILP backend;
-# CRAN). Chosen over Rglpk/Rsymphony for speed and a self-contained binary.
 
 # ----- helpers --------------------------------------------------------------
 
@@ -94,128 +89,47 @@
   list(value = vals[[j]], witness = pool[[j]])
 }
 
-# Solve one maximum-independent-set feasibility probe on the threshold graph
-# G(lambda) and classify the result against the target size k.
+# Decide one maximum-independent-set feasibility probe on the threshold graph
+# G(lambda) against the target size k.
 #
-# `ui`, `uj` index the endpoints of every vertex pair (upper triangle);
-# `gEdge` flags the pairs with d(i, j) < lambda -- the G(lambda) edges. The
-# complement pairs form H, in which an independent k-set of G is a k-clique.
-# The probe is reduced combinatorially first (ThresholdReduce_cpp): H is
-# peeled to its (k-1)-core, split into components, and greedily coloured.
-# Nothing surviving proves infeasibility with no IP solve; a greedy k-clique
-# proves feasibility likewise. Each surviving component is then solved as its
-# own packing IP whose rows are one sum(x) <= 1 row per multi-member colour
-# class (a G-clique) plus the cross-colour G-edges: the same integer feasible
-# set as the all-pairs formulation, with an LP bound of ~chi rather than
-# ~n/2.
+# `hi`, `hj` are the endpoints of the pairs at least lambda apart -- the edges
+# of the complement graph H, in which an independent k-set of G(lambda) is a
+# k-clique, and which `ThresholdDecide_cpp` searches exhaustively.
 #
-# Witnesses are validated against `d` independently of what produced them:
-# the selected set is checked to contain no G(lambda) edge and its size is
-# compared to k. This keeps the classification robust to solver status-code
-# or time-limit quirks.
+# A returned witness is validated against `d` independently of what produced
+# it: the selected set is checked to contain no G(lambda) edge and its size is
+# compared to k.
 #
 # Returns list(verdict, witness) where verdict is one of:
 #   "feasible"     -- a validated independent set of size >= k was found
 #                     (witness = its vertex indices; min-distance >= lambda),
-#   "infeasible"   -- every component was refuted, by reduction or by an IP
-#                     solved to proven optimality (witness = integer(0)),
+#   "infeasible"   -- the search was exhaustive and no k-clique exists
+#                     (witness = integer(0)),
 #   "inconclusive" -- the budget expired before either could be established
 #                     (witness = integer(0)).
-.MaxISVerdict <- function(d, n, ui, uj, gEdge, lambda, k, timeLimit) {
-  t0 <- proc.time()[[3L]]
+.MaxISVerdict <- function(d, n, hi, hj, lambda, k, timeLimit) {
   if (!is.finite(timeLimit) || timeLimit <= 0) { # nocov start
     return(list(verdict = "inconclusive", witness = integer(0)))
   } # nocov end
 
-  if (!any(gEdge)) {
-    # Empty graph: every vertex is independent, so alpha = n. Feasible
-    # whenever k <= n (guaranteed by the caller's guard). No solve needed.
+  if (length(hi) == as.double(n) * (n - 1) / 2) {  # n^2 overflows an integer
+    # H holds every pair, so G(lambda) is edgeless: every vertex is
+    # independent and alpha = n. Feasible whenever k <= n (the caller's
+    # guard).
     return(list(verdict = "feasible", witness = seq_len(n)))
   }
 
-  Valid <- function(sel) {
-    if (length(sel) < 2L) {
-      TRUE  # nocov                       # 0 or 1 vertex: trivially independent
-    } else {
-      sub <- d[sel, sel, drop = FALSE]
-      !any(sub[upper.tri(sub)] < lambda)
-    }
-  }
-
-  red <- ThresholdReduce_cpp(ui[!gEdge], uj[!gEdge], n, k)
-  clique <- red[["clique"]]
-  if (length(clique) >= k) {
-    if (!Valid(clique)) { # nocov start
-      stop("Internal error: reduction clique violates threshold ", lambda)
+  res <- ThresholdDecide_cpp(hi, hj, n, k, timeLimit)
+  witness <- res[["witness"]]
+  if (identical(res[["status"]], "feasible")) {
+    sub <- d[witness, witness, drop = FALSE]
+    if (length(witness) != k || any(sub[upper.tri(sub)] < lambda)) { # nocov start
+      stop("Internal error: clique search returned a set violating threshold ",
+           lambda)
     } # nocov end
-    return(list(verdict = "feasible", witness = clique))
+    return(list(verdict = "feasible", witness = witness))
   }
-  comps <- red[["comps"]]
-  if (!length(comps)) {
-    # The peel and colouring bound left no component that could host a
-    # k-clique of H: infeasible with no IP solve.
-    return(list(verdict = "infeasible", witness = integer(0)))
-  }
-
-  for (cp in comps) {
-    remaining <- timeLimit - (proc.time()[[3L]] - t0)
-    if (remaining <= 0) { # nocov start
-      return(list(verdict = "inconclusive", witness = integer(0)))
-    } # nocov end
-    vars <- cp[["vars"]]
-    nv <- length(vars)
-    bigCls <- which(tabulate(cp[["cls"]]) >= 2L)
-    nCls <- length(bigCls)
-    clsRow <- match(cp[["cls"]], bigCls)          # NA for singleton classes
-    inCls <- !is.na(clsRow)
-    nEdgeRow <- length(cp[["ei"]])
-    if (nCls + nEdgeRow == 0L) { # nocov start
-      # Unconstrained component (an H-clique): the greedy clique above finds
-      # these, so this is defensive only.
-      sel <- vars
-      optimal <- TRUE
-    } else { # nocov end
-      # The probe only asks whether alpha >= k, so a final row sum(x) <= k
-      # caps the objective: a feasible component proves optimality as soon
-      # as a k-incumbent appears, and an infeasible one proves the bound
-      # < k without closing the gap to its true alpha.
-      nRow <- nCls + nEdgeRow + 1L
-      res <- highs::highs_solve(
-        L       = rep.int(1, nv),
-        lower   = rep.int(0, nv),
-        upper   = rep.int(1, nv),
-        A       = Matrix::sparseMatrix(
-          i = c(clsRow[inCls], rep.int(nCls + seq_len(nEdgeRow), 2L),
-                rep.int(nRow, nv)),
-          j = c(which(inCls), cp[["ei"]], cp[["ej"]], seq_len(nv)),
-          x = 1, dims = c(nRow, nv)
-        ),
-        lhs     = rep.int(-Inf, nRow),
-        rhs     = c(rep.int(1, nRow - 1L), k),
-        types   = rep.int("I", nv),             # integer var on [0,1] = binary
-        maximum = TRUE,
-        control = list(
-          threads    = .NThreads(),
-          time_limit = remaining
-        )
-      )
-      sel <- vars[res$primal_solution > 0.5]
-      optimal <- identical(res$status_message, "Optimal")
-    }
-
-    ok <- Valid(sel)
-    if (ok && length(sel) >= k) {
-      return(list(verdict = "feasible", witness = sel))
-    }
-    # Refuting a component requires its IP solved to proven optimality with a
-    # validated maximum independent set still smaller than k. A time-limit
-    # hit with a too-small (or empty) incumbent proves nothing.
-    if (!(optimal && ok && length(sel) < k)) { # nocov start
-      return(list(verdict = "inconclusive", witness = integer(0)))
-    } # nocov end
-  }
-  # Every component refuted: no independent k-set exists anywhere.
-  list(verdict = "infeasible", witness = integer(0))
+  list(verdict = res[["status"]], witness = integer(0))
 }
 
 # ----- main -----------------------------------------------------------------
@@ -230,11 +144,15 @@
 #' The search is warm-started from a heuristic lower bound (the best of several
 #' [Grasp()] restarts and a [DropAdd()] pass), then gallops upward from that
 #' bound to the first infeasible threshold and bisects the resulting bracket.
-#' When a heuristic already attains the optimum, a single infeasibility solve
+#' When a heuristic already attains the optimum, a single infeasibility proof
 #' certifies it.
 #' Each feasibility probe is first reduced to its \eqn{(k-1)}-core and greedily
-#' coloured; where this does not settle the probe, an algebraic solver is
-#' launched, using multiple cores if `options("mc.cores") > 1`.
+#' coloured, then searched exhaustively for a witness under a colouring bound.
+#' The search runs on one core: its branches parallelise, but measurably only
+#' for infeasibility proofs, and threads would make the reported subset
+#' thread-dependent.
+#' The indices returned may vary between releases where several subsets attain
+#' the optimum; the `score` does not.
 #'
 #' @param k Integer: target subset size, between 2 and `nrow(d)`.
 #' @param d `dist` object or a square symmetric numeric distance matrix.
@@ -266,11 +184,6 @@
 ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
   progress <- getOption("MaxMin.progress", interactive())
   t0 <- proc.time()[[3L]]
-  if (!requireNamespace("highs", quietly = TRUE)) { # nocov start
-    stop("The `highs` package is required for ExactMaxMin(). ",
-         "Install it with install.packages(\"highs\").")
-  } # nocov end
-
   d <- .ExactAsMatrix(d)
   n <- nrow(d)
   k <- as.integer(k)
@@ -280,20 +193,18 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
 
   Elapsed <- function() proc.time()[[3L]] - t0
 
-  # Upper-triangle edge structure, precomputed ONCE: every probe is then a
-  # threshold over `ud` (a vector compare) rather than a fresh n x n logical.
-  # Column-major upper-triangle order: pair t of column j has row ui[t] < j.
-  ui <- sequence(seq_len(n) - 1L)
-  uj <- rep.int(seq_len(n), c(0L, seq_len(n - 1L)))
-  ud <- d[upper.tri(d)]
+  # Warm start: a provably-achievable lower bound + witness. Every candidate
+  # <= ws$value is feasible (the witness attains it), so the optimum is at
+  # least ws$value. Without a heuristic, fall back to the trivial bound (the
+  # smallest distance, whose threshold graph is edgeless).
+  ws <- .ExactWarmStart(d, n, k, warmStart)
+  lowest <- if (is.null(ws)) -Inf else ws$value # nocov
 
-  # Candidate thresholds: the achieved distinct pairwise distances, ascending.
-  # The optimum is necessarily one of these (it is a realised distance), so
-  # searching this finite grid is exact. cand[1] (the smallest distance) gives
-  # an edgeless graph, feasible whenever k <= n -- the guaranteed lower bound,
-  # established without any IP solve. Radix sort then adjacent dedupe --
-  # exactly the ascending distinct values.
-  s <- sort.int(ud, method = "radix")
+  # Candidate thresholds: the achieved distinct distances from `lowest` up,
+  # ascending. The optimum is necessarily one of these (it is a realised
+  # distance) and is at least `lowest`, so searching this finite grid is exact.
+  # Radix sort then adjacent dedupe -- exactly the ascending distinct values.
+  s <- sort.int(TriangleAtLeast_cpp(d, lowest), method = "radix")
   cand <- s[c(TRUE, s[-1L] != s[-length(s)])]
   nCand <- length(cand)
 
@@ -306,7 +217,8 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
   # independent set of size >= k?
   feas <- function(idx, remaining) {
     lambda <- cand[idx]
-    .MaxISVerdict(d, n, ui, uj, ud < lambda, lambda, k, remaining)
+    h <- EdgesAtLeast_cpp(d, lambda)
+    .MaxISVerdict(d, n, h[["hi"]], h[["hj"]], lambda, k, remaining)
   }
 
   # Helper to package a result for a proven-feasible candidate index.
@@ -338,15 +250,13 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
     )
   }
 
-  # Warm start: a provably-achievable lower bound + witness. Every candidate
-  # <= ws$value is feasible (the witness attains it), so the optimum index is
-  # at least i0. Without a heuristic, fall back to the trivial bound (cand[1]).
-  ws <- .ExactWarmStart(d, n, k, warmStart)
+  # cand[1] is the warm start's own realised value, so the search starts there.
+  i0 <- 1L
+  bestIdx <- 1L
   if (is.null(ws)) { # nocov start
-    i0 <- 1L; bestIdx <- 1L; bestWitness <- seq_len(n)
+    bestWitness <- seq_len(n)
   } else { # nocov end
-    i0 <- findInterval(ws$value, cand)        # cand[i0] == ws$value (realised)
-    bestIdx <- i0; bestWitness <- ws$witness
+    bestWitness <- ws$witness
   }
   inconclusive <- FALSE
 

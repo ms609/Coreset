@@ -31,7 +31,7 @@ specialized solvers.
 |---|---|---|
 | `DropAdd()` | DropAdd tabu search | ~99%-optimal heuristic |
 | `Grasp()` |  GRASP with path-relinking metaheuristic | Slower but powerful heuristic |
-| `ExactMaxMin()` | Node-packing integer program | Proven optimum, small `k` (needs `highs`) |
+| `ExactMaxMin()` | Node-packing integer program | Proven optimum, small `k` |
 
 ### Max-sum dispersion (maximum diversity)
 

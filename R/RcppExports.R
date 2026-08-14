@@ -9,8 +9,16 @@ DropAdd_points_cpp <- function(points, m, time_budget_s, max_iter, max_no_improv
     .Call(`_MaxMin_DropAdd_points_cpp`, points, m, time_budget_s, max_iter, max_no_improve, want_trace, seed0, n_threads)
 }
 
-ThresholdReduce_cpp <- function(hi, hj, n, k) {
-    .Call(`_MaxMin_ThresholdReduce_cpp`, hi, hj, n, k)
+TriangleAtLeast_cpp <- function(d, lowest) {
+    .Call(`_MaxMin_TriangleAtLeast_cpp`, d, lowest)
+}
+
+EdgesAtLeast_cpp <- function(d, lambda) {
+    .Call(`_MaxMin_EdgesAtLeast_cpp`, d, lambda)
+}
+
+ThresholdDecide_cpp <- function(hi, hj, n, k, maxSeconds) {
+    .Call(`_MaxMin_ThresholdDecide_cpp`, hi, hj, n, k, maxSeconds)
 }
 
 Grasp_cpp <- function(dmat, m, max_no_improve, max_iter, elite_size, alpha, time_budget_s, n_threads = 1L, progress_cb = NULL) {

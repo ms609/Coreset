@@ -1,44 +1,218 @@
 // exact_reduce.cpp
 //
-// Combinatorial reduction for one ExactMaxMin feasibility probe.
+// Decides one ExactMaxMin feasibility probe combinatorially.
 //
 // A probe asks whether the threshold graph G(lambda) (edges: pairs closer
 // than lambda) has an independent set of size >= k -- equivalently, whether
-// the complement graph H (pairs >= lambda apart) contains a k-clique. Every
-// vertex of a k-clique has H-degree >= k - 1, so iteratively deleting
-// vertices of H-degree < k - 1 (the (k-1)-core peel) never removes a witness
-// vertex, and a k-clique lies within a single H-component. A proper
-// colouring of H bounds its clique number (omega <= chi), so a component
-// greedily coloured with fewer than k colours cannot host a witness.
+// the complement graph H (pairs >= lambda apart) contains a k-clique.
 //
-// Same-colour vertices are pairwise H-non-adjacent, hence pairwise
-// G-adjacent: each colour class is a G-clique whose single packing row
-// sum(x) <= 1 carries all of its pairwise constraints, leaving only
-// cross-colour G-edges to emit as pairwise rows. The reduced per-component
-// model has the same integer feasible set as the all-pairs formulation, with
-// an LP bound of ~chi rather than ~n/2.
+// Three facts bound the search:
+//
+//   * Every vertex of a k-clique has H-degree >= k - 1, so iteratively
+//     deleting vertices of H-degree < k - 1 -- the (k-1)-core peel -- never
+//     removes a witness vertex.
+//
+//   * A k-clique lies wholly within one H-component.
+//
+//   * A proper colouring bounds the clique number (omega <= chi): a candidate
+//     set greedily coloured with fewer colours than the clique still needs
+//     cannot complete it.
+//
+// The colour bound applies at every node of the depth-first search, not only
+// at the root: a node's surviving candidates are greedily coloured and
+// visited in descending colour order, so the first candidate whose colour
+// cannot lift the current clique to size k prunes every candidate before it.
+// The search is exhaustive, so finding no clique proves that none exists.
+//
+// Candidate sets are 64-bit word bitmaps, making the intersection with a
+// vertex's neighbourhood -- the operation the search performs at every node --
+// a linear word-AND pass.
 //
 // All tie-breaks are by vertex index, so the output is deterministic.
 
 #include <Rcpp.h>
+#include <vector>
+#include <algorithm>
+#include <cstdint>
+#include <chrono>
 using namespace Rcpp;
 
-// Reduce the complement graph H (edge list `hi`/`hj`, 1-based) of one
-// threshold probe on `n` vertices against target clique size `k`.
-// Returns list(clique, comps):
-//   clique -- a greedy H-clique of size >= k (sorted, 1-based) when one is
-//             found: a feasibility witness needing no IP; else integer(0).
-//   comps  -- one entry per surviving component (size >= k and greedy
-//             chi >= k), each list(vars, cls, ei, ej): member vertices
-//             (ascending, 1-based), their colour class, and the cross-colour
-//             G-edges as local indices into `vars`. Empty when `clique` is
-//             non-empty or nothing survives (the latter proves
-//             infeasibility).
+typedef uint64_t BitWord;
+static const int kBits = 64;
+
+// Vertices of one component, relabelled 0 .. nv-1, with bitmap adjacency.
+// The search visits candidates in ascending local index within a colour
+// class, so the caller's ordering of `vars` is the colouring order.
+struct CliqueSearch {
+  int nv;
+  int nw;
+  int k;
+  std::vector<BitWord> adj;                    // nv * nw
+  std::vector<std::vector<BitWord> > cand;     // candidate set per depth
+  std::vector<std::vector<int> > order, colour;
+  std::vector<BitWord> uncoloured, sameColour; // colouring scratch
+  std::vector<int> cur, best;
+  bool found;
+  bool expired;
+  long long nodes;
+  std::chrono::steady_clock::time_point deadline;
+
+  inline void SetBit(BitWord* s, int v) const {
+    s[v >> 6] |= (BitWord(1) << (v & 63));
+  }
+  inline void ClearBit(BitWord* s, int v) const {
+    s[v >> 6] &= ~(BitWord(1) << (v & 63));
+  }
+  inline int FirstBit(const BitWord* s, int from) const {
+    for (int w = from; w < nw; ++w) {
+      if (s[w]) {
+        // __builtin_ctzll is GCC/clang; MSVC does not build R packages here.
+        return (w << 6) + static_cast<int>(__builtin_ctzll(s[w]));
+      }
+    }
+    return -1;
+  }
+
+  CliqueSearch(int nv_, int k_, std::chrono::steady_clock::time_point end)
+    : nv(nv_), nw((nv_ + kBits - 1) / kBits), k(k_),
+      adj(static_cast<size_t>(nv_) * nw, 0),
+      cand(k_ + 1, std::vector<BitWord>(nw, 0)),
+      order(k_ + 1, std::vector<int>(nv_, 0)),
+      colour(k_ + 1, std::vector<int>(nv_, 0)),
+      uncoloured(nw, 0), sameColour(nw, 0),
+      found(false), expired(false), nodes(0), deadline(end) {}
+
+  // Greedy colouring of `set`, writing its vertices to order/colour sorted by
+  // colour ascending. Colour c is a set of pairwise non-adjacent vertices, so
+  // at most one of them can join any clique.
+  int ColourSort(const BitWord* set, std::vector<int>& order,
+                 std::vector<int>& colour) {
+    std::copy(set, set + nw, uncoloured.begin());
+    int idx = 0;
+    int c = 0;
+    for (;;) {
+      const int seed = FirstBit(uncoloured.data(), 0);
+      if (seed < 0) {
+        break;
+      }
+      ++c;
+      std::copy(uncoloured.begin(), uncoloured.end(), sameColour.begin());
+      for (int v = seed; v >= 0; v = FirstBit(sameColour.data(), v >> 6)) {
+        ClearBit(sameColour.data(), v);
+        ClearBit(uncoloured.data(), v);
+        const BitWord* av = &adj[static_cast<size_t>(v) * nw];
+        for (int w = 0; w < nw; ++w) {
+          sameColour[w] &= ~av[w];
+        }
+        order[idx] = v;
+        colour[idx] = c;
+        ++idx;
+      }
+    }
+    return idx;
+  }
+
+  void Expand(int depth) {
+    if (((++nodes) & 1023LL) == 0) {
+      if (std::chrono::steady_clock::now() > deadline) {
+        expired = true;
+      }
+      checkUserInterrupt();
+    }
+    if (expired) {
+      return;
+    }
+    std::vector<BitWord>& set = cand[depth];
+    std::vector<int>& ord = order[depth];
+    std::vector<int>& col = colour[depth];
+    const int m = ColourSort(set.data(), ord, col);
+    for (int i = m - 1; i >= 0; --i) {
+      if (depth + col[i] < k) {
+        return;                     // colour bound: no k-clique below here
+      }
+      const int v = ord[i];
+      cur.push_back(v);
+      if (depth + 1 >= k) {
+        best = cur;
+        found = true;
+        return;
+      }
+      const BitWord* av = &adj[static_cast<size_t>(v) * nw];
+      std::vector<BitWord>& next = cand[depth + 1];
+      bool any = false;
+      for (int w = 0; w < nw; ++w) {
+        next[w] = set[w] & av[w];
+        any = any || next[w];
+      }
+      if (any) {
+        Expand(depth + 1);
+        if (found || expired) {
+          return;
+        }
+      }
+      cur.pop_back();
+      ClearBit(set.data(), v);
+    }
+  }
+};
+
+// The strict upper triangle of `d`, keeping only entries >= `lowest`: the
+// candidate thresholds the search can still reach. Column-major, so a column
+// is a contiguous read.
 // [[Rcpp::export]]
-List ThresholdReduce_cpp(IntegerVector hi, IntegerVector hj,
-                         int n, int k) {
+NumericVector TriangleAtLeast_cpp(NumericMatrix d, double lowest) {
+  const int n = d.nrow();
+  const double* dp = REAL(d);
+  std::vector<double> out;
+  for (int j = 1; j < n; ++j) {
+    const double* col = dp + static_cast<size_t>(j) * n;
+    for (int i = 0; i < j; ++i) {
+      if (col[i] >= lowest) {
+        out.push_back(col[i]);
+      }
+    }
+  }
+  return NumericVector(out.begin(), out.end());
+}
+
+// Edges of the complement graph H at threshold `lambda`: the pairs at least
+// `lambda` apart, as 1-based endpoint vectors with i < j. The pairs closer
+// than `lambda` are the threshold graph G(lambda), whose independent sets
+// these edges' cliques are.
+// [[Rcpp::export]]
+List EdgesAtLeast_cpp(NumericMatrix d, double lambda) {
+  const int n = d.nrow();
+  const double* dp = REAL(d);
+  std::vector<int> hi, hj;
+  for (int j = 1; j < n; ++j) {
+    const double* col = dp + static_cast<size_t>(j) * n;
+    for (int i = 0; i < j; ++i) {
+      if (col[i] >= lambda) {
+        hi.push_back(i + 1);
+        hj.push_back(j + 1);
+      }
+    }
+  }
+  return List::create(_["hi"] = IntegerVector(hi.begin(), hi.end()),
+                      _["hj"] = IntegerVector(hj.begin(), hj.end()));
+}
+
+// Decide one probe on the complement graph H (edge list `hi`/`hj`, 1-based,
+// each pair once) over `n` vertices against target clique size `k`.
+// Returns list(status, witness):
+//   "feasible"     -- witness is a k-clique of H (ascending, 1-based),
+//   "infeasible"   -- the search was exhaustive and found none,
+//   "inconclusive" -- `maxSeconds` elapsed first.
+// [[Rcpp::export]]
+List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
+                         int n, int k, double maxSeconds) {
   const R_xlen_t nE = hi.size();
   const int need = k - 1;
+  // One deadline for the whole probe: components share the caller's budget.
+  const std::chrono::steady_clock::time_point deadline =
+    std::chrono::steady_clock::now() +
+    std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+      std::chrono::duration<double>(maxSeconds));
 
   // Adjacency (CSR), both directions per edge.
   std::vector<R_xlen_t> off(n + 1, 0);
@@ -60,8 +234,8 @@ List ThresholdReduce_cpp(IntegerVector hi, IntegerVector hj,
     }
   }
 
-  // Peel to the (k-1)-core. After the loop, dg[] of a surviving vertex
-  // counts its surviving neighbours.
+  // Peel to the (k-1)-core. After the loop, dg[] of a surviving vertex counts
+  // its surviving neighbours.
   std::vector<int> dg(n);
   for (int v = 0; v < n; ++v) {
     dg[v] = static_cast<int>(off[v + 1] - off[v]);
@@ -114,140 +288,64 @@ List ThresholdReduce_cpp(IntegerVector hi, IntegerVector hj,
     compSize.push_back(sz);
   }
 
-  // Greedy colouring, highest surviving degree first. Neighbours are always
-  // within the vertex's own component, so per-component chi is the largest
-  // colour its members receive.
-  std::vector<int> alive;
-  alive.reserve(n);
-  for (int v = 0; v < n; ++v) {
-    if (!dead[v]) {
-      alive.push_back(v);
-    }
-  }
-  std::sort(alive.begin(), alive.end(), [&](int a, int b) {
-    return dg[a] != dg[b] ? dg[a] > dg[b] : a < b;
-  });
-  std::vector<int> colour(n, 0);
-  std::vector<int> compChi(nComp, 0);
-  std::vector<int> mark(n + 2, -1);
-  int stamp = 0;
-  for (const int v : alive) {
-    ++stamp;
-    for (R_xlen_t p = off[v]; p < off[v + 1]; ++p) {
-      const int u = adj[p];
-      if (!dead[u] && colour[u]) {
-        mark[colour[u]] = stamp;
-      }
-    }
-    int c = 1;
-    while (mark[c] == stamp) {
-      ++c;
-    }
-    colour[v] = c;
-    if (c > compChi[comp[v] - 1]) {
-      compChi[comp[v] - 1] = c;
-    }
-  }
-
-  // Greedy clique attempt per surviving component: seed at the highest
-  // surviving degree, grow by highest degree among common neighbours.
-  // Reaching k proves feasibility with no IP.
-  std::vector<int> vmark(n, -1);
-  int vstamp = 0;
-  IntegerVector clique;
-  for (int c = 1; c <= nComp && clique.size() == 0; ++c) {
-    if (compSize[c - 1] < k || compChi[c - 1] < k) {
+  std::vector<int> loc(n, -1);
+  for (int c = 1; c <= nComp; ++c) {
+    // Unreachable: every surviving vertex has >= need = k - 1 alive
+    // neighbours, all within its own component, so a surviving component
+    // always has >= k members.
+    if (compSize[c - 1] < k) {          // # nocov start
       continue;
-    }
-    int s = -1;
+    }                                    // # nocov end
+    // Highest surviving degree first: the colouring the search builds at each
+    // node then follows Welsh-Powell order, which needs fewer colours and so
+    // prunes harder.
+    std::vector<int> vars;
+    vars.reserve(compSize[c - 1]);
     for (int v = 0; v < n; ++v) {
-      if (!dead[v] && comp[v] == c && (s < 0 || dg[v] > dg[s])) {
-        s = v;
+      if (!dead[v] && comp[v] == c) {
+        vars.push_back(v);
       }
     }
-    std::vector<int> cand;
-    for (R_xlen_t p = off[s]; p < off[s + 1]; ++p) {
-      if (!dead[adj[p]]) {
-        cand.push_back(adj[p]);
-      }
+    std::stable_sort(vars.begin(), vars.end(),
+                     [&](int a, int b) { return dg[a] > dg[b]; });
+    const int nv = static_cast<int>(vars.size());
+    for (int t = 0; t < nv; ++t) {
+      loc[vars[t]] = t;
     }
-    std::vector<int> cl;
-    cl.push_back(s);
-    while (static_cast<int>(cl.size()) < k && !cand.empty()) {
-      int best = cand[0];
-      for (const int u : cand) {
-        if (dg[u] > dg[best] || (dg[u] == dg[best] && u < best)) {
-          best = u;
-        }
-      }
-      cl.push_back(best);
-      ++vstamp;
-      for (R_xlen_t p = off[best]; p < off[best + 1]; ++p) {
-        vmark[adj[p]] = vstamp;
-      }
-      std::vector<int> next;
-      for (const int u : cand) {
-        if (u != best && vmark[u] == vstamp) {
-          next.push_back(u);
-        }
-      }
-      cand.swap(next);
-    }
-    if (static_cast<int>(cl.size()) >= k) {
-      std::sort(cl.begin(), cl.end());
-      IntegerVector out(cl.size());
-      for (R_xlen_t t = 0; t < static_cast<R_xlen_t>(cl.size()); ++t) {
-        out[t] = cl[t] + 1;
-      }
-      clique = out;
-    }
-  }
 
-  // Emit the reduced model for each surviving component.
-  List comps;
-  if (clique.size() == 0) {
-    for (int c = 1; c <= nComp; ++c) {
-      if (compSize[c - 1] < k || compChi[c - 1] < k) {
-        continue;
-      }
-      std::vector<int> vars;
-      for (int v = 0; v < n; ++v) {
-        if (!dead[v] && comp[v] == c) {
-          vars.push_back(v);
+    CliqueSearch cs(nv, k, deadline);
+    for (int t = 0; t < nv; ++t) {
+      const int u = vars[t];
+      BitWord* row = &cs.adj[static_cast<size_t>(t) * cs.nw];
+      for (R_xlen_t p = off[u]; p < off[u + 1]; ++p) {
+        const int w = adj[p];
+        if (!dead[w] && comp[w] == c) {
+          cs.SetBit(row, loc[w]);
         }
       }
-      const int nv = static_cast<int>(vars.size());
-      std::vector<int> loc(n, -1);
-      for (int t = 0; t < nv; ++t) {
-        loc[vars[t]] = t;
+    }
+    for (int t = 0; t < nv; ++t) {
+      cs.SetBit(cs.cand[0].data(), t);
+    }
+    cs.Expand(0);
+    for (int t = 0; t < nv; ++t) {
+      loc[vars[t]] = -1;
+    }
+
+    if (cs.expired) {
+      return List::create(_["status"] = "inconclusive",
+                          _["witness"] = IntegerVector(0));
+    }
+    if (cs.found) {
+      std::vector<int> w(cs.best.size());
+      for (size_t t = 0; t < cs.best.size(); ++t) {
+        w[t] = vars[cs.best[t]] + 1;
       }
-      std::vector<int> ei;
-      std::vector<int> ej;
-      for (int a = 0; a < nv; ++a) {
-        const int u = vars[a];
-        ++vstamp;
-        for (R_xlen_t p = off[u]; p < off[u + 1]; ++p) {
-          vmark[adj[p]] = vstamp;
-        }
-        for (int b = a + 1; b < nv; ++b) {
-          const int v = vars[b];
-          if (vmark[v] == vstamp || colour[u] == colour[v]) {
-            continue;
-          }
-          ei.push_back(a + 1);
-          ej.push_back(b + 1);
-        }
-      }
-      IntegerVector vv(nv);
-      IntegerVector cc(nv);
-      for (int t = 0; t < nv; ++t) {
-        vv[t] = vars[t] + 1;
-        cc[t] = colour[vars[t]];
-      }
-      comps.push_back(List::create(_["vars"] = vv, _["cls"] = cc,
-                                   _["ei"] = IntegerVector(ei.begin(), ei.end()),
-                                   _["ej"] = IntegerVector(ej.begin(), ej.end())));
+      std::sort(w.begin(), w.end());
+      return List::create(_["status"] = "feasible",
+                          _["witness"] = IntegerVector(w.begin(), w.end()));
     }
   }
-  return List::create(_["clique"] = clique, _["comps"] = comps);
+  return List::create(_["status"] = "infeasible",
+                      _["witness"] = IntegerVector(0));
 }
