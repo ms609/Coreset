@@ -1,15 +1,56 @@
 # farfirst.R
 
+#' Reconcile the two triangles of a distance matrix
+#'
+#' Internal helper: returns `d` unchanged when its triangles already agree,
+#' averages them when they differ by no more than `tolerance`, and errors
+#' beyond it.
+#'
+#' @param d A square numeric matrix, known finite.
+#' @param tolerance Numeric: largest scaled discrepancy to repair.
+#' @return `.Symmetrise()` returns an exactly symmetric matrix.
+#' @details
+#' The solvers read whichever of `d[i, j]` and `d[j, i]` is the cheaper memory
+#' access, and which one that is depends on the subset size, so a matrix
+#' symmetric only to rounding would answer differently for different `k`.
+#' Averaging the two triangles settles the question once, at a cost of one
+#' `n * n` copy: repair `d` yourself if calling a solver in a loop.
+#' @keywords internal
+.Symmetrise <- function(d, tolerance = .SymmetryTolerance()) {
+  dev <- SymmetryDeviation_cpp(d)
+  if (dev == 0) {
+    return(d)
+  }
+  if (dev > tolerance) {
+    stop("`d` must be symmetric: d[i, j] and d[j, i] differ by ",
+         format(dev, digits = 3), " relative to their magnitude, beyond the ",
+         "tolerance of ", format(tolerance, digits = 3),
+         " set by `options(MaxMin.symmetryTolerance=)`")
+  }
+  warning("`d` is symmetric only to rounding; averaging d[i, j] with d[j, i]. ",
+          "Pass `(d + t(d)) / 2` to silence this.", immediate. = TRUE)
+  Symmetrised_cpp(d)
+}
+
+# Largest discrepancy between d[i, j] and d[j, i], relative to
+# max(1, |d[i, j]|, |d[j, i]|), that is repaired rather than refused. The
+# default matches R's own `isSymmetric()`; 0 refuses anything inexact.
+.SymmetryTolerance <- function() {
+  tol <- getOption("MaxMin.symmetryTolerance", 100 * .Machine$double.eps)
+  if (length(tol) != 1L || !is.numeric(tol) || is.na(tol) || tol < 0) {
+    stop("`options(MaxMin.symmetryTolerance=)` must be a single ",
+         "non-negative number")
+  }
+  tol
+}
+
 #' Coerce distance input to a square matrix, skipping the round-trip when
 #' already a matrix.
 #' @param d A `dist` object or a square numeric matrix.
-#' @param symmetric Logical: require `d` to be exactly symmetric.
+#' @param symmetric Logical: reconcile the two triangles of `d`.
 #' @return `.AsDistMatrix()` returns a square numeric matrix.
 #' @details
-#' Under `symmetric = TRUE` the two triangles must hold equal values, since the
-#' kernels are free to read either. A matrix symmetric only to rounding is
-#' rejected rather than silently resolved in one direction; `(d + t(d)) / 2`
-#' makes it exact. A `dist` object is symmetric by construction.
+#' A `dist` object is symmetric by construction, so it bypasses the check.
 #' @keywords internal
 .AsDistMatrix <- function(d, symmetric = TRUE) {
   wasDist <- inherits(d, "dist")
@@ -21,10 +62,8 @@
   if (!AllFinite_cpp(d, .NThreads())) {
     stop("distance matrix must not contain NA/NaN/Inf")
   }
-  # A `dist` fills both triangles from one value, so it needs no check.
-  if (symmetric && !wasDist && !IsExactlySymmetric_cpp(d)) {
-    stop("`d` must be symmetric: d[i, j] and d[j, i] must be equal. ",
-         "Use `(d + t(d)) / 2` if rounding has made them differ.")
+  if (symmetric && !wasDist) {
+    d <- .Symmetrise(d)
   }
   d
 }

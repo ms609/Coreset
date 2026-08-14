@@ -459,29 +459,52 @@ test_that("FarFirst results are invariant to mc.cores (parallel greedy pass)", {
   expect_identical(s1, s2)
 })
 
-test_that("IsExactlySymmetric_cpp holds to exact equality across tiles", {
-  sym <- MaxMin:::IsExactlySymmetric_cpp
+test_that("SymmetryDeviation_cpp measures every tile", {
+  dev <- MaxMin:::SymmetryDeviation_cpp
   d <- as.matrix(stats::dist(matrix(stats::rnorm(400L), ncol = 2L)))
-  expect_true(sym(d))
-  expect_true(sym(matrix(0, 1L, 1L)))
-  expect_false(sym(matrix(1:6 + 0, 2L, 3L)))       # not square
+  expect_identical(dev(d), 0)
+  expect_identical(dev(matrix(0, 1L, 1L)), 0)
+  expect_identical(dev(matrix(1:6 + 0, 2L, 3L)), Inf)      # not square
 
   # A single flipped entry is caught wherever it sits: within the first tile,
   # on a diagonal tile past the first, and in an off-diagonal tile.
   for (ij in list(c(1L, 2L), c(70L, 75L), c(3L, 130L))) {
     bad <- d
     bad[ij[[1]], ij[[2]]] <- bad[ij[[1]], ij[[2]]] + 1
-    expect_false(sym(bad), info = paste(ij, collapse = "-"))
+    expect_gt(dev(bad), 0)
   }
 
-  # Symmetric to rounding is not symmetric: one ulp apart must fail, since the
-  # kernels may read either triangle.
+  # The deviation is scaled by the larger magnitude of the pair, so the same
+  # tolerance serves distances of any size; below 1 the scaling stops, leaving
+  # an absolute comparison.
+  big <- d * 1e6
+  big[5L, 9L] <- big[9L, 5L] + 1
+  expect_equal(dev(big), 1 / big[5L, 9L])
+  small <- d * 1e-6
+  small[5L, 9L] <- small[9L, 5L] + 1e-8
+  expect_equal(dev(small), 1e-8)
+
+  # One ulp apart is a rounding-scale deviation, not zero: the kernels may read
+  # either triangle, so the two must be reconciled before the solve.
   near <- d
   near[5L, 9L] <- near[9L, 5L] * (1 + .Machine$double.eps)
-  expect_false(sym(near))
+  expect_gt(dev(near), 0)
+  expect_lt(dev(near), 100 * .Machine$double.eps)
 })
 
-test_that(".AsDistMatrix enforces the symmetry its callers rely on", {
+test_that("Symmetrised_cpp reproduces (d + t(d)) / 2", {
+  asym <- matrix(stats::rnorm(400L), 20L, 20L)
+  dimnames(asym) <- list(letters[1:20], LETTERS[1:20])
+  fixed <- MaxMin:::Symmetrised_cpp(asym)
+  expect_identical(fixed, (asym + t(asym)) / 2)  # dimnames included
+  expect_identical(MaxMin:::SymmetryDeviation_cpp(fixed), 0)
+
+  # Exactly symmetric input survives bit-for-bit, diagonal included.
+  d <- as.matrix(stats::dist(matrix(stats::rnorm(60L), ncol = 2L)))
+  expect_identical(MaxMin:::Symmetrised_cpp(d), d)
+})
+
+test_that(".AsDistMatrix repairs rounding asymmetry and refuses the rest", {
   adm <- MaxMin:::.AsDistMatrix
   pts <- matrix(stats::rnorm(60L), ncol = 2L)
   d <- as.matrix(stats::dist(pts))
@@ -495,11 +518,61 @@ test_that(".AsDistMatrix enforces the symmetry its callers rely on", {
   # opt out and must still accept it.
   expect_identical(adm(asym, symmetric = FALSE), asym)
 
+  # Within tolerance the triangles are averaged rather than refused, and the
+  # result is what the manual repair would have given.
+  near <- d
+  near[2L, 5L] <- near[5L, 2L] * (1 + 4 * .Machine$double.eps)
+  expect_warning(fixed <- adm(near), "symmetric only to rounding")
+  expect_identical(fixed, (near + t(near)) / 2)
+  expect_identical(MaxMin:::SymmetryDeviation_cpp(fixed), 0)
+
+  # A zero tolerance restores refusal, and the message names the option.
+  old <- options(MaxMin.symmetryTolerance = 0)
+  on.exit(options(old), add = TRUE)
+  expect_error(adm(near), "MaxMin.symmetryTolerance")
+  options(old)
+
   # NA is reported as NA, not as asymmetry: NA != NA would fail the symmetry
   # test on its own terms and hide the real defect.
   naMat <- d
   naMat[2L, 5L] <- NA_real_
   expect_error(adm(naMat), "NA/NaN/Inf")
+})
+
+test_that("the symmetry tolerance must be a single non-negative number", {
+  old <- options(MaxMin.symmetryTolerance = NULL)
+  on.exit(options(old), add = TRUE)
+  d <- as.matrix(stats::dist(matrix(stats::rnorm(60L), ncol = 2L)))
+  near <- d
+  near[2L, 5L] <- near[5L, 2L] * (1 + 4 * .Machine$double.eps)
+  for (bad in list(-1, c(1, 2), NA_real_, "1e-8")) {
+    options(MaxMin.symmetryTolerance = bad)
+    expect_error(MaxMin:::.AsDistMatrix(near), "non-negative number")
+  }
+  # A slack tolerance repairs what the default refuses.
+  options(MaxMin.symmetryTolerance = 1)
+  gross <- d
+  gross[2L, 5L] <- gross[5L, 2L] + 0.5
+  expect_warning(fixed <- MaxMin:::.AsDistMatrix(gross), "only to rounding")
+  expect_identical(fixed, (gross + t(gross)) / 2)
+})
+
+test_that("a repaired matrix gives the same selection at either subset size", {
+  # The repair exists because the kernels read whichever triangle is cheaper,
+  # and which that is depends on `k`: a matrix symmetric only to rounding could
+  # otherwise answer differently for different `k`. n = 200 puts k = 3 and
+  # k = 60 on opposite sides of the n / 8 switch.
+  set.seed(90)
+  d <- as.matrix(stats::dist(matrix(stats::rnorm(600L), ncol = 3L)))
+  near <- d
+  near[7L, 90L] <- near[90L, 7L] * (1 + 2 * .Machine$double.eps)
+  repaired <- (near + t(near)) / 2
+  for (k in c(3L, 60L)) {
+    expect_warning(sel <- DropAdd(k, near, plateau = 50L), "only to rounding")
+    ref <- DropAdd(k, repaired, plateau = 50L)
+    attr(sel, "time_s") <- attr(ref, "time_s") <- NULL   # wall-clock
+    expect_identical(sel, ref)
+  }
 })
 
 test_that("AllFinite_cpp matches the anyNA/is.finite guard semantics", {

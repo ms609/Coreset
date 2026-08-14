@@ -1594,14 +1594,21 @@ stay resident, while the recomputed points' columns are cold. That is what the
 `m > n/8` switch exists for, and it is why the lever ships as a switch rather
 than a replacement.
 
-**Contract.** `.AsDistMatrix()` now requires exact symmetry, checked by
-`IsExactlySymmetric_cpp` (tile-by-tile, so a tile and its transpose are
-resident together). Exact, not to a tolerance: the kernel reads whichever
-triangle is cheaper and that choice depends on `m`, so a matrix symmetric only
-to rounding could answer differently for different `k`. The finiteness scan
-runs first, since `NA != NA` would otherwise report a missing value as
-asymmetry. `MaxMean()`/`MeanDist()` pass `symmetric = FALSE`: they average the
-two triangles, which is documented behaviour and unaffected by this.
+**Contract.** The matrix the kernel receives from `.AsDistMatrix()` is now
+exactly symmetric, since the kernel reads whichever triangle is cheaper and
+that choice depends on `m`: a matrix symmetric only to rounding could
+otherwise answer differently for different `k`. `SymmetryDeviation_cpp`
+measures the largest discrepancy tile-by-tile (so a tile and its transpose are
+resident together); zero passes through untouched, anything up to
+`options(MaxMin.symmetryTolerance=)` has its triangles averaged with an
+immediate warning, and the rest is refused. The finiteness scan runs first,
+since `NA != NA` would otherwise report a missing value as asymmetry.
+`MaxMean()`/`MeanDist()` pass `symmetric = FALSE`: they average the two
+triangles themselves, which is documented behaviour and unaffected by this.
+
+The k-centre solvers' own `IsSymmetric_cpp` guard went with it: it ran after
+`.AsDistMatrix()`, whose guarantee is strictly the stronger one, so it could
+no longer fire.
 
 **Verification.** The 295-case trajectory battery is **bit-identical** to the
 pre-change kernel — after its asymmetric axis was replaced with a second

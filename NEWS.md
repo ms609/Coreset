@@ -1,3 +1,9 @@
+# MaxMin 0.0.0.9012 (development)
+
+- A distance matrix whose triangles differ only by rounding has them averaged,
+  with a warning; `options(MaxMin.symmetryTolerance = )` sets how large a
+  discrepancy is repaired rather than refused.
+
 # MaxMin 0.0.0.9011 (development)
 
 - Distance matrices must now be exactly symmetric.

@@ -36,20 +36,12 @@
 }
 
 # The k-centre solvers assume a symmetric metric: `KCentreCandidates_cpp` reads
-# only the upper triangle and the kernel/covering-IP read d(i,j) as d(j,i).
-# `.AsDistMatrix` (unlike the other MaxMin solvers) accepts asymmetric matrices,
-# so guard here -- an asymmetric `d` would otherwise give a silently wrong radius
-# (KC-002). A `dist` object is symmetric by construction; the O(n^2) check is
-# negligible against the O(n^2 log n) solve. (KCentreRadius needs no guard: it
-# reads true d(point, centre) columns and is correct for asymmetric input.)
-.KCentreRequireSymmetric <- function(d) {
-  # In-place C++ check (no transpose copy): negligible beside the O(n^2 log n)
-  # solve, where R's isSymmetric() would copy a large dense matrix.
-  if (!IsSymmetric_cpp(d, 100 * .Machine$double.eps)) {
-    stop("`d` must be symmetric for the k-centre solvers; an asymmetric ",
-         "distance would give a silently wrong covering radius")
-  }
-}
+# only the upper triangle and the kernel/covering-IP read d(i,j) as d(j,i), so
+# an asymmetric `d` would give a silently wrong covering radius (KC-002).
+# `.AsDistMatrix()` returns a matrix whose triangles agree exactly, which is
+# that guarantee; the solvers below need no guard of their own.
+# (`KCentreRadius()` is correct for asymmetric input regardless: it reads true
+# d(point, centre) columns.)
 
 # Above this many candidate radii the exhaustive CDS scan (O(nCand * n^2)) is too
 # costly, so KCentre falls back to binary-search CDSh; below it the full scan is
@@ -170,9 +162,7 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' KCentreRadius(d, FarFirst(5L, d, nSeeds = 1))
 #' @export
 KCentre <- function(k, d, nstart = 1L, effort = 1L) {
-  needSymCheck <- !inherits(d, "dist")          # a dist object is symmetric
   d <- .AsDistMatrix(d)
-  if (needSymCheck) .KCentreRequireSymmetric(d)
   n <- nrow(d)
   if (length(k) != 1L || !is.finite(k) || k < 1L) {
     stop("`k` must be a single positive integer")
@@ -351,9 +341,7 @@ ExactKCentre <- function(k, d, maxSeconds = 60) {
          "Install it with install.packages(\"Matrix\").")
   } # nocov end
 
-  needSymCheck <- !inherits(d, "dist")          # a dist object is symmetric
   d <- .AsDistMatrix(d)
-  if (needSymCheck) .KCentreRequireSymmetric(d)
   n <- nrow(d)
   if (length(k) != 1L || !is.finite(k) || k < 1L) {
     stop("`k` must be a single positive integer")

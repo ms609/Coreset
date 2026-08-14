@@ -10,7 +10,7 @@ already a matrix.}
 \arguments{
 \item{d}{A \code{dist} object or a square numeric matrix.}
 
-\item{symmetric}{Logical: require \code{d} to be exactly symmetric.}
+\item{symmetric}{Logical: reconcile the two triangles of \code{d}.}
 }
 \value{
 \code{.AsDistMatrix()} returns a square numeric matrix.
@@ -20,9 +20,6 @@ Coerce distance input to a square matrix, skipping the round-trip when
 already a matrix.
 }
 \details{
-Under \code{symmetric = TRUE} the two triangles must hold equal values, since the
-kernels are free to read either. A matrix symmetric only to rounding is
-rejected rather than silently resolved in one direction; \code{(d + t(d)) / 2}
-makes it exact. A \code{dist} object is symmetric by construction.
+A \code{dist} object is symmetric by construction, so it bypasses the check.
 }
 \keyword{internal}
