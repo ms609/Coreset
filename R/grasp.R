@@ -397,9 +397,6 @@ Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
     }
   }
 
-  nThreads <- as.integer(getOption("mc.cores", 1L))
-  if (is.na(nThreads) || nThreads < 1L) nThreads <- 1L
-
   out <- Grasp_cpp(d, k, plateau, .Machine$integer.max, eliteSize,
                      as.double(alpha), as.double(maxSeconds), .NThreads(), cb)
 
