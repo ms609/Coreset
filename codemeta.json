@@ -7,7 +7,7 @@
   "codeRepository": "https://ms609.github.io/MaxMin/",
   "issueTracker": "https://github.com/ms609/MaxMin/issues",
   "license": "https://spdx.org/licenses/GPL-3.0",
-  "version": "0.0.0.9008",
+  "version": "0.0.0.9010",
   "programmingLanguage": {
     "@type": "ComputerLanguage",
     "name": "R",
@@ -180,7 +180,7 @@
     },
     "SystemRequirements": null
   },
-  "fileSize": "725.781KB",
+  "fileSize": "1735.606KB",
   "citation": [
     {
       "@type": "SoftwareSourceCode",
@@ -194,7 +194,7 @@
       ],
       "name": "{MaxMin}: Maximum-Minimum Diversity and Dispersion Subset Selection",
       "url": "https://github.com/ms609/MaxMin",
-      "description": "R package version 0.0.0.9008"
+      "description": "R package version 0.0.0.9010"
     }
   ]
 }
