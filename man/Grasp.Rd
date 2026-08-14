@@ -4,7 +4,15 @@
 \alias{Grasp}
 \title{GRASP with Path Relinking for the Max-Min Diversity Problem}
 \usage{
-Grasp(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8, maxSeconds = Inf)
+Grasp(
+  k,
+  d,
+  plateau = 100L,
+  eliteSize = 10L,
+  alpha = 0.8,
+  maxSeconds = Inf,
+  maxCandidates = 2000L
+)
 }
 \arguments{
 \item{k}{Integer subset size, \verb{2 <= k <= nrow(d)}.}
@@ -24,6 +32,18 @@ whose gain lies within a fraction \code{alpha} of the best-to-worst spread.
 among candidates.}
 
 \item{maxSeconds}{Numeric specifying wall-clock ceiling, in seconds.}
+
+\item{maxCandidates}{Integer: a composable-coreset tractability cap. When the
+number of candidate points \code{N} exceeds \code{maxCandidates}, \code{\link[=FarFirst]{FarFirst()}} thins
+the candidates to a \code{maxCandidates}-point coreset (with the deterministic,
+RNG-free \code{"peripheral"} seed, so no random stream is perturbed), the solver
+runs on the coreset, and the chosen indices are mapped back to the original
+numbering. This lets the solver produce a solution at scales where it would
+otherwise be intractable. \code{maxCandidates = 0} (or \code{Inf}) disables thinning
+and runs on the full problem; a cap at or above \code{N} is a no-op. A cap below
+\code{k} is an error. The default is \code{2000L}, conservative because \code{Grasp()} is matrix-only, so
+Thinning is \strong{on by default}: an input larger than the cap is thinned (and
+a warning is emitted) unless \code{maxCandidates = 0} is passed.}
 }
 \value{
 \code{Grasp()} returns an integer vector of length \code{k} specifying the
@@ -57,6 +77,16 @@ elapsed.
 This method will fail if the complete \eqn{N \times N} distance matrix is
 too large to fit into memory.
 }
+\section{Parallelism}{
+
+To parallelize computation when OpenMP is available, set the \code{"mc.cores"}
+option:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{options(mc.cores = 2L)                       # use a fixed number of cores
+options(mc.cores = parallel::detectCores())  # or all available cores
+}\if{html}{\out{</div>}}
+}
+
 \section{Progress bar}{
 
 In interactive sessions, a bar tracks how close the search is to its \code{plateau} stopping criterion, snapping back each time a better solution is found.
@@ -67,6 +97,10 @@ To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 Grasp(5L, dist(pts), plateau = 20L, eliteSize = 4L)
+
+# Composable coreset: thin to 20 candidates with farthest-first, then run
+# GRASP on the coreset. Returned indices are original-space row indices.
+suppressWarnings(Grasp(5L, dist(pts), plateau = 20L, maxCandidates = 20L))
 }
 \references{
 \insertAllCited{}

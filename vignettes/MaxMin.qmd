@@ -123,15 +123,18 @@ methods for identifying starting points for the greedy search.
 The default is a two-step strategy that starts from a random selects a point at random, then starts greedy search from
 the point furthest from 
 
-By default `FarFirst()` runs eight `"random_furthest"` starts, each of which
+By default `FarFirst()` runs three `"random_furthest"` starts, each of which
 takes a randomly selected point, moves to the point furthest from it, and begins
 the farthest-first sweep from there. The results of the pass with the highest
-T~k~ are returned.
+T~k~ are returned. Three starts captures most of the quality gain from
+restarting — on benchmarks across a wide range of datasets the improvement
+curve bends early (knee at n ≈ 3–4); for higher-quality results, prefer
+`DropAdd()`, whose tabu search escapes the plateau that restarts cannot.
 
 ```{r}
 #| label: gonzalez-random
 set.seed(1)
-FarFirst(6L, eurodist)   # default: best of eight random starts
+FarFirst(6L, eurodist)   # default: best of three random starts
 ```
 
 The number of random starts can be configured via the `nSeeds` argument.
@@ -191,7 +194,7 @@ labels(eurodist)[daPick]
 ```
 
 The algorithm terminates after `plateau` iterations do not improve T~k~.
-Where *N* is too large for a distance matrix to fit in memory 
+Where *N* is too large for a distance matrix to fit in memory
 (roughly N > 46 000), pass a coordinate matrix via `DropAdd(points = ...)`.
 
 

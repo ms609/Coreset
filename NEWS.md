@@ -1,16 +1,42 @@
-# MaxMin 0.0.0.9003 (development)
+# MaxMin 0.0.0.9008 (development)
 
 - `MaxMean()` solves the Max-Mean Dispersion Problem: choose a subset of
   unrestricted size maximising the sum of pairwise distances divided by the
-  number of selected elements.  Uses the RLTS algorithm
-  (Nijimbere et al. 2020, doi:10.3934/jimo.2020115).
-- `MaxMean()` gains a `maxIter` argument (default `1000`): a hard cap on the
-  total number of tabu-search iterations. The search now stops as soon as
-  *either* `maxSeconds` or `maxIter` is reached. **Behaviour change:** because
-  `maxIter` defaults to `1000`, a default `MaxMean()` call now stops at 1000
-  iterations rather than running for the full `maxSeconds`; pass `maxIter = Inf`
-  to budget by time alone (the previous behaviour).
+  number of selected elements, via the RLTS algorithm
+  (Nijimbere et al. 2020, doi:10.3934/jimo.2020115). The search is budgeted by
+  wall-clock time (`maxSeconds`) and a cap on tabu iterations (`maxIter`,
+  default `1000`), stopping as soon as *either* is reached; pass `maxIter = Inf`
+  to budget by time alone.
 - `MeanDist()` scores an arbitrary selection under the max-mean objective.
+
+# MaxMin 0.0.0.9007 (development)
+
+- `FarFirst()` parallelized and optimized.
+
+# MaxMin 0.0.0.9006 (development)
+
+- `Grasp()` no longer discards its best-known solution, is ~10.0× faster,
+  and may be parallelized.
+
+# MaxMin 0.0.0.9005 (development)
+
+- `DropAdd()` can now compute distances between pairs on the fly, rather than
+  needing a complete matrix _a priori_.
+  
+# MaxMin 0.0.0.9004 (development)
+
+- New `MaxEntropy()`: maximum-entropy (maxdet) subset selection.
+
+- New `ExactMaxSum()`: exact solver for the Max-Sum Diversity Problem.
+
+- `DropAdd()` and `Grasp()` gain a `maxCandidates` argument.
+
+- `FarFirst()`'s default `nSeeds` is reduced from `8` to `3`.
+
+- `DropAdd()` gains a `seed` argument.
+
+# MaxMin 0.0.0.9003 (development)
+
 - `KCentre()` / `ExactKCentre()` solve the k-centre problem.
 
 # MaxMin 0.0.0.9002 (development)
@@ -85,8 +111,7 @@
 # MaxMin 0.0.0.9000 (development)
 
 - Initial release: a tiered toolbox for the Max-Min Diversity Problem (MMDP /
-  discrete p-dispersion), extracted from the `FurthestPoint` study package so
-  that it can be depended on by CRAN packages (e.g. `TreeSearch`).
+  discrete p-dispersion).
 - `FarFirst()`: deterministic farthest-first selection from a distance matrix,
   Euclidean coordinates (`points =`), or an on-demand **distance-column oracle**
   (pass a column function as `d`, with `N =`) for spaces with no coordinate

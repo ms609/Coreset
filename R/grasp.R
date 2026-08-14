@@ -53,12 +53,19 @@
 #' @param d Square distance matrix.
 #' @param k Target subset size.
 #' @param alpha RCL threshold parameter (alpha=1 -> greedy, alpha=0 -> random).
+#' @param us Numeric vector of `k` pre-drawn uniforms. `us[[1]]` picks the
+#'   first vertex and `us[[h]]` step `h`'s RCL member, as
+#'   `floor(u * size)` clamped to `size - 1` — exactly the kernel's mapping,
+#'   so R and C++ stay bit-identical. Steps whose RCL is a singleton (or
+#'   empty; see below) leave their uniform unused: consumption is fixed at
+#'   `k` draws either way, which is what lets whole batches be drawn up
+#'   front and constructions run on threads that must not touch R's RNG.
 #' @return `.GraspConstruct()` returns an integer vector of length k.
 #' @keywords internal
-.GraspConstruct <- function(d, k, alpha) {
+.GraspConstruct <- function(d, k, alpha, us) {
   n <- nrow(d)
   sel <- integer(k)
-  sel[1L] <- sample.int(n, 1L)
+  sel[1L] <- as.integer(min(floor(us[[1L]] * n), n - 1)) + 1L
   # nearest-selected distance for each candidate; Inf if no candidate available
   g <- d[, sel[1L]]
   g[sel[1L]] <- -Inf  # mark selected
@@ -75,16 +82,17 @@
       rcl <- candIdx[gv >= thresh]
       # FP rounding at the documented alpha = 1 (and deterministically for
       # alpha > 1) can push thresh just past gmax, emptying the RCL. Fall back
-      # to the unique greedy-best (the argmax-g candidate, first on ties)
-      # WITHOUT an RNG draw, mirroring the size-1 branch and the C++ kernel so
-      # R and C++ stay bit-identical.
+      # to the unique greedy-best (the argmax-g candidate, first on ties);
+      # the step's pre-drawn uniform simply goes unused, mirroring the
+      # size-1 branch and the C++ kernel so R and C++ stay bit-identical.
       if (length(rcl) == 0L) {
         rcl <- candIdx[which.max(gv)]
       }
       if (length(rcl) == 1L) {
         pick <- rcl
       } else {
-        pick <- rcl[sample.int(length(rcl), 1L)]
+        len <- length(rcl)
+        pick <- rcl[[as.integer(min(floor(us[[h]] * len), len - 1)) + 1L]]
       }
       sel[h] <- pick
       # update g: candidate's new "min-to-sel" is min(old g, d to new pick)
@@ -229,13 +237,18 @@
   # Don't admit a duplicate
   if (dmin == 0L) accept <- FALSE
   if (!accept) return(list(ES = ES, esZ = esZ, changed = FALSE))
-  # remove the closest member (smallest Hamming distance); break ties on lowest z
-  closest <- which(hamm == dmin)
-  if (length(closest) > 1L) {
-    closest <- closest[which.min(esZ[closest])]
-  } else {
-    closest <- closest[1L]
-  }
+  # Eviction is restricted to members WORSE than the candidate -- Resende et al.
+  # (2010) Fig. 4 line 8, "closest solution to x' in ES with z(x') > z(x^k)", and
+  # §4.1, "we remove the closest solution to x' in ES among those worse than it
+  # in value".
+  #
+  # The pool is never empty: acceptance already requires selZ > z1 (every member
+  # is then worse) or selZ > zb (the worst member qualifies).
+  worse <- which(esZ < selZ)
+  hammWorse <- hamm[worse]
+  cand <- worse[hammWorse == min(hammWorse)]
+  # Ties: lowest z, then lowest index (which.min gives the first minimum).
+  closest <- cand[which.min(esZ[cand])]
   ES <- ES[-closest]
   esZ <- esZ[-closest]
   # insert sorted (descending z)
@@ -285,6 +298,11 @@
 #'   `alpha = 1` is pure greedy (best only); `alpha = 0` is uniform random
 #'   among candidates.
 #' @param maxSeconds Numeric specifying wall-clock ceiling, in seconds.
+#' @templateVar default `2000L`
+#' @templateVar default_basis conservative because `Grasp()` is matrix-only, so
+#'   the coreset subproblem is a dense \eqn{m \times m} matrix
+#'   (\eqn{2000 \times 2000 \approx} 32 MB)
+#' @template maxCandidates
 #' @return `Grasp()` returns an integer vector of length `k` specifying the
 #' indices of the selected points, with attributes:
 #'   \describe{
@@ -295,6 +313,16 @@
 #'   }
 #'   The vector has class `"MaxMinSelection"` and prints as a one-line summary
 #'   (see [print.MaxMinSelection()]).
+#' @section Parallelism:
+#' To parallelize computation when OpenMP is available, set the `"mc.cores"`
+#' option:
+#'
+#' ```r
+#' options(mc.cores = 2L)                       # use a fixed number of cores
+#' options(mc.cores = parallel::detectCores())  # or all available cores
+#' ```
+#'
+#'
 #' @templateVar progress_shows a bar tracks how close the search is to its `plateau` stopping criterion, snapping back each time a better solution is found
 #' @template progress
 #' @references \insertAllCited{}
@@ -305,9 +333,13 @@
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' Grasp(5L, dist(pts), plateau = 20L, eliteSize = 4L)
+#'
+#' # Composable coreset: thin to 20 candidates with farthest-first, then run
+#' # GRASP on the coreset. Returned indices are original-space row indices.
+#' suppressWarnings(Grasp(5L, dist(pts), plateau = 20L, maxCandidates = 20L))
 #' @export
 Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
-                  maxSeconds = Inf) {
+                  maxSeconds = Inf, maxCandidates = 2000L) {
   progress <- getOption("MaxMin.progress", interactive())
   d <- .AsDistMatrix(d)
   n <- nrow(d)
@@ -327,6 +359,20 @@ Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
   if (!is.numeric(alpha) || length(alpha) != 1L || is.na(alpha) ||
       alpha < 0 || alpha > 1) {
     stop("`alpha` must be a single number in [0, 1]")
+  }
+
+  # Composable-coreset thinning: when `maxCandidates` binds, farthest-first
+  # reduces the n candidates to an m-point coreset (a cheap d[core, core] subset
+  # of the matrix Grasp already holds) and Grasp runs on that. The recursive
+  # call passes `maxCandidates = 0L`, so the coreset is solved exactly once.
+  mc <- .ResolveCap(maxCandidates, n, k)
+  if (!is.na(mc)) {
+    return(.FarFirstThin(
+      k, mc, d = d, points = NULL,
+      RunOnSubset = function(d, points)
+        Grasp(k, d = d, plateau = plateau, eliteSize = eliteSize,
+              alpha = alpha, maxSeconds = maxSeconds, maxCandidates = 0L),
+      label = "Grasp"))
   }
 
   # The kernel reports its stall counter (consecutive non-improving GRASP
@@ -352,7 +398,7 @@ Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
   }
 
   out <- Grasp_cpp(d, k, plateau, .Machine$integer.max, eliteSize,
-                     as.double(alpha), as.double(maxSeconds), cb)
+                     as.double(alpha), as.double(maxSeconds), .NThreads(), cb)
 
   if (progress) {
     cli::cli_progress_done(id = pb)
@@ -375,16 +421,10 @@ Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
 }
 
 # Pure-R reference implementation of Grasp, used as the parity oracle for
-# the compiled kernel (see tests/testthat/test-grasp.R). It mirrors
-# Grasp_cpp() step for step, including the construction RNG draws, so that
-# from a common `set.seed()` the two agree bit for bit. Not exported; callers
-# use Grasp().
-#
-# Termination is the deterministic stagnation rule: stop after
-# `plateau` consecutive iterations that do not raise the best elite
-# objective esZ[1] (which is monotone non-decreasing under .GraspTryInsert()).
-# `maxIter` is an optional hard cap; `maxSeconds` an optional ceiling
-# (Inf = off) that leaves the result reproducible.
+# the compiled kernel (see tests/testthat/test-grasp.R).
+# Because it mirrors Grasp_cpp() step for step, the two agree bit for bit
+# for a given `set.seed()`.
+#' @importFrom stats runif
 #' @keywords internal
 .Grasp_R <- function(k, d, plateau, maxIter = .Machine$integer.max,
                        eliteSize = 10L, alpha = 0.8, maxSeconds = Inf) {
@@ -395,11 +435,13 @@ Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
   dth <- 5L
   t0 <- proc.time()[[3L]]
 
-  # Phase A: build initial elite set.
+  # Phase A: build initial elite set. Uniforms for the whole phase are drawn
+  # up front, one column per construction.
   ES <- vector("list", eliteSize)
   esZ <- numeric(eliteSize)
+  usA <- matrix(runif(eliteSize * k), nrow = k)
   for (b in seq_len(eliteSize)) {
-    x  <- .GraspConstruct(d, k, alpha)
+    x  <- .GraspConstruct(d, k, alpha, usA[, b])
     xp <- .GraspLocalSearch(d, x)
     ES[[b]] <- xp
     esZ[b] <- .GraspObjective(d, xp)
@@ -413,7 +455,7 @@ Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
   prCalls <- 0L
   on.exit(setTimeLimit(), add = TRUE)
   # The wall-clock ceiling is the only stopping criterion that survives when
-  # both `plateau` and `maxIter` are disabled, so it must actually fire.
+  # both `plateau` and `maxIter` are disabled.
   # setTimeLimit() alone cannot be trusted for this: a non-positive `elapsed`
   # *removes* the limit, so once Phase A has already overrun a tiny budget,
   # `maxSeconds - elapsed <= 0` would silently disable it and Phase B would
@@ -429,26 +471,37 @@ Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
   }
 
   # Phase B: GRASP iterations until `plateau` consecutive non-improving
-  # iterations (the deterministic criterion), an optional iteration cap, or an
-  # optional wall-clock ceiling.
+  # iterations, an optional iteration cap, or an optional wall-clock ceiling.
+  # Batched to mirror the kernel: each batch's uniforms are drawn before its
+  # constructions run, and results merge in iteration order with the stopping
+  # rules evaluated at merge time.
+  batchSize <- 32L                     # == GRASP_BATCH in src/grasp.cpp
   tryCatch({
     noImprove <- 0L
     repeat {
       if (budgetSpent()) break
       if (noImprove >= plateau) break
       if (iters >= maxIter) break
-      x  <- .GraspConstruct(d, k, alpha)
-      xp <- .GraspLocalSearch(d, x)
-      zp <- .GraspObjective(d, xp)
-      res <- .GraspTryInsert(d, ES, esZ, xp, zp, dth)
-      ES <- res$ES; esZ <- res$esZ
-      iters <- iters + 1L
-      if (esZ[1L] > bestZ) {
-        bestZ   <- esZ[1L]
-        bestSel <- ES[[1L]]
-        noImprove <- 0L
-      } else {
-        noImprove <- noImprove + 1L
+      us <- matrix(runif(batchSize * k), nrow = k)
+      batch <- vector("list", batchSize)
+      for (b in seq_len(batchSize)) {
+        x <- .GraspConstruct(d, k, alpha, us[, b])
+        batch[[b]] <- .GraspLocalSearch(d, x)
+      }
+      for (b in seq_len(batchSize)) {
+        if (budgetSpent() || noImprove >= plateau || iters >= maxIter) break
+        xp <- batch[[b]]
+        zp <- .GraspObjective(d, xp)
+        res <- .GraspTryInsert(d, ES, esZ, xp, zp, dth)
+        ES <- res$ES; esZ <- res$esZ
+        iters <- iters + 1L
+        if (esZ[1L] > bestZ) {
+          bestZ   <- esZ[1L]
+          bestSel <- ES[[1L]]
+          noImprove <- 0L
+        } else {
+          noImprove <- noImprove + 1L
+        }
       }
     }
 

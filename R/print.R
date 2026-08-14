@@ -276,6 +276,43 @@ print.KCentreSelection <- function(x, ...) {
   invisible(x)
 }
 
+#' Format and print Max-Sum (maximum diversity) solver results
+#'
+#' Terse summary of the object returned by [ExactMaxSum()]
+#' (`"MaxSumSelection"`), reporting the achieved **total** pairwise distance
+#' (the max-sum objective) rather than the minimum distance of [ExactMaxMin()].
+#'
+#' @param x A `"MaxSumSelection"` object.
+#' @param ... Ignored; present for S3 compatibility.
+#' @return `format.MaxSumSelection()` returns a one-line character summary;
+#'   `print.MaxSumSelection()` returns `x` invisibly, called for its side-effect.
+#' @name print.MaxSum
+#' @family reporting functions
+#' @examples
+#' set.seed(1)
+#' ExactMaxSum(3L, dist(matrix(rnorm(20), ncol = 2)))
+#' @export
+format.MaxSumSelection <- function(x, ...) {
+  idx <- as.integer(x)
+  nc <- length(idx)
+  status <- if (isTRUE(attr(x, "proven"))) {
+    "exact MILP, proven optimal"
+  } else {
+    "exact MILP, unproven incumbent"
+  }
+  rel <- if (isTRUE(attr(x, "proven"))) "=" else ">="
+  sprintf("%d element%s (%s) by %s, total distance %s %s",
+          nc, if (nc == 1L) "" else "s", .FormatIndexList(idx), status, rel,
+          format(signif(attr(x, "score"), 4L)))
+}
+
+#' @rdname print.MaxSum
+#' @export
+print.MaxSumSelection <- function(x, ...) {
+  cat(format(x, ...), "\n", sep = "")
+  invisible(x)
+}
+
 #' @rdname print.KCentre
 #' @export
 format.KCentreExact <- function(x, ...) {
@@ -365,4 +402,45 @@ summary.MaxMeanSelection <- function(object, ...) {
   .SummaryField("iterations", attr(object, "iters"), 12L)
   .SummaryField("time",  paste(.SummaryNum(attr(object, "time_s")), "s"), 12L)
   invisible(object)
+}
+
+# ---- MaxEntropySelection ----------------------------------------------------
+
+#' Format and print maximum-entropy (maxdet) solver results
+#'
+#' Terse summary of the object returned by [MaxEntropy()]
+#' (`"MaxEntropySelection"`), reporting the retained log-determinant
+#' (\eqn{\log\det K_S}, the maxdet objective) and the magnitude of the
+#' positive-semidefinite repair.
+#'
+#' @param x A `"MaxEntropySelection"` object.
+#' @param ... Ignored; present for S3 compatibility.
+#' @return `format.MaxEntropySelection()` returns a one-line character summary;
+#'   `print.MaxEntropySelection()` returns `x` invisibly, called for its
+#'   side-effect.
+#' @name print.MaxEntropy
+#' @family reporting functions
+#' @examples
+#' set.seed(1)
+#' MaxEntropy(4L, dist(matrix(rnorm(40), ncol = 2)))
+#' @export
+format.MaxEntropySelection <- function(x, ...) {
+  idx <- as.integer(x)
+  nc <- length(idx)
+  how <- if (isTRUE(attr(x, "exact"))) {
+    "max-entropy, exact enumeration"
+  } else {
+    "max-entropy, greedy pivoted Cholesky"
+  }
+  sprintf("%d element%s (%s) by %s, log det = %s (repair removed %s of mass)",
+          nc, if (nc == 1L) "" else "s", .FormatIndexList(idx), how,
+          format(signif(attr(x, "logDet"), 4L)),
+          format(signif(attr(x, "negMass"), 3L)))
+}
+
+#' @rdname print.MaxEntropy
+#' @export
+print.MaxEntropySelection <- function(x, ...) {
+  cat(format(x, ...), "\n", sep = "")
+  invisible(x)
 }

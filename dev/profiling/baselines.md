@@ -38,12 +38,124 @@ Median wall time, `bench::mark`, R-devel, `-O2`. Refresh each round.
 (T-006→T-007: 22.2→16.4 ms / 85.0→39.5 ms → 1.34× / 2.07×, 416/416 bit-identical.
  Cumulative vs pre-T-006: 315→16.4 ms / 1329→39.5 ms → 19.2× / 33.6×.)
 
+### AFTER round 4 (T-016/T-016b/T-017, 2026-08-13) — canonical coreset shapes
+
+`drivers/grasp-timing.R` best-of-3 minima across interleaved invocations
+(this box spikes ±20–35% on sub-second cells — regress-compare against
+interleaved minima, never one run; see log.md round 4).
+
+| case | metric | ms |
+|------|--------|---:|
+| n=2000 dim=10 k=100 plateau=8 | min | 120 |
+| n=2000 dim=10 k=100 plateau=64 | min | 520 |
+| n=2000 dim=10 k=100 plateau=256 | min | 2390 |
+| n=2000 dim=10 k=10 plateau=64 | min | 50 |
+| n=500 dim=10 k=50 plateau=64 | min | 40 |
+
+(Round 4 vs PR3 tip: 470→120 / 2210→520 / 10490→2390 ms → 3.9× / 4.3× / 4.4×,
+ 1458/1458 bit-identical, equal-plateau objectives identical at n = 2000.
+ Quality-vs-time harness: `drivers/grasp-frontier.R`.)
+
+### AFTER round 5 (T-018/T-019/T-021, 2026-08-13) — single-threaded
+
+**Trajectory changed once at T-021** (batched floor-index draws): `iters`
+per plateau differ from all earlier rows, so cross-version wall-clock is not
+per-iteration comparable — per-iteration cost is unchanged (~2.1 ms at
+plateau 256). Regress against THESE rows, single-threaded, interleaved
+minima. Determinism is nCores-invariant (`drivers/grasp-invariance.R`);
+scaling curve in `drivers/grasp-scaling.R` (plateau 256:
+0.83/0.43/0.23/0.14 s at 1/2/4/8 threads, 16-core box).
+
+| case | metric | ms |
+|------|--------|---:|
+| n=2000 dim=10 k=100 plateau=8 (iters 8) | min | 120 |
+| n=2000 dim=10 k=100 plateau=64 (iters 64) | min | 220 |
+| n=2000 dim=10 k=100 plateau=256 (iters 372) | min | 820 |
+| n=2000 dim=10 k=10 plateau=64 (iters 64) | min | 20 |
+| n=500 dim=10 k=50 plateau=64 (iters 163) | min | 50 |
+
+### AFTER round 6 (tie-arm derivation + g-handoff, 2026-08-13) — single-threaded
+
+Bit-identical to the round-5 rows (same iters, objectives, pr_calls;
+battery 1458/1458). Regress against THESE rows, single-threaded,
+interleaved minima. The k=10 row is per 40 calls (single calls sit under
+this box's timer granularity).
+
+| case | metric | ms |
+|------|--------|---:|
+| n=2000 dim=10 k=100 plateau=8 (iters 8) | min | 110 |
+| n=2000 dim=10 k=100 plateau=64 (iters 64) | min | 150 |
+| n=2000 dim=10 k=100 plateau=256 (iters 372) | min | 610 |
+| n=2000 dim=10 k=10 plateau=64, 40 calls | min | 1020 |
+| n=500 dim=10 k=50 plateau=64 (iters 163) | min | 40 |
+
+Re-verified 2026-08-13 after the rebase onto post-#2 main (round 8, no code
+change shipped): interleaved minima 100/150/590/—/40 ms — within noise of
+the rows above. The 40-call k=10 row is seed-protocol-sensitive (fixed-seed
+calls; a seeds-1:40 mix measures ~1.6 s on the same build) — regress it
+only with the original fixed-seed protocol.
+
 ## Area 1 — FarFirst single pass — AFTER T-004 (column reorder, AT-LIMIT)
 
 | case | metric | ms |
 |------|--------|---:|
 | points, dim=2, N=6000, n=3000 | median | 40.4 |
 | points, dim=10, N=6000, n=3000 | median | 108.8 |
+
+### AFTER round 7 (argmax fold + mc.cores kernels, 2026-08-13)
+
+Bit-identical selections (925-case battery, both paths, every strategy).
+Interleaved min-of-3, `drivers/farfirst-timing.R`; regress against THESE
+rows. Threads engage on the pass only at N ≥ 32768.
+
+| case | 1 thread ms | 8 threads ms |
+|------|---:|---:|
+| matrix, dim=10, N=6000, k=3000 | 233 | 235 (below threshold) |
+| points, dim=2, N=6000, k=3000 | 23 | 23 (below threshold) |
+| points, dim=10, N=6000, k=3000 | 87 | 90 (below threshold) |
+| points, dim=2, N=100000, k=1000 | 140 | 57 |
+| points, dim=10, N=100000, k=1000 | 560 | 125 |
+| anchors ensemble (diameter+anti_medoid+rownorm), N=6000, k=300 | 740 | 140 |
+
+### AFTER round 9 (validation scan + block sweeps + anchor scans, 2026-08-13)
+
+Bit-identical selections and scores everywhere (battery 925/925; cross-path
+identity at dims 1–11; nCores-invariant). Interleaved min-of-3,
+`drivers/farfirst-timing.R` (which now includes the matrix-anchors cell);
+regress against THESE rows. The matrix cells' validation scan
+(`AllFinite_cpp`) follows mc.cores; the matrix greedy pass itself is serial
+at every RAM-feasible N (round 9 lever F).
+
+| case | 1 thread ms | 8 threads ms |
+|------|---:|---:|
+| matrix, dim=10, N=6000, k=3000 | 42 | 28 |
+| points, dim=2, N=6000, k=3000 | 18 | 20 |
+| points, dim=10, N=6000, k=3000 | 67 | 67 |
+| points, dim=2, N=100000, k=1000 | 107 | 47 |
+| points, dim=10, N=100000, k=1000 | 395 | 85 |
+| anchors ensemble (diameter+anti_medoid+rownorm), N=6000, k=300 | 280 | 60 |
+| matrix anchors ensemble (same anchors), N=6000, k=300 | 200 | 90 |
+
+### AFTER round 10 (restart-parallel ensembles, 2026-08-14)
+
+Bit-identical selections and scores everywhere (battery 925/925 at mc.cores
+1/2/8; nCores-invariant). The rows above are unchanged — this round moved
+only the multi-start cells, which the timing driver gains here (`ens-default*`,
+seeded per call: the random-furthest draw must not vary between A/B arms).
+Interleaved min-of-5, rep counts sized so each timed block clears this box's
+~10-16 ms clock granularity; regress against THESE rows.
+
+| case | 1 thread ms | 4 threads ms | 8 threads ms |
+|------|---:|---:|---:|
+| ens-default matrix, N=6e3, k=3000, nSeeds=3 | 113 | 42 | 40 |
+| ens-default points, dim=10, N=6e3, k=3000, nSeeds=3 | 205 | 72 | 72 |
+| ens-default matrix, N=6e3, k=3000, nSeeds=8 | 206 | 66 | 50 |
+| ens-default points, dim=10, N=6e3, k=3000, nSeeds=8 | 540 | 153 | 123 |
+
+(Round 9 → 10 at 8 threads: 80→40 / 207→72 / 174→50 / 547→123 ms —
+**2.00× / 2.88× / 3.48× / 4.43×**. Serial within noise: 117→113 / 205→205 /
+206→206 / 553→540. The anchors ensembles are unmoved by design — their
+O(N²) seeds dominate and already parallelise: matrix anchors 106→106 ms.)
 
 ## Area 4 — ExactMaxMin — AFTER T-008 (sparse-A + Grasp warm-start gallop)
 

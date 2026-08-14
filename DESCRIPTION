@@ -1,6 +1,6 @@
 Package: MaxMin
 Title: Maximum-Minimum Diversity and Discrete k-Centre Subset Selection
-Version: 0.0.0.9003
+Version: 0.0.0.9008
 Authors@R:
   person("Martin R.", "Smith",
          email = "martin.smith@durham.ac.uk",
@@ -17,9 +17,14 @@ Description: Solves discrete location objectives on a distance matrix or
   (Sayyady & Fathi 2016) <doi:10.1016/j.ejor.2016.02.026>.
   The discrete k-centre (min-max covering / facility location) objective,
   which chooses k centres to minimise the largest distance from any point to
-  its nearest centre, is solved via the CDSh heuristic (Garcia-Diaz et al. 
+  its nearest centre, is solved via the CDSh heuristic (Garcia-Diaz et al.
   2017 <doi:10.1007/s10732-017-9345-x>, 2019 <doi:10.1109/ACCESS.2019.2933875>),
-  and an exact minimum-cover integer program.
+  and an exact minimum-cover integer program. The maximum-entropy (maxdet)
+  objective, which maximises the log-determinant of a similarity kernel built
+  from the distances (Shewry & Wynn 1987 <doi:10.1080/02664768700000020>; the
+  mode of a determinantal point process, Kulesza & Taskar 2012
+  <doi:10.1561/2200000044>), is solved by greedy pivoted-Cholesky selection and,
+  for small instances, exact enumeration.
 License: GPL (>= 3)
 Encoding: UTF-8
 Language: en-GB
@@ -41,7 +46,7 @@ Suggests:
   testthat (>= 3.0.0)
 VignetteBuilder: quarto
 LinkingTo: Rcpp
-URL: https://ms609.github.com/MaxMin/
+URL: https://ms609.github.io/MaxMin/
 BugReports: https://github.com/ms609/MaxMin/issues
 Config/Needs/benchmark: bench, highs
 Config/Needs/check: rcmdcheck, testthat

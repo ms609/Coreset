@@ -10,7 +10,7 @@ FarFirst(
   points = NULL,
   N = NULL,
   strategy = "random_furthest",
-  nSeeds = 8L
+  nSeeds = 3L
 )
 }
 \arguments{
@@ -36,7 +36,11 @@ Pass the name of one or more seeding strategies described in \code{\link[=PickPo
 to run each strategy and return the best solution.}
 
 \item{nSeeds}{Integer: number of distinct seeds to draw under the (default)
-\code{"random_furthest"} strategy.}
+\code{"random_furthest"} strategy. Three starts captures most of the gain from
+restarting — the improvement curve bends early (knee at n ≈ 3–4 across
+benchmarks) and additional restarts add little. For higher-quality
+solutions, prefer \code{\link[=DropAdd]{DropAdd()}}: tabu search escapes the farthest-first
+construction family where restarts plateau.}
 }
 \value{
 \code{FarFirst()} returns an integer vector with class \code{MaxMinSelection},
@@ -60,12 +64,25 @@ In interactive sessions, the distance-column path shows a progress bar.
 To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
 }
 
+\section{Parallelism}{
+
+To parallelize computation when OpenMP is available, set the \code{"mc.cores"}
+option:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{options(mc.cores = 2L)                       # use a fixed number of cores
+options(mc.cores = parallel::detectCores())  # or all available cores
+}\if{html}{\out{</div>}}
+
+The main use case for parallelization is when \code{nSeeds} is a multiple of
+\code{mc.cores}, so each seed point can be evaluated in parallel.
+}
+
 \examples{
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
 
-# Default: best of eight random-furthest starts (set.seed for reproducibility):
+# Default: best of three random-furthest starts (set.seed for reproducibility):
 FarFirst(5L, d)
 
 # More random-furthest starts:

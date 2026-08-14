@@ -4,7 +4,7 @@
 \alias{.GonzEnsemble}
 \title{Ensemble Gonzalez over cheap peripheral-anchor strategies (distance matrix)}
 \usage{
-.GonzEnsemble(d, m, anchors = "peripheral", nSeeds = 8L)
+.GonzEnsemble(d, m, anchors = "peripheral", nSeeds = 3L)
 }
 \arguments{
 \item{d}{Square numeric distance matrix (already coerced).}

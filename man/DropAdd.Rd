@@ -4,14 +4,24 @@
 \alias{DropAdd}
 \title{DropAdd Tabu Search for the Max-Min Diversity Problem}
 \usage{
-DropAdd(k, d = NULL, plateau = 5000L, maxSeconds = Inf, points = NULL)
+DropAdd(
+  k,
+  d = NULL,
+  plateau = 5000L,
+  maxSeconds = Inf,
+  points = NULL,
+  maxCandidates = 46340L,
+  seed = NULL,
+  N = NULL
+)
 }
 \arguments{
-\item{k}{Integer; subset size, \eqn{2 \le k \le N}.}
+\item{k}{Integer: subset size, \eqn{2 \le k \le N}.}
 
-\item{d}{A \code{dist} object or square symmetric numeric matrix.}
+\item{d}{A \code{dist} object, a square symmetric numeric matrix, or a
+distance-column function (see §\emph{Distance-column function}).}
 
-\item{plateau}{Integer; stop after this many consecutive drop-add
+\item{plateau}{Integer: stop after this many consecutive drop-add
 iterations do not improve the score.}
 
 \item{maxSeconds}{Numeric: terminate search after this many seconds have
@@ -23,6 +33,26 @@ Must be complete (no \code{NA}).
 Ignored if \code{d} specified.
 Avoids creating an \eqn{N \times N} distance matrix, enabling use at
 \eqn{N \ge 46340}).}
+
+\item{maxCandidates}{Integer: a composable-coreset tractability cap. When the
+number of candidate points \code{N} exceeds \code{maxCandidates}, \code{\link[=FarFirst]{FarFirst()}} thins
+the candidates to a \code{maxCandidates}-point coreset (with the deterministic,
+RNG-free \code{"peripheral"} seed, so no random stream is perturbed), the solver
+runs on the coreset, and the chosen indices are mapped back to the original
+numbering. This lets the solver produce a solution at scales where it would
+otherwise be intractable. \code{maxCandidates = 0} (or \code{Inf}) disables thinning
+and runs on the full problem; a cap at or above \code{N} is a no-op. A cap below
+\code{k} is an error. The default is \code{46340L}, the dense-distance-matrix feasibility ceiling
+Thinning is \strong{on by default}: an input larger than the cap is thinned (and
+a warning is emitted) unless \code{maxCandidates = 0} is passed.}
+
+\item{seed}{Optional integer: a 1-based start index that overrides the
+construction's default warm-start seed.
+\code{NULL} (default) keeps the method's own seed. Not supported when
+\code{maxCandidates = 0L}.}
+
+\item{N}{Integer: the total number of elements. Required only if \code{d} is a
+function.}
 }
 \value{
 \code{DropAdd()} returns an integer vector of length \code{k} containing the 1-based selected
@@ -53,6 +83,48 @@ In interactive sessions, status messages are shown.
 To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
 }
 
+\section{Distance-column oracle}{
+
+When \code{d} is a \strong{function}, \code{d(i)} must return the distances from element \code{i}
+to every element (length \code{N}, with the self-distance ignored)
+or to every \emph{other} element (length \code{N - 1}, in order).
+\code{N} is required, and memory is \eqn{O(N)}.
+This suits metrics where no stored matrix or coordinate embedding is available.
+
+It is likely that \code{d} will be called many times; unless \code{d} implements
+caching, specifying a distance matrix is likely to require less calculation
+than the multiple calls to \code{d}, where memory permits.
+}
+
+\examples{
+set.seed(1)
+pts <- matrix(rnorm(200), ncol = 2)
+DropAdd(5L, dist(pts))
+
+# Composable coreset: thin to 40 candidates with farthest-first, then run
+# DropAdd on the coreset. Returned indices are original-space row indices.
+suppressWarnings(DropAdd(5L, points = pts, maxCandidates = 40L))
+
+# Disable thinning on the full problem
+DropAdd(5L, points = pts, maxCandidates = 0L)
+
+# Distance function; `cache` memoizes the columns to reduce computation.
+data("USArrests")
+ArrestDist <- function(dat) {
+  scaled <- scale(as.matrix(dat))                 # derived once
+  cache <- new.env(parent = emptyenv())
+  function(i) {
+    key <- as.character(i)
+    if (is.null(cache[[key]])) {
+      cache[[key]] <- sqrt(rowSums(sweep(scaled, 2, scaled[i, ], "-") ^ 2))
+    }
+    cache[[key]]
+  }
+}
+arrests <- USArrests[, c("Murder", "Assault", "Rape")]
+idx <- DropAdd(4L, ArrestDist(arrests), N = nrow(arrests), plateau = 200L)
+USArrests[idx, ]
+}
 \references{
 \insertAllCited{}
 }

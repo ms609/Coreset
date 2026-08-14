@@ -64,7 +64,7 @@ arbitrary distance, a combinatorial problem on a different footing.
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://ms609.github.com/MaxMin/}
+  \item \url{https://ms609.github.io/MaxMin/}
   \item Report bugs at \url{https://github.com/ms609/MaxMin/issues}
 }
 

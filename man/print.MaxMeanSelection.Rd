@@ -36,7 +36,9 @@ print(MaxMean(dist(pts), maxSeconds = 1))
 \seealso{
 Other reporting functions:
 \code{\link{print.KCentre}},
+\code{\link{print.MaxEntropy}},
 \code{\link{print.MaxMin}},
+\code{\link{print.MaxSum}},
 \code{\link{summary.MaxMin}}
 }
 \concept{reporting functions}

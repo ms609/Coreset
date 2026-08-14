@@ -4,23 +4,23 @@
 \alias{.ResolveEnsemble}
 \title{Resolve an expanded ensemble into the winning subset}
 \usage{
-.ResolveEnsemble(expanded, labels, RunGonz)
+.ResolveEnsemble(expanded, labels, RunPasses)
 }
 \arguments{
 \item{expanded}{List of \code{list(label, s1)} specs from \code{\link[=.ExpandAnchors]{.ExpandAnchors()}}.}
 
 \item{labels}{Character vector of labels (one per spec).}
 
-\item{RunGonz}{Closure mapping a seed \code{s1} to \code{list(idx, tK)}.}
+\item{RunPasses}{Closure mapping a vector of distinct seeds to a list of
+\code{list(idx, tK)}, one per seed and in the same order.}
 }
 \value{
 \code{.ResolveEnsemble()} returns an integer vector of selected indices with attributes.
 }
 \description{
-Shared tail of the two ensemble drivers: solves each expanded spec via the
-driver's \code{RunGonz} closure (which de-duplicates repeated seeds through its
-own cache), then returns the subset maximising \eqn{T_k}. The returned vector
-carries the \code{strategy_results} (one record per label) and \code{winning_strategy}
-(all tied-best labels) attributes.
+Shared tail of the two ensemble drivers: solves the specs' distinct seeds in
+one batch via the driver's \code{RunPasses} closure, then returns the subset
+maximising \eqn{T_k}. The returned vector carries the \code{strategy_results} (one
+record per label) and \code{winning_strategy} (all tied-best labels) attributes.
 }
 \keyword{internal}

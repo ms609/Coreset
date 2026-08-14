@@ -68,16 +68,16 @@ test_that("ensemble keeps the best anchor by T_k", {
   expect_length(attr(two, "strategy_results"), 2L)
 })
 
-test_that("the default ensemble is eight random-furthest starts", {
+test_that("the default ensemble is three random-furthest starts", {
   dat <- MakeData()
   n   <- 8L
-  # Default is `"random_furthest"` alone -> eight random starts on both paths.
+  # Default is `"random_furthest"` alone -> three random starts on both paths.
   mat <- FarFirst(n, dat$d)
   expect_identical(names(attr(mat, "strategy_results")),
-                   paste0("random_furthest", 1:8))
+                   paste0("random_furthest", 1:3))
   pt <- FarFirst(k = n, points = dat$pts)
   expect_identical(names(attr(pt, "strategy_results")),
-                   paste0("random_furthest", 1:8))
+                   paste0("random_furthest", 1:3))
   # Neither path includes the deterministic anchors by default.
   expect_false("anti_centroid" %in% names(attr(pt, "strategy_results")))
   expect_false("peripheral" %in% names(attr(mat, "strategy_results")))
@@ -93,8 +93,8 @@ test_that("the default selection is reproducible under set.seed", {
 test_that("nSeeds controls the number of random-furthest starts", {
   dat <- MakeData()
   n   <- 8L
-  # Default is 8 random-furthest starts.
-  expect_length(attr(FarFirst(n, dat$d), "strategy_results"), 8L)
+  # Default is 3 random-furthest starts.
+  expect_length(attr(FarFirst(n, dat$d), "strategy_results"), 3L)
   # nSeeds sets the count.
   expect_length(attr(FarFirst(n, dat$d, nSeeds = 4L), "strategy_results"), 4L)
   expect_length(attr(FarFirst(n, dat$d, nSeeds = 1L), "strategy_results"), 1L)
@@ -372,7 +372,26 @@ test_that("nSeeds: matrix and coordinate paths agree (same RNG)", {
   for (n in c(2L, 6L, 12L)) {
     set.seed(7); mat <- FarFirst(n, dat$d, nSeeds = 5L)
     set.seed(7); pt  <- FarFirst(k = n, points = dat$pts, nSeeds = 5L)
-    expect_identical(mat, pt, info = paste("nSeeds k", n))
+
+    # Indices, seeds and winners must agree exactly; the matrix and coordinate
+    # kernels accumulate T_k via different summation orders, so a per-strategy
+    # t_k can differ in its last bit even when every selection is identical --
+    # compare those with tolerance rather than via expect_identical().
+    info <- paste("nSeeds k", n)
+    expect_identical(as.integer(mat), as.integer(pt), info = info)
+    expect_equal(attr(mat, "score"), attr(pt, "score"), tolerance = 1e-9,
+                 info = paste(info, "score"))
+    expect_identical(attr(mat, "winning_strategy"), attr(pt, "winning_strategy"),
+                      info = paste(info, "winning_strategy"))
+    srMat <- attr(mat, "strategy_results")
+    srPt  <- attr(pt, "strategy_results")
+    expect_identical(names(srMat), names(srPt), info = paste(info, "names"))
+    for (nm in names(srMat)) {
+      expect_identical(srMat[[nm]]$s1, srPt[[nm]]$s1, info = paste(info, nm, "s1"))
+      expect_identical(srMat[[nm]]$idx, srPt[[nm]]$idx, info = paste(info, nm, "idx"))
+      expect_equal(srMat[[nm]]$t_k, srPt[[nm]]$t_k, tolerance = 1e-9,
+                   info = paste(info, nm, "t_k"))
+    }
   }
 })
 
@@ -403,4 +422,221 @@ test_that("nSeeds is silently ignored on the distance-column oracle path", {
   dat <- MakeData()
   colFn <- function(i) dat$d[, i]
   expect_no_error(FarFirst(6L, colFn, N = nrow(dat$d), nSeeds = 3L))
+})
+
+
+test_that("FarFirst results are invariant to mc.cores (small anchors)", {
+  # The O(N^2) anchor primitives parallelise at any non-trivial size; results
+  # must be bit-identical at every thread count. CRAN caps tests at 2 cores.
+  set.seed(21)
+  pts <- matrix(rnorm(200L * 3L), ncol = 3L)
+  d <- as.matrix(dist(pts))
+  old <- options(mc.cores = NULL)
+  on.exit(options(old), add = TRUE)
+  anchors <- c("diameter", "anti_medoid", "medoid", "rowsum", "rownorm")
+  options(mc.cores = 1L)
+  a1 <- FarFirst(12L, d, strategy = anchors)
+  p1 <- FarFirst(12L, points = pts, strategy = anchors)
+  options(mc.cores = 2L)
+  a2 <- FarFirst(12L, d, strategy = anchors)
+  p2 <- FarFirst(12L, points = pts, strategy = anchors)
+  expect_identical(a1, a2)
+  expect_identical(p1, p2)
+})
+
+test_that("FarFirst results are invariant to mc.cores (parallel greedy pass)", {
+  # N above the kernels' thread-engagement threshold (~32k), so the fused
+  # pmin/argmax sweep really runs chunked; the chunk merge must reproduce the
+  # serial first-maximum rule exactly.
+  set.seed(22)
+  pts <- matrix(rnorm(40000L * 2L), ncol = 2L)
+  old <- options(mc.cores = NULL)
+  on.exit(options(old), add = TRUE)
+  options(mc.cores = 1L)
+  s1 <- FarFirst(50L, points = pts, strategy = 5L)
+  options(mc.cores = 2L)
+  s2 <- FarFirst(50L, points = pts, strategy = 5L)
+  expect_identical(s1, s2)
+})
+
+test_that("AllFinite_cpp matches the anyNA/is.finite guard semantics", {
+  # .AsDistMatrix's finite check runs through this single-pass scan; it must
+  # flag exactly what `anyNA(x) || any(!is.finite(x))` flags, for double and
+  # integer storage, serially and through the parallel OR-reduction.
+  af <- MaxMin:::AllFinite_cpp
+  expect_true(af(c(0, 1.5, -2), 1L))
+  expect_false(af(c(0, NA_real_), 1L))
+  expect_false(af(c(0, NaN), 1L))
+  expect_false(af(c(0, Inf), 1L))
+  expect_false(af(c(0, -Inf), 1L))
+  expect_true(af(c(1L, 3L), 1L))
+  expect_false(af(c(1L, NA_integer_), 1L))
+  expect_error(af("a", 1L), "storage")
+  # The parallel reduction engages past 2^20 elements (CRAN 2-core cap).
+  big <- runif(1200000L)
+  expect_true(af(big, 2L))
+  big[[999983L]] <- NaN
+  expect_false(af(big, 2L))
+})
+
+test_that("points pass is cross-path identical at every dimension block shape", {
+  # The fused update sweeps up to four dimensions per block, with distinct
+  # code paths for a single-block dim (<= 4) and each final-block width
+  # (dim mod 4). The matrix path never touches that code, so cross-path
+  # agreement certifies every instantiation.
+  for (dim in c(1:5, 8:11)) {
+    set.seed(dim)
+    pts <- matrix(rnorm(120L * dim), ncol = dim)
+    d <- as.matrix(dist(pts))
+    pm <- FarFirst(40L, d, strategy = 5L)
+    pp <- FarFirst(40L, points = pts, strategy = 5L)
+    expect_identical(as.integer(pm), as.integer(pp))
+    expect_identical(attr(pm, "score"), attr(pp, "score"))
+  }
+})
+
+test_that("multi-seed kernels reproduce the single-seed kernels exactly", {
+  # The ensemble path runs its restarts through MaximinMulti*_cpp; each column
+  # must equal the corresponding single-seed pass, indices and T_k alike, on
+  # both the restart-parallel arm (nSeeds > 1, threads > 1) and the serial one.
+  dat <- MakeData(seed = 7, N = 150L, dim = 6L)
+  seeds <- c(3L, 41L, 99L, 128L)
+  for (k in c(1L, 2L, 25L)) {
+    refM <- lapply(seeds, function(s) MaxMin:::.MaximinFrom(dat$d, k, s))
+    refP <- lapply(seeds, function(s) MaxMin:::.MaximinFromPoints(dat$pts, k, s))
+    for (nThread in c(1L, 2L)) {
+      gotM <- MaxMin:::MaximinMultiFrom_cpp(dat$d, k, seeds, nThread)
+      gotP <- MaxMin:::MaximinMultiFromPoints_cpp(dat$pts, k, seeds, nThread)
+      for (j in seq_along(seeds)) {
+        expect_identical(gotM[["idx"]][, j], as.integer(refM[[j]]))
+        expect_identical(gotM[["t_k"]][[j]], attr(refM[[j]], "t_k"))
+        expect_identical(gotP[["idx"]][, j], as.integer(refP[[j]]))
+        expect_identical(gotP[["t_k"]][[j]], attr(refP[[j]], "t_k"))
+      }
+    }
+  }
+})
+
+test_that("multi-seed kernels reject out-of-range arguments", {
+  dat <- MakeData(N = 20L)
+  expect_error(MaxMin:::MaximinMultiFrom_cpp(dat$d, 0L, 1L, 1L), "'n' must be")
+  expect_error(MaxMin:::MaximinMultiFrom_cpp(dat$d, 21L, 1L, 1L), "'n' must be")
+  expect_error(MaxMin:::MaximinMultiFrom_cpp(dat$d, 5L, integer(0), 1L),
+               "at least one seed")
+  expect_error(MaxMin:::MaximinMultiFrom_cpp(dat$d, 5L, c(1L, 21L), 1L),
+               "'firsts' must lie")
+  expect_error(MaxMin:::MaximinMultiFrom_cpp(dat$d, 5L, 0L, 1L),
+               "'firsts' must lie")
+  expect_error(MaxMin:::MaximinMultiFromPoints_cpp(dat$pts, 0L, 1L, 1L),
+               "'n' must be")
+  expect_error(MaxMin:::MaximinMultiFromPoints_cpp(dat$pts, 5L, integer(0), 1L),
+               "at least one seed")
+  expect_error(MaxMin:::MaximinMultiFromPoints_cpp(dat$pts, 5L, c(1L, 99L), 1L),
+               "'firsts' must lie")
+})
+
+test_that("single-seed kernels reject an out-of-range n", {
+  # Both single-pass kernels guard `n` behind FarFirst()'s own validation, so
+  # the guard only fires on a direct internal call -- as for the `first` guards
+  # above and the multi-seed pair's `n` guard.
+  dat <- MakeData(N = 20L)
+  expect_error(MaxMin:::MaximinFrom_cpp(dat$d, 0L, 1L, 1L), "'n' must be")
+  expect_error(MaxMin:::MaximinFrom_cpp(dat$d, 21L, 1L, 1L), "'n' must be")
+  expect_error(MaxMin:::MaximinFromPoints_cpp(dat$pts, 0L, 1L, 0L, 1L),
+               "'n' must be")
+  expect_error(MaxMin:::MaximinFromPoints_cpp(dat$pts, 21L, 1L, 0L, 1L),
+               "'n' must be")
+})
+
+test_that("the coordinate pass keeps a zero-dimension input defined", {
+  # With no coordinates every squared distance is 0, so the fused update
+  # degenerates to pmin(min_dist, 0) plus the argmax -- FusedUpdateChunk's own
+  # dim == 0 branch. The pass then walks the unmasked points in ascending
+  # order and every insertion distance is 0.
+  p0 <- matrix(numeric(0), nrow = 6L, ncol = 0L)
+  r1 <- MaxMin:::MaximinFromPoints_cpp(p0, 4L, 1L, 0L, 1L)
+  expect_identical(as.integer(r1), 1:4)
+  expect_identical(attr(r1, "t_k"), 0)
+  # A later seed is taken first, then skipped by the ascending scan.
+  r3 <- MaxMin:::MaximinFromPoints_cpp(p0, 4L, 3L, 0L, 1L)
+  expect_identical(as.integer(r3), c(3L, 1L, 2L, 4L))
+  expect_identical(attr(r3, "t_k"), 0)
+  # n < 2 never enters the update loop, so T_k stays NA.
+  expect_identical(attr(MaxMin:::MaximinFromPoints_cpp(p0, 1L, 2L, 0L, 1L),
+                        "t_k"), NA_real_)
+})
+
+test_that(".NThreads reads mc.cores and collapses anything unusable to 1", {
+  # Every kernel takes its thread count from the standard option; a value that
+  # is absent, non-numeric, vectorised or < 1 must degrade to serial rather
+  # than reach OpenMP with a nonsense count.
+  old <- options(mc.cores = NULL)
+  on.exit(options(old), add = TRUE)
+  expect_identical(MaxMin:::.NThreads(), 1L)   # unset -> the 1L default
+  options(mc.cores = 2L)
+  expect_identical(MaxMin:::.NThreads(), 2L)   # usable: passed straight through
+  options(mc.cores = 0L)
+  expect_identical(MaxMin:::.NThreads(), 1L)
+  options(mc.cores = -1L)
+  expect_identical(MaxMin:::.NThreads(), 1L)
+  options(mc.cores = "many")                   # as.integer() -> NA (warning)
+  expect_identical(MaxMin:::.NThreads(), 1L)
+  options(mc.cores = c(2L, 3L))                # length != 1
+  expect_identical(MaxMin:::.NThreads(), 1L)
+})
+
+test_that("restarts fall back to per-pass threading above the size threshold", {
+  # Past ~32k points a single pass can occupy every thread itself, so the
+  # kernel keeps the seed loop serial and threads the sweep instead. Only the
+  # coordinate path reaches that size in practice. CRAN caps tests at 2 cores.
+  skip_on_cran()
+  set.seed(23)
+  pts <- matrix(rnorm(33000L * 2L), ncol = 2L)
+  seeds <- c(11L, 20001L)
+  ref <- lapply(seeds, function(s) MaxMin:::.MaximinFromPoints(pts, 20L, s))
+  got <- MaxMin:::MaximinMultiFromPoints_cpp(pts, 20L, seeds, 2L)
+  for (j in seq_along(seeds)) {
+    expect_identical(got[["idx"]][, j], as.integer(ref[[j]]))
+    expect_identical(got[["t_k"]][[j]], attr(ref[[j]], "t_k"))
+  }
+})
+
+test_that("default ensemble is invariant to mc.cores (restart-parallel arm)", {
+  # The restarts run one per thread below the size threshold; the winner and
+  # every strategy_results record must be identical at any thread count.
+  old <- options(mc.cores = NULL)
+  on.exit(options(old), add = TRUE)
+  set.seed(24)
+  pts <- matrix(rnorm(400L * 3L), ncol = 3L)
+  d <- as.matrix(dist(pts))
+  options(mc.cores = 1L)
+  set.seed(5); m1 <- FarFirst(20L, d, nSeeds = 6L)
+  set.seed(5); p1 <- FarFirst(20L, points = pts, nSeeds = 6L)
+  options(mc.cores = 2L)
+  set.seed(5); m2 <- FarFirst(20L, d, nSeeds = 6L)
+  set.seed(5); p2 <- FarFirst(20L, points = pts, nSeeds = 6L)
+  expect_identical(m1, m2)
+  expect_identical(p1, p2)
+})
+
+test_that("an ensemble whose anchors share a seed keeps one record per label", {
+  # Distinct seeds are solved once and mapped back to labels, so anchors that
+  # collide on a seed still get their own strategy_results entry, and a label
+  # that ties the best score is still reported as a winner.
+  set.seed(25)
+  pts <- matrix(rnorm(80L * 2L), ncol = 2L)
+  d <- as.matrix(dist(pts))
+  anchors <- c("diameter", "anti_medoid", "medoid", "rowsum", "rownorm",
+               "peripheral")
+  seeds <- vapply(anchors, function(a) MaxMin:::.PickPoint(d, a), integer(1L))
+  expect_true(anyDuplicated(seeds) > 0L)     # the collision this test needs
+  r <- FarFirst(8L, d, strategy = anchors)
+  sr <- attr(r, "strategy_results")
+  expect_identical(names(sr), anchors)
+  expect_identical(vapply(sr, `[[`, integer(1L), "s1"), seeds)
+  # Colliding anchors must report the same record, not merely the same score.
+  dup <- anchors[duplicated(seeds) | duplicated(seeds, fromLast = TRUE)]
+  expect_identical(sr[[dup[[1L]]]]$idx, sr[[dup[[2L]]]]$idx)
+  expect_true(all(dup %in% attr(r, "winning_strategy")) ||
+                !any(dup %in% attr(r, "winning_strategy")))
 })

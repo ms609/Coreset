@@ -150,11 +150,9 @@ does not trigger at n=2004 (binary search + floor).
 - escalation decision: KC-001 high-sev was confirmed by opus and fixed; no further
   immediate escalation needed. Next rotation advances to area #8 (test-suite health).
 
-last_focus: 7
-
 ---
 
-## Round 9 — area #9 MaxMean (max-mean dispersion / RLTS) — opus
+## Round 10 — area #10 MaxMean (max-mean dispersion / RLTS) — opus
 
 date: 2026-06-16
 tier: opus (new area; implementer had already self-found+fixed 3 bugs: RNG not
@@ -198,9 +196,7 @@ MM-01/02/03 regressions; all other areas unaffected).
 - escalation decision: no high-sev signal. Rotation advances to area #1
   (DropAdd single-fidelity) next.
 
-last_focus: 9
-
-### Round 9 addendum — benchmark validation (2026-06-17)
+### Round 10 addendum — benchmark validation (2026-06-17)
 
 A/B vs published best-known (Lai & Hao 2016 / Nijimbere et al. 2020 Table 1) on the
 MDPI Type-I n=500 instances (downloaded from grafo.etsii.urjc.es/optsicom/edp/),
@@ -213,3 +209,40 @@ useRL=TRUE, 30 s/instance, set.seed(1) — see dev/ab-mdpi.R:
 Confirms the RL-initialisation fidelity fixes (MM-04/05/06) and the implementation
 as a whole reach the paper's optima. Instances not committed (~64 MB); ab-mdpi.R
 documents how to re-download.
+
+---
+
+### Round — area #9 MaxEntropy (maxdet)  (2026-06-29)
+- tier: opus (numerical core; brand-new, treated as immature — opened above sonnet)
+- finder yield: 4 confirmed non-trivial (ME-001..ME-004); 2 low/latent noted not filed
+- verifier verdicts: confirmed empirically by the orchestrator (deterministic
+  reproductions — a SIGSEGV exit code, a fired warning, thrown errors — are more
+  definitive than a model verifier; no separate verifier agent spawned).
+- ME-001 (HIGH, Bug): out-of-range `seed` → OOB array access → SIGSEGV (exit 139),
+  GRASP-01 analogue. FIXED: `seed` bound-guarded `>=1 && <=n` in
+  `MaxEntropyGreedy_cpp` (falls back to the diagonal argmax).
+- ME-002 (HIGH, Bug): density-blindness invariant fails when `k` > distinct-point
+  count — both greedy & exact co-select zero-distance duplicates and the eps-floored
+  log det hid it (finite −20.95). FIXED: `MaxEntropy()` `warning()`s when
+  `k > nDistinct` and reports `logDet = -Inf` (singular by pigeonhole). The
+  `k <= nDistinct` invariant (never co-selects a duplicate) holds and is tested.
+- ME-003 (MED, Bug): exact SELECTED by Cholesky `SubLogDet` but REPORTED via a
+  different eigen-floor log det (dev parity target also eigen-floor) — divergent
+  argmax on near-singular blocks. FIXED: unified on one metric — exposed
+  `MaxEntropyLogDet_cpp` (the Cholesky score) and report it. Verified on all 12 real
+  cases the selected block is well-conditioned (minEig 0.24–1.0) so Cholesky ==
+  eigen-floor exactly → dev/table parity preserved; differs only in the now-warned
+  degenerate regime.
+- ME-004 (MED, Bug): no NA/Inf guard on `d` (FF-001 analogue) — NA → cryptic
+  `eigen()` error, Inf → silent wrong selection. FIXED: reject non-finite `d`.
+- not filed (low/latent): ME-005 non-integer `k` silently truncated (matches the
+  package's other solvers; left for consistency); ME-006 greedy clamps `k>n` vs
+  exact `stop()`s (both unreachable; R wrapper rejects `k>n` first).
+- trivial fixes: 1 test bug (`expect_identical(sel, sort(sel))` compared attributes;
+  now compares `as.integer`).
+- verification: full `test_local` green — 180 tests, 0 fail, 2 expected skips;
+  existing solvers unbroken (ABI re-checked after recompile).
+- seam status: still yielding (4 real, incl. a SIGSEGV and an invariant violation)
+  — next visit stays at opus (fresh angle) before escalating to fable.
+
+last_focus: 9

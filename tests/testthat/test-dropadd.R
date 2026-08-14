@@ -167,8 +167,9 @@ test_that("DropAdd is deterministic and validates inputs", {
   set.seed(11)
   dmat <- as.matrix(dist(matrix(rnorm(20 * 3), ncol = 3)))
 
-  # The search is RNG-free, so repeated calls are identical. (The old `seed`
-  # argument was a documented no-op and has been removed from the API.)
+  # The search is RNG-free, so repeated calls are identical regardless of the
+  # global RNG state. (`seed=` selects a deterministic start POINT, not an RNG
+  # seed; its behaviour is covered in tests 11-12.)
   set.seed(1)
   r1 <- DropAdd(4L, dmat, plateau = 100L)
   set.seed(999)
@@ -326,4 +327,52 @@ test_that("DropAdd secondary attribute equals upper-triangle distance sum", {
   sub <- dmat[res, res]
   expected_secondary <- sum(sub[upper.tri(sub)])
   expect_equal(attr(res, "secondary"), expected_secondary, tolerance = 1e-10)
+})
+
+# ---------------------------------------------------------------------------
+# 11. seed= start-point override (both kernels' seed0 >= 0 branch)
+# ---------------------------------------------------------------------------
+test_that("DropAdd seed= reproduces the default seed and honours an override", {
+  set.seed(303)
+  pts  <- matrix(rnorm(40 * 4), ncol = 4)
+  dmat <- as.matrix(dist(pts))
+
+  # Matrix path: the default seed IS the max-row-sum point, so passing that index
+  # explicitly must reproduce the default run exactly (within-path; no cross-path
+  # FP comparison -- see test 7 on why those flicker).
+  mr <- which.max(rowSums(dmat))
+  a  <- DropAdd(6L, dmat, plateau = 200L)
+  b  <- DropAdd(6L, dmat, plateau = 200L, seed = mr)
+  attr(a, "time_s") <- attr(b, "time_s") <- NULL
+  expect_identical(a, b)
+
+  # Points path: the default seed IS the centroid-peripheral point; same check.
+  cp <- which.max(rowSums(sweep(pts, 2, colMeans(pts))^2))
+  ap <- DropAdd(6L, points = pts, plateau = 200L)
+  bp <- DropAdd(6L, points = pts, plateau = 200L, seed = cp)
+  attr(ap, "time_s") <- attr(bp, "time_s") <- NULL
+  expect_identical(ap, bp)
+
+  # A different valid seed is honoured: a valid selection whose reported score
+  # equals the true MaxMin of the returned indices.
+  c1 <- DropAdd(6L, dmat, plateau = 50L, seed = 1L)
+  expect_length(c1, 6L)
+  expect_equal(attr(c1, "score"), .MaxminBrute(c1, dmat))
+})
+
+# ---------------------------------------------------------------------------
+# 12. seed= input validation and the thinning guard (R-side)
+# ---------------------------------------------------------------------------
+test_that("DropAdd seed= validates its range and rejects candidate thinning", {
+  dmat <- as.matrix(dist(matrix(rnorm(20 * 3), ncol = 3)))
+  n <- nrow(dmat)
+  expect_error(DropAdd(4L, dmat, seed = 0L),          "seed")
+  expect_error(DropAdd(4L, dmat, seed = n + 1L),      "seed")
+  expect_error(DropAdd(4L, dmat, seed = NA_integer_), "seed")
+  expect_error(DropAdd(4L, dmat, seed = c(1L, 2L)),   "seed")
+  # seed= is unsupported when candidate thinning binds (n > maxCandidates).
+  expect_error(
+    DropAdd(4L, points = matrix(rnorm(20 * 3), ncol = 3),
+            maxCandidates = 8L, seed = 1L),
+    "thinning")
 })
