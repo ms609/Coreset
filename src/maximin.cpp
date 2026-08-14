@@ -97,11 +97,9 @@ static void MaximinPass(const double* dp, int nPts, int n, int first0,
       int nb;
       double nbv;
 #ifdef _OPENMP
-      // nocov: unreachable in practice on this path -- a square matrix at
-      // GONZ_PAR_MIN rows already occupies 8.6 GB (see the note above
-      // MaximinMultiFrom_cpp), so no test can supply an input that engages it.
-      // The coordinate counterpart in maximin_points.cpp is testable and is
-      // exercised at 32k+ points.
+      // nocov: no input reaches this branch, for the reason given at
+      // GONZ_PAR_MIN above. Its coordinate counterpart is exercised at 32k+
+      // points (maximin_points.cpp).
       if (nthr > 1 && nPts >= GONZ_PAR_MIN) {            // # nocov start
         const int C = nthr;
 #pragma omp parallel for num_threads(nthr) schedule(static, 1)
