@@ -2,6 +2,9 @@
 
 ## MaxMin 0.0.0.9011 (development)
 
+- Seed
+  [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) via
+  a two-sweep peripheral anchor.
 - [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) is
   up to 1.75× faster on the dense-matrix path at large `k`.
 

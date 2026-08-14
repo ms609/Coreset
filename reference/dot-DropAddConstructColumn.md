@@ -37,8 +37,9 @@ and `minDistCount`, matching the record set of `.DropAddConstruct()`.
 
 ## Seed deviation
 
-The matrix kernel seeds at the max-row-sum point, \\\mathrm{argmax}\_x
-\sum_y d(x, y)\\. Pass `DropAdd(seed=)` to override.
+The matrix kernel seeds at the O(n) two-sweep peripheral point (the same
+anchor as `PickPoint(d, "peripheral")`). Pass `DropAdd(seed=)` to
+override.
 
 ## References
 

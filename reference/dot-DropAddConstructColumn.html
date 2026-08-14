@@ -88,8 +88,8 @@ holding <code>S</code> (the selection, in add order), <code>inS</code>, <code>mi
     <h2 id="seed-deviation">Seed deviation<a class="anchor" aria-label="anchor" href="#seed-deviation"></a></h2>
 
 
-<p>The matrix kernel seeds at the max-row-sum point,
-\(\mathrm{argmax}_x \sum_y d(x, y)\). Pass <code>DropAdd(seed=)</code> to override.</p>
+<p>The matrix kernel seeds at the O(n) two-sweep peripheral point (the same
+anchor as <code>PickPoint(d, "peripheral")</code>). Pass <code>DropAdd(seed=)</code> to override.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
