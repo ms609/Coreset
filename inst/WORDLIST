@@ -1,6 +1,7 @@
 antimedoid
 argmax
 Arthur
+binom
 CDSh
 cf
 CMD
@@ -8,6 +9,7 @@ codecov
 composable
 coreset
 cpp
+det
 determinantal
 doi
 DropAdd

@@ -106,7 +106,7 @@ MaxMin provides solvers for each objective:
 | `MaxMean()` | max-mean | High | Time-budgeted | Yes (`set.seed()`) |
 | `KCentre()` | k-centre | Near-optimal | Fast | No |
 | `ExactKCentre()` | k-centre | Optimal (NP-hard) | Slow | No |
-| `MaxEntropy()` | maxdet (max log-det) | High / Optimal for small `k` | Fast | No |
+| `MaxEntropy()` | maxdet | High / Optimal for small `k` | Fast | No |
 
 
 To compute the score for an arbitrary selection of points under each objective,
