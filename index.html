@@ -58,17 +58,15 @@
 </h1></div>
 <!-- badges: start -->
 
-<p><code>MaxMin</code> implements algorithms that select a dispersed subsample of points that maximizes coverage of a larger set, under one of several objectives:</p>
-<p>The <strong>Max-Min Diversity Problem</strong> (MMDP, the discrete <em>p</em>-dispersion objective) selects <span class="math inline">\(k\)</span> elements such that the minimum distance between any pair of selected elements is as large as possible; the chosen elements are maximally separated.</p>
-<p>The <strong>discrete <em>k</em>-centre problem</strong> selects <span class="math inline">\(k\)</span> elements such that the maximum distance from any element in the original set to a selected element is as small as possible.</p>
+<p><code>MaxMin</code> implements algorithms that select a dispersed subsample of points that maximizes coverage of a larger set, under one of several objectives.</p>
 <div class="section level2">
 <h2 id="solvers">Solvers<a class="anchor" aria-label="anchor" href="#solvers"></a>
 </h2>
-<p>The greedy farthest-first heuristic <code><a href="reference/FarFirst.html">FarFirst()</a></code> serves as a quick approximate solver to both problems, providing a solution that is guaranteed to be within a factor of two of the optimum (and typically much closer).</p>
-<p>Better approximations can be accomplished, at the cost of longer runs, by specialized solvers.</p>
+<p>Solvers support precomputed distance matrices (<code>dist</code> objects), matrices of Euclidian coordinates, or lists of elements from which distances can be calculated. Each solver is accompanied by a function that evaluates its objective against an arbitrary selection of elements.</p>
 <div class="section level3">
 <h3 id="mmdp-max-min-dispersion">MMDP (max-min dispersion)<a class="anchor" aria-label="anchor" href="#mmdp-max-min-dispersion"></a>
 </h3>
+<p>The Max-Min Diversity Problem (MMDP, the discrete <em>p</em>-dispersion objective) selects <span class="math inline">\(k\)</span> elements such that the minimum distance between any pair of selected elements is as large as possible; the chosen elements are maximally separated.</p>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -103,6 +101,7 @@
 <div class="section level3">
 <h3 id="max-sum-dispersion-maximum-diversity">Max-sum dispersion (maximum diversity)<a class="anchor" aria-label="anchor" href="#max-sum-dispersion-maximum-diversity"></a>
 </h3>
+<p>The Max-Sum dispersion problem selects <span class="math inline">\(k\)</span> elements such that the summed distance between all pairs of selected elements is as large as possible.</p>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -124,6 +123,7 @@
 <div class="section level3">
 <h3 id="max-mean-dispersion">Max-mean dispersion<a class="anchor" aria-label="anchor" href="#max-mean-dispersion"></a>
 </h3>
+<p>The analogous Max-Mean dispersion problem chooses a number of elements so as to maximize the mean distance between selected pairs.</p>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -146,6 +146,7 @@
 <h3 id="k-centre-min-max-covering">
 <em>k</em>-centre (min-max covering)<a class="anchor" aria-label="anchor" href="#k-centre-min-max-covering"></a>
 </h3>
+<p>The discrete <em>k</em>-centre problem selects <span class="math inline">\(k\)</span> elements such that the maximum distance from any element in the original set to a selected element is as small as possible.</p>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -175,6 +176,7 @@
 <div class="section level3">
 <h3 id="maximum-entropy-maxdet-selection">Maximum-entropy (maxdet) selection<a class="anchor" aria-label="anchor" href="#maximum-entropy-maxdet-selection"></a>
 </h3>
+<p>The maximum entropy problem selects the <span class="math inline">\(k\)</span> elements that contain the highest amount of information about the original set: a minimially redundant pick.</p>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -192,8 +194,6 @@
 <td>Maximize the log-determinant (spanned volume) of a similarity kernel; density-blind</td>
 </tr></tbody>
 </table>
-<p>Solvers support precomputed distance matrices (<code>dist</code> objects), matrices of Euclidian coordinates, or lists of elements from which distances can be calculated.</p>
-<p><code><a href="reference/MinDist.html">MinDist()</a></code> returns the minimum pairwise distance within a selection (the MMDP objective), <code><a href="reference/MeanDist.html">MeanDist()</a></code> its mean pairwise dispersion (the max-mean objective), and <code><a href="reference/KCentreRadius.html">KCentreRadius()</a></code> returns its covering radius (the <em>k</em>-centre objective).</p>
 </div>
 </div>
 <div class="section level2">

@@ -2,29 +2,21 @@
 
 `MaxMin` implements algorithms that select a dispersed subsample of
 points that maximizes coverage of a larger set, under one of several
-objectives:
-
-The **Max-Min Diversity Problem** (MMDP, the discrete *p*-dispersion
-objective) selects \\k\\ elements such that the minimum distance between
-any pair of selected elements is as large as possible; the chosen
-elements are maximally separated.
-
-The **discrete *k*-centre problem** selects \\k\\ elements such that the
-maximum distance from any element in the original set to a selected
-element is as small as possible.
+objectives.
 
 ## Solvers
 
-The greedy farthest-first heuristic
-[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
-serves as a quick approximate solver to both problems, providing a
-solution that is guaranteed to be within a factor of two of the optimum
-(and typically much closer).
-
-Better approximations can be accomplished, at the cost of longer runs,
-by specialized solvers.
+Solvers support precomputed distance matrices (`dist` objects), matrices
+of Euclidian coordinates, or lists of elements from which distances can
+be calculated. Each solver is accompanied by a function that evaluates
+its objective against an arbitrary selection of elements.
 
 ### MMDP (max-min dispersion)
+
+The Max-Min Diversity Problem (MMDP, the discrete *p*-dispersion
+objective) selects \\k\\ elements such that the minimum distance between
+any pair of selected elements is as large as possible; the chosen
+elements are maximally separated.
 
 | Function | Method | Use |
 |----|----|----|
@@ -34,17 +26,28 @@ by specialized solvers.
 
 ### Max-sum dispersion (maximum diversity)
 
+The Max-Sum dispersion problem selects \\k\\ elements such that the
+summed distance between all pairs of selected elements is as large as
+possible.
+
 | Function | Method | Use |
 |----|----|----|
 | [`ExactMaxSum()`](https://ms609.github.io/MaxMin/reference/ExactMaxSum.md) | Per-node MILP linearisation, floored by multi-start local search | Proven optimum for total pairwise distance, small `k` (needs `highs`) |
 
 ### Max-mean dispersion
 
+The analogous Max-Mean dispersion problem chooses a number of elements
+so as to maximize the mean distance between selected pairs.
+
 | Function | Method | Use |
 |----|----|----|
 | [`MaxMean()`](https://ms609.github.io/MaxMin/reference/MaxMean.md) | Reinforcement-learning tabu search | Maximize mean pairwise distance; subset size free; signed distances supported |
 
 ### *k*-centre (min-max covering)
+
+The discrete *k*-centre problem selects \\k\\ elements such that the
+maximum distance from any element in the original set to a selected
+element is as small as possible.
 
 | Function | Method | Use |
 |----|----|----|
@@ -53,21 +56,13 @@ by specialized solvers.
 
 ### Maximum-entropy (maxdet) selection
 
+The maximum entropy problem selects the \\k\\ elements that contain the
+highest amount of information about the original set: a minimially
+redundant pick.
+
 | Function | Method | Use |
 |----|----|----|
 | [`MaxEntropy()`](https://ms609.github.io/MaxMin/reference/MaxEntropy.md) | Greedy pivoted-Cholesky selection, with exact enumeration for small instances | Maximize the log-determinant (spanned volume) of a similarity kernel; density-blind |
-
-Solvers support precomputed distance matrices (`dist` objects), matrices
-of Euclidian coordinates, or lists of elements from which distances can
-be calculated.
-
-[`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md)
-returns the minimum pairwise distance within a selection (the MMDP
-objective),
-[`MeanDist()`](https://ms609.github.io/MaxMin/reference/MeanDist.md) its
-mean pairwise dispersion (the max-mean objective), and
-[`KCentreRadius()`](https://ms609.github.io/MaxMin/reference/KCentreRadius.md)
-returns its covering radius (the *k*-centre objective).
 
 ## Installation
 
