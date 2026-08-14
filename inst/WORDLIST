@@ -10,8 +10,6 @@ coreset
 cpp
 determinantal
 doi
-Díaz
-Dieudonne
 DropAdd
 Duarte
 ejor
@@ -21,14 +19,11 @@ FastPAM
 FasterPAM
 Fathi
 Gallego
-García
-Glover
 Gonzalez
-Gramacy
 GRASP
 Hao
-jimo
 Kulesza
+jimo
 lex
 Marti
 maxdet
@@ -53,7 +48,6 @@ RCL
 relinking
 Resende
 reproducibility
-RLTS
 rownorm
 rowsum
 R's
@@ -65,9 +59,7 @@ SOTA
 subsample
 subsampling
 summands
-Tamir
 Taskar
 tabu
 TS
-Vassilvitskii
 WIP
