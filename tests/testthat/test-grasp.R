@@ -45,13 +45,13 @@ test_that("Grasp_cpp == .Grasp_R across seeds and parameters", {
                    alpha = al)
 
     info <- sprintf("seed=%d mni=%d es=%d alpha=%g", s, mni, es, al)
-    # Drop the wall-clock `time_s` attribute: it is genuinely nondeterministic
-    # and never expected to match. Every other attribute is asserted below.
+    # Drop the wall-clock `time_s` attribute: it is never expected to match.
     attr(ker, "time_s") <- attr(ref, "time_s") <- NULL
-    expect_identical(ker,                    ref,                    info = info)
-    expect_equal(attr(ker, "score"),     attr(ref, "score"),     tolerance = 1e-14, info = info)
-    expect_identical(attr(ker, "iters"),     attr(ref, "iters"),     info = info)
-    expect_identical(attr(ker, "pr_calls"),  attr(ref, "pr_calls"),  info = info)
+    expect_identical(ker, ref, info = info)
+    expect_equal(attr(ker, "score"), attr(ref, "score"), tolerance = 1e-14,
+                 info = info)
+    expect_identical(attr(ker, "iters"), attr(ref, "iters"), info = info)
+    expect_identical(attr(ker, "pr_calls"), attr(ref, "pr_calls"), info = info)
   }
 })
 
@@ -142,10 +142,9 @@ test_that("Grasp validates maxSeconds", {
 
 # 8b. GRASP-01: empty-RCL at alpha = 1 no longer crashes ---------------------
 # At the documented alpha = 1 (pure greedy), FP rounding can push the RCL
-# threshold ~1 ULP past gmax and empty the RCL; pre-fix the C++ kernel indexed
-# rcl[0] on an empty vector and SIGSEGV'd (uncatchable, killed the session),
-# while the R path threw. A bare-greedy fallback (no RNG draw) now selects the
-# argmax-g candidate in both. Sweeping seeds 1:30 exercises the rounding case
+# threshold ~1 ULP past gmax and empty the RCL.
+# A bare-greedy fallback (no RNG draw) selects the argmax-g candidate in both.
+# Sweeping seeds 1:30 exercises the rounding case
 # and asserts the kernel still matches the R reference bit-for-bit.
 test_that("Grasp survives alpha = 1 (empty-RCL fallback) and matches the R reference", {
   for (s in 1:30) {
@@ -196,11 +195,7 @@ test_that(".GraspLocalSearch reduces pair count when T_k is unchanged", {
 #   P1=(0,0), P2=(1,0), P3=(0,0.5), P4=(0.3,0.5)
 #   d12=1.0  (z1), d34=0.3 (zb), d13=0.5 (selZ) with zb < selZ < z1
 #
-# Line 217 fires: selZ=0.5 > zb=0.3 and selZ <= z1=1.0, dmin=1 >= dth=1.
-# Tie-break on Hamming removes s2={3,4} (lowest z=0.3), leaving ES=[{1,2}].
-# pos = sum([1.0] >= 0.5) + 1 = 2 > 1 = length(remaining) → tail (233-234).
-
-test_that(".GraspTryInsert line 217 (second condition) and lines 233-234 (tail insert)", {
+test_that(".GraspTryInsert second condition and tail insert", {
   pts4 <- rbind(c(0, 0), c(1, 0), c(0, 0.5), c(0.3, 0.5))
   d4   <- as.matrix(dist(pts4))
 
@@ -303,8 +298,8 @@ test_that(".Grasp_R phase-C path relinking fires lines 422-423", {
     d   <- as.matrix(dist(pts))
 
     # Replicate Phase A: same RNG, same constructions -> same Phase A ceiling.
-    # Phase A draws its uniforms in one up-front batch (T-021), so the
-    # replay must consume them the same way.
+    # Phase A draws its uniforms in one up-front batch, so the replay must
+    # consume them the same way.
     set.seed(s)
     usA <- matrix(runif(es * k), nrow = k)
     phaseABest <- -Inf
@@ -394,15 +389,6 @@ test_that(".Grasp_R time budget halts execution (grasp.R line 397)", {
   expect_lte(attr(res, "time_s"), 2)
 })
 
-# 16. Tied distances exercise the witness/tie machinery ------------------------
-# Lattice points give many EXACTLY equal distances (multiple pairs at 1,
-# sqrt(2), 2, ...), driving the compiled kernel through the tie arms of its
-# incremental summaries — duplicate minima occupying both witness slots, tied
-# pair counts (mcnt > 1), and the tie-decrement on swap maintenance — that
-# continuous random data cannot reach (cross-cell equality is measure-zero
-# there). The pure-R reference computes everything naively, so exact
-# agreement is a strong end-to-end check of those branches.
-
 test_that("Grasp_cpp == .Grasp_R on a tie-rich lattice", {
   latt <- as.matrix(expand.grid(x = 1:5, y = 1:5))
   dl <- as.matrix(dist(latt))
@@ -419,13 +405,6 @@ test_that("Grasp_cpp == .Grasp_R on a tie-rich lattice", {
     }
   }
 })
-
-# 17. mc.cores changes wall-clock only, never the result -----------------------
-# The kernel's determinism contract (T-021): random draws happen only on the
-# main thread in fixed-size batches, and batches merge in iteration order, so
-# a given seed returns the identical selection at every thread count. CRAN
-# checks cap at 2 cores, which suffices: the code path is the same for any
-# nThreads > 1.
 
 test_that("Grasp results are invariant to mc.cores", {
   oldOpt <- options(mc.cores = 1L)

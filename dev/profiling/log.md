@@ -1161,3 +1161,74 @@ dropadd-battery.R, dropadd-timing.R, dropadd-vtune10.R,
 dropadd-invariance.R. Cleanup: result_da10/ and scratch libs deleted
 post-round.
 last_focus: 2
+
+## Round 10 — 2026-08-14 — Area 1 (FarFirst): restart-level parallelism shipped
+
+**Trigger:** user question — a `FarFirst()` call with several restarts could
+run one restart per core; would that pay? Rounds 7 and 9 certified the serial
+floor and parallelised the *within-pass* sweep and the O(N²) anchors, but the
+restarts themselves had never been an axis: `.ResolveEnsemble` ran them one
+after another, and below GONZ_PAR_MIN each pass is serial, so a multi-start
+call used exactly one core for the bulk of its work.
+
+**Feasibility measured before implementing.** A scratch kernel (parallel-for
+over seeds, per-thread `min_dist`, shared read-only input) calling the shipped
+inner pass code, A/B'd against a serial loop in the same translation unit at
+the same flags. Identity gated first (8 seeds × N=6000 × k=300, both paths,
+nthreads 1/2/8, both arms == the shipped single-seed kernels). Scaling at
+nSeeds=3: matrix 2.80×, points d2 2.95×, points d10 2.77× at 4 threads —
+ceiling `min(nSeeds, cores)`, so ~90-98% efficient. The 2T rows land at
+~1.4-1.5× because three equal-cost tasks on two threads take two rounds
+(ideal 1.5×): intrinsic imbalance, not overhead.
+
+**The bandwidth hypothesis was wrong, and the measurement said so.** The
+matrix path was expected to saturate DRAM (three concurrent passes tripling
+demand against the ~14.4 GB/s single-core ceiling round 9 measured) and cap
+near 2×. It scales exactly like the compute-bound points path: a pass streams
+only one 48 KB column per step, and saturation first appears at nSeeds=8
+(5.08× not 8×), past the default. No lever was tuned to the wrong model
+because the prototype ran before the implementation.
+
+**Dispatch rule (measured, not assumed).** Above GONZ_PAR_MIN the existing
+axis still wins — points N=1e5, k=1000, nSeeds=3: serial loop with 8T
+in-kernel 365 ms (3.99×) vs restart-parallel on 3 threads 550 ms (2.65×),
+because nS is the smaller number there. So the kernels take the
+restart-parallel arm only when `seedThr > 1 && nPts < GONZ_PAR_MIN`, and
+threads are clamped to the seed count (a pass cannot be split further;
+un-clamped, 16 threads over 3 seeds *regressed* the prototype's points d2 cell
+2.95× → 2.11× on idle-thread barrier joins). No nested regions: a hybrid
+(nS seeds × threads/nS each) is the only thing that could beat 3.99× at large
+N, and is unmeasured.
+
+**Shipped.** `MaximinMultiFrom_cpp` / `MaximinMultiFromPoints_cpp`: the pass
+bodies were extracted verbatim into `MaximinPass` / `MaximinPointsPass`
+(caller-owned buffers, no R API), so the single-seed kernels and the
+multi-seed kernels are the same code and cannot drift. All R allocation
+precedes the parallel region. `.ResolveEnsemble` now de-duplicates the specs'
+seeds, dispatches one batch, and maps back — replacing the per-driver
+`gonzCache` environments, which existed for exactly that de-duplication.
+
+**Round-10 result** (interleaved min-of-5, 8 threads, scores identical on
+every cell): ens-default matrix nSeeds=3 80 → 40 ms (**2.00×**), points d10
+207 → 72 ms (**2.88×**); nSeeds=8 174 → 50 ms (**3.48×**) and 547 → 123 ms
+(**4.43×**). Serial unchanged (117→113 / 205→205 / 206→206 / 553→540 ms).
+Anchor ensembles unmoved by design (matrix 106→106 ms): their O(N²) seeds
+dominate and already parallelise, and their greedy passes are ~6 ms.
+
+**Ceiling on the prize, recorded so it is not re-chased.** `nSeeds` defaults
+to 3 and the documented quality knee is n ≈ 3-4, so a default call saturates
+at ~3× and four cores exhaust it. Raising `nSeeds` buys wall-clock scaling but
+little solution quality — `DropAdd()` remains the route to better solutions.
+Area 1's remaining axis is Hamilton wall-clock.
+
+Verification stack: battery 925/925 bit-identical vs the round-9 tip at
+mc.cores 1 AND 2 AND 8; cross-path identity OK in every capture;
+farfirst-invariance.R INVARIANT over nCores {1,2,8}; full suite green
+(5146 pass, 0 fail). New tests (test-farfirst.R): multi-seed kernels ==
+single-seed kernels at 1/2 threads over k ∈ {1,2,25}; their error branches;
+the above-threshold serial-fallback arm at N=33000; default-ensemble
+mc.cores-invariance (CRAN 2-core cap respected); and a seed-collision
+ensemble certifying that de-duplicated dispatch still yields one
+strategy_results record per label. Drivers: farfirst-timing.R gains three
+ens-default cells. Baselines refreshed (area 1 round-10 rows).
+last_focus unchanged (user-targeted round on area 1).

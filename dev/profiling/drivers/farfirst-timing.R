@@ -43,6 +43,19 @@ tab <- rbind(
              strategy = c("diameter", "anti_medoid", "rownorm")), 1L),
   cell("ens-anchors-matrix N=6e3 k=300", function()
     FarFirst(300L, d10,
-             strategy = c("diameter", "anti_medoid", "rownorm")), 1L)
+             strategy = c("diameter", "anti_medoid", "rownorm")), 1L),
+  # Default ensemble: nSeeds restarts from random-furthest seeds. The seeds are
+  # O(N) each, so the restarts are essentially the whole call — the shape the
+  # restart-parallel kernels address. Seeded per call: the draw must not vary
+  # between the arms of an A/B.
+  cell("ens-default N=6e3 dim=10 k=3000", function() {
+    set.seed(99); FarFirst(3000L, d10)
+  }, 1L),
+  cell("ens-default-pts N=6e3 d10 k=3000", function() {
+    set.seed(99); FarFirst(3000L, points = pts10)
+  }, 1L),
+  cell("ens-default nSeeds=8 N=6e3 k=3000", function() {
+    set.seed(99); FarFirst(3000L, d10, nSeeds = 8L)
+  }, 1L)
 )
 saveRDS(tab, out)

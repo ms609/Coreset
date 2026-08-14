@@ -153,6 +153,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// MaximinMultiFrom_cpp
+Rcpp::List MaximinMultiFrom_cpp(Rcpp::NumericMatrix d, int n, Rcpp::IntegerVector firsts, int n_threads);
+RcppExport SEXP _MaxMin_MaximinMultiFrom_cpp(SEXP dSEXP, SEXP nSEXP, SEXP firstsSEXP, SEXP n_threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type d(dSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type firsts(firstsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(MaximinMultiFrom_cpp(d, n, firsts, n_threads));
+    return rcpp_result_gen;
+END_RCPP
+}
 // MatrixOffDiagMax_cpp
 Rcpp::NumericVector MatrixOffDiagMax_cpp(Rcpp::NumericMatrix d, int n_threads);
 RcppExport SEXP _MaxMin_MatrixOffDiagMax_cpp(SEXP dSEXP, SEXP n_threadsSEXP) {
@@ -189,6 +203,20 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type mask(maskSEXP);
     Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
     rcpp_result_gen = Rcpp::wrap(MaximinFromPoints_cpp(points, n, first, mask, n_threads));
+    return rcpp_result_gen;
+END_RCPP
+}
+// MaximinMultiFromPoints_cpp
+Rcpp::List MaximinMultiFromPoints_cpp(Rcpp::NumericMatrix points, int n, Rcpp::IntegerVector firsts, int n_threads);
+RcppExport SEXP _MaxMin_MaximinMultiFromPoints_cpp(SEXP pointsSEXP, SEXP nSEXP, SEXP firstsSEXP, SEXP n_threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type points(pointsSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type firsts(firstsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(MaximinMultiFromPoints_cpp(points, n, firsts, n_threads));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -276,9 +304,11 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MaxMin_MaxEntropyExact_cpp", (DL_FUNC) &_MaxMin_MaxEntropyExact_cpp, 2},
     {"_MaxMin_MaxEntropyLogDet_cpp", (DL_FUNC) &_MaxMin_MaxEntropyLogDet_cpp, 2},
     {"_MaxMin_MaximinFrom_cpp", (DL_FUNC) &_MaxMin_MaximinFrom_cpp, 4},
+    {"_MaxMin_MaximinMultiFrom_cpp", (DL_FUNC) &_MaxMin_MaximinMultiFrom_cpp, 4},
     {"_MaxMin_MatrixOffDiagMax_cpp", (DL_FUNC) &_MaxMin_MatrixOffDiagMax_cpp, 2},
     {"_MaxMin_RowSqSumsFromMatrix_cpp", (DL_FUNC) &_MaxMin_RowSqSumsFromMatrix_cpp, 2},
     {"_MaxMin_MaximinFromPoints_cpp", (DL_FUNC) &_MaxMin_MaximinFromPoints_cpp, 5},
+    {"_MaxMin_MaximinMultiFromPoints_cpp", (DL_FUNC) &_MaxMin_MaximinMultiFromPoints_cpp, 4},
     {"_MaxMin_RowSumsFromPoints_cpp", (DL_FUNC) &_MaxMin_RowSumsFromPoints_cpp, 2},
     {"_MaxMin_RowSqSumsFromPoints_cpp", (DL_FUNC) &_MaxMin_RowSqSumsFromPoints_cpp, 2},
     {"_MaxMin_RowSumsSqFromPoints_cpp", (DL_FUNC) &_MaxMin_RowSumsSqFromPoints_cpp, 2},
