@@ -16,10 +16,7 @@
     stop("`d` must be a `dist` object or a square numeric matrix")
   }
   # NA/NaN/Inf propagate silently through pmin.int()/which.max() and can yield a
-  # repeated index in the selection; reject them up front (the coordinate path
-  # already errors via .AsPointsMatrix()'s anyNA check). The single-pass C++
-  # scan replaces `anyNA(d) || any(!is.finite(d))`, whose two full-size logical
-  # intermediates dwarfed the greedy kernel itself on large matrices.
+  # repeated index in the selection; reject them up front.
   if (!AllFinite_cpp(d, .NThreads())) {
     stop("distance matrix must not contain NA/NaN/Inf")
   }
