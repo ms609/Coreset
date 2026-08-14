@@ -16,9 +16,8 @@
     stop("`d` must be a `dist` object or a square numeric matrix")
   }
   # NA/NaN/Inf propagate silently through pmin.int()/which.max() and can yield a
-  # repeated index in the selection; reject them up front (the coordinate path
-  # already errors via .AsPointsMatrix()'s anyNA check).
-  if (anyNA(d) || any(!is.finite(d))) {
+  # repeated index in the selection; reject them up front.
+  if (!AllFinite_cpp(d, .NThreads())) {
     stop("distance matrix must not contain NA/NaN/Inf")
   }
   d
@@ -35,7 +34,35 @@
 #' @return `.MaximinFrom()` returns an integer vector of length `k` of selected row/col indices.
 #' @keywords internal
 .MaximinFrom <- function(d, k, first) {
-  MaximinFrom_cpp(d, as.integer(k), as.integer(first))
+  MaximinFrom_cpp(d, as.integer(k), as.integer(first), .NThreads())
+}
+
+#' Gonzalez maximin from several starting indices at once
+#'
+#' Ensemble counterpart of [.MaximinFrom()] / [.MaximinFromPoints()]: solves
+#' one greedy pass per seed. Each pass is an independent function of its seed,
+#' so under `mc.cores > 1` the passes run concurrently, one per thread; a lone
+#' seed, or a problem large enough for a single pass to occupy every thread
+#' itself, falls back to the per-pass parallelism instead.
+#'
+#' @param k Integer: target subsample size (`>= 1`).
+#' @param firsts Integer vector of distinct first-selected indices, one per pass.
+#' @param d Square pairwise distance matrix, or `NULL` when `points` is given.
+#' @param points A `double` `N x dim` coordinate matrix, or `NULL`.
+#' @return `.MaximinMulti()` returns a list with one `list(idx, tK)` per element
+#'   of `firsts`, in that order.
+#' @keywords internal
+.MaximinMulti <- function(k, firsts, d = NULL, points = NULL) {
+  k <- as.integer(k)
+  firsts <- as.integer(firsts)
+  res <- if (is.null(points)) {
+    MaximinMultiFrom_cpp(d, k, firsts, .NThreads())
+  } else {
+    MaximinMultiFromPoints_cpp(points, k, firsts, .NThreads())
+  }
+  lapply(seq_along(firsts), function(j) {
+    list(idx = res[["idx"]][, j], tK = res[["t_k"]][[j]])
+  })
 }
 
 #' Coerce coordinate input for the on-the-fly (matrix-free) samplers
@@ -78,7 +105,7 @@
 #' @keywords internal
 .MaximinFromPoints <- function(points, k, first, mask = 0L) {
   MaximinFromPoints_cpp(points, as.integer(k), as.integer(first),
-                        as.integer(mask))
+                        as.integer(mask), .NThreads())
 }
 
 #' Promote the kernel's free `t_k` score to the user-facing `score` attribute
@@ -174,6 +201,18 @@
 #' - `winning_strategy`: character vector listing strategies that attained the
 #' optimal score.
 #' - `strategy_results`: results for each strategy.
+#'
+#' @section Parallelism:
+#' To parallelize computation when OpenMP is available, set the `"mc.cores"`
+#' option:
+#'
+#' ```r
+#' options(mc.cores = 2L)                       # use a fixed number of cores
+#' options(mc.cores = parallel::detectCores())  # or all available cores
+#' ```
+#'
+#' The main use case for parallelization is when `nSeeds` is a multiple of
+#' `mc.cores`, so each seed point can be evaluated in parallel.
 #'
 #' @references \insertAllCited{}
 #' @seealso [PickPoint()] for the seed indices alone; [DropAdd()] and

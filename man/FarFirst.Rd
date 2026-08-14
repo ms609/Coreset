@@ -64,6 +64,19 @@ In interactive sessions, the distance-column path shows a progress bar.
 To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
 }
 
+\section{Parallelism}{
+
+To parallelize computation when OpenMP is available, set the \code{"mc.cores"}
+option:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{options(mc.cores = 2L)                       # use a fixed number of cores
+options(mc.cores = parallel::detectCores())  # or all available cores
+}\if{html}{\out{</div>}}
+
+The main use case for parallelization is when \code{nSeeds} is a multiple of
+\code{mc.cores}, so each seed point can be evaluated in parallel.
+}
+
 \examples{
 set.seed(1)
 pts <- matrix(rnorm(60), ncol = 2)

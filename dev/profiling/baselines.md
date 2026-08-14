@@ -102,6 +102,61 @@ only with the original fixed-seed protocol.
 | points, dim=2, N=6000, n=3000 | median | 40.4 |
 | points, dim=10, N=6000, n=3000 | median | 108.8 |
 
+### AFTER round 7 (argmax fold + mc.cores kernels, 2026-08-13)
+
+Bit-identical selections (925-case battery, both paths, every strategy).
+Interleaved min-of-3, `drivers/farfirst-timing.R`; regress against THESE
+rows. Threads engage on the pass only at N ≥ 32768.
+
+| case | 1 thread ms | 8 threads ms |
+|------|---:|---:|
+| matrix, dim=10, N=6000, k=3000 | 233 | 235 (below threshold) |
+| points, dim=2, N=6000, k=3000 | 23 | 23 (below threshold) |
+| points, dim=10, N=6000, k=3000 | 87 | 90 (below threshold) |
+| points, dim=2, N=100000, k=1000 | 140 | 57 |
+| points, dim=10, N=100000, k=1000 | 560 | 125 |
+| anchors ensemble (diameter+anti_medoid+rownorm), N=6000, k=300 | 740 | 140 |
+
+### AFTER round 9 (validation scan + block sweeps + anchor scans, 2026-08-13)
+
+Bit-identical selections and scores everywhere (battery 925/925; cross-path
+identity at dims 1–11; nCores-invariant). Interleaved min-of-3,
+`drivers/farfirst-timing.R` (which now includes the matrix-anchors cell);
+regress against THESE rows. The matrix cells' validation scan
+(`AllFinite_cpp`) follows mc.cores; the matrix greedy pass itself is serial
+at every RAM-feasible N (round 9 lever F).
+
+| case | 1 thread ms | 8 threads ms |
+|------|---:|---:|
+| matrix, dim=10, N=6000, k=3000 | 42 | 28 |
+| points, dim=2, N=6000, k=3000 | 18 | 20 |
+| points, dim=10, N=6000, k=3000 | 67 | 67 |
+| points, dim=2, N=100000, k=1000 | 107 | 47 |
+| points, dim=10, N=100000, k=1000 | 395 | 85 |
+| anchors ensemble (diameter+anti_medoid+rownorm), N=6000, k=300 | 280 | 60 |
+| matrix anchors ensemble (same anchors), N=6000, k=300 | 200 | 90 |
+
+### AFTER round 10 (restart-parallel ensembles, 2026-08-14)
+
+Bit-identical selections and scores everywhere (battery 925/925 at mc.cores
+1/2/8; nCores-invariant). The rows above are unchanged — this round moved
+only the multi-start cells, which the timing driver gains here (`ens-default*`,
+seeded per call: the random-furthest draw must not vary between A/B arms).
+Interleaved min-of-5, rep counts sized so each timed block clears this box's
+~10-16 ms clock granularity; regress against THESE rows.
+
+| case | 1 thread ms | 4 threads ms | 8 threads ms |
+|------|---:|---:|---:|
+| ens-default matrix, N=6e3, k=3000, nSeeds=3 | 113 | 42 | 40 |
+| ens-default points, dim=10, N=6e3, k=3000, nSeeds=3 | 205 | 72 | 72 |
+| ens-default matrix, N=6e3, k=3000, nSeeds=8 | 206 | 66 | 50 |
+| ens-default points, dim=10, N=6e3, k=3000, nSeeds=8 | 540 | 153 | 123 |
+
+(Round 9 → 10 at 8 threads: 80→40 / 207→72 / 174→50 / 547→123 ms —
+**2.00× / 2.88× / 3.48× / 4.43×**. Serial within noise: 117→113 / 205→205 /
+206→206 / 553→540. The anchors ensembles are unmoved by design — their
+O(N²) seeds dominate and already parallelise: matrix anchors 106→106 ms.)
+
 ## Area 4 — ExactMaxMin — AFTER T-008 (sparse-A + Grasp warm-start gallop)
 
 Wall time per solve (single call, highs threads=1, `set.seed(1)`); OLD = dense-A

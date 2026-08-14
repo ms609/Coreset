@@ -1,4 +1,4 @@
-# seed.R
+﻿# seed.R
 #
 # Peripheral seeding strategies for Gonzalez farthest-first selection, and the
 # ensemble driver that runs several and keeps the best by MinDist(). The single
@@ -94,20 +94,28 @@
 
 #' Resolve an expanded ensemble into the winning subset
 #'
-#' Shared tail of the two ensemble drivers: solves each expanded spec via the
-#' driver's `RunGonz` closure (which de-duplicates repeated seeds through its
-#' own cache), then returns the subset maximising \eqn{T_k}. The returned vector
-#' carries the `strategy_results` (one record per label) and `winning_strategy`
-#' (all tied-best labels) attributes.
+#' Shared tail of the two ensemble drivers: solves the specs' distinct seeds in
+#' one batch via the driver's `RunPasses` closure, then returns the subset
+#' maximising \eqn{T_k}. The returned vector carries the `strategy_results` (one
+#' record per label) and `winning_strategy` (all tied-best labels) attributes.
 #' @param expanded List of `list(label, s1)` specs from [.ExpandAnchors()].
 #' @param labels Character vector of labels (one per spec).
-#' @param RunGonz Closure mapping a seed `s1` to `list(idx, tK)`.
+#' @param RunPasses Closure mapping a vector of distinct seeds to a list of
+#'   `list(idx, tK)`, one per seed and in the same order.
 #' @return `.ResolveEnsemble()` returns an integer vector of selected indices with attributes.
 #' @keywords internal
-.ResolveEnsemble <- function(expanded, labels, RunGonz) {
-  strategyResults <- lapply(expanded, function(e) {
-    g <- RunGonz(e$s1)
-    list(s1 = e$s1, idx = g$idx, t_k = g$tK)
+.ResolveEnsemble <- function(expanded, labels, RunPasses) {
+  # Two anchors can resolve to the same seed (and a random draw can land on an
+  # anchor's), so the batch is de-duplicated before dispatch and mapped back
+  # after: each distinct seed is solved exactly once, and every label still
+  # gets its own record.
+  seeds    <- vapply(expanded, function(e) as.integer(e$s1), integer(1L))
+  distinct <- unique(seeds)
+  runs     <- RunPasses(distinct)
+  back     <- match(seeds, distinct)
+  strategyResults <- lapply(seq_along(expanded), function(i) {
+    g <- runs[[back[[i]]]]
+    list(s1 = expanded[[i]]$s1, idx = g$idx, t_k = g$tK)
   })
   names(strategyResults) <- labels
 
@@ -146,7 +154,8 @@
                     "or use `peripheral` on the distance-matrix path"),
     medoid  = as.integer(which.min(rowSums(d))),
     rowsum  = as.integer(which.max(rowSums(d))),
-    rownorm = as.integer(which.max(rowSums(d ^ 2))),
+    # Fused C++ scan: rowSums(d ^ 2) materialises the full squared matrix.
+    rownorm = as.integer(which.max(RowSqSumsFromMatrix_cpp(d, .NThreads()))),
     anti_medoid = {
       med <- which.min(rowSums(d))
       dd  <- d[, med]
@@ -154,13 +163,13 @@
       as.integer(which.max(dd))
     },
     diameter = {
-      dOff <- d
-      diag(dOff) <- -Inf
-      dMax <- max(dOff)
-      if (!is.finite(dMax) || dMax <= 0) {
+      # C++ off-diagonal first-max scan: the R idiom copies the full matrix
+      # to plant -Inf on the diagonal, then scans it twice more.
+      dm <- MatrixOffDiagMax_cpp(d, .NThreads())
+      if (!is.finite(dm[[1L]]) || dm[[1L]] <= 0) {
         1L
       } else {
-        as.integer(arrayInd(which.max(dOff), dim(dOff))[1L, 1L])
+        as.integer(dm[[2L]])
       }
     },
     peripheral = {
@@ -188,17 +197,17 @@
   switch(strategy,
     first   = 1L,
     anti_centroid = as.integer(which.max(.CentroidSqDist(points))),
-    medoid  = as.integer(which.min(RowSumsFromPoints_cpp(points))),
-    rowsum  = as.integer(which.max(RowSumsFromPoints_cpp(points))),
-    rownorm = as.integer(which.max(RowSqSumsFromPoints_cpp(points))),
+    medoid  = as.integer(which.min(RowSumsFromPoints_cpp(points, .NThreads()))),
+    rowsum  = as.integer(which.max(RowSumsFromPoints_cpp(points, .NThreads()))),
+    rownorm = as.integer(which.max(RowSqSumsFromPoints_cpp(points, .NThreads()))),
     anti_medoid = {
-      med <- which.min(RowSumsFromPoints_cpp(points))
+      med <- which.min(RowSumsFromPoints_cpp(points, .NThreads()))
       dd  <- EuclidColFromPoints_cpp(points, med)
       dd[med] <- -Inf
       as.integer(which.max(dd))
     },
     diameter = {
-      diam <- DiameterFromPoints_cpp(points)
+      diam <- DiameterFromPoints_cpp(points, .NThreads())
       if (!is.finite(diam[1L]) || diam[1L] <= 0) {
         1L
       } else {
@@ -314,42 +323,29 @@ PickPoint <- function(d = NULL, points = NULL,
     lazy$rowSums
   }
   GetRowSqSums <- function() {
-    lazy$rowSqSums <- lazy$rowSqSums %||% rowSums(d ^ 2)
+    # Fused C++ scan: rowSums(d ^ 2) materialises the full squared matrix.
+    lazy$rowSqSums <- lazy$rowSqSums %||% RowSqSumsFromMatrix_cpp(d, .NThreads())
     lazy$rowSqSums
-  }
-  GetDOffdiag <- function() {
-    lazy$dOffdiag <- lazy$dOffdiag %||% { tmp <- d; diag(tmp) <- -Inf; tmp }
-    lazy$dOffdiag
   }
   GetMedoid <- function() {
     lazy$medoid <- lazy$medoid %||% as.integer(which.min(GetRowSums()))
     lazy$medoid
   }
 
-  gonzCache <- new.env(parent = emptyenv())
-  RunGonz <- function(s1) {
-    key <- as.character(s1)
-    gonzCache[[key]] %||% {
-      idx <- .MaximinFrom(d, m, first = s1)
-      # The kernel computes T_k (min pairwise distance) for free during the
-      # greedy pass; read it rather than re-scoring with a d[idx, idx] subset.
-      tK  <- attr(idx, "t_k") %||% NA_real_
-      attr(idx, "t_k") <- NULL
-      res  <- list(idx = idx, tK = tK)
-      gonzCache[[key]] <- res
-      res
-    }
-  }
+  # One batched call: the kernel runs the passes one per thread and reports
+  # each one's T_k (computed for free during its greedy pass), so nothing here
+  # re-scores with a d[idx, idx] subset.
+  RunPasses <- function(seeds) .MaximinMulti(m, seeds, d = d)
 
   AnchorSeed <- function(name) {
     switch(name,
       diameter = {
-        dOff <- GetDOffdiag()
-        dMax <- max(dOff)
-        if (!is.finite(dMax) || dMax <= 0) {
+        # C++ off-diagonal first-max scan; see .PickPoint's diameter branch.
+        dm <- MatrixOffDiagMax_cpp(d, .NThreads())
+        if (!is.finite(dm[[1L]]) || dm[[1L]] <= 0) {
           1L
         } else {
-          as.integer(arrayInd(which.max(dOff), dim(dOff))[1L, 1L])
+          as.integer(dm[[2L]])
         }
       },
       anti_medoid = {
@@ -375,7 +371,7 @@ PickPoint <- function(d = NULL, points = NULL,
   }
   expanded <- .ExpandAnchors(anchors, rfSeeds, AnchorSeed)
   labels   <- vapply(expanded, `[[`, character(1L), "label")
-  .ResolveEnsemble(expanded, labels, RunGonz)
+  .ResolveEnsemble(expanded, labels, RunPasses)
 }
 
 #' Coordinate (matrix-free) multi-anchor Gonzalez ensemble
@@ -408,16 +404,26 @@ PickPoint <- function(d = NULL, points = NULL,
   if (m == 0L)   return(integer(0))
 
   lazy <- new.env(parent = emptyenv())
+  # When the requested anchors span BOTH row-aggregate families, one fused
+  # pair sweep fills both: each accumulator receives the identical summands
+  # in the identical order as its dedicated kernel (bit-identical results),
+  # while each pair's distance -- and its sqrt -- is computed once, not twice.
+  if (any(c("anti_medoid", "medoid", "rowsum") %in% anchors) &&
+        "rownorm" %in% anchors) {
+    both <- RowSumsSqFromPoints_cpp(points, .NThreads())
+    lazy$rowSums   <- both[[1L]]
+    lazy$rowSqSums <- both[[2L]]
+  }
   GetRowSums <- function() {
-    lazy$rowSums <- lazy$rowSums %||% RowSumsFromPoints_cpp(points)
+    lazy$rowSums <- lazy$rowSums %||% RowSumsFromPoints_cpp(points, .NThreads())
     lazy$rowSums
   }
   GetRowSqSums <- function() {
-    lazy$rowSqSums <- lazy$rowSqSums %||% RowSqSumsFromPoints_cpp(points)
+    lazy$rowSqSums <- lazy$rowSqSums %||% RowSqSumsFromPoints_cpp(points, .NThreads())
     lazy$rowSqSums
   }
   GetDiameter <- function() {
-    lazy$diameter <- lazy$diameter %||% DiameterFromPoints_cpp(points)
+    lazy$diameter <- lazy$diameter %||% DiameterFromPoints_cpp(points, .NThreads())
     lazy$diameter
   }
   GetCentroidD2 <- function() {
@@ -429,21 +435,10 @@ PickPoint <- function(d = NULL, points = NULL,
     lazy$medoid
   }
 
-  gonzCache <- new.env(parent = emptyenv())
-  RunGonz <- function(s1) {
-    key <- as.character(s1)
-    gonzCache[[key]] %||% {
-      idx <- .MaximinFromPoints(points, m, first = s1)
-      # The kernel computes T_k (min pairwise distance) for free during the
-      # greedy pass; read it rather than re-running stats::dist() on the
-      # selected sub-coordinates.
-      tK  <- attr(idx, "t_k") %||% NA_real_
-      attr(idx, "t_k") <- NULL
-      res <- list(idx = idx, tK = tK)
-      gonzCache[[key]] <- res
-      res
-    }
-  }
+  # One batched call: the kernel runs the passes one per thread and reports
+  # each one's T_k (computed for free during its greedy pass), so nothing here
+  # re-runs stats::dist() on the selected sub-coordinates.
+  RunPasses <- function(seeds) .MaximinMulti(m, seeds, points = points)
 
   AnchorSeed <- function(name) {
     switch(name,
@@ -481,5 +476,5 @@ PickPoint <- function(d = NULL, points = NULL,
   }
   expanded <- .ExpandAnchors(anchors, rfSeeds, AnchorSeed)
   labels   <- vapply(expanded, `[[`, character(1L), "label")
-  .ResolveEnsemble(expanded, labels, RunGonz)
+  .ResolveEnsemble(expanded, labels, RunPasses)
 }

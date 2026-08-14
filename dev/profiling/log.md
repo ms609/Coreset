@@ -800,6 +800,72 @@ last_focus unchanged (targeted continuation of area 3).
 
 
 
+## Round 7 — 2026-08-13 — Area 1 (FarFirst): argmax fold + nCores-invariant parallel kernels
+
+**Trigger:** user mandate ("direct the same level of effort at ... the
+FarthestFirst solver"); area files changed 2026-07-08 > last profiled
+2026-06-10, so the rotation was due regardless. Prior ground re-read first:
+round 1 priced the R glue at < 0.2 ms (T-003 refuted "fold into C++"),
+T-001/T-002 shipped free-T_k + squared space, T-004's column reorder left
+the points pass "AT-LIMIT" — but the argmax fold and parallelism were never
+tried on these kernels. VTune (symboled OpenMP build, farfirst-vtune7.R:
+matrix N=6000 n=3000; points dim {2,10}; N=60,000 case): EuclidColSqInto
+1.63 s + MaximinFromPoints self 0.87 s (the separate argmax/pmin passes) of
+~2.9 s kernel time; matrix kernel 0.23 s, bandwidth-bound.
+
+**Lever 1 — fused greedy step (exact; the T-019 pattern).** Both kernels
+seed (best, best_val) with one standalone scan, then ride each step's
+argmax on the update pass — strict >, ascending i, masked −Inf entries
+can't win, so the first-maximum tie rule is preserved read-for-read. The
+points kernel additionally fuses the squared-column fill into the same
+sweep: dimension 0 writes (no zeroing pass), middle dimensions accumulate
+in the same j-ascending order (identical partial doubles), the last
+dimension finishes in a register, merges, and tracks the max. Final step's
+dead update skipped (nothing reads min_dist after the last pick). dim ∈
+{0, 1} handled (0 = degenerate all-zero column, kept defined).
+**Measured** (interleaved min-of-3): points dim=2 **1.43×** (N=6e3) /
+**1.49×** (N=1e5); dim=10 1.11× / 1.14×; matrix 1.04× (bandwidth-bound, as
+VTune said). Battery 925/925 bit-identical + cross-path identity intact.
+
+**Lever 2 — mc.cores parallelism, results invariant to thread count.**
+No RNG anywhere in these kernels, so exactness is chunking-trivial:
+elementwise pmin/accumulation each computed by exactly one thread in the
+serial order; argmax reduced per contiguous chunk then merged ascending
+with strict > (= global first maximum); RowSums/RowSqSums keep each row's
+long-double accumulation on one thread in j order; Diameter merges
+column-chunk winners in ascending chunk order (column-major first-wins
+preserved). Greedy pass engages at nPts >= 32768 (GONZ_PAR_MIN — below
+that the per-step barrier outweighs a ~30 µs sweep; pure tuning constant,
+results identical either way). Anchors parallelise at nPts > 64.
+`.NThreads()` (utils.R) reads mc.cores once per wrapper; Grasp() refactored
+onto the same helper. Oracle path stays serial (calls back into user R).
+**Measured** (8 threads): N=1e5 pass 2.5× (dim 2) / 4.5× (dim 10);
+O(N²) anchors 5.3× (compute-bound, near-linear as expected); N=6e3 cells
+unchanged (below threshold, by design). Serial cost of the parallel build:
+within noise (0.96–1.00×). **Verification:** battery bit-identical at
+mc.cores 1 AND 2 (925/925 each, anchors' parallel paths exercised);
+farfirst-invariance.R INVARIANT over nCores {1,2,8} × 5 cases including
+two above-threshold passes and the seeded default ensemble; two
+mc.cores-invariance tests added to test-farfirst.R (CRAN 2-core cap
+respected).
+
+**Round-7 result.** Cumulative on the round's cells: points N=1e5 dim=10
+0.63 → 0.125 s (5.0×, 8T), dim=2 0.203 → 0.057 s (3.6×, 8T); anchors
+ensemble N=6e3 0.73 → 0.14 s (5.2×, 8T); serial-only gains 1.04–1.49×.
+Every gain is selection-preserving: 925-case battery + 1620-style
+cross-path identity + suite. Area 1 stays AT-LIMIT serially (matrix path
+bandwidth-bound; points pass now one fused sweep per step); remaining
+axis is cores, which now scale. Windows-local relative figures
+(interleaved min-of-N); Linux/gcc first exercised by this branch's CI.
+
+**In-round fixes, no issues filed** (skill rule). Drivers added:
+farfirst-battery.R (925-case old-vs-new + cross-path), farfirst-timing.R,
+farfirst-invariance.R, farfirst-vtune7.R. Baselines refreshed (area 1
+round-7 rows). Cleanup: result_ff7/ and .vtune-lib-* deleted post-round.
+last_focus unchanged (user-targeted round on area 1).
+
+
+
 ## Round 8 — 2026-08-13 — Area 3 (Grasp): memory-layout stab, REFUTED — floor certified on the second axis
 
 **Trigger:** user-requested "one last stab" after PR #2 merged. The branch
@@ -856,3 +922,195 @@ comparable; ladder rows are). Cleanup done: result_grasp8/, symboled and
 scratch libs deleted post-round.
 last_focus unchanged (targeted continuation of area 3).
 
+## Round 9 — 2026-08-13 — Area 1 (FarFirst): validation, block sweeps, anchor scans — serial floor certified
+
+**Trigger:** user mandate ("optimize the performance of FarFirst to floor …
+keep working until unimprovable"). Fresh line-level VTune on the round-7 tip
+(farfirst-vtune9.R, which adds the anchor primitives round 7 never
+line-profiled), plus a components triage of the matrix cell.
+
+**The triage finding that set the round:** the matrix timing cell spent
+220 ms/call of which the greedy kernel was **10 ms** — `.AsDistMatrix`'s
+`anyNA(d) || any(!is.finite(d))` guard cost 200 ms (two full-size logical
+intermediates, ~288 MB of allocation at N = 6000) and had never been triaged
+because round 7 profiled only the kernels. Every shipped lever, in order,
+each gated on the 925-case battery + cross-path dim sweep (88 cells) +
+nCores-invariance BEFORE timing (interleaved min-of-3, serial):
+
+- **A — AllFinite_cpp** (src/utils.cpp): single-pass allocation-free finite
+  scan (branch-free exponent-mask OR-reduction, integer ops so it needs no
+  FP reassociation licence; OpenMP reduction past 2^20 elements,
+  order-independent by construction). `.AsDistMatrix` swaps the idiom for
+  it, so DropAdd/Grasp/KCentre matrix intake gains too. Matrix cell
+  230 → 47 ms (**4.8×**).
+- **B — blocked dimension sweeps** (SweepBlock, maximin_points.cpp): the
+  fused update processes up to four dimensions per sweep with the running
+  squared sum in a register — dim ≤ 4 never touches the scratch column;
+  larger dim cuts dc traffic from one RMW per middle dimension to one per
+  block. Same left-associated per-element chain, store/load of a double is
+  exact ⇒ bit-identical. Points cells **1.35–1.40×** across dim 2/10,
+  N 6e3/1e5.
+- **C — Diameter triangle + squared-space guard**: the column-major first
+  max of a symmetric matrix always lies in the strict lower triangle
+  (pair {a,b}, a<b: index b+aN < a+bN), and relative order among lower
+  cells is preserved ⇒ triangle-only scan is tie-identical. The scan runs
+  in squared space with `best == sqrt(bestSq)` as invariant; sqrt only on
+  running-max candidates (a sq ≤ bestSq pair can never win the reference's
+  strict >; a sq > bestSq pair gets the reference's own sqrt-space
+  comparison, because two distinct squares can round to the same sqrt).
+  Parallel chunks re-balanced by pair count.
+- **D — RowSums/RowSqSums serial pair-halving**: lower-triangle sweep adds
+  each pair's distance to both endpoint rows; every row still receives its
+  contributions in ascending-index order, the mirrored distance is the same
+  double ((-x)·(-x) == x·x), and the dropped diagonal contributed an exact
+  +0. Parallel path unchanged (per-row full sweeps) — pair-halving would
+  interleave rows' update order across threads. C+D: points anchors
+  ensemble 730 → 390 ms (**1.87×**).
+- **E — matrix anchor scans** (MatrixOffDiagMax_cpp, RowSqSumsFromMatrix_cpp,
+  maximin.cpp): the R idioms copied the N × N matrix (diameter: dOff with
+  −Inf diagonal) or materialised d² (rownorm). Full-matrix scans — NOT
+  triangle: `.AsDistMatrix` admits asymmetric matrices, where an
+  upper-triangle cell can win — verified against the R idioms on
+  asymmetric and tie-dense inputs at 1/2/8 threads. Matrix anchors
+  ensemble 620 → 200 ms (**3.1×**).
+- **G — fused row-aggregate sweep** (RowSumsSqFromPoints_cpp): an ensemble
+  whose anchors span both aggregate families (anti_medoid/medoid/rowsum
+  need sums; rownorm needs squared sums) previously ran two full pair
+  sweeps, each with its own 18M sqrts at N = 6000. One fused sweep fills
+  both: each accumulator receives the identical summands in the identical
+  order as its dedicated kernel (verified fused == dedicated at 5 sizes × 3
+  thread counts, plus 108 both-family ensembles old-vs-new). Points
+  anchors 390 → 290 ms (**1.34×**).
+
+**Refuted in-round (no code shipped, no issues per skill rules):**
+- **F — matrix-pass parallel threshold.** GONZ_PAR_MIN = 32768 is
+  unreachable for the matrix kernel (8.6 GB matrix), so its parallel path
+  is dead code in practice. Lowering it to 4096 in a scratch build and
+  timing N = 16384 (2 GB): 8 threads **60 ms vs 30–50 ms serial** — the
+  ~2000 per-step barriers dominate ~15 µs sweeps. Verdict: the matrix pass
+  is serial at every RAM-feasible size; constant kept (aligned with the
+  points kernel), comment + Rd updated to say so.
+- **H — register-banded matrix row aggregates.** Hypothesis: the x87
+  fld/fadd/fstp round-trip into the long-double accumulator array dominates
+  RowSqSumsFromMatrix_cpp, so banding 4 rows' accumulators into registers
+  should win ~1.5×. Measured: banded == accumulator-array == base-R
+  rowSums == 60 ms at N = 6000 (and the cell A/B read 0.95–1.04×).
+  Reverted; the simpler column-outer orientation ships. The matrix
+  row-aggregate loops measure identical in every orientation tried — at
+  their floor.
+
+**Round-9 result (definitive interleaved A/B vs the round-7/8 tip, serial,
+scores identical on every cell):** matrix N=6e3 k=3000 218 → 42 ms
+(**5.1×**); points passes 1.27–1.38× (d2/d10, N 6e3/1e5); points anchors
+730 → 280 ms (**2.6×**); matrix anchors 930 → 200 ms (**4.7×**, new
+timing cell). 8 threads: N=1e5 pass d10 125 → 85 ms, d2 57 → 47 ms,
+points anchors 140 → 60 ms, matrix cell 42 → 28 ms (validation scan
+parallelises). Remaining serial components all measure at memory/semantics
+floors: AllFinite and OffDiagMax stream at ~14.4 GB/s (single-core DRAM
+ceiling), the pass's per-element argmax merge is a semantics-mandated
+single pass (round 7), the only alternative access orientations measured
+equal (H) or slower (F), and round 1's deferred Gram/gemv reformulation
+stays excluded-by-contract (it rounds differently, failing the bit-identity
+gate before any timing). Area 1 → AT-LIMIT serial, certified on the
+instruction axis (rounds 1+7) and now the memory/validation axis (this
+round); remaining axis: Hamilton wall-clock.
+
+Verification stack: battery 925/925 bit-identical vs the round-7 tip;
+cross-path identity at dims 1–11 × k {2,60,250,499} (88 cells, certifies
+every SweepBlock instantiation); matrix-anchor helpers exact vs the R
+idioms on asymmetric + tie-dense inputs; fused-sweep kernel == dedicated
+kernels and 108 both-family ensembles old-vs-new; farfirst-invariance.R
+INVARIANT over nCores {1,2,8}; full suite green (see commit). New tests:
+AllFinite semantics + parallel branch, block-shape cross-path sweep
+(test-farfirst.R), matrix-anchor scans + fused sweep (test-seed-score.R).
+Drivers: farfirst-vtune9.R added; farfirst-timing.R gains the
+ens-anchors-matrix cell. man/DropAdd.Rd re-synced with its roxygen source
+in passing (the Concision commits shortened the source but left the Rd
+stale). Cleanup: result_ff9 dirs and scratch libs deleted post-round.
+last_focus unchanged (user-targeted round on area 1).
+
+**Post-push addendum (same day) — block width swept, floor closed.** The
+sweep width 4 was initially an un-swept tuning constant; a scratch-only
+B = 6 variant ({6,4} split at dim = 10 — identical left-associated chain,
+verified same score and indices) measured 390–400 ms vs 400 ms on the
+N=1e5 dim=10 cell: within noise, refuted. Width 4 ships. Remaining
+unpursued micro-levers, recorded so a future round need not re-derive
+them (estimated ceilings all ≤ ~1.2× cell-level, below this box's
+±20–35% noise floor for reliable single-cell verification): buffered
+column-streamed fills for the serial pair sweeps (arithmetic would SIMD
+but the scalar errno-guarded sqrt chain remains), banded pair
+accumulators for the halved row aggregates (x87 RMW per acc[j] survives
+banding — see lever H's null result), and a fused matrix
+RowSums+RowSqSums pass (saves one 288 MB stream, ~20 ms of a 200 ms
+cell).
+
+## Round 10 — 2026-08-14 — Area 1 (FarFirst): restart-level parallelism shipped
+
+**Trigger:** user question — a `FarFirst()` call with several restarts could
+run one restart per core; would that pay? Rounds 7 and 9 certified the serial
+floor and parallelised the *within-pass* sweep and the O(N²) anchors, but the
+restarts themselves had never been an axis: `.ResolveEnsemble` ran them one
+after another, and below GONZ_PAR_MIN each pass is serial, so a multi-start
+call used exactly one core for the bulk of its work.
+
+**Feasibility measured before implementing.** A scratch kernel (parallel-for
+over seeds, per-thread `min_dist`, shared read-only input) calling the shipped
+inner pass code, A/B'd against a serial loop in the same translation unit at
+the same flags. Identity gated first (8 seeds × N=6000 × k=300, both paths,
+nthreads 1/2/8, both arms == the shipped single-seed kernels). Scaling at
+nSeeds=3: matrix 2.80×, points d2 2.95×, points d10 2.77× at 4 threads —
+ceiling `min(nSeeds, cores)`, so ~90-98% efficient. The 2T rows land at
+~1.4-1.5× because three equal-cost tasks on two threads take two rounds
+(ideal 1.5×): intrinsic imbalance, not overhead.
+
+**The bandwidth hypothesis was wrong, and the measurement said so.** The
+matrix path was expected to saturate DRAM (three concurrent passes tripling
+demand against the ~14.4 GB/s single-core ceiling round 9 measured) and cap
+near 2×. It scales exactly like the compute-bound points path: a pass streams
+only one 48 KB column per step, and saturation first appears at nSeeds=8
+(5.08× not 8×), past the default. No lever was tuned to the wrong model
+because the prototype ran before the implementation.
+
+**Dispatch rule (measured, not assumed).** Above GONZ_PAR_MIN the existing
+axis still wins — points N=1e5, k=1000, nSeeds=3: serial loop with 8T
+in-kernel 365 ms (3.99×) vs restart-parallel on 3 threads 550 ms (2.65×),
+because nS is the smaller number there. So the kernels take the
+restart-parallel arm only when `seedThr > 1 && nPts < GONZ_PAR_MIN`, and
+threads are clamped to the seed count (a pass cannot be split further;
+un-clamped, 16 threads over 3 seeds *regressed* the prototype's points d2 cell
+2.95× → 2.11× on idle-thread barrier joins). No nested regions: a hybrid
+(nS seeds × threads/nS each) is the only thing that could beat 3.99× at large
+N, and is unmeasured.
+
+**Shipped.** `MaximinMultiFrom_cpp` / `MaximinMultiFromPoints_cpp`: the pass
+bodies were extracted verbatim into `MaximinPass` / `MaximinPointsPass`
+(caller-owned buffers, no R API), so the single-seed kernels and the
+multi-seed kernels are the same code and cannot drift. All R allocation
+precedes the parallel region. `.ResolveEnsemble` now de-duplicates the specs'
+seeds, dispatches one batch, and maps back — replacing the per-driver
+`gonzCache` environments, which existed for exactly that de-duplication.
+
+**Round-10 result** (interleaved min-of-5, 8 threads, scores identical on
+every cell): ens-default matrix nSeeds=3 80 → 40 ms (**2.00×**), points d10
+207 → 72 ms (**2.88×**); nSeeds=8 174 → 50 ms (**3.48×**) and 547 → 123 ms
+(**4.43×**). Serial unchanged (117→113 / 205→205 / 206→206 / 553→540 ms).
+Anchor ensembles unmoved by design (matrix 106→106 ms): their O(N²) seeds
+dominate and already parallelise, and their greedy passes are ~6 ms.
+
+**Ceiling on the prize, recorded so it is not re-chased.** `nSeeds` defaults
+to 3 and the documented quality knee is n ≈ 3-4, so a default call saturates
+at ~3× and four cores exhaust it. Raising `nSeeds` buys wall-clock scaling but
+little solution quality — `DropAdd()` remains the route to better solutions.
+Area 1's remaining axis is Hamilton wall-clock.
+
+Verification stack: battery 925/925 bit-identical vs the round-9 tip at
+mc.cores 1 AND 2 AND 8; cross-path identity OK in every capture;
+farfirst-invariance.R INVARIANT over nCores {1,2,8}; full suite green
+(5146 pass, 0 fail). New tests (test-farfirst.R): multi-seed kernels ==
+single-seed kernels at 1/2 threads over k ∈ {1,2,25}; their error branches;
+the above-threshold serial-fallback arm at N=33000; default-ensemble
+mc.cores-invariance (CRAN 2-core cap respected); and a seed-collision
+ensemble certifying that de-duplicated dispatch still yields one
+strategy_results record per label. Drivers: farfirst-timing.R gains three
+ens-default cells. Baselines refreshed (area 1 round-10 rows).
+last_focus unchanged (user-targeted round on area 1).

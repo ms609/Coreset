@@ -5,5 +5,5 @@ source("benchmark/_init.R")
 # enumeration, IP assembly and binary-search orchestration against regression.
 if (requireNamespace("highs", quietly = TRUE)) {
   d40 <- BenchDist(40L, 5L, seed = 1L)
-  Benchmark(ExactMaxMin(d40, 8L))
+  Benchmark(ExactMaxMin(8L, d40))
 }
