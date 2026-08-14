@@ -231,11 +231,10 @@
 #' [Grasp()] restarts and a [DropAdd()] pass), then gallops upward from that
 #' bound to the first infeasible threshold and bisects the resulting bracket.
 #' When a heuristic already attains the optimum, a single infeasibility solve
-#' certifies it. Each feasibility probe is first reduced combinatorially --
-#' the complement graph is peeled to its \eqn{(k-1)}-core and greedily
-#' coloured -- which settles many probes, often all of them, without invoking
-#' the solver. The indices chosen may vary based on the value of the random
-#' seed when several subsets attain the optimum.
+#' certifies it.
+#' Each feasibility probe is first reduced to its \eqn{(k-1)}-core and greedily
+#' coloured; where this does not settle the probe, an algebraic solver is
+#' launched.
 #'
 #' @param k Integer: target subset size, between 2 and `nrow(d)`.
 #' @param d `dist` object or a square symmetric numeric distance matrix.
@@ -249,8 +248,8 @@
 #' @return `ExactMaxMin()` returns an integer vector of length `k` (sorted
 #'   ascending) with class `"MaxMinSelection"`, carrying attributes:
 #'   \describe{
-#'     \item{score}{Achieved `T_k` -- the minimum pairwise distance within the
-#'       selection. When `proven` is `TRUE` this is the true optimum; otherwise
+#'     \item{score}{The minimum pairwise distance within the selection.
+#'       When `proven` is `TRUE` this is the optimum; otherwise
 #'       a lower bound.}
 #'     \item{proven}{Logical: `TRUE` if the search certified optimality within
 #'       the budget, `FALSE` if it returned an unproven incumbent.}

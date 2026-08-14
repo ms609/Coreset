@@ -22,8 +22,8 @@ solver.}
 \code{ExactMaxMin()} returns an integer vector of length \code{k} (sorted
 ascending) with class \code{"MaxMinSelection"}, carrying attributes:
 \describe{
-\item{score}{Achieved \code{T_k} -- the minimum pairwise distance within the
-selection. When \code{proven} is \code{TRUE} this is the true optimum; otherwise
+\item{score}{The minimum pairwise distance within the selection.
+When \code{proven} is \code{TRUE} this is the optimum; otherwise
 a lower bound.}
 \item{proven}{Logical: \code{TRUE} if the search certified optimality within
 the budget, \code{FALSE} if it returned an unproven incumbent.}
@@ -43,11 +43,10 @@ The search is warm-started from a heuristic lower bound (the best of several
 \code{\link[=Grasp]{Grasp()}} restarts and a \code{\link[=DropAdd]{DropAdd()}} pass), then gallops upward from that
 bound to the first infeasible threshold and bisects the resulting bracket.
 When a heuristic already attains the optimum, a single infeasibility solve
-certifies it. Each feasibility probe is first reduced combinatorially --
-the complement graph is peeled to its \eqn{(k-1)}-core and greedily
-coloured -- which settles many probes, often all of them, without invoking
-the solver. The indices chosen may vary based on the value of the random
-seed when several subsets attain the optimum.
+certifies it.
+Each feasibility probe is first reduced to its \eqn{(k-1)}-core and greedily
+coloured; where this does not settle the probe, an algebraic solver is
+launched.
 }
 \section{Progress bar}{
 
