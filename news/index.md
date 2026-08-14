@@ -1,9 +1,15 @@
 # Changelog
 
+## MaxMin 0.0.0.9010 (development)
+
+- [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
+  decides each threshold probe by clique search instead of an integer
+  program, and no longer needs `highs`.
+
 ## MaxMin 0.0.0.9009 (development)
 
 - [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
-  parallelized and optimized.
+  optimized.
 
 ## MaxMin 0.0.0.9008 (development)
 

@@ -24,7 +24,7 @@ distance within a subset (the discrete *p*-dispersion objective).
 
 - [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md):
 
-  Exact node-packing optimum (needs highs).
+  Exact node-packing optimum.
 
 ## Max-Mean dispersion solver
 

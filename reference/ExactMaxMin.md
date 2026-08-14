@@ -65,10 +65,13 @@ restarts and a
 [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md)
 pass), then gallops upward from that bound to the first infeasible
 threshold and bisects the resulting bracket. When a heuristic already
-attains the optimum, a single infeasibility solve certifies it. Each
+attains the optimum, a single infeasibility proof certifies it. Each
 feasibility probe is first reduced to its \\(k-1)\\-core and greedily
-coloured; where this does not settle the probe, an algebraic solver is
-launched, using multiple cores if `options("mc.cores") > 1`.
+coloured, then searched exhaustively for a witness under a colouring
+bound. The search runs on one core: its branches parallelise, but
+measurably only for infeasibility proofs, and threads would make the
+reported subset thread-dependent. The indices returned may vary between
+releases where several subsets attain the optimum; the `score` does not.
 
 ## Progress bar
 

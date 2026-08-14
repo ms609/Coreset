@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">MaxMin</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9009</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9010</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -186,7 +186,7 @@
 </tr>
 <tr class="odd">
 <td><code><a href="../reference/MaxEntropy.html">MaxEntropy()</a></code></td>
-<td>maxdet (max log-det)</td>
+<td>maxdet</td>
 <td>High / Optimal for small <code>k</code>
 </td>
 <td>Fast</td>
@@ -460,7 +460,8 @@
 </div>
 </section></section><section class="level2"><h2 id="maximum-entropy-maxdet-selection">Maximum-entropy (maxdet) selection<a class="anchor" aria-label="anchor" href="#maximum-entropy-maxdet-selection"></a>
 </h2>
-<p><code><a href="../reference/MaxEntropy.html">MaxEntropy()</a></code> selects the <span class="math inline">\(k\)</span>-subset that maximizes the log-determinant of its kernel block, <span class="math inline">\(\log\det K_S\)</span> – the maximum-entropy sampling criterion <span class="citation" data-cites="Shewry1987">(<a href="#ref-Shewry1987" role="doc-biblioref">Shewry &amp; Wynn, 1987</a>)</span>, equivalently the maximum-a-posteriori mode of a determinantal point process <span class="citation" data-cites="Kulesza2012">(<a href="#ref-Kulesza2012" role="doc-biblioref">Kulesza &amp; Taskar, 2012</a>)</span>. A radial-basis kernel is built from the distance matrix and repaired to be positive semi-definite where needed, since an arbitrary distance is not guaranteed to be of negative type. Because a redundant point lies in the span of those already chosen and adds no volume, it is never selected: the objective is exactly density-blind, unlike the distance-based objectives above.</p>
+<p>The maximum entropy selection seeks to select <span class="math inline">\(k\)</span> elements that contain as much of the information of the original set as possible. The route to doing so is dropping elements that are redundant to selected elements. If redundancy between two points is equated to the overlap of volumes centred on each point, then maximum entropy can be cast as finding a selection that maximizes the log-determinant of its kernel block, <span class="math inline">\(\log\det K_S\)</span> <span class="citation" data-cites="Shewry1987">(<a href="#ref-Shewry1987" role="doc-biblioref">Shewry &amp; Wynn, 1987</a>)</span>, equivalently the maximum-a-posteriori mode of a determinantal point process <span class="citation" data-cites="Kulesza2012">(<a href="#ref-Kulesza2012" role="doc-biblioref">Kulesza &amp; Taskar, 2012</a>)</span>.</p>
+<p><code><a href="../reference/MaxEntropy.html">MaxEntropy()</a></code> builds a radial-basis kernel from the distance matrix. This is repaired to be positive semi-definite where needed, since an arbitrary distance is not guaranteed to be of negative type.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mePick</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/MaxEntropy.html">MaxEntropy</a></span><span class="op">(</span><span class="fl">4L</span>, <span class="va">eurodist</span><span class="op">)</span></span>
@@ -471,7 +472,7 @@
 <span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">mePick</span>, <span class="st">"exact"</span><span class="op">)</span>      <span class="co"># TRUE if certified by exact enumeration</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 </div>
-<p>The selection is built greedily by pivoted Cholesky, substituting exact enumeration when <span class="math inline">\(\binom{n}{k}\)</span> does not exceed <code>maxCombos</code> – as here, where the search is certified optimal. <code>negMass</code> reports the fraction of spectral mass removed by the positive-semidefinite repair, so a caller can see when that approximation is doing real work:</p>
+<p>The selection is built greedily by pivoted Cholesky, substituting exact enumeration when <span class="math inline">\(\binom{n}{k}\)</span> does not exceed <code>maxCombos</code>. <code>negMass</code> reports the fraction of spectral mass removed by the positive-semidefinite repair; as this fraction increases, so the result must be considered more approximate.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">mePick</span>, <span class="st">"negMass"</span><span class="op">)</span></span>

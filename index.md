@@ -30,7 +30,7 @@ by specialized solvers.
 |----|----|----|
 | [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) | DropAdd tabu search | ~99%-optimal heuristic |
 | [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) | GRASP with path-relinking metaheuristic | Slower but powerful heuristic |
-| [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md) | Node-packing integer program | Proven optimum, small `k` (needs `highs`) |
+| [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md) | Node-packing integer program | Proven optimum, small `k` |
 
 ### Max-sum dispersion (maximum diversity)
 

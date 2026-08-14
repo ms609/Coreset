@@ -98,7 +98,7 @@ MaxMin provides solvers for each objective:
 | [`MaxMean()`](https://ms609.github.io/MaxMin/reference/MaxMean.md) | max-mean | High | Time-budgeted | Yes ([`set.seed()`](https://rdrr.io/r/base/Random.html)) |
 | [`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md) | k-centre | Near-optimal | Fast | No |
 | [`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md) | k-centre | Optimal (NP-hard) | Slow | No |
-| [`MaxEntropy()`](https://ms609.github.io/MaxMin/reference/MaxEntropy.md) | maxdet (max log-det) | High / Optimal for small `k` | Fast | No |
+| [`MaxEntropy()`](https://ms609.github.io/MaxMin/reference/MaxEntropy.md) | maxdet | High / Optimal for small `k` | Fast | No |
 
 To compute the score for an arbitrary selection of points under each
 objective, use
@@ -537,17 +537,20 @@ labels(eurodist)[kc]    # covering: pulled toward the interior
 
 ## Maximum-entropy (maxdet) selection
 
+The maximum entropy selection seeks to select \\k\\ elements that
+contain as much of the information of the original set as possible. The
+route to doing so is dropping elements that are redundant to selected
+elements. If redundancy between two points is equated to the overlap of
+volumes centred on each point, then maximum entropy can be cast as
+finding a selection that maximizes the log-determinant of its kernel
+block, \\\log\det K_S\\ ([Shewry & Wynn, 1987](#ref-Shewry1987)),
+equivalently the maximum-a-posteriori mode of a determinantal point
+process ([Kulesza & Taskar, 2012](#ref-Kulesza2012)).
+
 [`MaxEntropy()`](https://ms609.github.io/MaxMin/reference/MaxEntropy.md)
-selects the \\k\\-subset that maximizes the log-determinant of its
-kernel block, \\\log\det K_S\\ – the maximum-entropy sampling criterion
-([Shewry & Wynn, 1987](#ref-Shewry1987)), equivalently the
-maximum-a-posteriori mode of a determinantal point process ([Kulesza &
-Taskar, 2012](#ref-Kulesza2012)). A radial-basis kernel is built from
-the distance matrix and repaired to be positive semi-definite where
-needed, since an arbitrary distance is not guaranteed to be of negative
-type. Because a redundant point lies in the span of those already chosen
-and adds no volume, it is never selected: the objective is exactly
-density-blind, unlike the distance-based objectives above.
+builds a radial-basis kernel from the distance matrix. This is repaired
+to be positive semi-definite where needed, since an arbitrary distance
+is not guaranteed to be of negative type.
 
 ``` r
 
@@ -561,10 +564,10 @@ attr(mePick, "exact")      # TRUE if certified by exact enumeration
 ```
 
 The selection is built greedily by pivoted Cholesky, substituting exact
-enumeration when \\\binom{n}{k}\\ does not exceed `maxCombos` – as here,
-where the search is certified optimal. `negMass` reports the fraction of
-spectral mass removed by the positive-semidefinite repair, so a caller
-can see when that approximation is doing real work:
+enumeration when \\\binom{n}{k}\\ does not exceed `maxCombos`. `negMass`
+reports the fraction of spectral mass removed by the
+positive-semidefinite repair; as this fraction increases, so the result
+must be considered more approximate.
 
 ``` r
 
