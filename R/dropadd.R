@@ -172,8 +172,8 @@
 #' distance matrix.
 #'
 #' @section Seed deviation:
-#' The matrix kernel seeds at the max-row-sum point,
-#' \eqn{\mathrm{argmax}_x \sum_y d(x, y)}. Pass `DropAdd(seed=)` to override.
+#' The matrix kernel seeds at the O(n) two-sweep peripheral point (the same
+#' anchor as `PickPoint(d, "peripheral")`). Pass `DropAdd(seed=)` to override.
 #'
 #' @param colFn Column oracle; see [DropAdd()].
 #' @param N Integer element count.
@@ -613,8 +613,18 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
       .auto_close = FALSE
     )
   }
+  # Unseeded calls get the O(n) peripheral anchor computed here rather than
+  # the kernel's own O(n^2) max-row-sum fallback (seed0 = -1): it gives the
+  # post-tabu-search result a measurably lower gap to the proven optimum
+  # (see dev/profiling/drivers/dropadd-seed-quality.R), matching the
+  # points-path and oracle-path defaults, which already seed peripherally.
+  matrixSeed0 <- if (is.null(seed)) {
+    as.integer(.PickPoint(dmat, "peripheral")) - 1L
+  } else {
+    seed0
+  }
   out <- DropAdd_cpp(dmat, k, as.double(maxSeconds),
-                       .Machine$integer.max, plateau, FALSE, seed0)
+                       .Machine$integer.max, plateau, FALSE, matrixSeed0)
   timeS <- proc.time()[[3L]] - t0
   if (progress) {
     itersMsg <- as.integer(out$iters)

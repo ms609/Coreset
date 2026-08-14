@@ -233,14 +233,16 @@ test_that("DropAdd time budget halts when both other criteria are disabled", {
 
 test_that("DropAdd C++ construction covers sumDist tie-break (lines 82-85)", {
   # 5-point geometry: A=(0,0), B=(3,0), C=(0,2), P=(1,1), Q=(2,1).
-  # Construction: B (max row-sum) -> C -> A.
+  # Construction from B: B -> C -> A.
   # Then P and Q both have minDist=sqrt(2) to {B,C,A}, but
   # sumDist[Q]=sqrt(2)+2*sqrt(5) > sumDist[P]=2*sqrt(2)+sqrt(5),
   # so the tie-break updates xNew to Q (lines 83-85 fire).
   # When A is added, d(P,A)=sqrt(2)==minDist[P] -> line 103 fires too.
+  # Seed pinned to B (index 2): the default peripheral anchor starts at C
+  # instead and would not exercise this sequence.
   pts <- rbind(c(0,0), c(3,0), c(0,2), c(1,1), c(2,1))
   d   <- as.matrix(dist(pts))
-  res <- DropAdd(4L, d)
+  res <- DropAdd(4L, d, seed = 2L)
   expect_length(res, 4L)
 })
 
@@ -263,10 +265,12 @@ test_that("DropAdd C++ main-loop ADD covers tie-break (255-258) and equality (27
   #   * Line 277: when Y is added, d(Y,W)=0.5=minDist[W] -> count increments.
   #
   # Points: P(0,0), Q(4,0), R(0,4), ANC(10,10), X(1,0), Y(3,0), W(3.5,0).
-  # Construction: ANC -> P -> Q -> R  (ANC has max row-sum).
+  # Construction from ANC: ANC -> P -> Q -> R.
+  # Seed pinned to ANC (index 4): the default peripheral anchor starts at P
+  # instead and would not exercise this sequence.
   pts7 <- rbind(c(0,0), c(4,0), c(0,4), c(10,10), c(1,0), c(3,0), c(3.5,0))
   d7   <- as.matrix(dist(pts7))
-  res <- DropAdd(4L, d7)
+  res <- DropAdd(4L, d7, seed = 4L)
   expect_length(res, 4L)
 })
 
@@ -337,10 +341,10 @@ test_that("DropAdd seed= reproduces the default seed and honours an override", {
   pts  <- matrix(rnorm(40 * 4), ncol = 4)
   dmat <- as.matrix(dist(pts))
 
-  # Matrix path: the default seed IS the max-row-sum point, so passing that index
-  # explicitly must reproduce the default run exactly (within-path; no cross-path
-  # FP comparison -- see test 7 on why those flicker).
-  mr <- which.max(rowSums(dmat))
+  # Matrix path: the default seed IS the two-sweep peripheral point, so passing
+  # that index explicitly must reproduce the default run exactly (within-path;
+  # no cross-path FP comparison -- see test 7 on why those flicker).
+  mr <- MaxMin:::.PickPoint(dmat, "peripheral")
   a  <- DropAdd(6L, dmat, plateau = 200L)
   b  <- DropAdd(6L, dmat, plateau = 200L, seed = mr)
   attr(a, "time_s") <- attr(b, "time_s") <- NULL
