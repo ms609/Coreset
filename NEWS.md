@@ -1,6 +1,6 @@
 # MaxMin 0.0.0.9007 (development)
 
-- FarFirst() parallelized and optimized.
+- `FarFirst()` parallelized and optimized.
 
 # MaxMin 0.0.0.9006 (development)
 
