@@ -23,7 +23,8 @@ the objective maximised by \code{\link[=MaxMean]{MaxMean()}}.
 }
 \examples{
 d <- dist(matrix(rnorm(20), ncol = 2))
-MeanDist(d, 1:4)
+selection <- MaxMean(d)
+MeanDist(d, selection)
 }
 \seealso{
 \code{\link[=MaxMean]{MaxMean()}} which maximises this objective; \code{\link[=MinDist]{MinDist()}} for the

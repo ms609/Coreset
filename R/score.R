@@ -58,7 +58,8 @@ MinDist <- function(d = NULL, idx, points = NULL) {
 #'   max-min (MMDP) analogue.
 #' @examples
 #' d <- dist(matrix(rnorm(20), ncol = 2))
-#' MeanDist(d, 1:4)
+#' selection <- MaxMean(d)
+#' MeanDist(d, selection)
 #' @export
 MeanDist <- function(d, idx) {
   idx <- as.integer(idx)
