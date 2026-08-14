@@ -64,7 +64,7 @@ MeanDist <- function(d, idx) {
   idx <- as.integer(idx)
   if (anyNA(idx)) stop("`idx` must not contain NA")
   if (anyDuplicated(idx)) stop("`idx` must not contain duplicate indices")
-  d <- .AsDistMatrix(d)
+  d <- .AsDistMatrix(d, symmetric = FALSE)   # each pair averaged below
   k <- length(idx)
   if (k < 2L) return(NA_real_)
   sub <- d[idx, idx, drop = FALSE]

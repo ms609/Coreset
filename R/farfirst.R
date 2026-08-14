@@ -3,22 +3,34 @@
 #' Coerce distance input to a square matrix, skipping the round-trip when
 #' already a matrix.
 #' @param d A `dist` object or a square numeric matrix.
+#' @param symmetric Logical: require `d` to be exactly symmetric. `TRUE` for the
+#' min-based solvers, whose kernels read whichever of \eqn{d_{ij}} and
+#' \eqn{d_{ji}} is the cheaper memory access; `FALSE` for the mean- and
+#' sum-based ones, which average the two.
 #' @return `.AsDistMatrix()` returns a square numeric matrix.
 #' @details
-#' Symmetry is not checked; an `O(N^2)` check is intentionally omitted.
-#' Asymmetric matrices are silently accepted, and the algorithm treats
-#' \eqn{d_{ij}} and \eqn{d_{ji}} as independent values.
+#' Under `symmetric = TRUE` the two triangles must hold equal values, since the
+#' kernels are free to read either. A matrix symmetric only to rounding is
+#' rejected rather than silently resolved in one direction; `(d + t(d)) / 2`
+#' makes it exact. A `dist` object is symmetric by construction.
 #' @keywords internal
-.AsDistMatrix <- function(d) {
-  if (inherits(d, "dist")) {
+.AsDistMatrix <- function(d, symmetric = TRUE) {
+  wasDist <- inherits(d, "dist")
+  if (wasDist) {
     d <- as.matrix(d)
   } else if (!is.matrix(d) || !is.numeric(d) || nrow(d) != ncol(d)) {
     stop("`d` must be a `dist` object or a square numeric matrix")
   }
   # NA/NaN/Inf propagate silently through pmin.int()/which.max() and can yield a
-  # repeated index in the selection; reject them up front.
+  # repeated index in the selection; reject them up front. Checked before
+  # symmetry, which NA would fail on its own terms (NA != NA).
   if (!AllFinite_cpp(d, .NThreads())) {
     stop("distance matrix must not contain NA/NaN/Inf")
+  }
+  # A `dist` fills both triangles from one value, so it needs no check.
+  if (symmetric && !wasDist && !IsExactlySymmetric_cpp(d)) {
+    stop("`d` must be symmetric: d[i, j] and d[j, i] must be equal. ",
+         "Use `(d + t(d)) / 2` if rounding has made them differ.")
   }
   d
 }

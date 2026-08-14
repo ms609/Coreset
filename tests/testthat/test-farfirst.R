@@ -459,6 +459,49 @@ test_that("FarFirst results are invariant to mc.cores (parallel greedy pass)", {
   expect_identical(s1, s2)
 })
 
+test_that("IsExactlySymmetric_cpp holds to exact equality across tiles", {
+  sym <- MaxMin:::IsExactlySymmetric_cpp
+  d <- as.matrix(stats::dist(matrix(stats::rnorm(400L), ncol = 2L)))
+  expect_true(sym(d))
+  expect_true(sym(matrix(0, 1L, 1L)))
+  expect_false(sym(matrix(1:6 + 0, 2L, 3L)))       # not square
+
+  # A single flipped entry is caught wherever it sits: within the first tile,
+  # on a diagonal tile past the first, and in an off-diagonal tile.
+  for (ij in list(c(1L, 2L), c(70L, 75L), c(3L, 130L))) {
+    bad <- d
+    bad[ij[[1]], ij[[2]]] <- bad[ij[[1]], ij[[2]]] + 1
+    expect_false(sym(bad), info = paste(ij, collapse = "-"))
+  }
+
+  # Symmetric to rounding is not symmetric: one ulp apart must fail, since the
+  # kernels may read either triangle.
+  near <- d
+  near[5L, 9L] <- near[9L, 5L] * (1 + .Machine$double.eps)
+  expect_false(sym(near))
+})
+
+test_that(".AsDistMatrix enforces the symmetry its callers rely on", {
+  adm <- MaxMin:::.AsDistMatrix
+  pts <- matrix(stats::rnorm(60L), ncol = 2L)
+  d <- as.matrix(stats::dist(pts))
+  expect_identical(adm(d), d)
+  expect_identical(adm(stats::dist(pts)), d)     # a dist needs no check
+
+  asym <- d
+  asym[2L, 5L] <- asym[2L, 5L] + 1
+  expect_error(adm(asym), "must be symmetric")
+  # The mean- and sum-based entry points average the two triangles, so they
+  # opt out and must still accept it.
+  expect_identical(adm(asym, symmetric = FALSE), asym)
+
+  # NA is reported as NA, not as asymmetry: NA != NA would fail the symmetry
+  # test on its own terms and hide the real defect.
+  naMat <- d
+  naMat[2L, 5L] <- NA_real_
+  expect_error(adm(naMat), "NA/NaN/Inf")
+})
+
 test_that("AllFinite_cpp matches the anyNA/is.finite guard semantics", {
   # .AsDistMatrix's finite check runs through this single-pass scan; it must
   # flag exactly what `anyNA(x) || any(!is.finite(x))` flags, for double and

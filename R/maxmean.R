@@ -87,7 +87,8 @@
 MaxMean <- function(d, maxSeconds = 0.1, maxIter = 1000, useRL = TRUE) {
   progress <- getOption("MaxMin.progress", interactive())
 
-  dmat <- .AsDistMatrix(d)
+  # Asymmetry is averaged away below, so it is accepted here.
+  dmat <- .AsDistMatrix(d, symmetric = FALSE)
   n    <- nrow(dmat)
   # The max-mean objective is defined for symmetric distances, but
   # .AsDistMatrix() does not enforce symmetry (the O(n^2) check is avoided as

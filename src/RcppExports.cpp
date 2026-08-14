@@ -351,6 +351,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// IsExactlySymmetric_cpp
+bool IsExactlySymmetric_cpp(Rcpp::NumericMatrix d);
+RcppExport SEXP _MaxMin_IsExactlySymmetric_cpp(SEXP dSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type d(dSEXP);
+    rcpp_result_gen = Rcpp::wrap(IsExactlySymmetric_cpp(d));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_MaxMin_DropAdd_cpp", (DL_FUNC) &_MaxMin_DropAdd_cpp, 7},
@@ -378,6 +389,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MaxMin_DiameterFromPoints_cpp", (DL_FUNC) &_MaxMin_DiameterFromPoints_cpp, 2},
     {"_MaxMin_MaxMean_cpp", (DL_FUNC) &_MaxMin_MaxMean_cpp, 10},
     {"_MaxMin_AllFinite_cpp", (DL_FUNC) &_MaxMin_AllFinite_cpp, 2},
+    {"_MaxMin_IsExactlySymmetric_cpp", (DL_FUNC) &_MaxMin_IsExactlySymmetric_cpp, 1},
     {NULL, NULL, 0}
 };
 

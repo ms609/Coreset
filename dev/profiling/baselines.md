@@ -51,6 +51,22 @@ measurement — see log.md round 10).
 figures are from the same-code experiment build and the public-API run;
 mc.cores end-to-end at n=2e4 m=2000 plateau-capped: 320 → 180 ms, 1.75×.)
 
+## Area 2 — DropAdd matrix kernel — AFTER round 13 (symmetric-read recompute)
+
+Kernel-direct, n = 4000, interleaved min-of-3. Objectives identical per cell.
+
+| cell | before s | after s |
+|------|---------:|--------:|
+| m=10 construct | 0.0100 | 0.0100 |
+| m=10 search1500 | 0.0500 | 0.0500 |
+| m=400 search1500 | 0.0733 | 0.0733 |
+| m=600 search1500 | 0.0867 | 0.0700 |
+| m=2000 construct | 0.0500 | 0.0300 |
+| m=2000 search1500 | 0.1400 | 0.0800 |
+
+Recompute reads switch to column-major at m > n/8. 295-case trajectory battery
+bit-identical (asymmetric axis retired with the symmetry contract).
+
 ## Area 3 — Grasp — AFTER T-007 (base_z min-edge witness hoist)
 
 | case | metric | ms |

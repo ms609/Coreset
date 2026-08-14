@@ -101,3 +101,7 @@ AllFinite_cpp <- function(x, n_threads = 1L) {
     .Call(`_MaxMin_AllFinite_cpp`, x, n_threads)
 }
 
+IsExactlySymmetric_cpp <- function(d) {
+    .Call(`_MaxMin_IsExactlySymmetric_cpp`, d)
+}
+

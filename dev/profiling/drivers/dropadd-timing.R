@@ -41,6 +41,11 @@ tab <- rbind(
     MaxMin:::DropAdd_cpp(d4, 10L, Inf, 1500L, PL, FALSE, -1L), 4L),
   cell("matrix n=4e3 m=2000 search1500", function()
     MaxMin:::DropAdd_cpp(d4, 2000L, Inf, 1500L, PL, FALSE, -1L), 3L),
+  # Either side of m = n/8, where the recompute branch switches read order.
+  cell("matrix n=4e3 m=400 search1500", function()
+    MaxMin:::DropAdd_cpp(d4, 400L, Inf, 1500L, PL, FALSE, -1L), 3L),
+  cell("matrix n=4e3 m=600 search1500", function()
+    MaxMin:::DropAdd_cpp(d4, 600L, Inf, 1500L, PL, FALSE, -1L), 3L),
   cell("points n=2e4 d2 m=10 search1000", function()
     MaxMin:::DropAdd_points_cpp(big2, 10L, Inf, 1000L, PL, FALSE, -1L), 3L),
   cell("points n=2e4 d10 m=10 search600", function()
