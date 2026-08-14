@@ -203,41 +203,16 @@
 #' - `strategy_results`: results for each strategy.
 #'
 #' @section Parallelism:
-#' When the package is built with OpenMP support (the default on Linux and
-#' Windows), the greedy pass and the \eqn{O(N^2)} seeding anchors (`diameter`,
-#' `medoid`, `anti_medoid`, `rowsum`, `rownorm`) run on multiple threads. The
-#' number of threads is controlled by the standard `"mc.cores"` option:
+#' To parallelize computation when OpenMP is available, set the `"mc.cores"`
+#' option:
 #'
 #' ```r
-#' options(mc.cores = parallel::detectCores())  # use all available cores
-#' options(mc.cores = 4L)                        # or a fixed number
+#' options(mc.cores = 2L)                       # use a fixed number of cores
+#' options(mc.cores = parallel::detectCores())  # or all available cores
 #' ```
 #'
-#' The default is `1` (single-threaded). The kernels contain no random draws,
-#' each restart is an independent function of its seed, and every parallel
-#' reduction preserves the serial first-maximum tie rule, so **the selection
-#' returned is identical at every thread count**: `mc.cores` trades wall-clock
-#' time only.
-#'
-#' Threads are put to whichever use suits the call:
-#'
-#' - A call that runs several starts — any multi-anchor `strategy`, or the
-#'   default `"random_furthest"` with `nSeeds > 1` — runs one start per
-#'   thread. Speed-up is capped at the number of distinct seeds, so `nSeeds`
-#'   starts saturate `nSeeds` cores.
-#' - A single greedy pass splits its own sweep across threads instead, but
-#'   only past ~32,000 points: below that a step is too brief for the
-#'   synchronisation to pay. Only the coordinate path reaches that size in
-#'   practice, since a 32,000-point distance matrix already occupies 8 GB and
-#'   the matrix pass measures faster serially at every smaller size. Past it,
-#'   splitting one pass beats running the starts concurrently, so the starts
-#'   run in turn.
-#' - The \eqn{O(N^2)} seeding anchors (`diameter`, `medoid`, `anti_medoid`,
-#'   `rowsum`, `rownorm`) parallelise at any non-trivial size. They dominate an
-#'   anchor ensemble, whose greedy passes are comparatively cheap.
-#'
-#' The distance-column oracle path stays serial (it calls back into user R
-#' code).
+#' The main use case for parallelization is when `nSeeds` is a multiple of
+#' `mc.cores`, so each seed point can be evaluated in parallel.
 #'
 #' @references \insertAllCited{}
 #' @seealso [PickPoint()] for the seed indices alone; [DropAdd()] and
