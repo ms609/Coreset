@@ -372,7 +372,26 @@ test_that("nSeeds: matrix and coordinate paths agree (same RNG)", {
   for (n in c(2L, 6L, 12L)) {
     set.seed(7); mat <- FarFirst(n, dat$d, nSeeds = 5L)
     set.seed(7); pt  <- FarFirst(k = n, points = dat$pts, nSeeds = 5L)
-    expect_identical(mat, pt, info = paste("nSeeds k", n))
+
+    # Indices, seeds and winners must agree exactly; the matrix and coordinate
+    # kernels accumulate T_k via different summation orders, so a per-strategy
+    # t_k can differ in its last bit even when every selection is identical --
+    # compare those with tolerance rather than via expect_identical().
+    info <- paste("nSeeds k", n)
+    expect_identical(as.integer(mat), as.integer(pt), info = info)
+    expect_equal(attr(mat, "score"), attr(pt, "score"), tolerance = 1e-9,
+                 info = paste(info, "score"))
+    expect_identical(attr(mat, "winning_strategy"), attr(pt, "winning_strategy"),
+                      info = paste(info, "winning_strategy"))
+    srMat <- attr(mat, "strategy_results")
+    srPt  <- attr(pt, "strategy_results")
+    expect_identical(names(srMat), names(srPt), info = paste(info, "names"))
+    for (nm in names(srMat)) {
+      expect_identical(srMat[[nm]]$s1, srPt[[nm]]$s1, info = paste(info, nm, "s1"))
+      expect_identical(srMat[[nm]]$idx, srPt[[nm]]$idx, info = paste(info, nm, "idx"))
+      expect_equal(srMat[[nm]]$t_k, srPt[[nm]]$t_k, tolerance = 1e-9,
+                   info = paste(info, nm, "t_k"))
+    }
   }
 })
 
