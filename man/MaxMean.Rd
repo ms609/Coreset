@@ -2,7 +2,7 @@
 % Please edit documentation in R/maxmean.R
 \name{MaxMean}
 \alias{MaxMean}
-\title{RLTS tabu search for the Max-Mean Dispersion Problem}
+\title{Max-Mean Dispersion Problem solver}
 \usage{
 MaxMean(d, maxSeconds = 0.1, maxIter = 1000, useRL = TRUE)
 }
@@ -11,14 +11,14 @@ MaxMean(d, maxSeconds = 0.1, maxIter = 1000, useRL = TRUE)
 values may be negative, and an asymmetric matrix is symmetrized to
 \eqn{(d_{ij} + d_{ji})/2} before solving.}
 
-\item{maxSeconds}{Numeric wall-clock time budget in seconds.}
+\item{maxSeconds}{Numeric: wall-clock time budget, in seconds.}
 
-\item{maxIter}{Numeric cap on the total tabu-search iterations across
-restarts; \code{Inf} budgets by wall-clock time alone.}
+\item{maxIter}{Numeric: cap on the total tabu-search iterations across
+restarts.}
 
-\item{useRL}{Logical: enable the \eqn{Q}-learning layer guiding
-initial-solution construction across restarts (\code{TRUE}, the default, costs
-\eqn{O(n^2)} memory; \code{FALSE} uses random restarts only, \eqn{O(n)} memory).}
+\item{useRL}{Logical: if \code{TRUE} (the default) a \eqn{Q}-learning layer guides
+initial-solution construction across restarts; if \code{FALSE}, each restart
+starts from a random solution.}
 }
 \value{
 \code{MaxMean()} returns an integer vector of selected 1-based indices
@@ -45,14 +45,12 @@ to maximise the mean dispersion.
 }
 \details{
 \code{MaxMean()} implements the reinforcement-learning tabu search
-(\acronym{RLTS}) algorithm of \insertCite{Dieudonne2020}{MaxMin}.
+algorithm of \insertCite{Dieudonne2020}{MaxMin}.
 An initial solution is constructed randomly for the first restart and
 via \eqn{Q}-learning thereafter; each initial solution is then refined by a
-tabu search using one-flip moves (adding or removing one element per step),
-with efficient \eqn{O(n)} neighbourhood evaluation via the contribution
-array \eqn{P_i = \sum_{j \in S,\, j \ne i} d_{ij}}.  Restarts continue until
-the \code{maxSeconds} or \code{maxIter} budget is reached, whichever comes first; the
-best solution found is returned.
+tabu search using one-flip moves (adding or removing one element per step).
+Restarts continue until either the \code{maxSeconds} or \code{maxIter} budget is
+reached.
 
 The reinforcement-learning and tabu hyperparameters are fixed at the tuned
 values reported by \insertCite{Dieudonne2020}{MaxMin} (greedy factor
@@ -66,14 +64,14 @@ To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
 }
 
 \examples{
+# The max-mean problem is defined for signed dissimilarities; with these the
+# optimal subset has an interior size, chosen to maximise mean dispersion.
 set.seed(1)
-pts <- matrix(rnorm(60), ncol = 2)
-d <- dist(pts)
-
-# Select the subset that maximises mean pairwise dispersion:
-result <- MaxMean(d, maxSeconds = 0.001)
-result
-attr(result, "score")
+x <- matrix(runif(100, -5, 5), 10)
+d <- (x + t(x)) / 2          # symmetric, signed
+selection <- MaxMean(d)
+selection                    # 5 of the 10 elements: {2, 5, 6, 8, 10}
+MeanDist(d, selection)       # 2.714 — equals attr(selection, "score")
 }
 \references{
 \insertAllCited{}

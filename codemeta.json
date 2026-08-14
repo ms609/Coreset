@@ -2,18 +2,18 @@
   "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
   "@type": "SoftwareSourceCode",
   "identifier": "MaxMin",
-  "description": "Solves discrete location objectives on a distance matrix or Euclidean coordinate set. The Max-Min Diversity (MMDP / p-dispersion) objective, which maximizes the minimum pairwise distance within a selection of k items, is solved by farthest-first selection (Gonzalez 1985) <doi:10.1016/0304-3975(85)90224-5>; the DropAdd tabu-search heuristic (Porumbel, Hao & Glover 2011) <doi:10.1007/s10479-011-0898-z>, GRASP with path-relinking (Resende, Marti, Gallego & Duarte 2010) <doi:10.1016/j.cor.2008.05.011>, and an exact node-packing integer program (Sayyady & Fathi 2016) <doi:10.1016/j.ejor.2016.02.026>. The discrete k-centre (min-max covering / facility location) objective, which chooses k centres to minimise the largest distance from any point to its nearest centre, is solved via the CDSh heuristic (Garcia-Diaz et al. 2017 <doi:10.1007/s10732-017-9345-x>, 2019 <doi:10.1109/ACCESS.2019.2933875>), and an exact minimum-cover integer program.",
-  "name": "MaxMin: Maximum-Minimum Diversity and Discrete k-Centre Subset Selection",
-  "codeRepository": "https://ms609.github.com/MaxMin/",
+  "description": "Solves discrete location objectives on a distance matrix or Euclidean coordinate set. The Max-Min Diversity (MMDP / p-dispersion) objective, which maximizes the minimum pairwise distance within a selection of k items, is solved by farthest-first selection (Gonzalez 1985) <doi:10.1016/0304-3975(85)90224-5>; the DropAdd tabu-search heuristic (Porumbel, Hao & Glover 2011) <doi:10.1007/s10479-011-0898-z>, GRASP with path-relinking (Resende, Marti, Gallego & Duarte 2010) <doi:10.1016/j.cor.2008.05.011>, and an exact node-packing integer program (Sayyady & Fathi 2016) <doi:10.1016/j.ejor.2016.02.026>. The Max-Mean Dispersion objective, which selects a subset of unrestricted size maximising the sum of its pairwise distances divided by the number of selected elements, is solved by reinforcement-learning-guided tabu search (Nijimbere et al. 2020) <doi:10.3934/jimo.2020115>. The discrete k-centre (min-max covering / facility location) objective, which chooses k centres to minimise the largest distance from any point to its nearest centre, is solved via the CDSh heuristic (Garcia-Diaz et al. 2017 <doi:10.1007/s10732-017-9345-x>, 2019 <doi:10.1109/ACCESS.2019.2933875>), and an exact minimum-cover integer program. The maximum-entropy (maxdet) objective, which maximises the log-determinant of a similarity kernel built from the distances (Shewry & Wynn 1987 <doi:10.1080/02664768700000020>; the mode of a determinantal point process, Kulesza & Taskar 2012 <doi:10.1561/2200000044>), is solved by greedy pivoted-Cholesky selection and, for small instances, exact enumeration.",
+  "name": "MaxMin: Maximum-Minimum Diversity, Discrete k-Centre, and Max-Mean Dispersion Subset Selection",
+  "codeRepository": "https://ms609.github.io/MaxMin/",
   "issueTracker": "https://github.com/ms609/MaxMin/issues",
   "license": "https://spdx.org/licenses/GPL-3.0",
-  "version": "0.0.0.9003",
+  "version": "0.0.0.9010",
   "programmingLanguage": {
     "@type": "ComputerLanguage",
     "name": "R",
     "url": "https://r-project.org"
   },
-  "runtimePlatform": "R version 4.6.0 (2026-04-24 ucrt)",
+  "runtimePlatform": "R Under development (unstable) (2026-06-29 r90199 ucrt)",
   "author": [
     {
       "@type": "Person",
@@ -180,7 +180,7 @@
     },
     "SystemRequirements": null
   },
-  "fileSize": "1482.016KB",
+  "fileSize": "1735.606KB",
   "citation": [
     {
       "@type": "SoftwareSourceCode",
@@ -194,7 +194,7 @@
       ],
       "name": "{MaxMin}: Maximum-Minimum Diversity and Dispersion Subset Selection",
       "url": "https://github.com/ms609/MaxMin",
-      "description": "R package version 0.0.0.9003"
+      "description": "R package version 0.0.0.9010"
     }
   ]
 }

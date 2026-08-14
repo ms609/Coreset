@@ -97,8 +97,8 @@ MaxMin provides solvers for each objective:
 | `DropAdd()` | MMDP (max-min) | High (≈ 99 % optimal) | Fast | No |
 | `Grasp()` | MMDP (max-min) | Highest | Moderate | Yes (`set.seed()`) |
 | `ExactMaxMin()` | MMDP (max-min) | Optimal (NP-hard) | Slow | No |
-| `MaxMean()` | max-mean | High (RLTS) | Time-budgeted | Yes (`set.seed()`) |
-| `KCentre()` | k-centre | Near-optimal (CDSh) | Fast | No |
+| `MaxMean()` | max-mean | High | Time-budgeted | Yes (`set.seed()`) |
+| `KCentre()` | k-centre | Near-optimal | Fast | No |
 | `ExactKCentre()` | k-centre | Optimal (NP-hard) | Slow | No |
 
 
@@ -345,20 +345,17 @@ MinDist(points = pts, idx = ffPick)                # from coordinates
 
 ## Max-mean dispersion
 
-The Max-Mean Dispersion Problem rewards the average separation; it maximizes
-the sum of pairwise distances divided by the number of selected elements,
-which is chosen by the algorithm.
+The Max-Mean Dispersion Problem maximizes the sum of pairwise distances divided
+by the number of selected elements, which is chosen by the algorithm.
 
-`MaxMean()` implements reinforcement-learning tabu search (RLTS) 
-[@Dieudonne2020]: each restart constructs a candidate selection, randomly at
-first, then guided by a *Q*-learning memory of which elements proved valuable.
+`MaxMean()` implements reinforcement-learning tabu search [@Dieudonne2020]: 
+each restart constructs a candidate selection, randomly at first, then guided by
+a *Q*-learning memory of which elements proved valuable.
 The selection is refined with a one-flip tabu search that adds or removes a
 single element at a time.  The search continues until its time budget expires.
 
-The objective is most interesting when distances are signed: a pair separated
-by a *negative* distance drags the mean down, so the optimal selection excludes
-elements that would dilute it. We thus draw a symmetric matrix of signed
-dissimilarities:
+The objective is only interesting when negative distances occur: otherwise the
+optimal selection tends to include all points.
 
 ```{r}
 #| label: maxmean-data
@@ -377,7 +374,7 @@ attr(mmPick, "size")              # the algorithm chose this subset size
 attr(mmPick, "score")             # achieved mean-dispersion objective
 ```
 
-`MaxMean()` chooses the subset size for us, retaining only the elements that
+`MaxMean()` chooses the subset size to retaining only the elements that
 raise the average separation.
 `MeanDist()` scores any index set under the same objective, so a hand-picked
 selection can be compared directly:
@@ -387,14 +384,6 @@ selection can be compared directly:
 MeanDist(affinity, mmPick)        # matches attr(mmPick, "score")
 MeanDist(affinity, 1:30)          # the full set scores lower
 ```
-
-With strictly non-negative distances (as in `eurodist`) the mean rises
-monotonically as elements are added, so the objective simply selects the entire
-pool; the signed case above is where the size trade-off bites.
-
-The *Q*-learning layer occupies memory of the same order as the distance matrix
-($O(N^2)$); for very large instances it can be disabled with `useRL = FALSE`,
-falling back to random restarts.
 
 
 ## Covering: the k-centre problem
@@ -483,7 +472,8 @@ For **dispersion** (spread the selection; maximize T~k~):
 | Proven optimum, N ≤ ~ 25–30, **highs** installed | `ExactMaxMin()` |
 | Score a selection's T~k~ | `MinDist()` |
 
-For **average dispersion** (maximize mean separation; subset size free):
+For **average dispersion** (select a subset of the size that maximizes mean
+separation):
 
 | Scenario | Recommended |
 |---|---|
