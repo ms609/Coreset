@@ -4,10 +4,12 @@
 \alias{.Symmetrise}
 \title{Reconcile the two triangles of a distance matrix}
 \usage{
-.Symmetrise(d, tolerance = .SymmetryTolerance())
+.Symmetrise(d, dev, tolerance = .SymmetryTolerance())
 }
 \arguments{
 \item{d}{A square numeric matrix, known finite.}
+
+\item{dev}{Numeric: its scaled asymmetry, from \code{SymmetryScan_cpp()}.}
 
 \item{tolerance}{Numeric: largest scaled discrepancy to repair.}
 }

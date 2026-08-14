@@ -1597,7 +1597,7 @@ than a replacement.
 **Contract.** The matrix the kernel receives from `.AsDistMatrix()` is now
 exactly symmetric, since the kernel reads whichever triangle is cheaper and
 that choice depends on `m`: a matrix symmetric only to rounding could
-otherwise answer differently for different `k`. `SymmetryDeviation_cpp`
+otherwise answer differently for different `k`. `SymmetryScan_cpp`
 measures the largest discrepancy tile-by-tile (so a tile and its transpose are
 resident together); zero passes through untouched, anything up to
 `options(MaxMin.symmetryTolerance=)` has its triangles averaged with an
@@ -1623,12 +1623,21 @@ k-centre solvers, which do take a triangle — and whose kernels dominate it.
 `FarFirst(20L, d2000)` returns to 6.0 ms against a 6.0 ms base; the
 `"diameter"` seed to 5.0 ms against 5.5 ms.
 
-Threading the sweep is the lever left: a full-matrix scan takes 2.0 ms at one
-thread and 0.5 ms at four, and both the max and the OR-reduction are
-order-independent. Not taken -- `.NThreads()` is 1 unless the user sets
-`mc.cores`, so it would not move the default path. Fusing the finiteness and
-symmetry sweeps (one 32 MB pass, not two) would save ~2 ms on the callers that
-still check; also untaken, and larger than it looks only for Grasp.
+**The two sweeps are fused.** `SymmetryScan_cpp` answers finiteness and
+asymmetry from one pass, so the callers that check symmetry read the matrix
+once rather than twice: intake at n = 2000 7.0 -> 5.0 ms, `Grasp(20L, d2000)`
+25 -> 20 ms. It carries `AllFinite_cpp`'s bitwise exponent test into the pair
+loop and scans the diagonal separately, the pair sweep stepping over it. Both
+reductions are order-independent, so it threads with `.NThreads()` at no cost
+to reproducibility (a full-matrix scan is 2.0 ms at one thread, 0.5 ms at
+four) -- though `mc.cores` is 1 by default, so that is upside, not the
+default path.
+
+**No benchmark cell exercised the round-13 lever.** `DropAdd(20L, d500)` has
+m = 20 against n/8 = 62.5, and the points cell never reaches the matrix
+kernel, so CI could only ever report NSD on the transposed reads -- which it
+did. A cell at m = n/2 is added: `DropAdd(250L, d500, plateau = 2000L)`,
+measured 15.5 -> 12.5 ms against the pre-round-13 base.
 
 **Verification.** The 295-case trajectory battery is **bit-identical** to the
 pre-change kernel — after its asymmetric axis was replaced with a second

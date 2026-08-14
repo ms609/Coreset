@@ -339,14 +339,15 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// SymmetryDeviation_cpp
-double SymmetryDeviation_cpp(Rcpp::NumericMatrix d);
-RcppExport SEXP _MaxMin_SymmetryDeviation_cpp(SEXP dSEXP) {
+// SymmetryScan_cpp
+Rcpp::List SymmetryScan_cpp(Rcpp::NumericMatrix d, int n_threads);
+RcppExport SEXP _MaxMin_SymmetryScan_cpp(SEXP dSEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type d(dSEXP);
-    rcpp_result_gen = Rcpp::wrap(SymmetryDeviation_cpp(d));
+    Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(SymmetryScan_cpp(d, n_threads));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -387,7 +388,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MaxMin_DiameterFromPoints_cpp", (DL_FUNC) &_MaxMin_DiameterFromPoints_cpp, 2},
     {"_MaxMin_MaxMean_cpp", (DL_FUNC) &_MaxMin_MaxMean_cpp, 10},
     {"_MaxMin_AllFinite_cpp", (DL_FUNC) &_MaxMin_AllFinite_cpp, 2},
-    {"_MaxMin_SymmetryDeviation_cpp", (DL_FUNC) &_MaxMin_SymmetryDeviation_cpp, 1},
+    {"_MaxMin_SymmetryScan_cpp", (DL_FUNC) &_MaxMin_SymmetryScan_cpp, 2},
     {"_MaxMin_Symmetrised_cpp", (DL_FUNC) &_MaxMin_Symmetrised_cpp, 1},
     {NULL, NULL, 0}
 };

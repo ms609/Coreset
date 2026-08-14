@@ -51,8 +51,9 @@
   # symmetry guard would surface only as an empty heuristic pool and a silent
   # fall back to the trivial bound. A non-finite entry fails a symmetry test on
   # its own terms (NA != NA), so it is left to the guard that names it.
-  if (AllFinite_cpp(d, .NThreads())) {
-    d <- .Symmetrise(d)
+  scan <- SymmetryScan_cpp(d, .NThreads())
+  if (scan[["finite"]]) {
+    d <- .Symmetrise(d, scan[["deviation"]])
   }
   d
 }

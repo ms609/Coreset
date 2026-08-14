@@ -7,14 +7,14 @@
 #' beyond it.
 #'
 #' @param d A square numeric matrix, known finite.
+#' @param dev Numeric: its scaled asymmetry, from `SymmetryScan_cpp()`.
 #' @param tolerance Numeric: largest scaled discrepancy to repair.
 #' @return `.Symmetrise()` returns an exactly symmetric matrix.
 #' @details
 #' Averaging costs one `n * n` copy per call: repair `d` yourself if calling a
 #' solver in a loop.
 #' @keywords internal
-.Symmetrise <- function(d, tolerance = .SymmetryTolerance()) {
-  dev <- SymmetryDeviation_cpp(d)
+.Symmetrise <- function(d, dev, tolerance = .SymmetryTolerance()) {
   if (dev == 0) {
     return(d)
   }
@@ -55,13 +55,17 @@
   } else if (!is.matrix(d) || !is.numeric(d) || nrow(d) != ncol(d)) {
     stop("`d` must be a `dist` object or a square numeric matrix")
   }
-  if (!AllFinite_cpp(d, .NThreads())) {
+  if (!symmetric || wasDist) {
+    if (!AllFinite_cpp(d, .NThreads())) {
+      stop("distance matrix must not contain NA/NaN/Inf")
+    }
+    return(d)
+  }
+  scan <- SymmetryScan_cpp(d, .NThreads())
+  if (!scan[["finite"]]) {
     stop("distance matrix must not contain NA/NaN/Inf")
   }
-  if (symmetric && !wasDist) {
-    d <- .Symmetrise(d)
-  }
-  d
+  .Symmetrise(d, scan[["deviation"]])
 }
 
 #' Gonzalez maximin from a single starting index

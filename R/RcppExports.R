@@ -97,8 +97,8 @@ AllFinite_cpp <- function(x, n_threads = 1L) {
     .Call(`_MaxMin_AllFinite_cpp`, x, n_threads)
 }
 
-SymmetryDeviation_cpp <- function(d) {
-    .Call(`_MaxMin_SymmetryDeviation_cpp`, d)
+SymmetryScan_cpp <- function(d, n_threads = 1L) {
+    .Call(`_MaxMin_SymmetryScan_cpp`, d, n_threads)
 }
 
 Symmetrised_cpp <- function(d) {

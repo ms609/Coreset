@@ -5,6 +5,8 @@
   discrepancy is repaired rather than refused.
 - `FarFirst()` and `PickPoint()` score a distance matrix as written, so they no
   longer pay to reconcile its triangles.
+- Solvers that do reconcile them check finiteness and symmetry in a single pass
+  over `d`, which `options(mc.cores = )` parallelizes.
 
 # MaxMin 0.0.0.9011 (development)
 

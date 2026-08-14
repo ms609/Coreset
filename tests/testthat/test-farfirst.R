@@ -459,12 +459,17 @@ test_that("FarFirst results are invariant to mc.cores (parallel greedy pass)", {
   expect_identical(s1, s2)
 })
 
-test_that("SymmetryDeviation_cpp measures every tile", {
-  dev <- MaxMin:::SymmetryDeviation_cpp
+test_that("SymmetryScan_cpp measures every tile", {
+  dev <- function(x, threads = 1L) {
+    MaxMin:::SymmetryScan_cpp(x, threads)[["deviation"]]
+  }
   d <- as.matrix(stats::dist(matrix(stats::rnorm(400L), ncol = 2L)))
   expect_identical(dev(d), 0)
   expect_identical(dev(matrix(0, 1L, 1L)), 0)
   expect_identical(dev(matrix(1:6 + 0, 2L, 3L)), Inf)      # not square
+  for (threads in c(2L, 8L)) {                             # order-independent
+    expect_identical(dev(d, threads), 0)
+  }
 
   # A single flipped entry is caught wherever it sits: within the first tile,
   # on a diagonal tile past the first, and in an off-diagonal tile.
@@ -490,6 +495,19 @@ test_that("SymmetryDeviation_cpp measures every tile", {
   near[5L, 9L] <- near[9L, 5L] * (1 + .Machine$double.eps)
   expect_gt(dev(near), 0)
   expect_lt(dev(near), 100 * .Machine$double.eps)
+
+  # The finiteness verdict comes from the same pass, and covers the diagonal
+  # that the pair sweep steps over.
+  fin <- function(x) MaxMin:::SymmetryScan_cpp(x, 1L)[["finite"]]
+  expect_true(fin(d))
+  for (ij in list(c(3L, 130L), c(7L, 7L))) {
+    for (value in c(NA_real_, NaN, Inf)) {
+      bad <- d
+      bad[ij[[1]], ij[[2]]] <- value
+      expect_false(fin(bad))
+    }
+  }
+  expect_false(fin(matrix(c(1, NA, 1, 1, 1, 1), 2L, 3L)))   # not square
 })
 
 test_that("Symmetrised_cpp reproduces (d + t(d)) / 2", {
@@ -497,7 +515,7 @@ test_that("Symmetrised_cpp reproduces (d + t(d)) / 2", {
   dimnames(asym) <- list(letters[1:20], LETTERS[1:20])
   fixed <- MaxMin:::Symmetrised_cpp(asym)
   expect_identical(fixed, (asym + t(asym)) / 2)  # dimnames included
-  expect_identical(MaxMin:::SymmetryDeviation_cpp(fixed), 0)
+  expect_identical(MaxMin:::SymmetryScan_cpp(fixed, 1L)[["deviation"]], 0)
 
   # Exactly symmetric input survives bit-for-bit, diagonal included.
   d <- as.matrix(stats::dist(matrix(stats::rnorm(60L), ncol = 2L)))
@@ -524,7 +542,7 @@ test_that(".AsDistMatrix repairs rounding asymmetry and refuses the rest", {
   near[2L, 5L] <- near[5L, 2L] * (1 + 4 * .Machine$double.eps)
   expect_warning(fixed <- adm(near), "symmetric only to rounding")
   expect_identical(fixed, (near + t(near)) / 2)
-  expect_identical(MaxMin:::SymmetryDeviation_cpp(fixed), 0)
+  expect_identical(MaxMin:::SymmetryScan_cpp(fixed, 1L)[["deviation"]], 0)
 
   # A zero tolerance restores refusal, and the message names the option.
   old <- options(MaxMin.symmetryTolerance = 0)
