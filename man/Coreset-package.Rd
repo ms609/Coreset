@@ -4,8 +4,7 @@
 \name{Coreset-package}
 \alias{Coreset}
 \alias{Coreset-package}
-\title{Coreset: Maximum-Minimum Diversity, Discrete k-Centre, and Max-Mean
-Dispersion Subset Selection}
+\title{Coreset: Discrete Diversity, Dispersion, and Coverage Subset Selection}
 \description{
 Selects a representative subset of a fixed candidate set.
 }

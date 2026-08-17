@@ -1,5 +1,5 @@
 Package: Coreset
-Title: Maximum-Minimum Diversity, Discrete k-Centre, and Max-Mean Dispersion Subset Selection
+Title: Discrete Diversity, Dispersion, and Coverage Subset Selection
 Version: 0.0.0.9000
 Authors@R:
   person("Martin R.", "Smith",

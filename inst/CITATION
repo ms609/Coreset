@@ -4,14 +4,14 @@ year <- format(Sys.Date(), "%Y")
 
 bibentry(
   bibtype  = "Manual",
-  title    = "{Coreset}: Maximum-Minimum Diversity and Dispersion Subset Selection",
+  title    = "{Coreset}: Discrete Diversity, Dispersion, and Coverage Subset Selection",
   author   = person("Martin R.", "Smith"),
   year     = year,
   note     = paste("R package version", meta$Version),
   url      = "https://github.com/ms609/Coreset",
   textVersion = paste0(
     "Martin R. Smith (", year,
-    "). Coreset: Maximum-Minimum Diversity and Dispersion Subset Selection. ",
+    "). Coreset: Discrete Diversity, Dispersion, and Coverage Subset Selection. ",
     "R package version ", meta$Version, ". https://github.com/ms609/Coreset"
   )
 )

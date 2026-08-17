@@ -1,7 +1,8 @@
 # Agent notes for `Coreset`
 
 `Coreset` is a small, dependency-light (`Imports: cli, Rcpp, Rdpack, stats`) solver library
-for the Max-Min Diversity Problem (MMDP / discrete p-dispersion).
+for discrete diversity, dispersion, and coverage subset-selection problems (Max-Min /
+Max-Sum / Max-Mean diversity, discrete k-centre, and max-entropy selection).
 **Keep it CRAN-clean and dependency-light** — `highs` (exact solver) stays in
  `Suggests` behind a `requireNamespace()` guard.
 

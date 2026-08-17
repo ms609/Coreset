@@ -1,5 +1,4 @@
-#' Coreset: Maximum-Minimum Diversity, Discrete k-Centre, and Max-Mean
-#' Dispersion Subset Selection
+#' Coreset: Discrete Diversity, Dispersion, and Coverage Subset Selection
 #'
 #' Selects a representative subset of a fixed candidate set.
 #'
