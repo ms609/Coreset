@@ -1,8 +1,8 @@
 # Coreset
 
-`Coreset` implements algorithms that select a dispersed subsample of
-points that maximizes coverage of a larger set, under one of several
-objectives.
+`Coreset` implements algorithms for discrete diversity, dispersion, and
+coverage subset selection: choosing a representative subsample of points
+under one of several objectives.
 
 ## Solvers
 

@@ -41,7 +41,7 @@
 
 <div id="agent-notes-for-coreset" class="section level1">
 
-<p><code>Coreset</code> is a small, dependency-light (<code>Imports: cli, Rcpp, Rdpack, stats</code>) solver library for the Max-Min Diversity Problem (MMDP / discrete p-dispersion). <strong>Keep it CRAN-clean and dependency-light</strong> — <code>highs</code> (exact solver) stays in <code>Suggests</code> behind a <code><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace()</a></code> guard.</p>
+<p><code>Coreset</code> is a small, dependency-light (<code>Imports: cli, Rcpp, Rdpack, stats</code>) solver library for discrete diversity, dispersion, and coverage subset-selection problems (Max-Min / Max-Sum / Max-Mean diversity, discrete k-centre, and max-entropy selection). <strong>Keep it CRAN-clean and dependency-light</strong> — <code>highs</code> (exact solver) stays in <code>Suggests</code> behind a <code><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace()</a></code> guard.</p>
 <div class="section level2">
 <h2 id="scope">Scope<a class="anchor" aria-label="anchor" href="#scope"></a></h2>
 <p>The MMDP algorithms — Gonzalez farthest-first (matrix / coordinate / column-oracle paths) and its seeding strategies, DropAdd tabu search, the exact node-packing solver, the polish local search, and the <code>MinDist</code> objective; and the k-center algorithms.</p>

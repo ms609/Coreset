@@ -11,12 +11,12 @@
 Source:
 [`inst/CITATION`](https://github.com/ms609/Coreset/blob/main/inst/CITATION)
 
-Martin R. Smith (2026). Coreset: Maximum-Minimum Diversity and
-Dispersion Subset Selection. R package version 0.0.0.9000.
+Martin R. Smith (2026). Coreset: Discrete Diversity, Dispersion, and
+Coverage Subset Selection. R package version 0.0.0.9000.
 https://github.com/ms609/Coreset
 
     @Manual{,
-      title = {{Coreset}: Maximum-Minimum Diversity and Dispersion Subset Selection},
+      title = {{Coreset}: Discrete Diversity, Dispersion, and Coverage Subset Selection},
       author = {Martin R. Smith},
       year = {2026},
       note = {R package version 0.0.0.9000},
