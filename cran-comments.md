@@ -25,6 +25,6 @@
   exist. The package documentation cross-references `maximin` to avoid
   confusion.
 
-* The `highs` package is used only by `ExactKCentre()` and is listed in
-  Suggests behind a `requireNamespace()` guard; all examples and tests that
-  need it skip when it is absent.
+* The `highs` package is used only by `ExactKCentre()` and `ExactMaxSum()`,
+  and is listed in Suggests behind a `requireNamespace()` guard; all examples
+  and tests that need it skip when it is absent.
