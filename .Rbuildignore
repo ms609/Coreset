@@ -9,6 +9,7 @@ man-roxygen
 memcheck
 .github
 ^\.git/
+^\.git$
 ^\.lintr$
 ^_pkgdown\.yml$
 ^.*\.o$
