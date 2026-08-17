@@ -29,7 +29,7 @@ suppressPackageStartupMessages({
   library("TreeTools")
 })
 
-stopifnot(packageVersion("Coreset") >= "0.0.0.9005")
+stopifnot(packageVersion("Coreset") >= "0.0.0.9000")
 options(Coreset.progress = FALSE)
 
 kPlateau <- 200L      # keep the runs finishable; see the note on plateau below
