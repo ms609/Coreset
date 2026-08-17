@@ -38,7 +38,7 @@ test_that("Grasp_cpp == .Grasp_R across seeds and parameters", {
     al  <- grid$alpha[r]
 
     set.seed(s)
-    ref <- MaxMin:::.Grasp_R(6L, d30m, plateau = mni,
+    ref <- Coreset:::.Grasp_R(6L, d30m, plateau = mni,
                                eliteSize = es, alpha = al)
     set.seed(s)
     ker <- Grasp(d = d30m, k = 6L, plateau = mni, eliteSize = es,
@@ -90,9 +90,9 @@ test_that(".GraspLocalSearch never decreases the MaxMin objective", {
   anti_centroid <- colMeans(pts30)
   toCentroid <- sqrt(rowSums(sweep(pts30, 2L, anti_centroid)^2))
   badSel <- order(toCentroid)[1:5]
-  zStart <- MaxMin:::.GraspObjective(d30m, badSel)
-  improved <- MaxMin:::.GraspLocalSearch(d30m, badSel)
-  zEnd <- MaxMin:::.GraspObjective(d30m, improved)
+  zStart <- Coreset:::.GraspObjective(d30m, badSel)
+  improved <- Coreset:::.GraspLocalSearch(d30m, badSel)
+  zEnd <- Coreset:::.GraspObjective(d30m, improved)
   expect_true(zEnd >= zStart)
   expect_true(zEnd > zStart)
   expect_length(improved, 5L)
@@ -104,9 +104,9 @@ test_that(".GraspLocalSearch never decreases the MaxMin objective", {
 test_that(".GraspPathRelink keeps the best state along the path", {
   x <- c(1L, 2L, 3L, 4L, 5L)
   y <- c(1L, 2L, 6L, 7L, 8L)
-  pr <- MaxMin:::.GraspPathRelink(d30m, x, y)
-  zx <- MaxMin:::.GraspObjective(d30m, x)
-  zy <- MaxMin:::.GraspObjective(d30m, y)
+  pr <- Coreset:::.GraspPathRelink(d30m, x, y)
+  zx <- Coreset:::.GraspObjective(d30m, x)
+  zy <- Coreset:::.GraspObjective(d30m, y)
   expect_equal(pr$intermediates, 3L)
   expect_true(pr$objective >= max(zx, zy))
 })
@@ -117,13 +117,13 @@ test_that(".GraspPathRelink strictly improves on at least one pair", {
   found <- FALSE
   for (s in 1:100) {
     set.seed(s)
-    x <- MaxMin:::.GraspConstruct(d30m, 5L, 0.5, runif(5L))
+    x <- Coreset:::.GraspConstruct(d30m, 5L, 0.5, runif(5L))
     set.seed(s + 100L)
-    y <- MaxMin:::.GraspConstruct(d30m, 5L, 0.5, runif(5L))
+    y <- Coreset:::.GraspConstruct(d30m, 5L, 0.5, runif(5L))
     if (!identical(sort(x), sort(y))) {
-      zx <- MaxMin:::.GraspObjective(d30m, x)
-      zy <- MaxMin:::.GraspObjective(d30m, y)
-      pr <- MaxMin:::.GraspPathRelink(d30m, x, y)
+      zx <- Coreset:::.GraspObjective(d30m, x)
+      zy <- Coreset:::.GraspObjective(d30m, y)
+      pr <- Coreset:::.GraspPathRelink(d30m, x, y)
       if (pr$objective > max(zx, zy) + 1e-10) {
         found <- TRUE; break
       }
@@ -149,7 +149,7 @@ test_that("Grasp validates maxSeconds", {
 test_that("Grasp survives alpha = 1 (empty-RCL fallback) and matches the R reference", {
   for (s in 1:30) {
     set.seed(s)
-    ref <- MaxMin:::.Grasp_R(5L, d30m, plateau = 15L, eliteSize = 4L,
+    ref <- Coreset:::.Grasp_R(5L, d30m, plateau = 15L, eliteSize = 4L,
                              alpha = 1)
     set.seed(s)
     ker <- Grasp(d = d30m, k = 5L, plateau = 15L, eliteSize = 4L, alpha = 1)
@@ -170,7 +170,7 @@ test_that("Grasp validates alpha", {
 
 test_that(".Grasp_R stops exactly at maxIter", {
   set.seed(1)
-  ref <- MaxMin:::.Grasp_R(5L, d30m, plateau = 1000L,
+  ref <- Coreset:::.Grasp_R(5L, d30m, plateau = 1000L,
                               maxIter = 3L, eliteSize = 4L)
   expect_lte(attr(ref, "iters"), 3L)
 })
@@ -184,10 +184,10 @@ test_that(".GraspLocalSearch reduces pair count when T_k is unchanged", {
   ptsSq <- rbind(c(0,0), c(1,0), c(1,1), c(0,1), c(3,0.5))
   dSq   <- as.matrix(dist(ptsSq))
   sel    <- 1:4   # four corners; T_k = 1, 4 critical pairs
-  improved <- MaxMin:::.GraspLocalSearch(dSq, sel)
+  improved <- Coreset:::.GraspLocalSearch(dSq, sel)
   # After improvement T_k must be >= 1.
-  expect_gte(MaxMin:::.GraspObjective(dSq, improved),
-             MaxMin:::.GraspObjective(dSq, sel))
+  expect_gte(Coreset:::.GraspObjective(dSq, improved),
+             Coreset:::.GraspObjective(dSq, sel))
 })
 
 # 11. .GraspTryInsert second acceptance condition and tail insertion ---------
@@ -200,16 +200,16 @@ test_that(".GraspTryInsert second condition and tail insert", {
   d4   <- as.matrix(dist(pts4))
 
   s1   <- c(1L, 2L); s2 <- c(3L, 4L)
-  z1   <- MaxMin:::.GraspObjective(d4, s1)   # 1.0
-  z2   <- MaxMin:::.GraspObjective(d4, s2)   # 0.3
+  z1   <- Coreset:::.GraspObjective(d4, s1)   # 1.0
+  z2   <- Coreset:::.GraspObjective(d4, s2)   # 0.3
   ES   <- list(s1, s2)
   esZ  <- c(z1, z2)   # already descending
 
   sel  <- c(1L, 3L)
-  selZ <- MaxMin:::.GraspObjective(d4, sel) # 0.5  (between zb and z1)
+  selZ <- Coreset:::.GraspObjective(d4, sel) # 0.5  (between zb and z1)
   dth  <- 1L
 
-  res <- MaxMin:::.GraspTryInsert(d4, ES, esZ, sel, selZ, dth)
+  res <- Coreset:::.GraspTryInsert(d4, ES, esZ, sel, selZ, dth)
 
   expect_true(res$changed)
   expect_length(res$ES, 2L)
@@ -233,16 +233,16 @@ test_that(".GraspTryInsert evicts only members worse than the candidate", {
                c(0, 5))                    # sel = {1,5}: z = 5
   dm  <- as.matrix(dist(pts))
   s1  <- c(1L, 2L); s2 <- c(3L, 4L); sel <- c(1L, 5L)
-  z1  <- MaxMin:::.GraspObjective(dm, s1)
-  z2  <- MaxMin:::.GraspObjective(dm, s2)
-  selZ <- MaxMin:::.GraspObjective(dm, sel)
+  z1  <- Coreset:::.GraspObjective(dm, s1)
+  z2  <- Coreset:::.GraspObjective(dm, s2)
+  selZ <- Coreset:::.GraspObjective(dm, sel)
   expect_equal(c(z1, z2, selZ), c(10, 1, 5))
 
   # The incumbent best really is the unique Hamming-nearest member.
-  hamm <- MaxMin:::.GraspHammingToES(sel, list(s1, s2))
+  hamm <- Coreset:::.GraspHammingToES(sel, list(s1, s2))
   expect_identical(hamm, c(1L, 2L))
 
-  res <- MaxMin:::.GraspTryInsert(dm, list(s1, s2), c(z1, z2), sel, selZ,
+  res <- Coreset:::.GraspTryInsert(dm, list(s1, s2), c(z1, z2), sel, selZ,
                                   dth = 1L)
   expect_true(res$changed)
   expect_identical(res$ES[[1L]], s1)        # incumbent best survives
@@ -258,7 +258,7 @@ test_that(".GraspTryInsert never lowers the elite best", {
   set.seed(1)
   n <- 60L; k <- 8L; b <- 10L; dth <- 2L
   dm <- as.matrix(dist(matrix(rnorm(n * 3L), n)))
-  z <- function(s) MaxMin:::.GraspObjective(dm, s)
+  z <- function(s) Coreset:::.GraspObjective(dm, s)
 
   ES  <- lapply(seq_len(b), function(i) sort(sample(n, k)))
   esZ <- vapply(ES, z, numeric(1L))
@@ -268,7 +268,7 @@ test_that(".GraspTryInsert never lowers the elite best", {
   for (it in seq_len(2000L)) {
     sel <- sort(sample(n, k))
     before <- esZ[1L]
-    res <- MaxMin:::.GraspTryInsert(dm, ES, esZ, sel, z(sel), dth)
+    res <- Coreset:::.GraspTryInsert(dm, ES, esZ, sel, z(sel), dth)
     ES <- res$ES; esZ <- res$esZ
     if (esZ[1L] < before - 1e-12) drops <- drops + 1L
     # The set stays the right size and sorted best-to-worst throughout.
@@ -304,14 +304,14 @@ test_that(".Grasp_R phase-C path relinking fires lines 422-423", {
     usA <- matrix(runif(es * k), nrow = k)
     phaseABest <- -Inf
     for (b in seq_len(es)) {
-      x  <- MaxMin:::.GraspConstruct(d, k, alpha, usA[, b])
-      xp <- MaxMin:::.GraspLocalSearch(d, x)
-      phaseABest <- max(phaseABest, MaxMin:::.GraspObjective(d, xp))
+      x  <- Coreset:::.GraspConstruct(d, k, alpha, usA[, b])
+      xp <- Coreset:::.GraspLocalSearch(d, x)
+      phaseABest <- max(phaseABest, Coreset:::.GraspObjective(d, xp))
     }
 
     # Full run (Phase A + C, no Phase B).
     set.seed(s)
-    res <- MaxMin:::.Grasp_R(k, d, plateau = 1000L,
+    res <- Coreset:::.Grasp_R(k, d, plateau = 1000L,
                                 maxIter = 0L, eliteSize = es, alpha = alpha)
 
     if (attr(res, "score") > phaseABest + 1e-9) {
@@ -336,10 +336,10 @@ test_that("Grasp eliteSize=1 skips path relinking", {
 
 test_that(".GraspPathRelink returns immediately for identical endpoints", {
   x  <- c(1L, 2L, 3L, 4L, 5L)
-  pr <- MaxMin:::.GraspPathRelink(d30m, x, x)
+  pr <- Coreset:::.GraspPathRelink(d30m, x, x)
   expect_equal(pr$intermediates, 0L)
   # The returned objective is the best we can do with that selection.
-  expect_equal(pr$objective, MaxMin:::.GraspObjective(d30m, x))
+  expect_equal(pr$objective, Coreset:::.GraspObjective(d30m, x))
 })
 
 # 15. .Grasp_R finite maxSeconds covers setTimeLimit (grasp.R line 397) ------
@@ -358,7 +358,7 @@ test_that("grasp_local_search non-witness critical branch covered (grasp.cpp:193
   # reference; the R reference is known to hit line 193 (all 4 corners are
   # critical, corners 2 and 3 are non-witnesses).
   set.seed(1)
-  ref <- MaxMin:::.Grasp_R(4L, dSq5, plateau = 10L, eliteSize = 4L)
+  ref <- Coreset:::.Grasp_R(4L, dSq5, plateau = 10L, eliteSize = 4L)
   set.seed(1)
   ker <- Grasp(d = dSq5, k = 4L, plateau = 10L, eliteSize = 4L)
   attr(ker, "time_s") <- attr(ref, "time_s") <- NULL
@@ -380,7 +380,7 @@ test_that(".Grasp_R time budget halts execution (grasp.R line 397)", {
   # .Machine$integer.max disables both other stopping criteria; only the
   # budget can end Phase B.
   res <- expect_returns_within(
-    MaxMin:::.Grasp_R(6L, d30m,
+    Coreset:::.Grasp_R(6L, d30m,
                       plateau  = .Machine$integer.max,
                       maxIter  = .Machine$integer.max,
                       eliteSize = 4L, maxSeconds = 0.001),
@@ -395,7 +395,7 @@ test_that("Grasp_cpp == .Grasp_R on a tie-rich lattice", {
   for (s in c(3L, 11L)) {
     for (al in c(0, 0.8)) {
       set.seed(s)
-      ref <- MaxMin:::.Grasp_R(6L, dl, plateau = 15L, eliteSize = 4L,
+      ref <- Coreset:::.Grasp_R(6L, dl, plateau = 15L, eliteSize = 4L,
                                alpha = al)
       set.seed(s)
       ker <- Grasp(d = dl, k = 6L, plateau = 15L, eliteSize = 4L,

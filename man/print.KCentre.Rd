@@ -38,10 +38,10 @@ KCentre(4L, dist(matrix(rnorm(60), ncol = 2)))
 }
 \seealso{
 Other reporting functions:
+\code{\link{print.Coreset}},
 \code{\link{print.MaxEntropy}},
 \code{\link[=print.MaxMeanSelection]{print.MaxMeanSelection()}},
-\code{\link{print.MaxMin}},
 \code{\link{print.MaxSum}},
-\code{\link{summary.MaxMin}}
+\code{\link{summary.Coreset}}
 }
 \concept{reporting functions}

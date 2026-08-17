@@ -72,7 +72,7 @@ test_that("print returns its argument invisibly and emits the format line", {
 })
 
 test_that("an empty selection is left bare (no class)", {
-  expect_identical(MaxMin:::.AsMaxMinSelection(integer(0), "FarFirst"),
+  expect_identical(Coreset:::.AsMaxMinSelection(integer(0), "FarFirst"),
                    integer(0))
   expect_identical(FarFirst(0L, MakeData(N = 10)$d), integer(0))
 })

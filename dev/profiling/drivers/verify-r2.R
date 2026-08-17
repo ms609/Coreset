@@ -5,7 +5,7 @@
 # match the baseline lib exactly". Writes dev/profiling/verify-r2-<tag>.rds.
 args <- commandArgs(trailingOnly = TRUE)
 libpath <- normalizePath(args[[1]]); tag <- args[[2]]
-suppressMessages({ library(MaxMin, lib.loc = libpath); library(bench) })
+suppressMessages({ library(Coreset, lib.loc = libpath); library(bench) })
 ms <- function(th, it = 11L)
   as.numeric(bench::mark(th(), iterations = it, check = FALSE,
                          filter_gc = FALSE)$median) * 1000

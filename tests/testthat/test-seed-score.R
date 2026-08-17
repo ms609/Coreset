@@ -146,8 +146,8 @@ test_that(".GonzEnsemble non-first anchor wins when it is the better one", {
 
 test_that(".PickPoint and .PickPoints stop on an unknown method", {
   dat <- MakeData()
-  expect_error(MaxMin:::.PickPoint(dat$d, "nope"), "Unknown")
-  expect_error(MaxMin:::.PickPoints(dat$pts, "nope"), "Unknown")
+  expect_error(Coreset:::.PickPoint(dat$d, "nope"), "Unknown")
+  expect_error(Coreset:::.PickPoints(dat$pts, "nope"), "Unknown")
 })
 
 # ---- .GonzEnsemble internal guards (bypassed by FarFirst() validation) -----
@@ -156,13 +156,13 @@ test_that(".GonzEnsemble validates k and anchors and handles trivial k", {
   dat <- MakeData()
   d   <- dat$d
   n   <- nrow(d)
-  expect_error(MaxMin:::.GonzEnsemble(d, -1L, "peripheral"), "non-negative")
-  expect_error(MaxMin:::.GonzEnsemble(d, 3L, character(0)), "at least one")
+  expect_error(Coreset:::.GonzEnsemble(d, -1L, "peripheral"), "non-negative")
+  expect_error(Coreset:::.GonzEnsemble(d, 3L, character(0)), "at least one")
   # k >= nPts: all points returned with score = NA_real_ (FF-005)
-  trivial <- MaxMin:::.GonzEnsemble(d, n, "peripheral")
+  trivial <- Coreset:::.GonzEnsemble(d, n, "peripheral")
   expect_identical(as.integer(trivial), seq_len(n))
   expect_true(is.na(attr(trivial, "score")))
-  expect_identical(MaxMin:::.GonzEnsemble(d, 0L, "peripheral"), integer(0))
+  expect_identical(Coreset:::.GonzEnsemble(d, 0L, "peripheral"), integer(0))
 })
 
 # ---- .GonzEnsembleFromPoints internal guards --------------------------------
@@ -171,13 +171,13 @@ test_that(".GonzEnsembleFromPoints validates k and anchors and handles trivial k
   dat  <- MakeData()
   pts  <- dat$pts
   nPts <- nrow(pts)
-  expect_error(MaxMin:::.GonzEnsembleFromPoints(pts, -1L, "peripheral"), "non-negative")
-  expect_error(MaxMin:::.GonzEnsembleFromPoints(pts, 3L, character(0)), "at least one")
+  expect_error(Coreset:::.GonzEnsembleFromPoints(pts, -1L, "peripheral"), "non-negative")
+  expect_error(Coreset:::.GonzEnsembleFromPoints(pts, 3L, character(0)), "at least one")
   # k >= nPts: all points returned with score = NA_real_ (FF-005)
-  trivial <- MaxMin:::.GonzEnsembleFromPoints(pts, nPts, "peripheral")
+  trivial <- Coreset:::.GonzEnsembleFromPoints(pts, nPts, "peripheral")
   expect_identical(as.integer(trivial), seq_len(nPts))
   expect_true(is.na(attr(trivial, "score")))
-  expect_identical(MaxMin:::.GonzEnsembleFromPoints(pts, 0L, "peripheral"), integer(0))
+  expect_identical(Coreset:::.GonzEnsembleFromPoints(pts, 0L, "peripheral"), integer(0))
 })
 
 # ---- .ExpandAnchors empty-specs guard (no anchors produce no specs) ----------
@@ -186,7 +186,7 @@ test_that(".ExpandAnchors stops when no specs are produced", {
   # Calling the internal directly with empty rfSeeds and no deterministic anchors
   # triggers the guard; nSeeds = 0 can't be reached via FarFirst (validated >= 1).
   expect_error(
-    MaxMin:::.ExpandAnchors("random_furthest", integer(0), function(n) 1L),
+    Coreset:::.ExpandAnchors("random_furthest", integer(0), function(n) 1L),
     "no seed strateg"
   )
 })
@@ -244,16 +244,16 @@ test_that("matrix anchor scans match their R idioms exactly", {
     dOff <- d
     diag(dOff) <- -Inf
     for (nc in 1:2) {
-      dm <- MaxMin:::MatrixOffDiagMax_cpp(d, nc)
+      dm <- Coreset:::MatrixOffDiagMax_cpp(d, nc)
       expect_identical(dm[[1L]], max(dOff))
       expect_identical(as.integer(dm[[2L]]),
                        as.integer(arrayInd(which.max(dOff), dim(dOff))[1L, 1L]))
-      expect_equal(MaxMin:::RowSqSumsFromMatrix_cpp(d, nc),
+      expect_equal(Coreset:::RowSqSumsFromMatrix_cpp(d, nc),
                    unname(rowSums(d ^ 2)), tolerance = 1e-12)
     }
   }
   # No off-diagonal cell: row 0 sends the caller to its degenerate branch.
-  expect_identical(MaxMin:::MatrixOffDiagMax_cpp(matrix(0, 1L, 1L), 1L)[[2L]],
+  expect_identical(Coreset:::MatrixOffDiagMax_cpp(matrix(0, 1L, 1L), 1L)[[2L]],
                    0)
 })
 
@@ -264,9 +264,9 @@ test_that("fused row-aggregate sweep equals the dedicated kernels", {
     set.seed(n)
     pts <- matrix(rnorm(n * 3L), ncol = 3L)
     for (nc in 1:2) {
-      both <- MaxMin:::RowSumsSqFromPoints_cpp(pts, nc)
-      expect_identical(both[[1L]], MaxMin:::RowSumsFromPoints_cpp(pts, nc))
-      expect_identical(both[[2L]], MaxMin:::RowSqSumsFromPoints_cpp(pts, nc))
+      both <- Coreset:::RowSumsSqFromPoints_cpp(pts, nc)
+      expect_identical(both[[1L]], Coreset:::RowSumsFromPoints_cpp(pts, nc))
+      expect_identical(both[[2L]], Coreset:::RowSqSumsFromPoints_cpp(pts, nc))
     }
   }
   # An ensemble spanning both families rides the fused sweep; it must agree

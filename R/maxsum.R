@@ -6,7 +6,7 @@
 # the max-SUM counterpart of the max-MIN p-dispersion solved by ExactMaxMin().
 #
 # Method: exact MILP via the Kuo, Glover & Dhir (1993) per-node linearisation,
-# the most efficient integer program for the MDP \insertCite{Kuo1993}{MaxMin}.
+# the most efficient integer program for the MDP \insertCite{Kuo1993}{Coreset}.
 # The quadratic objective sum_{i<j} d_ij x_i x_j = (1/2) sum_i x_i a_i, with
 # a_i = sum_j d_ij x_j the contribution of i, is linearised by one continuous
 # variable w_i = x_i a_i per point:
@@ -110,7 +110,7 @@
 #' maximising the **total** pairwise distance it contains. It is the max-sum
 #' counterpart of [ExactMaxMin()] (which maximises the *minimum* pairwise
 #' distance), solved by per-node integer-program linearisation
-#' \insertCite{Kuo1993}{MaxMin}. As the problem is NP-hard it is feasible only
+#' \insertCite{Kuo1993}{Coreset}. As the problem is NP-hard it is feasible only
 #' for small sets.
 #'
 #' The optimum is floored by a multi-start 1-swap local search, which warms the

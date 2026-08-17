@@ -1,7 +1,7 @@
 # Per-probe cost instrumentation for the binary search, + highs option listing.
 # Where is the solver time spent: a few hard (infeasible) probes near the
 # optimum, or spread across many?
-suppressMessages({ library(MaxMin); library(Matrix); library(highs) })
+suppressMessages({ library(Coreset); library(Matrix); library(highs) })
 load("C:/Users/pjjg18/GitHub/furthest-point/data/cases.rda")
 
 cat("===== highs solver options (early-termination relevant) =====\n")

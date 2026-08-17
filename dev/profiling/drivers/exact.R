@@ -10,7 +10,7 @@
 # Override lib via FP_LIB env (timestamped profiling install); default installed.
 set.seed(5813)
 lib <- Sys.getenv("FP_LIB", "")
-if (nzchar(lib)) library(MaxMin, lib.loc = lib) else library(MaxMin)
+if (nzchar(lib)) library(Coreset, lib.loc = lib) else library(Coreset)
 
 load("C:/Users/pjjg18/GitHub/furthest-point/data/cases.rda")
 case <- Sys.getenv("FP_CASE", "tc22_penguins")
@@ -22,7 +22,7 @@ cat(sprintf("case=%s n=%d k=%d  (%d distinct distances)\n",
 
 gc(reset = TRUE)
 t0 <- proc.time()[[3L]]
-r  <- MaxMin::ExactMaxMin(d, m = k, maxSeconds = 600)
+r  <- Coreset::ExactMaxMin(d, m = k, maxSeconds = 600)
 el <- proc.time()[[3L]] - t0
 g  <- gc()
 cat(sprintf("Elapsed: %.2f s   obj=%.6f  proven=%s\n", el, r$objective, r$proven))

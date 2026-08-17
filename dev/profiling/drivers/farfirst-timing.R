@@ -1,11 +1,11 @@
 # FarFirst kernel timing cells (single pass, strategy = explicit first), for
 # interleaved A/B minima (this box spikes +/-20-35% on sub-second cells).
 # Usage: Rscript farfirst-timing.R <out.rds> [nThreads]
-library(MaxMin)
+library(Coreset)
 args <- commandArgs(trailingOnly = TRUE)
 out <- args[[1L]]
 if (length(args) >= 2L) options(mc.cores = as.integer(args[[2L]]))
-cat("lib:", dirname(system.file(package = "MaxMin")), "\n")
+cat("lib:", dirname(system.file(package = "Coreset")), "\n")
 
 set.seed(5813)
 N <- 6000L

@@ -14,19 +14,19 @@
 #     reference).
 # Usage: Rscript dropadd-battery.R <out.rds>            # capture
 #        Rscript dropadd-battery.R <new.rds> <base.rds> # capture + compare
-library(MaxMin)
+library(Coreset)
 args <- commandArgs(trailingOnly = TRUE)
 outFile <- args[[1L]]
-cat("lib:", dirname(system.file(package = "MaxMin")), "\n")
+cat("lib:", dirname(system.file(package = "Coreset")), "\n")
 
 recM <- function(dmat, m, plateau, seed0, maxIter = 100000L) {
-  o <- MaxMin:::DropAdd_cpp(dmat, m, Inf, maxIter, plateau, TRUE, seed0)
+  o <- Coreset:::DropAdd_cpp(dmat, m, Inf, maxIter, plateau, TRUE, seed0)
   list(idx = as.integer(o$indices), obj = as.numeric(o$objective),
        sec = as.numeric(o$secondary), iters = as.integer(o$iters),
        drops = as.integer(o$drops), adds = as.integer(o$adds))
 }
 recP <- function(pts, m, plateau, seed0, maxIter = 100000L) {
-  o <- MaxMin:::DropAdd_points_cpp(pts, m, Inf, maxIter, plateau, TRUE, seed0)
+  o <- Coreset:::DropAdd_points_cpp(pts, m, Inf, maxIter, plateau, TRUE, seed0)
   list(idx = as.integer(o$indices), obj = as.numeric(o$objective),
        sec = as.numeric(o$secondary), iters = as.integer(o$iters),
        drops = as.integer(o$drops), adds = as.integer(o$adds))
@@ -92,9 +92,9 @@ for (ds in 1:2) {
   dmat <- as.matrix(dist(pts))
   colFn <- function(i) dmat[, i]
   for (m in c(3L, 25L)) {
-    ro <- MaxMin:::.DropAddFromColumn(colFn, n, m, first = 6L,
+    ro <- Coreset:::.DropAddFromColumn(colFn, n, m, first = 6L,
                                       plateau = 30L, trace = TRUE)
-    co <- MaxMin:::DropAdd_cpp(dmat, m, Inf, 100000L, 30L, TRUE, 5L)
+    co <- Coreset:::DropAdd_cpp(dmat, m, Inf, 100000L, 30L, TRUE, 5L)
     twin <- identical(sort(as.integer(ro$indices)),
                       sort(as.integer(co$indices))) &&
       identical(as.numeric(ro$objective), as.numeric(co$objective)) &&

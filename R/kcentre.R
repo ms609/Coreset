@@ -54,7 +54,7 @@
 #' `KCentreRadius()` computes the covering radius of a set of centres:
 #' the largest distance from any of the `N` points to its nearest centre,
 #' \eqn{R = \max_p \min_{c \in \mathrm{idx}} d(p, c)}. This is the min-max
-#' \emph{k}-centre objective \insertCite{Gonzalez1985}{MaxMin} minimized by
+#' \emph{k}-centre objective \insertCite{Gonzalez1985}{Coreset} minimized by
 #' [KCentre()] and [ExactKCentre()].
 #'
 #' @param d Pairwise distance matrix or `dist` object. Ignored when `points` is
@@ -120,9 +120,9 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' `KCentre()` selects \eqn{k} elements (centres) so as to minimize the largest
 #' distance from any point to its nearest centre (the covering radius),
 #' using the Critical Dominating Set heuristic (\acronym{CDSh})
-#' \insertCite{GarciaDiaz2017,GarciaDiaz2019}{MaxMin}.
+#' \insertCite{GarciaDiaz2017,GarciaDiaz2019}{Coreset}.
 #'
-#' On the benchmark instances of \insertCite{GarciaDiaz2019;textual}{MaxMin},
+#' On the benchmark instances of \insertCite{GarciaDiaz2019;textual}{Coreset},
 #' the \acronym{CDS} heuristic reaches roughly 1-3.5%
 #' of the optimum at \eqn{O(N^2 \log N)}, far tighter than [FarFirst()]
 #' (typically tens of per cent above optimum).
@@ -149,7 +149,7 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' The vector has class `"KCentreSelection"` and prints as a one-line summary.
 #' @seealso [ExactKCentre()] for the proven optimum;
 #' [KCentreRadius()] for a selection's score;
-#' [FarFirst()] for the \insertCite{Gonzalez1985;textual}{MaxMin}
+#' [FarFirst()] for the \insertCite{Gonzalez1985;textual}{Coreset}
 #' 2-approximation baseline.
 #' @references \insertAllCited{}
 #' @examples
@@ -330,7 +330,7 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L) {
 #' }
 #' @export
 ExactKCentre <- function(k, d, maxSeconds = 60) {
-  progress <- getOption("MaxMin.progress", interactive())
+  progress <- getOption("Coreset.progress", interactive())
   t0 <- proc.time()[[3L]]
   if (!requireNamespace("highs", quietly = TRUE)) { # nocov start
     stop("The `highs` package is required for ExactKCentre(). ",

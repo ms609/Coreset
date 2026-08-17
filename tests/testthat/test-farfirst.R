@@ -265,7 +265,7 @@ test_that(".AsPointsMatrix coerces non-matrix, converts integer, and rejects bad
 test_that(".MaximinFromColumn progress bar fires without error", {
   dat <- MakeData()
   colFn <- function(i) dat$d[, i]
-  old <- options(MaxMin.progress = TRUE)
+  old <- options(Coreset.progress = TRUE)
   on.exit(options(old))
   expect_no_error(FarFirst(5L, colFn, N = nrow(dat$d), strategy = 1L))
 })
@@ -305,15 +305,15 @@ test_that(".SubsetScore mean_pairwise returns mean of lower-triangle entries", {
   dat <- MakeData(N = 10)
   idx <- c(1L, 3L, 7L)
   sub <- dat$d[idx, idx]
-  expect_equal(MaxMin:::.SubsetScore(dat$d, idx, "mean_pairwise"),
+  expect_equal(Coreset:::.SubsetScore(dat$d, idx, "mean_pairwise"),
                mean(sub[lower.tri(sub)]))
-  expect_true(is.na(MaxMin:::.SubsetScore(dat$d, 5L, "mean_pairwise")))
+  expect_true(is.na(Coreset:::.SubsetScore(dat$d, 5L, "mean_pairwise")))
 })
 
 # ---- .GonzalezColumn non-function guard -------------------------------------
 
 test_that(".GonzalezColumn rejects a non-function colFn", {
-  expect_error(MaxMin:::.GonzalezColumn("not_a_function", N = 10L, k = 3L),
+  expect_error(Coreset:::.GonzalezColumn("not_a_function", N = 10L, k = 3L),
                "function")
 })
 
@@ -461,7 +461,7 @@ test_that("FarFirst results are invariant to mc.cores (parallel greedy pass)", {
 
 test_that("SymmetryScan_cpp measures every tile", {
   dev <- function(x, threads = 1L) {
-    MaxMin:::SymmetryScan_cpp(x, threads)[["deviation"]]
+    Coreset:::SymmetryScan_cpp(x, threads)[["deviation"]]
   }
   d <- as.matrix(stats::dist(matrix(stats::rnorm(400L), ncol = 2L)))
   expect_identical(dev(d), 0)
@@ -498,7 +498,7 @@ test_that("SymmetryScan_cpp measures every tile", {
 
   # The finiteness verdict comes from the same pass, and covers the diagonal
   # that the pair sweep steps over.
-  fin <- function(x) MaxMin:::SymmetryScan_cpp(x, 1L)[["finite"]]
+  fin <- function(x) Coreset:::SymmetryScan_cpp(x, 1L)[["finite"]]
   expect_true(fin(d))
   for (ij in list(c(3L, 130L), c(7L, 7L))) {
     for (value in c(NA_real_, NaN, Inf)) {
@@ -513,17 +513,17 @@ test_that("SymmetryScan_cpp measures every tile", {
 test_that("Symmetrised_cpp reproduces (d + t(d)) / 2", {
   asym <- matrix(stats::rnorm(400L), 20L, 20L)
   dimnames(asym) <- list(letters[1:20], LETTERS[1:20])
-  fixed <- MaxMin:::Symmetrised_cpp(asym)
+  fixed <- Coreset:::Symmetrised_cpp(asym)
   expect_identical(fixed, (asym + t(asym)) / 2)  # dimnames included
-  expect_identical(MaxMin:::SymmetryScan_cpp(fixed, 1L)[["deviation"]], 0)
+  expect_identical(Coreset:::SymmetryScan_cpp(fixed, 1L)[["deviation"]], 0)
 
   # Exactly symmetric input survives bit-for-bit, diagonal included.
   d <- as.matrix(stats::dist(matrix(stats::rnorm(60L), ncol = 2L)))
-  expect_identical(MaxMin:::Symmetrised_cpp(d), d)
+  expect_identical(Coreset:::Symmetrised_cpp(d), d)
 })
 
 test_that(".AsDistMatrix repairs rounding asymmetry and refuses the rest", {
-  adm <- MaxMin:::.AsDistMatrix
+  adm <- Coreset:::.AsDistMatrix
   pts <- matrix(stats::rnorm(60L), ncol = 2L)
   d <- as.matrix(stats::dist(pts))
   expect_identical(adm(d), d)
@@ -542,12 +542,12 @@ test_that(".AsDistMatrix repairs rounding asymmetry and refuses the rest", {
   near[2L, 5L] <- near[5L, 2L] * (1 + 4 * .Machine$double.eps)
   expect_warning(fixed <- adm(near), "symmetric only to rounding")
   expect_identical(fixed, (near + t(near)) / 2)
-  expect_identical(MaxMin:::SymmetryScan_cpp(fixed, 1L)[["deviation"]], 0)
+  expect_identical(Coreset:::SymmetryScan_cpp(fixed, 1L)[["deviation"]], 0)
 
   # A zero tolerance restores refusal, and the message names the option.
-  old <- options(MaxMin.symmetryTolerance = 0)
+  old <- options(Coreset.symmetryTolerance = 0)
   on.exit(options(old), add = TRUE)
-  expect_error(adm(near), "MaxMin.symmetryTolerance")
+  expect_error(adm(near), "Coreset.symmetryTolerance")
   options(old)
 
   # NA is reported as NA, not as asymmetry: NA != NA would fail the symmetry
@@ -558,20 +558,20 @@ test_that(".AsDistMatrix repairs rounding asymmetry and refuses the rest", {
 })
 
 test_that("the symmetry tolerance must be a single non-negative number", {
-  old <- options(MaxMin.symmetryTolerance = NULL)
+  old <- options(Coreset.symmetryTolerance = NULL)
   on.exit(options(old), add = TRUE)
   d <- as.matrix(stats::dist(matrix(stats::rnorm(60L), ncol = 2L)))
   near <- d
   near[2L, 5L] <- near[5L, 2L] * (1 + 4 * .Machine$double.eps)
   for (bad in list(-1, c(1, 2), NA_real_, "1e-8")) {
-    options(MaxMin.symmetryTolerance = bad)
-    expect_error(MaxMin:::.AsDistMatrix(near), "non-negative number")
+    options(Coreset.symmetryTolerance = bad)
+    expect_error(Coreset:::.AsDistMatrix(near), "non-negative number")
   }
   # A slack tolerance repairs what the default refuses.
-  options(MaxMin.symmetryTolerance = 1)
+  options(Coreset.symmetryTolerance = 1)
   gross <- d
   gross[2L, 5L] <- gross[5L, 2L] + 0.5
-  expect_warning(fixed <- MaxMin:::.AsDistMatrix(gross), "only to rounding")
+  expect_warning(fixed <- Coreset:::.AsDistMatrix(gross), "only to rounding")
   expect_identical(fixed, (gross + t(gross)) / 2)
 })
 
@@ -597,7 +597,7 @@ test_that("AllFinite_cpp matches the anyNA/is.finite guard semantics", {
   # .AsDistMatrix's finite check runs through this single-pass scan; it must
   # flag exactly what `anyNA(x) || any(!is.finite(x))` flags, for double and
   # integer storage, serially and through the parallel OR-reduction.
-  af <- MaxMin:::AllFinite_cpp
+  af <- Coreset:::AllFinite_cpp
   expect_true(af(c(0, 1.5, -2), 1L))
   expect_false(af(c(0, NA_real_), 1L))
   expect_false(af(c(0, NaN), 1L))
@@ -636,11 +636,11 @@ test_that("multi-seed kernels reproduce the single-seed kernels exactly", {
   dat <- MakeData(seed = 7, N = 150L, dim = 6L)
   seeds <- c(3L, 41L, 99L, 128L)
   for (k in c(1L, 2L, 25L)) {
-    refM <- lapply(seeds, function(s) MaxMin:::.MaximinFrom(dat$d, k, s))
-    refP <- lapply(seeds, function(s) MaxMin:::.MaximinFromPoints(dat$pts, k, s))
+    refM <- lapply(seeds, function(s) Coreset:::.MaximinFrom(dat$d, k, s))
+    refP <- lapply(seeds, function(s) Coreset:::.MaximinFromPoints(dat$pts, k, s))
     for (nThread in c(1L, 2L)) {
-      gotM <- MaxMin:::MaximinMultiFrom_cpp(dat$d, k, seeds, nThread)
-      gotP <- MaxMin:::MaximinMultiFromPoints_cpp(dat$pts, k, seeds, nThread)
+      gotM <- Coreset:::MaximinMultiFrom_cpp(dat$d, k, seeds, nThread)
+      gotP <- Coreset:::MaximinMultiFromPoints_cpp(dat$pts, k, seeds, nThread)
       for (j in seq_along(seeds)) {
         expect_identical(gotM[["idx"]][, j], as.integer(refM[[j]]))
         expect_identical(gotM[["t_k"]][[j]], attr(refM[[j]], "t_k"))
@@ -653,19 +653,19 @@ test_that("multi-seed kernels reproduce the single-seed kernels exactly", {
 
 test_that("multi-seed kernels reject out-of-range arguments", {
   dat <- MakeData(N = 20L)
-  expect_error(MaxMin:::MaximinMultiFrom_cpp(dat$d, 0L, 1L, 1L), "'n' must be")
-  expect_error(MaxMin:::MaximinMultiFrom_cpp(dat$d, 21L, 1L, 1L), "'n' must be")
-  expect_error(MaxMin:::MaximinMultiFrom_cpp(dat$d, 5L, integer(0), 1L),
+  expect_error(Coreset:::MaximinMultiFrom_cpp(dat$d, 0L, 1L, 1L), "'n' must be")
+  expect_error(Coreset:::MaximinMultiFrom_cpp(dat$d, 21L, 1L, 1L), "'n' must be")
+  expect_error(Coreset:::MaximinMultiFrom_cpp(dat$d, 5L, integer(0), 1L),
                "at least one seed")
-  expect_error(MaxMin:::MaximinMultiFrom_cpp(dat$d, 5L, c(1L, 21L), 1L),
+  expect_error(Coreset:::MaximinMultiFrom_cpp(dat$d, 5L, c(1L, 21L), 1L),
                "'firsts' must lie")
-  expect_error(MaxMin:::MaximinMultiFrom_cpp(dat$d, 5L, 0L, 1L),
+  expect_error(Coreset:::MaximinMultiFrom_cpp(dat$d, 5L, 0L, 1L),
                "'firsts' must lie")
-  expect_error(MaxMin:::MaximinMultiFromPoints_cpp(dat$pts, 0L, 1L, 1L),
+  expect_error(Coreset:::MaximinMultiFromPoints_cpp(dat$pts, 0L, 1L, 1L),
                "'n' must be")
-  expect_error(MaxMin:::MaximinMultiFromPoints_cpp(dat$pts, 5L, integer(0), 1L),
+  expect_error(Coreset:::MaximinMultiFromPoints_cpp(dat$pts, 5L, integer(0), 1L),
                "at least one seed")
-  expect_error(MaxMin:::MaximinMultiFromPoints_cpp(dat$pts, 5L, c(1L, 99L), 1L),
+  expect_error(Coreset:::MaximinMultiFromPoints_cpp(dat$pts, 5L, c(1L, 99L), 1L),
                "'firsts' must lie")
 })
 
@@ -674,11 +674,11 @@ test_that("single-seed kernels reject an out-of-range n", {
   # the guard only fires on a direct internal call -- as for the `first` guards
   # above and the multi-seed pair's `n` guard.
   dat <- MakeData(N = 20L)
-  expect_error(MaxMin:::MaximinFrom_cpp(dat$d, 0L, 1L, 1L), "'n' must be")
-  expect_error(MaxMin:::MaximinFrom_cpp(dat$d, 21L, 1L, 1L), "'n' must be")
-  expect_error(MaxMin:::MaximinFromPoints_cpp(dat$pts, 0L, 1L, 0L, 1L),
+  expect_error(Coreset:::MaximinFrom_cpp(dat$d, 0L, 1L, 1L), "'n' must be")
+  expect_error(Coreset:::MaximinFrom_cpp(dat$d, 21L, 1L, 1L), "'n' must be")
+  expect_error(Coreset:::MaximinFromPoints_cpp(dat$pts, 0L, 1L, 0L, 1L),
                "'n' must be")
-  expect_error(MaxMin:::MaximinFromPoints_cpp(dat$pts, 21L, 1L, 0L, 1L),
+  expect_error(Coreset:::MaximinFromPoints_cpp(dat$pts, 21L, 1L, 0L, 1L),
                "'n' must be")
 })
 
@@ -688,15 +688,15 @@ test_that("the coordinate pass keeps a zero-dimension input defined", {
   # dim == 0 branch. The pass then walks the unmasked points in ascending
   # order and every insertion distance is 0.
   p0 <- matrix(numeric(0), nrow = 6L, ncol = 0L)
-  r1 <- MaxMin:::MaximinFromPoints_cpp(p0, 4L, 1L, 0L, 1L)
+  r1 <- Coreset:::MaximinFromPoints_cpp(p0, 4L, 1L, 0L, 1L)
   expect_identical(as.integer(r1), 1:4)
   expect_identical(attr(r1, "t_k"), 0)
   # A later seed is taken first, then skipped by the ascending scan.
-  r3 <- MaxMin:::MaximinFromPoints_cpp(p0, 4L, 3L, 0L, 1L)
+  r3 <- Coreset:::MaximinFromPoints_cpp(p0, 4L, 3L, 0L, 1L)
   expect_identical(as.integer(r3), c(3L, 1L, 2L, 4L))
   expect_identical(attr(r3, "t_k"), 0)
   # n < 2 never enters the update loop, so T_k stays NA.
-  expect_identical(attr(MaxMin:::MaximinFromPoints_cpp(p0, 1L, 2L, 0L, 1L),
+  expect_identical(attr(Coreset:::MaximinFromPoints_cpp(p0, 1L, 2L, 0L, 1L),
                         "t_k"), NA_real_)
 })
 
@@ -706,17 +706,17 @@ test_that(".NThreads reads mc.cores and collapses anything unusable to 1", {
   # than reach OpenMP with a nonsense count.
   old <- options(mc.cores = NULL)
   on.exit(options(old), add = TRUE)
-  expect_identical(MaxMin:::.NThreads(), 1L)   # unset -> the 1L default
+  expect_identical(Coreset:::.NThreads(), 1L)   # unset -> the 1L default
   options(mc.cores = 2L)
-  expect_identical(MaxMin:::.NThreads(), 2L)   # usable: passed straight through
+  expect_identical(Coreset:::.NThreads(), 2L)   # usable: passed straight through
   options(mc.cores = 0L)
-  expect_identical(MaxMin:::.NThreads(), 1L)
+  expect_identical(Coreset:::.NThreads(), 1L)
   options(mc.cores = -1L)
-  expect_identical(MaxMin:::.NThreads(), 1L)
+  expect_identical(Coreset:::.NThreads(), 1L)
   options(mc.cores = "many")                   # as.integer() -> NA (warning)
-  expect_identical(MaxMin:::.NThreads(), 1L)
+  expect_identical(Coreset:::.NThreads(), 1L)
   options(mc.cores = c(2L, 3L))                # length != 1
-  expect_identical(MaxMin:::.NThreads(), 1L)
+  expect_identical(Coreset:::.NThreads(), 1L)
 })
 
 test_that("restarts fall back to per-pass threading above the size threshold", {
@@ -727,8 +727,8 @@ test_that("restarts fall back to per-pass threading above the size threshold", {
   set.seed(23)
   pts <- matrix(rnorm(33000L * 2L), ncol = 2L)
   seeds <- c(11L, 20001L)
-  ref <- lapply(seeds, function(s) MaxMin:::.MaximinFromPoints(pts, 20L, s))
-  got <- MaxMin:::MaximinMultiFromPoints_cpp(pts, 20L, seeds, 2L)
+  ref <- lapply(seeds, function(s) Coreset:::.MaximinFromPoints(pts, 20L, s))
+  got <- Coreset:::MaximinMultiFromPoints_cpp(pts, 20L, seeds, 2L)
   for (j in seq_along(seeds)) {
     expect_identical(got[["idx"]][, j], as.integer(ref[[j]]))
     expect_identical(got[["t_k"]][[j]], attr(ref[[j]], "t_k"))
@@ -762,7 +762,7 @@ test_that("an ensemble whose anchors share a seed keeps one record per label", {
   d <- as.matrix(dist(pts))
   anchors <- c("diameter", "anti_medoid", "medoid", "rowsum", "rownorm",
                "peripheral")
-  seeds <- vapply(anchors, function(a) MaxMin:::.PickPoint(d, a), integer(1L))
+  seeds <- vapply(anchors, function(a) Coreset:::.PickPoint(d, a), integer(1L))
   expect_true(anyDuplicated(seeds) > 0L)     # the collision this test needs
   r <- FarFirst(8L, d, strategy = anchors)
   sr <- attr(r, "strategy_results")

@@ -12,9 +12,9 @@
 #   Rscript -e '.libPaths("dev/profiling/.vtune-lib-XXatamp"); source(...)'
 libloc <- Sys.getenv("MAXMIN_LIB", unset = NA)
 if (is.na(libloc)) {
-  suppressMessages(library(MaxMin))
+  suppressMessages(library(Coreset))
 } else {
-  suppressMessages(library(MaxMin, lib.loc = libloc))
+  suppressMessages(library(Coreset, lib.loc = libloc))
 }
 
 set.seed(5813)

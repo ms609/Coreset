@@ -6,10 +6,10 @@
 # identical deterministic trajectory (objective printed as an identity
 # probe).
 # Usage: Rscript dropadd-timing.R <out.rds>
-library(MaxMin)
+library(Coreset)
 args <- commandArgs(trailingOnly = TRUE)
 out <- args[[1L]]
-cat("lib:", dirname(system.file(package = "MaxMin")), "\n")
+cat("lib:", dirname(system.file(package = "Coreset")), "\n")
 
 set.seed(5813)
 n4 <- 4000L
@@ -34,25 +34,25 @@ cell <- function(label, th, reps = 3L) {
 
 tab <- rbind(
   cell("matrix n=4e3 m=10 construct", function()
-    MaxMin:::DropAdd_cpp(d4, 10L, Inf, 0L, PL, FALSE, -1L), 6L),
+    Coreset:::DropAdd_cpp(d4, 10L, Inf, 0L, PL, FALSE, -1L), 6L),
   cell("matrix n=4e3 m=2000 construct", function()
-    MaxMin:::DropAdd_cpp(d4, 2000L, Inf, 0L, PL, FALSE, -1L), 4L),
+    Coreset:::DropAdd_cpp(d4, 2000L, Inf, 0L, PL, FALSE, -1L), 4L),
   cell("matrix n=4e3 m=10 search1500", function()
-    MaxMin:::DropAdd_cpp(d4, 10L, Inf, 1500L, PL, FALSE, -1L), 4L),
+    Coreset:::DropAdd_cpp(d4, 10L, Inf, 1500L, PL, FALSE, -1L), 4L),
   cell("matrix n=4e3 m=2000 search1500", function()
-    MaxMin:::DropAdd_cpp(d4, 2000L, Inf, 1500L, PL, FALSE, -1L), 3L),
+    Coreset:::DropAdd_cpp(d4, 2000L, Inf, 1500L, PL, FALSE, -1L), 3L),
   # Either side of m = n/8, where the recompute branch switches read order.
   cell("matrix n=4e3 m=400 search1500", function()
-    MaxMin:::DropAdd_cpp(d4, 400L, Inf, 1500L, PL, FALSE, -1L), 3L),
+    Coreset:::DropAdd_cpp(d4, 400L, Inf, 1500L, PL, FALSE, -1L), 3L),
   cell("matrix n=4e3 m=600 search1500", function()
-    MaxMin:::DropAdd_cpp(d4, 600L, Inf, 1500L, PL, FALSE, -1L), 3L),
+    Coreset:::DropAdd_cpp(d4, 600L, Inf, 1500L, PL, FALSE, -1L), 3L),
   cell("points n=2e4 d2 m=10 search1000", function()
-    MaxMin:::DropAdd_points_cpp(big2, 10L, Inf, 1000L, PL, FALSE, -1L), 3L),
+    Coreset:::DropAdd_points_cpp(big2, 10L, Inf, 1000L, PL, FALSE, -1L), 3L),
   cell("points n=2e4 d10 m=10 search600", function()
-    MaxMin:::DropAdd_points_cpp(big10, 10L, Inf, 600L, PL, FALSE, -1L), 3L),
+    Coreset:::DropAdd_points_cpp(big10, 10L, Inf, 600L, PL, FALSE, -1L), 3L),
   cell("points n=2e4 d10 m=1e4 construct", function()
-    MaxMin:::DropAdd_points_cpp(big10, 10000L, Inf, 0L, PL, FALSE, -1L), 1L),
+    Coreset:::DropAdd_points_cpp(big10, 10000L, Inf, 0L, PL, FALSE, -1L), 1L),
   cell("points n=2e4 d10 m=1e4 search600", function()
-    MaxMin:::DropAdd_points_cpp(big10, 10000L, Inf, 600L, PL, FALSE, -1L), 1L)
+    Coreset:::DropAdd_points_cpp(big10, 10000L, Inf, 600L, PL, FALSE, -1L), 1L)
 )
 saveRDS(tab, out)

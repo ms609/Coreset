@@ -9,8 +9,8 @@
 #
 # Usage: R --vanilla --no-echo < dev/profiling/drivers/dropadd-seed-quality.R
 lib <- Sys.getenv("FP_LIB", "")
-if (nzchar(lib)) library(MaxMin, lib.loc = lib) else pkgload::load_all(".", quiet = TRUE)
-options(MaxMin.progress = FALSE)
+if (nzchar(lib)) library(Coreset, lib.loc = lib) else pkgload::load_all(".", quiet = TRUE)
+options(Coreset.progress = FALSE)
 
 load("C:/Users/pjjg18/GitHub/furthest-point/data/cases.rda")
 
@@ -51,7 +51,7 @@ for (caseName in cs) {
     stratScores <- setNames(numeric(length(strategies)), strategies)
     stratTk     <- setNames(numeric(length(strategies)), strategies)
     for (strat in strategies) {
-      seedIdx <- MaxMin:::.PickPoint(d, strat)
+      seedIdx <- Coreset:::.PickPoint(d, strat)
       stratTk[[strat]] <- attr(FarFirst(k, d, strategy = as.numeric(seedIdx)), "score")
       set.seed(1L)
       r <- DropAdd(k, d, seed = seedIdx)

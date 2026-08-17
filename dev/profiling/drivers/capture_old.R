@@ -1,6 +1,6 @@
 # Capture the OLD (installed) ExactMaxMin proven optima + timings as the
 # regression baseline, before installing the new build over it.
-suppressMessages(library(MaxMin))
+suppressMessages(library(Coreset))
 load("C:/Users/pjjg18/GitHub/furthest-point/data/cases.rda")
 cs14 <- c("tc20_zoo","tc7_ring","tc9_iris","tc8_highdim_gaussians","tc3_multiscale",
           "tc1_uniform","tc2_two_unequal","tc6_density_gradient","tc16_sonar",
@@ -13,7 +13,7 @@ for (cs in cs14) {
   d <- as.matrix(stats::dist(pts))
   for (k in ks) {
     t <- proc.time()[[3L]]
-    r <- MaxMin::ExactMaxMin(d, k, maxSeconds = 600)
+    r <- Coreset::ExactMaxMin(d, k, maxSeconds = 600)
     rows[[length(rows)+1L]] <- data.frame(case = cs, n = nrow(d), k = k,
       objective = r$objective, proven = r$proven,
       time_s = proc.time()[[3L]] - t, stringsAsFactors = FALSE)

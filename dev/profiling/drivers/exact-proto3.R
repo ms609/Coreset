@@ -4,7 +4,7 @@
 # ~16 IP solves to O(log gap) -- ~1-3 when the heuristic is optimal.
 # Layered on sparse-A + cheap-edges (v2). Plus an objective_bound cutoff probe.
 set.seed(5813)
-suppressMessages({ library(MaxMin); library(Matrix); library(highs) })
+suppressMessages({ library(Coreset); library(Matrix); library(highs) })
 load("C:/Users/pjjg18/GitHub/furthest-point/data/cases.rda")
 
 # feasibility oracle: does G(lambda) admit an IS of size >= m? returns witness.
@@ -41,9 +41,9 @@ Exact_v3 <- function(d, m, maxSeconds = 600, cutoff = TRUE, seedMethod = "dropad
   scv <- function(idx) { s <- d[idx, idx]; diag(s) <- Inf; min(s) }
   cands_seed <- list()
   if (seedMethod %in% c("grasp", "best"))
-    cands_seed$grasp <- sort(as.integer(MaxMin::Grasp(d, m, plateau = 50L, seed = 1L)))
+    cands_seed$grasp <- sort(as.integer(Coreset::Grasp(d, m, plateau = 50L, seed = 1L)))
   if (seedMethod %in% c("dropadd", "best"))
-    cands_seed$dropadd <- sort(as.integer(MaxMin::DropAdd(d = d, m = m, plateau = 512L)))
+    cands_seed$dropadd <- sort(as.integer(Coreset::DropAdd(d = d, m = m, plateau = 512L)))
   vals <- vapply(cands_seed, scv, numeric(1))
   Sh <- cands_seed[[which.max(vals)]]; LB <- max(vals)
   i0 <- findInterval(LB, cand)                       # cand[i0] == LB (realized)
@@ -78,7 +78,7 @@ Exact_v3 <- function(d, m, maxSeconds = 600, cutoff = TRUE, seedMethod = "dropad
 bench <- function(case, k = 10L) {
   pts <- as.matrix(cases[[case]][["points"]]); storage.mode(pts) <- "double"
   d <- as.matrix(stats::dist(pts)); n <- nrow(d)
-  t <- proc.time()[[3L]]; r0 <- MaxMin::ExactMaxMin(d, k, maxSeconds = 600); t0 <- proc.time()[[3L]] - t
+  t <- proc.time()[[3L]]; r0 <- Coreset::ExactMaxMin(d, k, maxSeconds = 600); t0 <- proc.time()[[3L]] - t
   t <- proc.time()[[3L]]; rg <- Exact_v3(d, k, cutoff = FALSE, seedMethod = "grasp"); tg <- proc.time()[[3L]] - t
   t <- proc.time()[[3L]]; rb <- Exact_v3(d, k, cutoff = FALSE, seedMethod = "best");  tb <- proc.time()[[3L]] - t
   ok <- isTRUE(all.equal(r0$objective, rg$objective)) && isTRUE(all.equal(r0$objective, rb$objective)) &&

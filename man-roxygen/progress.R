@@ -1,3 +1,3 @@
 #' @section Progress bar:
 #' In interactive sessions, <%= progress_shows %>.
-#' To toggle, set `options("MaxMin.progress" = FALSE)` (or `TRUE`).
+#' To toggle, set `options("Coreset.progress" = FALSE)` (or `TRUE`).

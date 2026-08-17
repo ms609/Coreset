@@ -308,7 +308,7 @@ test_that("summary.MaxMeanSelection prints the detail block", {
 })
 
 test_that(".AsMaxMeanSelection leaves an empty vector unclassed", {
-  expect_identical(MaxMin:::.AsMaxMeanSelection(integer(0)), integer(0))
+  expect_identical(Coreset:::.AsMaxMeanSelection(integer(0)), integer(0))
 })
 
 # ---- determinism & monotonicity --------------------------------------------
@@ -384,9 +384,9 @@ test_that("RL initial-solution construction can terminate early", {
   expect_true(is.finite(attr(result, "score")))
 })
 
-test_that("MaxMean MaxMin.progress option fires the cli hooks", {
+test_that("MaxMean Coreset.progress option fires the cli hooks", {
   d <- MakeD(73, 12)
-  old <- options(MaxMin.progress = TRUE)
+  old <- options(Coreset.progress = TRUE)
   on.exit(options(old))
   expect_no_error(suppressMessages(MaxMean(d, maxSeconds = 0.2)))
 })

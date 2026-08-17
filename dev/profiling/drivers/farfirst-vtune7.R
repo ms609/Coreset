@@ -4,8 +4,8 @@
 # case (the path's design regime). Usage: Rscript farfirst-vtune7.R <libdir>
 # bare: ~4 s of kernel work after the one-off dist() setup, 2026-08-13
 args <- commandArgs(trailingOnly = TRUE)
-library(MaxMin, lib.loc = args[[1L]])
-cat("lib:", dirname(system.file(package = "MaxMin")), "\n")
+library(Coreset, lib.loc = args[[1L]])
+cat("lib:", dirname(system.file(package = "Coreset")), "\n")
 
 set.seed(5813)
 N <- 6000L

@@ -1,8 +1,8 @@
 # Code to be run with
 #   R -d "valgrind --tool=memcheck --leak-check=full --error-exitcode=1" --vanilla < memcheck/thisfile.R
-library("MaxMin")
+library("Coreset")
 
-example_db <- tools::Rd_db("MaxMin")
+example_db <- tools::Rd_db("Coreset")
 
 cat("Running examples for", length(example_db), "topics\n")
 

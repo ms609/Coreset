@@ -6,7 +6,7 @@
 # bit-identical.
 # Usage: Rscript farfirst-battery.R <out.rds>            # capture
 #        Rscript farfirst-battery.R <new.rds> <base.rds> # capture + compare
-library(MaxMin)
+library(Coreset)
 args <- commandArgs(trailingOnly = TRUE)
 outFile <- args[[1L]]
 # Optional: run the whole battery at a fixed thread count (results must be

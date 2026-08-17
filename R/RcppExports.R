@@ -2,106 +2,106 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 DropAdd_cpp <- function(dmat, m, time_budget_s, max_iter, max_no_improve, want_trace, seed0 = -1L) {
-    .Call(`_MaxMin_DropAdd_cpp`, dmat, m, time_budget_s, max_iter, max_no_improve, want_trace, seed0)
+    .Call(`_Coreset_DropAdd_cpp`, dmat, m, time_budget_s, max_iter, max_no_improve, want_trace, seed0)
 }
 
 DropAdd_points_cpp <- function(points, m, time_budget_s, max_iter, max_no_improve, want_trace, seed0 = -1L, n_threads = 1L) {
-    .Call(`_MaxMin_DropAdd_points_cpp`, points, m, time_budget_s, max_iter, max_no_improve, want_trace, seed0, n_threads)
+    .Call(`_Coreset_DropAdd_points_cpp`, points, m, time_budget_s, max_iter, max_no_improve, want_trace, seed0, n_threads)
 }
 
 TriangleAtLeast_cpp <- function(d, lowest) {
-    .Call(`_MaxMin_TriangleAtLeast_cpp`, d, lowest)
+    .Call(`_Coreset_TriangleAtLeast_cpp`, d, lowest)
 }
 
 EdgesAtLeast_cpp <- function(d, lambda) {
-    .Call(`_MaxMin_EdgesAtLeast_cpp`, d, lambda)
+    .Call(`_Coreset_EdgesAtLeast_cpp`, d, lambda)
 }
 
 ThresholdDecide_cpp <- function(hi, hj, n, k, maxSeconds) {
-    .Call(`_MaxMin_ThresholdDecide_cpp`, hi, hj, n, k, maxSeconds)
+    .Call(`_Coreset_ThresholdDecide_cpp`, hi, hj, n, k, maxSeconds)
 }
 
 Grasp_cpp <- function(dmat, m, max_no_improve, max_iter, elite_size, alpha, time_budget_s, n_threads = 1L, progress_cb = NULL) {
-    .Call(`_MaxMin_Grasp_cpp`, dmat, m, max_no_improve, max_iter, elite_size, alpha, time_budget_s, n_threads, progress_cb)
+    .Call(`_Coreset_Grasp_cpp`, dmat, m, max_no_improve, max_iter, elite_size, alpha, time_budget_s, n_threads, progress_cb)
 }
 
 KCentreCandidates_cpp <- function(d) {
-    .Call(`_MaxMin_KCentreCandidates_cpp`, d)
+    .Call(`_Coreset_KCentreCandidates_cpp`, d)
 }
 
 KCentreCDSh_cpp <- function(d, k, seed, cand, exhaustive) {
-    .Call(`_MaxMin_KCentreCDSh_cpp`, d, k, seed, cand, exhaustive)
+    .Call(`_Coreset_KCentreCDSh_cpp`, d, k, seed, cand, exhaustive)
 }
 
 MaxEntropyGreedy_cpp <- function(K, k, seed) {
-    .Call(`_MaxMin_MaxEntropyGreedy_cpp`, K, k, seed)
+    .Call(`_Coreset_MaxEntropyGreedy_cpp`, K, k, seed)
 }
 
 MaxEntropyExact_cpp <- function(K, k) {
-    .Call(`_MaxMin_MaxEntropyExact_cpp`, K, k)
+    .Call(`_Coreset_MaxEntropyExact_cpp`, K, k)
 }
 
 MaxEntropyLogDet_cpp <- function(K, idx) {
-    .Call(`_MaxMin_MaxEntropyLogDet_cpp`, K, idx)
+    .Call(`_Coreset_MaxEntropyLogDet_cpp`, K, idx)
 }
 
 MaximinFrom_cpp <- function(d, n, first, n_threads = 1L) {
-    .Call(`_MaxMin_MaximinFrom_cpp`, d, n, first, n_threads)
+    .Call(`_Coreset_MaximinFrom_cpp`, d, n, first, n_threads)
 }
 
 MaximinMultiFrom_cpp <- function(d, n, firsts, n_threads = 1L) {
-    .Call(`_MaxMin_MaximinMultiFrom_cpp`, d, n, firsts, n_threads)
+    .Call(`_Coreset_MaximinMultiFrom_cpp`, d, n, firsts, n_threads)
 }
 
 MatrixOffDiagMax_cpp <- function(d, n_threads = 1L) {
-    .Call(`_MaxMin_MatrixOffDiagMax_cpp`, d, n_threads)
+    .Call(`_Coreset_MatrixOffDiagMax_cpp`, d, n_threads)
 }
 
 RowSqSumsFromMatrix_cpp <- function(d, n_threads = 1L) {
-    .Call(`_MaxMin_RowSqSumsFromMatrix_cpp`, d, n_threads)
+    .Call(`_Coreset_RowSqSumsFromMatrix_cpp`, d, n_threads)
 }
 
 MaximinFromPoints_cpp <- function(points, n, first, mask, n_threads = 1L) {
-    .Call(`_MaxMin_MaximinFromPoints_cpp`, points, n, first, mask, n_threads)
+    .Call(`_Coreset_MaximinFromPoints_cpp`, points, n, first, mask, n_threads)
 }
 
 MaximinMultiFromPoints_cpp <- function(points, n, firsts, n_threads = 1L) {
-    .Call(`_MaxMin_MaximinMultiFromPoints_cpp`, points, n, firsts, n_threads)
+    .Call(`_Coreset_MaximinMultiFromPoints_cpp`, points, n, firsts, n_threads)
 }
 
 RowSumsFromPoints_cpp <- function(points, n_threads = 1L) {
-    .Call(`_MaxMin_RowSumsFromPoints_cpp`, points, n_threads)
+    .Call(`_Coreset_RowSumsFromPoints_cpp`, points, n_threads)
 }
 
 RowSqSumsFromPoints_cpp <- function(points, n_threads = 1L) {
-    .Call(`_MaxMin_RowSqSumsFromPoints_cpp`, points, n_threads)
+    .Call(`_Coreset_RowSqSumsFromPoints_cpp`, points, n_threads)
 }
 
 RowSumsSqFromPoints_cpp <- function(points, n_threads = 1L) {
-    .Call(`_MaxMin_RowSumsSqFromPoints_cpp`, points, n_threads)
+    .Call(`_Coreset_RowSumsSqFromPoints_cpp`, points, n_threads)
 }
 
 EuclidColFromPoints_cpp <- function(points, col) {
-    .Call(`_MaxMin_EuclidColFromPoints_cpp`, points, col)
+    .Call(`_Coreset_EuclidColFromPoints_cpp`, points, col)
 }
 
 DiameterFromPoints_cpp <- function(points, n_threads = 1L) {
-    .Call(`_MaxMin_DiameterFromPoints_cpp`, points, n_threads)
+    .Call(`_Coreset_DiameterFromPoints_cpp`, points, n_threads)
 }
 
 MaxMean_cpp <- function(dmat, time_budget_s, iter_budget, alpha_depth, T_min, T_max, epsilon, alpha_rl, gamma_rl, use_rl) {
-    .Call(`_MaxMin_MaxMean_cpp`, dmat, time_budget_s, iter_budget, alpha_depth, T_min, T_max, epsilon, alpha_rl, gamma_rl, use_rl)
+    .Call(`_Coreset_MaxMean_cpp`, dmat, time_budget_s, iter_budget, alpha_depth, T_min, T_max, epsilon, alpha_rl, gamma_rl, use_rl)
 }
 
 AllFinite_cpp <- function(x, n_threads = 1L) {
-    .Call(`_MaxMin_AllFinite_cpp`, x, n_threads)
+    .Call(`_Coreset_AllFinite_cpp`, x, n_threads)
 }
 
 SymmetryScan_cpp <- function(d, n_threads = 1L) {
-    .Call(`_MaxMin_SymmetryScan_cpp`, d, n_threads)
+    .Call(`_Coreset_SymmetryScan_cpp`, d, n_threads)
 }
 
 Symmetrised_cpp <- function(d) {
-    .Call(`_MaxMin_Symmetrised_cpp`, d)
+    .Call(`_Coreset_Symmetrised_cpp`, d)
 }
 

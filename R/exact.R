@@ -77,7 +77,7 @@
   # full matrix the user handed to the exact solver, regardless of the solvers'
   # own default coreset caps.
   grasps <- local({
-    op <- options(MaxMin.progress = FALSE); on.exit(options(op))
+    op <- options(Coreset.progress = FALSE); on.exit(options(op))
     lapply(seq_len(nStart), function(s)
       tryCatch(Grasp(k, d, plateau = 50L, maxCandidates = 0L),
                error = function(e) NULL))
@@ -85,7 +85,7 @@
   raw <- c(if (is.null(warmStart)) list() else list(warmStart),
            grasps,
            list(tryCatch(local({
-             op <- options(MaxMin.progress = FALSE); on.exit(options(op))
+             op <- options(Coreset.progress = FALSE); on.exit(options(op))
              DropAdd(d = d, k = k, plateau = 512L, maxCandidates = 0L)
            }), error = function(e) NULL)))
   pool <- Filter(Negate(is.null), lapply(raw, valid))
@@ -146,7 +146,7 @@
 #'
 #' `ExactMaxMin()` finds the optimal solution to the Max-Min Diversity Problem
 #' (discrete _p_-dispersion) by iterated node-packing
-#' \insertCite{Sayyady2016}{MaxMin} (which may be slow or intractable on large
+#' \insertCite{Sayyady2016}{Coreset} (which may be slow or intractable on large
 #' sets).
 #'
 #' The search is warm-started from a heuristic lower bound (the best of several
@@ -190,7 +190,7 @@
 #' ExactMaxMin(3L, dist(pts))
 #' @export
 ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
-  progress <- getOption("MaxMin.progress", interactive())
+  progress <- getOption("Coreset.progress", interactive())
   t0 <- proc.time()[[3L]]
   d <- .ExactAsMatrix(d)
   n <- nrow(d)

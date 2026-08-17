@@ -22,7 +22,7 @@
 
 .libdir <- tryCatch(readLines("dev/profiling/.libdir", n = 1L), error = function(e) NULL)
 suppressMessages({
-  if (!is.null(.libdir) && nzchar(.libdir)) library(MaxMin, lib.loc = .libdir) else library(MaxMin)
+  if (!is.null(.libdir) && nzchar(.libdir)) library(Coreset, lib.loc = .libdir) else library(Coreset)
 })
 
 # ---- helpers ---------------------------------------------------------------

@@ -9,9 +9,22 @@
 
 ## Notes for the CRAN team
 
-* The package name `MaxMin` is distinct from the existing CRAN package
-  `maximin` (Sun & Gramacy): the names differ in spelling, and the two solve
-  different problems. `maximin` constructs continuous space-filling designs;
-  `MaxMin` selects a subset from a fixed candidate set under an arbitrary
-  distance (the discrete p-dispersion / Max-Min Diversity Problem). The README
-  and package documentation cross-reference `maximin` to avoid confusion.
+* This is a new submission.
+
+* The package name `Coreset` is close in spelling to the existing CRAN package
+  `corset` (Arbitrary Bounding of Series and Time Series Objects). The two are
+  unrelated: `corset` constrains numerical and time series within given
+  boundaries, whereas `Coreset` selects a representative subset of a fixed
+  candidate set under an arbitrary distance. The name is the established term
+  in computational geometry and machine learning for a small subset that
+  preserves a property of the whole, which is what the package computes.
+
+* `Coreset` is likewise distinct from the CRAN package `maximin` (Sun &
+  Gramacy), which constructs continuous space-filling designs by generating new
+  points in a coordinate region; `Coreset` chooses among points that already
+  exist. The package documentation cross-references `maximin` to avoid
+  confusion.
+
+* The `highs` package is used only by `ExactKCentre()` and `ExactMaxSum()`,
+  and is listed in Suggests behind a `requireNamespace()` guard; all examples
+  and tests that need it skip when it is absent.

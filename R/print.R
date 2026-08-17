@@ -112,17 +112,17 @@
   )
 }
 
-#' Format and print MaxMin solver results
+#' Format and print Coreset solver results
 #'
-#' Terse summaries of the objects returned by the MaxMin solvers.
+#' Terse summaries of the objects returned by the Coreset solvers.
 #'
 #' @param x A `MaxMinSelection` object (from any solver, including
 #'   [ExactMaxMin()]).
 #' @param ... Ignored; present for S3 compatibility.
 #' @return
-#' `print.MaxMin()` returns `x`, invisibly. It is called for its side-effect
+#' `print.Coreset()` returns `x`, invisibly. It is called for its side-effect
 #' of printing `format(x)` to the console.
-#' `format.MaxMin()` returns a character string reporting the selection size,
+#' `format.Coreset()` returns a character string reporting the selection size,
 #' the selected indices, the algorithm (and if applicable strategy or proof
 #' status), and the achieved \eqn{T_k}.
 #'
@@ -130,7 +130,7 @@
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' print(FarFirst(5L, dist(pts)))
-#' @name print.MaxMin
+#' @name print.Coreset
 #' @family reporting functions
 #' @export
 format.MaxMinSelection <- function(x, ...) {
@@ -139,7 +139,7 @@ format.MaxMinSelection <- function(x, ...) {
   .MaxMinSummaryLine(length(idx), idx, .MaxMinSelectedBy(x), attr(x, "score"))
 }
 
-#' @rdname print.MaxMin
+#' @rdname print.Coreset
 #' @export
 print.MaxMinSelection <- function(x, ...) {
   cat(format(x, ...), "\n", sep = "")
@@ -197,19 +197,19 @@ print.MaxMinSelection <- function(x, ...) {
   invisible(NULL)
 }
 
-#' Detailed summaries of MaxMin solver results
+#' Detailed summaries of Coreset solver results
 #'
 #' A fuller counterpart to [print.MaxMinSelection()]: the one-line headline,
 #' followed by the achieved objective(s), search effort, and -- for a
 #' [FarFirst()] ensemble -- the per-strategy \eqn{T_k} table.
 #' @param object A `MaxMinSelection` object (from any solver).
 #' @param ... Ignored; present for S3 compatibility.
-#' @return `summary.MaxMin()` returns `object`, invisibly.
+#' @return `summary.Coreset()` returns `object`, invisibly.
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' summary(FarFirst(5L, dist(pts)))
-#' @name summary.MaxMin
+#' @name summary.Coreset
 #' @family reporting functions
 #' @export
 summary.MaxMinSelection <- function(object, ...) {

@@ -4,9 +4,9 @@
 # at k=4). Each witness is re-validated against d.
 # FP_CELLS overrides the cell list as comma-separated "case:k" pairs.
 lib <- Sys.getenv("FP_LIB", "")
-if (nzchar(lib)) library(MaxMin, lib.loc = lib) else library(MaxMin)
+if (nzchar(lib)) library(Coreset, lib.loc = lib) else library(Coreset)
 suppressMessages(library(highs))
-options(MaxMin.progress = FALSE)
+options(Coreset.progress = FALSE)
 load("C:/Users/pjjg18/GitHub/furthest-point/data/cases.rda")
 
 cells <- strsplit(strsplit(Sys.getenv(

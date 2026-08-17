@@ -35,7 +35,7 @@ budget.}
 maximising the \strong{total} pairwise distance it contains. It is the max-sum
 counterpart of \code{\link[=ExactMaxMin]{ExactMaxMin()}} (which maximises the \emph{minimum} pairwise
 distance), solved by per-node integer-program linearisation
-\insertCite{Kuo1993}{MaxMin}. As the problem is NP-hard it is feasible only
+\insertCite{Kuo1993}{Coreset}. As the problem is NP-hard it is feasible only
 for small sets.
 }
 \details{

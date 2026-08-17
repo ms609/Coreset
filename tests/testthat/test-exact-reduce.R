@@ -38,7 +38,7 @@
 }
 
 .Decide <- function(hi, hj, n, k, maxSeconds = 60) {
-  MaxMin:::ThresholdDecide_cpp(as.integer(hi), as.integer(hj), n, k, maxSeconds)
+  Coreset:::ThresholdDecide_cpp(as.integer(hi), as.integer(hj), n, k, maxSeconds)
 }
 
 # Is `cl` a clique of hAdj?
@@ -60,8 +60,8 @@ test_that("the triangle scans match the R idioms they replace", {
     for (lambda in c(-Inf, stats::quantile(ud, c(0, 0.4, 1), names = FALSE),
                      Inf)) {
       keep <- ud >= lambda
-      expect_identical(MaxMin:::TriangleAtLeast_cpp(d, lambda), ud[keep])
-      h <- MaxMin:::EdgesAtLeast_cpp(d, lambda)
+      expect_identical(Coreset:::TriangleAtLeast_cpp(d, lambda), ud[keep])
+      h <- Coreset:::EdgesAtLeast_cpp(d, lambda)
       expect_identical(h$hi, rc[keep, 1L])
       expect_identical(h$hj, rc[keep, 2L])
     }
@@ -237,12 +237,12 @@ test_that(".MaxISVerdict decides probes and validates its witness", {
   pa <- .ProbeArgs(d, 5)
 
   # k = 4: chi = 3 refutes at the root -- the certifying-probe fast path.
-  v <- MaxMin:::.MaxISVerdict(d, 6L, pa$hi, pa$hj, 5, 4L, 60)
+  v <- Coreset:::.MaxISVerdict(d, 6L, pa$hi, pa$hj, 5, 4L, 60)
   expect_identical(v$verdict, "infeasible")
   expect_identical(v$witness, integer(0))
 
   # k = 3: a witness, whose pairwise distances all clear lambda.
-  v <- MaxMin:::.MaxISVerdict(d, 6L, pa$hi, pa$hj, 5, 3L, 60)
+  v <- Coreset:::.MaxISVerdict(d, 6L, pa$hi, pa$hj, 5, 3L, 60)
   expect_identical(v$verdict, "feasible")
   expect_length(v$witness, 3L)
   sub <- d[v$witness, v$witness]
@@ -250,11 +250,11 @@ test_that(".MaxISVerdict decides probes and validates its witness", {
 
   # lambda below every distance: empty G, all vertices independent.
   paLow <- .ProbeArgs(d, 0.5)
-  v <- MaxMin:::.MaxISVerdict(d, 6L, paLow$hi, paLow$hj, 0.5, 3L, 60)
+  v <- Coreset:::.MaxISVerdict(d, 6L, paLow$hi, paLow$hj, 0.5, 3L, 60)
   expect_identical(v$verdict, "feasible")
   expect_identical(v$witness, 1:6)
 
   # A budget that cannot buy any search is inconclusive, never a verdict.
-  v <- MaxMin:::.MaxISVerdict(d, 6L, pa$hi, pa$hj, 5, 3L, 0)
+  v <- Coreset:::.MaxISVerdict(d, 6L, pa$hi, pa$hj, 5, 3L, 0)
   expect_identical(v$verdict, "inconclusive")
 })

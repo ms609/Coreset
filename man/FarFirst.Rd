@@ -54,14 +54,14 @@ optimal score.
 }
 }
 \description{
-Greedy farthest-first selection \insertCite{Gonzalez1985,Hochbaum1985}{MaxMin}
+Greedy farthest-first selection \insertCite{Gonzalez1985,Hochbaum1985}{Coreset}
 iteratively selects the point furthest from the current selection to yield a
 2-approximation to the \emph{k}-centre and Max Min Diversity problems.
 }
 \section{Progress bar}{
 
 In interactive sessions, the distance-column path shows a progress bar.
-To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
+To toggle, set \code{options("Coreset.progress" = FALSE)} (or \code{TRUE}).
 }
 
 \section{Parallelism}{

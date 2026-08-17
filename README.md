@@ -1,12 +1,12 @@
-# MaxMin
+# Coreset
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/ms609/MaxMin/actions/workflows/R-CMD-check.yml/badge.svg)](https://github.com/ms609/MaxMin/actions/workflows/R-CMD-check.yml)
-[![codecov](https://codecov.io/gh/ms609/MaxMin/branch/main/graph/badge.svg)](https://app.codecov.io/gh/ms609/MaxMin)
+[![R-CMD-check](https://github.com/ms609/Coreset/actions/workflows/R-CMD-check.yml/badge.svg)](https://github.com/ms609/Coreset/actions/workflows/R-CMD-check.yml)
+[![codecov](https://codecov.io/gh/ms609/Coreset/branch/main/graph/badge.svg)](https://app.codecov.io/gh/ms609/Coreset)
 [![Project Status: WIP](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
 <!-- badges: end -->
 
-`MaxMin` implements algorithms that select a dispersed subsample of points that
+`Coreset` implements algorithms that select a dispersed subsample of points that
 maximizes coverage of a larger set, under one of several objectives.
 
 ## Solvers
@@ -59,7 +59,7 @@ as possible.
 ### Maximum-entropy (maxdet) selection
 
 The maximum entropy problem selects the $k$ elements that contain the highest
-amount of information about the original set: a minimially redundant pick.
+amount of information about the original set: a minimally redundant pick.
 
 | Function | Method | Use |
 |---|---|---|
@@ -70,12 +70,12 @@ amount of information about the original set: a minimially redundant pick.
 
 ```r
 # install.packages("remotes")
-remotes::install_github("ms609/MaxMin")
+remotes::install_github("ms609/Coreset")
 ```
 
 ## Related problems
 
-`MaxMin` selects a subset from a given set of elements.
+`Coreset` selects a subset from a given set of elements.
 Several established packages solve neighbouring objectives:
 
 - **k-medoids / k-median** selects elements that minimize the mean distance from

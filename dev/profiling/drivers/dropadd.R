@@ -24,7 +24,7 @@
 #   - Points n=20000 dim=2 case => dropadd-profvis-points-large.html
 
 suppressMessages({
-  library(MaxMin)
+  library(Coreset)
   library(profvis)
   library(htmlwidgets)
 })

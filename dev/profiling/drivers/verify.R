@@ -10,7 +10,7 @@
 args <- commandArgs(trailingOnly = TRUE)
 libpath <- normalizePath(args[[1]])
 tag     <- args[[2]]
-suppressMessages({ library(MaxMin, lib.loc = libpath); library(bench) })
+suppressMessages({ library(Coreset, lib.loc = libpath); library(bench) })
 
 bench1 <- function(thunk, iters = 15L) {
   m <- bench::mark(thunk(), iterations = iters, check = FALSE, filter_gc = FALSE)

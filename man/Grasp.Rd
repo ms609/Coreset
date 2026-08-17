@@ -60,7 +60,7 @@ The vector has class \code{"MaxMinSelection"} and prints as a one-line summary
 \description{
 \code{Grasp()} solves the Max-Min Diversity Problem (discrete \emph{p}-dispersion) with
 the static variant of the GRASP / path-relinking metaheuristic
-\insertCite{@@Resende2010, fig. 4}{MaxMin}{}. This is the most expensive
+\insertCite{@@Resende2010, fig. 4}{Coreset}{}. This is the most expensive
 heuristic in this package, and attains correspondingly high-quality
 selections.
 }
@@ -68,7 +68,7 @@ selections.
 The GRASP with path-relinking algorithm conducts a randomised-greedy
 construction with extended-improvement local search builds; it identifies an
 elite set, then conducts a single pass of path relinking over all elite
-pairs \insertCite{Resende2010}{MaxMin}.
+pairs \insertCite{Resende2010}{Coreset}.
 
 The refinement loop stops after \code{plateau} consecutive GRASP iterations
 fail to improve the best elite objective, or once \code{maxSeconds} have
@@ -90,7 +90,7 @@ options(mc.cores = parallel::detectCores())  # or all available cores
 \section{Progress bar}{
 
 In interactive sessions, a bar tracks how close the search is to its \code{plateau} stopping criterion, snapping back each time a better solution is found.
-To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
+To toggle, set \code{options("Coreset.progress" = FALSE)} (or \code{TRUE}).
 }
 
 \examples{

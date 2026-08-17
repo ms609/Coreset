@@ -1,7 +1,7 @@
 # Old-vs-new bit-identity battery for Grasp (T-007 `oldopt.rds` pattern).
 # Usage: Rscript battery.R <out.rds>            # capture
 #        Rscript battery.R <new.rds> <base.rds> # capture + compare
-library(MaxMin)
+library(Coreset)
 args <- commandArgs(trailingOnly = TRUE)
 outFile <- args[[1L]]
 
@@ -23,7 +23,7 @@ for (i in seq_len(nrow(grid))) {
   set.seed(1000L + g$seed)
   d <- as.matrix(dist(matrix(rnorm(g$n * g$dim), g$n)))
   set.seed(g$seed)
-  o <- MaxMin:::Grasp_cpp(d, g$k, g$plateau, .Machine$integer.max,
+  o <- Coreset:::Grasp_cpp(d, g$k, g$plateau, .Machine$integer.max,
                           g$eliteSize, as.double(g$alpha), Inf)
   res[[i]] <- list(
     idx = as.integer(o$indices), obj = as.numeric(o$objective),
@@ -32,7 +32,7 @@ for (i in seq_len(nrow(grid))) {
   # Also exercise the R reference on the small cases: re-proves parity directly.
   if (g$n <= 60L && g$k <= 10L) {
     set.seed(g$seed)
-    r <- MaxMin:::.Grasp_R(g$k, d, plateau = g$plateau,
+    r <- Coreset:::.Grasp_R(g$k, d, plateau = g$plateau,
                            eliteSize = g$eliteSize, alpha = as.double(g$alpha))
     res[[i]]$rIdx <- as.integer(r)
     res[[i]]$rObj <- as.numeric(attr(r, "score"))

@@ -172,9 +172,9 @@ test_that("DropAdd points path: deterministic and input validation", {
                "supply")
 })
 
-test_that("DropAdd points path: MaxMin.progress option fires the cli hooks", {
+test_that("DropAdd points path: Coreset.progress option fires the cli hooks", {
   pts <- matrix(rnorm(20 * 2), ncol = 2)
-  old <- options(MaxMin.progress = TRUE)
+  old <- options(Coreset.progress = TRUE)
   on.exit(options(old))
   expect_no_error(suppressMessages(DropAdd(3L, maxSeconds = 0.1, points = pts)))
 })
