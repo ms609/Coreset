@@ -2,8 +2,8 @@
 
 `Grasp()` solves the Max-Min Diversity Problem (discrete *p*-dispersion)
 with the static variant of the GRASP / path-relinking metaheuristic
-(Resende et al. 2010, fig. 4) . This is the most expensive heuristic in
-this package, and attains correspondingly high-quality selections.
+(Resende et al. 2010, fig. 4) . This expensive heuristic often attains
+high-quality selections.
 
 ## Usage
 
