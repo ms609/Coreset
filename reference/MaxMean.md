@@ -59,7 +59,7 @@ MaxMean(d, maxSeconds = 0.1, maxIter = 1000, useRL = TRUE)
 
 The vector has class `"MaxMeanSelection"` and prints as a one-line
 summary (see
-[`print.MaxMeanSelection()`](https://ms609.github.io/MaxMin/reference/print.MaxMeanSelection.md));
+[`print.MaxMeanSelection()`](https://ms609.github.io/Coreset/reference/print.MaxMeanSelection.md));
 it is otherwise an ordinary integer vector that indexes the distance
 matrix directly.
 
@@ -80,7 +80,7 @@ tuned values reported by (Nijimbere et al. 2020) (greedy factor
 ## Progress bar
 
 In interactive sessions, status messages are shown. To toggle, set
-`options("MaxMin.progress" = FALSE)` (or `TRUE`).
+`options("Coreset.progress" = FALSE)` (or `TRUE`).
 
 ## References
 
@@ -92,11 +92,11 @@ problem.” *Journal of Industrial & Management Optimization*, **17**,
 
 ## See also
 
-[`MeanDist()`](https://ms609.github.io/MaxMin/reference/MeanDist.md) to
+[`MeanDist()`](https://ms609.github.io/Coreset/reference/MeanDist.md) to
 score an arbitrary selection under this objective;
-[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md),
-[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) and
-[`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) for
+[`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md),
+[`DropAdd()`](https://ms609.github.io/Coreset/reference/DropAdd.md) and
+[`Grasp()`](https://ms609.github.io/Coreset/reference/Grasp.md) for
 fixed-cardinality max-min solvers.
 
 ## Examples

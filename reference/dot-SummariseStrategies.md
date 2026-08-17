@@ -1,4 +1,4 @@
-# Print the per-strategy \\T_k\\ table of a [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) ensemble
+# Print the per-strategy \\T_k\\ table of a [`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md) ensemble
 
 One row per strategy tried, ordered best (largest \\T_k\\) first, with
 each tied-best strategy marked `*`. A bare single pass (no
@@ -15,7 +15,7 @@ each tied-best strategy marked `*`. A bare single pass (no
 - object:
 
   A `MaxMinSelection` from an ensemble
-  [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
+  [`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md)
   call.
 
 ## Value

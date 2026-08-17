@@ -1,9 +1,9 @@
 # Gonzalez maximin from several starting indices at once
 
 Ensemble counterpart of
-[`.MaximinFrom()`](https://ms609.github.io/MaxMin/reference/dot-MaximinFrom.md)
+[`.MaximinFrom()`](https://ms609.github.io/Coreset/reference/dot-MaximinFrom.md)
 /
-[`.MaximinFromPoints()`](https://ms609.github.io/MaxMin/reference/dot-MaximinFromPoints.md):
+[`.MaximinFromPoints()`](https://ms609.github.io/Coreset/reference/dot-MaximinFromPoints.md):
 solves one greedy pass per seed. Each pass is an independent function of
 its seed, so under `mc.cores > 1` the passes run concurrently, one per
 thread; a lone seed, or a problem large enough for a single pass to

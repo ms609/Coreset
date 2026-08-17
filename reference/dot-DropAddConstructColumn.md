@@ -15,7 +15,7 @@ matrix.
 - colFn:
 
   Column oracle; see
-  [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md).
+  [`DropAdd()`](https://ms609.github.io/Coreset/reference/DropAdd.md).
 
 - N:
 

@@ -1,7 +1,7 @@
-# Stamp the `MaxMeanSelection` class onto a [`MaxMean()`](https://ms609.github.io/MaxMin/reference/MaxMean.md) result
+# Stamp the `MaxMeanSelection` class onto a [`MaxMean()`](https://ms609.github.io/Coreset/reference/MaxMean.md) result
 
 Parallel to
-[`.AsMaxMinSelection()`](https://ms609.github.io/MaxMin/reference/dot-AsMaxMinSelection.md)
+[`.AsMaxMinSelection()`](https://ms609.github.io/Coreset/reference/dot-AsMaxMinSelection.md)
 for the fixed-cardinality solvers. An empty selection is returned
 unchanged.
 

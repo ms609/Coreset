@@ -51,7 +51,7 @@ DropAdd(
 
   Integer: a composable-coreset tractability cap. When the number of
   candidate points `N` exceeds `maxCandidates`,
-  [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
+  [`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md)
   thins the candidates to a `maxCandidates`-point coreset (with the
   deterministic, RNG-free `"peripheral"` seed, so no random stream is
   perturbed), the solver runs on the coreset, and the chosen indices are
@@ -79,7 +79,7 @@ DropAdd(
 
 `DropAdd()` returns an integer vector of length `k` containing the
 1-based selected indices **sorted ascending** (unlike
-[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md),
+[`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md),
 which returns farthest-first order), with attributes:
 
 - score:
@@ -103,13 +103,13 @@ which returns farthest-first order), with attributes:
 
 The vector has class `"MaxMinSelection"` and prints as a one-line
 summary (see
-[`print.MaxMinSelection()`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md));
+[`print.MaxMinSelection()`](https://ms609.github.io/Coreset/reference/print.Coreset.md));
 it is otherwise an ordinary integer vector.
 
 ## Progress bar
 
 In interactive sessions, status messages are shown. To toggle, set
-`options("MaxMin.progress" = FALSE)` (or `TRUE`).
+`options("Coreset.progress" = FALSE)` (or `TRUE`).
 
 ## Parallelism
 

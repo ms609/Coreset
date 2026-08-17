@@ -1,7 +1,7 @@
 # Normalise a distance-column oracle result for the DropAdd records
 
 Reports the self-distance as 0, cf. `-Inf` in
-[`.DistColumn()`](https://ms609.github.io/MaxMin/reference/dot-DistColumn.md)
+[`.DistColumn()`](https://ms609.github.io/Coreset/reference/dot-DistColumn.md)
 
 ## Usage
 
@@ -14,7 +14,7 @@ Reports the self-distance as 0, cf. `-Inf` in
 - colFn:
 
   Column oracle; see
-  [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md).
+  [`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md).
 
 - i:
 

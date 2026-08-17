@@ -34,19 +34,19 @@ two selected points (or `NA_real_`, if `length(idx) < 2`).
 ## Details
 
 The solvers in this package
-([`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md),
-[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md),
-[`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md)) already
+([`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md),
+[`DropAdd()`](https://ms609.github.io/Coreset/reference/DropAdd.md),
+[`Grasp()`](https://ms609.github.io/Coreset/reference/Grasp.md)) already
 attach the achieved \\T_k\\ as a `score` attribute. `MinDist()` allows
 arbitrary selections to be scored, or an existing selection to be scored
 against a different distance matrix.
 
 ## See also
 
-[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md),
-[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md),
-[`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) and
-[`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md).
+[`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md),
+[`DropAdd()`](https://ms609.github.io/Coreset/reference/DropAdd.md),
+[`Grasp()`](https://ms609.github.io/Coreset/reference/Grasp.md) and
+[`ExactMaxMin()`](https://ms609.github.io/Coreset/reference/ExactMaxMin.md).
 
 ## Examples
 

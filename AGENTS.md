@@ -1,10 +1,11 @@
-# Agent notes for MaxMin
+# Agent notes for Coreset
 
-`MaxMin` is a small, dependency-light (`Imports: Rcpp, stats`) solver
-library for the Max-Min Diversity Problem (MMDP / discrete
-p-dispersion). **Keep it CRAN-clean and dependency-light** — `highs`
-(exact solver) stays in `Suggests` behind a
-[`requireNamespace()`](https://rdrr.io/r/base/ns-load.html) guard.
+`Coreset` is a small, dependency-light
+(`Imports: cli, Rcpp, Rdpack, stats`) solver library for the Max-Min
+Diversity Problem (MMDP / discrete p-dispersion). **Keep it CRAN-clean
+and dependency-light** — `highs` (exact solver) stays in `Suggests`
+behind a [`requireNamespace()`](https://rdrr.io/r/base/ns-load.html)
+guard.
 
 ## Scope
 

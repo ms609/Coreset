@@ -48,7 +48,7 @@ FarFirst(
 
   Integer or character defining how to seed the greedy pass. Pass the
   name of one or more seeding strategies described in
-  [`PickPoint()`](https://ms609.github.io/MaxMin/reference/PickPoint.md)
+  [`PickPoint()`](https://ms609.github.io/Coreset/reference/PickPoint.md)
   to run each strategy and return the best solution.
 
 - nSeeds:
@@ -58,7 +58,7 @@ FarFirst(
   from restarting — the improvement curve bends early (knee at n ≈ 3–4
   across benchmarks) and additional restarts add little. For
   higher-quality solutions, prefer
-  [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md):
+  [`DropAdd()`](https://ms609.github.io/Coreset/reference/DropAdd.md):
   tabu search escapes the farthest-first construction family where
   restarts plateau.
 
@@ -78,7 +78,7 @@ report:
 ## Progress bar
 
 In interactive sessions, the distance-column path shows a progress bar.
-To toggle, set `options("MaxMin.progress" = FALSE)` (or `TRUE`).
+To toggle, set `options("Coreset.progress" = FALSE)` (or `TRUE`).
 
 ## Parallelism
 
@@ -105,10 +105,10 @@ Hochbaum DS, Shmoys DB (1985). “A best possible heuristic for the
 
 ## See also
 
-[`PickPoint()`](https://ms609.github.io/MaxMin/reference/PickPoint.md)
+[`PickPoint()`](https://ms609.github.io/Coreset/reference/PickPoint.md)
 for the seed indices alone;
-[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) and
-[`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
+[`DropAdd()`](https://ms609.github.io/Coreset/reference/DropAdd.md) and
+[`ExactMaxMin()`](https://ms609.github.io/Coreset/reference/ExactMaxMin.md)
 for higher-effort solvers.
 
 ## Examples

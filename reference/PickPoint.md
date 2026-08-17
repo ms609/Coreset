@@ -77,7 +77,7 @@ seed in `d` or `points`.
 
 ## See also
 
-[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md),
+[`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md),
 which seeds and runs the greedy pass in one call.
 
 ## Examples

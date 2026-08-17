@@ -17,12 +17,12 @@ set by the caller, which knows which peers are current.
 - st:
 
   Record environment; see
-  [`.DropAddConstructColumn()`](https://ms609.github.io/MaxMin/reference/dot-DropAddConstructColumn.md).
+  [`.DropAddConstructColumn()`](https://ms609.github.io/Coreset/reference/dot-DropAddConstructColumn.md).
 
 - col:
 
   Self-zeroed distance column of `xNew`; see
-  [`.DropAddColumn()`](https://ms609.github.io/MaxMin/reference/dot-DropAddColumn.md).
+  [`.DropAddColumn()`](https://ms609.github.io/Coreset/reference/dot-DropAddColumn.md).
 
 - xNew:
 

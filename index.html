@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Maximum-Minimum Diversity, Discrete k-Centre, and Max-Mean Dispersion Subset Selection • MaxMin</title>
+<title>Maximum-Minimum Diversity, Discrete k-Centre, and Max-Mean Dispersion Subset Selection • Coreset</title>
 <!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
   window.MathJax = {
     chtml: {
@@ -26,9 +26,9 @@
 
     <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
 
-    <a class="navbar-brand me-2" href="index.html">MaxMin</a>
+    <a class="navbar-brand me-2" href="index.html">Coreset</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9011</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,7 +37,7 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="nav-item"><a class="nav-link" href="articles/MaxMin.html">Get started</a></li>
+<li class="nav-item"><a class="nav-link" href="articles/Coreset.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul>
@@ -45,7 +45,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json">
 </form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/ms609/MaxMin/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/ms609/Coreset/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -54,11 +54,11 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="maxmin">MaxMin<a class="anchor" aria-label="anchor" href="#maxmin"></a>
+<div class="page-header"><h1 id="coreset">Coreset<a class="anchor" aria-label="anchor" href="#coreset"></a>
 </h1></div>
 <!-- badges: start -->
 
-<p><code>MaxMin</code> implements algorithms that select a dispersed subsample of points that maximizes coverage of a larger set, under one of several objectives.</p>
+<p><code>Coreset</code> implements algorithms that select a dispersed subsample of points that maximizes coverage of a larger set, under one of several objectives.</p>
 <div class="section level2">
 <h2 id="solvers">Solvers<a class="anchor" aria-label="anchor" href="#solvers"></a>
 </h2>
@@ -176,7 +176,7 @@
 <div class="section level3">
 <h3 id="maximum-entropy-maxdet-selection">Maximum-entropy (maxdet) selection<a class="anchor" aria-label="anchor" href="#maximum-entropy-maxdet-selection"></a>
 </h3>
-<p>The maximum entropy problem selects the <span class="math inline">\(k\)</span> elements that contain the highest amount of information about the original set: a minimially redundant pick.</p>
+<p>The maximum entropy problem selects the <span class="math inline">\(k\)</span> elements that contain the highest amount of information about the original set: a minimally redundant pick.</p>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -201,12 +201,12 @@
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ms609/MaxMin"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ms609/Coreset"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="related-problems">Related problems<a class="anchor" aria-label="anchor" href="#related-problems"></a>
 </h2>
-<p><code>MaxMin</code> selects a subset from a given set of elements. Several established packages solve neighbouring objectives:</p>
+<p><code>Coreset</code> selects a subset from a given set of elements. Several established packages solve neighbouring objectives:</p>
 <ul>
 <li>
 <p><strong>k-medoids / k-median</strong> selects elements that minimize the mean distance from each element to its nearest centre. Implementations include:</p>
@@ -229,8 +229,8 @@
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
-<li><a href="https://github.com/ms609/MaxMin/" class="external-link">Browse source code</a></li>
-<li><a href="https://github.com/ms609/MaxMin/issues" class="external-link">Report a bug</a></li>
+<li><a href="https://github.com/ms609/Coreset/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/ms609/Coreset/issues" class="external-link">Report a bug</a></li>
 </ul>
 </div>
 
@@ -251,7 +251,7 @@
 <div class="citation">
 <h2 data-toc-skip>Citation</h2>
 <ul class="list-unstyled">
-<li><a href="authors.html#citation">Citing MaxMin</a></li>
+<li><a href="authors.html#citation">Citing Coreset</a></li>
 </ul>
 </div>
 
@@ -266,8 +266,8 @@
 <div class="dev-status">
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
-<li><a href="https://github.com/ms609/MaxMin/actions/workflows/R-CMD-check.yml" class="external-link"><img src="https://github.com/ms609/MaxMin/actions/workflows/R-CMD-check.yml/badge.svg" alt="R-CMD-check"></a></li>
-<li><a href="https://app.codecov.io/gh/ms609/MaxMin" class="external-link"><img src="https://codecov.io/gh/ms609/MaxMin/branch/main/graph/badge.svg" alt="codecov"></a></li>
+<li><a href="https://github.com/ms609/Coreset/actions/workflows/R-CMD-check.yml" class="external-link"><img src="https://github.com/ms609/Coreset/actions/workflows/R-CMD-check.yml/badge.svg" alt="R-CMD-check"></a></li>
+<li><a href="https://app.codecov.io/gh/ms609/Coreset" class="external-link"><img src="https://codecov.io/gh/ms609/Coreset/branch/main/graph/badge.svg" alt="codecov"></a></li>
 <li><a href="https://www.repostatus.org/#wip" class="external-link"><img src="https://www.repostatus.org/badges/latest/wip.svg" alt="Project Status: WIP"></a></li>
 </ul>
 </div>

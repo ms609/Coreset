@@ -14,7 +14,7 @@ lexicographically, ties broken to the smallest index.
 - st:
 
   Record environment; see
-  [`.DropAddConstructColumn()`](https://ms609.github.io/MaxMin/reference/dot-DropAddConstructColumn.md).
+  [`.DropAddConstructColumn()`](https://ms609.github.io/Coreset/reference/dot-DropAddConstructColumn.md).
 
 - exclude:
 

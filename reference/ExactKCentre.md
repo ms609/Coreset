@@ -53,7 +53,7 @@ the chosen centres in ascending order. It has class
 
 It prints as a one-line summary and indexes a matrix or data frame
 directly. The `"KCentreSelection"` superclass means
-[`KCentreRadius()`](https://ms609.github.io/MaxMin/reference/KCentreRadius.md)
+[`KCentreRadius()`](https://ms609.github.io/Coreset/reference/KCentreRadius.md)
 and any generic written for that class work here too.
 
 The covering optimum may be attained by fewer than `k` centres (extra
@@ -71,16 +71,16 @@ within `r`.
 Each probe solves a minimum-cardinality *set-cover* integer program with
 the `highs` MILP backend, the covering constraints held as a sparse
 matrix – the covering dual of
-[`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)'s
+[`ExactMaxMin()`](https://ms609.github.io/Coreset/reference/ExactMaxMin.md)'s
 node-packing program. The search is warm-started from the
-[`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md)
+[`KCentre()`](https://ms609.github.io/Coreset/reference/KCentre.md)
 (CDSh) radius, a proven feasible upper bound that caps the binary
 search, then bisects downward to the smallest feasible radius.
 
 ## Progress bar
 
 In interactive sessions, a progress indicator is shown. To toggle, set
-`options("MaxMin.progress" = FALSE)` (or `TRUE`).
+`options("Coreset.progress" = FALSE)` (or `TRUE`).
 
 ## References
 
@@ -89,9 +89,9 @@ page.
 
 ## See also
 
-[`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md) for
+[`KCentre()`](https://ms609.github.io/Coreset/reference/KCentre.md) for
 the fast near-optimal heuristic;
-[`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
+[`ExactMaxMin()`](https://ms609.github.io/Coreset/reference/ExactMaxMin.md)
 for the dual MMDP optimum.
 
 ## Examples

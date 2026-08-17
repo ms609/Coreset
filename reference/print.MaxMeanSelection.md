@@ -1,7 +1,7 @@
 # Format and print Max-Mean solver results
 
 Terse one-line and detailed summaries of the objects returned by
-[`MaxMean()`](https://ms609.github.io/MaxMin/reference/MaxMean.md).
+[`MaxMean()`](https://ms609.github.io/Coreset/reference/MaxMean.md).
 
 ## Usage
 
@@ -21,7 +21,7 @@ summary(object, ...)
 - x:
 
   A `MaxMeanSelection` object returned by
-  [`MaxMean()`](https://ms609.github.io/MaxMin/reference/MaxMean.md).
+  [`MaxMean()`](https://ms609.github.io/Coreset/reference/MaxMean.md).
 
 - ...:
 
@@ -30,7 +30,7 @@ summary(object, ...)
 - object:
 
   A `MaxMeanSelection` object returned by
-  [`MaxMean()`](https://ms609.github.io/MaxMin/reference/MaxMean.md).
+  [`MaxMean()`](https://ms609.github.io/Coreset/reference/MaxMean.md).
 
 ## Value
 
@@ -42,11 +42,11 @@ objective \\f(S)\\.
 ## See also
 
 Other reporting functions:
-[`print.KCentre`](https://ms609.github.io/MaxMin/reference/print.KCentre.md),
-[`print.MaxEntropy`](https://ms609.github.io/MaxMin/reference/print.MaxEntropy.md),
-[`print.MaxMin`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md),
-[`print.MaxSum`](https://ms609.github.io/MaxMin/reference/print.MaxSum.md),
-[`summary.MaxMin`](https://ms609.github.io/MaxMin/reference/summary.MaxMin.md)
+[`print.Coreset`](https://ms609.github.io/Coreset/reference/print.Coreset.md),
+[`print.KCentre`](https://ms609.github.io/Coreset/reference/print.KCentre.md),
+[`print.MaxEntropy`](https://ms609.github.io/Coreset/reference/print.MaxEntropy.md),
+[`print.MaxSum`](https://ms609.github.io/Coreset/reference/print.MaxSum.md),
+[`summary.Coreset`](https://ms609.github.io/Coreset/reference/summary.Coreset.md)
 
 ## Examples
 

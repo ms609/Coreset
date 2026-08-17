@@ -1,10 +1,10 @@
 # Format and print Max-Sum (maximum diversity) solver results
 
 Terse summary of the object returned by
-[`ExactMaxSum()`](https://ms609.github.io/MaxMin/reference/ExactMaxSum.md)
+[`ExactMaxSum()`](https://ms609.github.io/Coreset/reference/ExactMaxSum.md)
 (`"MaxSumSelection"`), reporting the achieved **total** pairwise
 distance (the max-sum objective) rather than the minimum distance of
-[`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md).
+[`ExactMaxMin()`](https://ms609.github.io/Coreset/reference/ExactMaxMin.md).
 
 ## Usage
 
@@ -35,11 +35,11 @@ side-effect.
 ## See also
 
 Other reporting functions:
-[`print.KCentre`](https://ms609.github.io/MaxMin/reference/print.KCentre.md),
-[`print.MaxEntropy`](https://ms609.github.io/MaxMin/reference/print.MaxEntropy.md),
-[`print.MaxMeanSelection()`](https://ms609.github.io/MaxMin/reference/print.MaxMeanSelection.md),
-[`print.MaxMin`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md),
-[`summary.MaxMin`](https://ms609.github.io/MaxMin/reference/summary.MaxMin.md)
+[`print.Coreset`](https://ms609.github.io/Coreset/reference/print.Coreset.md),
+[`print.KCentre`](https://ms609.github.io/Coreset/reference/print.KCentre.md),
+[`print.MaxEntropy`](https://ms609.github.io/Coreset/reference/print.MaxEntropy.md),
+[`print.MaxMeanSelection()`](https://ms609.github.io/Coreset/reference/print.MaxMeanSelection.md),
+[`summary.Coreset`](https://ms609.github.io/Coreset/reference/summary.Coreset.md)
 
 ## Examples
 

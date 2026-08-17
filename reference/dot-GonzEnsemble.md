@@ -2,11 +2,11 @@
 
 Runs Gonzalez from each requested peripheral anchor and returns the
 subset maximising \\T_k\\. Internal driver for the ensemble path of
-[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
+[`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md)
 (triggered when `strategy` is a character vector of length \> 1 or
 `"random_furthest"`). The `"random_furthest"` token draws `nSeeds`
 distinct furthest-point seeds via
-[`.DrawDistinctSeeds()`](https://ms609.github.io/MaxMin/reference/dot-DrawDistinctSeeds.md).
+[`.DrawDistinctSeeds()`](https://ms609.github.io/Coreset/reference/dot-DrawDistinctSeeds.md).
 The returned vector carries `strategy_results` and `winning_strategy`
 (character vector of all tied-best strategies, with random starts
 labelled `random_furthest1`, `random_furthest2`, ...) attributes.

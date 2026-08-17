@@ -3,7 +3,7 @@
 `MeanDist()` reports the sum of pairwise distances divided by the number
 of selected elements, \$\$f(S) = \frac{\displaystyle\sum\_{i \< j,\\ i,j
 \in S} d\_{ij}}{\|S\|}\$\$, the objective maximised by
-[`MaxMean()`](https://ms609.github.io/MaxMin/reference/MaxMean.md).
+[`MaxMean()`](https://ms609.github.io/Coreset/reference/MaxMean.md).
 
 ## Usage
 
@@ -28,9 +28,9 @@ MeanDist(d, idx)
 
 ## See also
 
-[`MaxMean()`](https://ms609.github.io/MaxMin/reference/MaxMean.md) which
-maximises this objective;
-[`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md) for
+[`MaxMean()`](https://ms609.github.io/Coreset/reference/MaxMean.md)
+which maximises this objective;
+[`MinDist()`](https://ms609.github.io/Coreset/reference/MinDist.md) for
 the max-min (MMDP) analogue.
 
 ## Examples

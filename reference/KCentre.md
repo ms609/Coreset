@@ -31,7 +31,7 @@ KCenter(k, d, nstart = 1L, effort = 1L)
 - effort:
 
   Integer: if `> 0`, run a parallel
-  [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
+  [`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md)
   search with `effort` random seeds, returning the best of all results.
 
 ## Value
@@ -46,14 +46,14 @@ attached as attribute `radius`. The vector has class
 On the benchmark instances of García-Díaz et al. (2019) , the CDS
 heuristic reaches roughly 1-3.5% of the optimum at \\O(N^2 \log N)\\,
 far tighter than
-[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
+[`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md)
 (typically tens of per cent above optimum).
 
 Despite this good performance in practice, the CDSh is a
 3-approximation. To guard against occasional cases where a better
 candidate is missed, `KCentre()` runs by default an exhaustive search of
 a small candidate grid (for `n` up to ~150); and an additional
-[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
+[`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md)
 pass (controlled via the `effort` argument). These safeguards ensure
 that `KCentre()` always returns at least a 2-approximation.
 
@@ -75,12 +75,12 @@ of Heuristics*, **23**(5), 349–366.
 
 ## See also
 
-[`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md)
+[`ExactKCentre()`](https://ms609.github.io/Coreset/reference/ExactKCentre.md)
 for the proven optimum;
-[`KCentreRadius()`](https://ms609.github.io/MaxMin/reference/KCentreRadius.md)
+[`KCentreRadius()`](https://ms609.github.io/Coreset/reference/KCentreRadius.md)
 for a selection's score;
-[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) for
-the González (1985) 2-approximation baseline.
+[`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md)
+for the González (1985) 2-approximation baseline.
 
 ## Examples
 

@@ -1,9 +1,9 @@
 # Format and print k-centre solver results
 
 Terse summaries of the objects returned by
-[`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md)
+[`KCentre()`](https://ms609.github.io/Coreset/reference/KCentre.md)
 (`"KCentreSelection"`) and
-[`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md)
+[`ExactKCentre()`](https://ms609.github.io/Coreset/reference/ExactKCentre.md)
 (`"KCentreExact"`)
 
 ## Usage
@@ -43,11 +43,11 @@ covering radius (with proof status for the exact solver).
 ## See also
 
 Other reporting functions:
-[`print.MaxEntropy`](https://ms609.github.io/MaxMin/reference/print.MaxEntropy.md),
-[`print.MaxMeanSelection()`](https://ms609.github.io/MaxMin/reference/print.MaxMeanSelection.md),
-[`print.MaxMin`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md),
-[`print.MaxSum`](https://ms609.github.io/MaxMin/reference/print.MaxSum.md),
-[`summary.MaxMin`](https://ms609.github.io/MaxMin/reference/summary.MaxMin.md)
+[`print.Coreset`](https://ms609.github.io/Coreset/reference/print.Coreset.md),
+[`print.MaxEntropy`](https://ms609.github.io/Coreset/reference/print.MaxEntropy.md),
+[`print.MaxMeanSelection()`](https://ms609.github.io/Coreset/reference/print.MaxMeanSelection.md),
+[`print.MaxSum`](https://ms609.github.io/Coreset/reference/print.MaxSum.md),
+[`summary.Coreset`](https://ms609.github.io/Coreset/reference/summary.Coreset.md)
 
 ## Examples
 

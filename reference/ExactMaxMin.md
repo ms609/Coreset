@@ -55,14 +55,14 @@ ascending) with class `"MaxMinSelection"`, carrying attributes:
   Instance size and target subset size.
 
 Prints as a terse summary via
-[`print.MaxMinSelection()`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md).
+[`print.MaxMinSelection()`](https://ms609.github.io/Coreset/reference/print.Coreset.md).
 
 ## Details
 
 The search is warm-started from a heuristic lower bound (the best of
-several [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md)
+several [`Grasp()`](https://ms609.github.io/Coreset/reference/Grasp.md)
 restarts and a
-[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md)
+[`DropAdd()`](https://ms609.github.io/Coreset/reference/DropAdd.md)
 pass), then gallops upward from that bound to the first infeasible
 threshold and bisects the resulting bracket. When a heuristic already
 attains the optimum, a single infeasibility proof certifies it. Each
@@ -76,7 +76,7 @@ releases where several subsets attain the optimum; the `score` does not.
 ## Progress bar
 
 In interactive sessions, a progress indicator is shown. To toggle, set
-`options("MaxMin.progress" = FALSE)` (or `TRUE`).
+`options("Coreset.progress" = FALSE)` (or `TRUE`).
 
 ## References
 

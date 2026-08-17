@@ -1,11 +1,11 @@
 # Run a solver on a farthest-first coreset and map indices back
 
 Implements the composable-coreset path of
-[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) /
-[`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md)
+[`DropAdd()`](https://ms609.github.io/Coreset/reference/DropAdd.md) /
+[`Grasp()`](https://ms609.github.io/Coreset/reference/Grasp.md)
 (dispatched there when their `maxCandidates` cap binds). It builds an
 `m`-point coreset with
-[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md),
+[`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md),
 restricts the problem to those `m` points, runs the supplied solver on
 the restriction, and maps the returned indices back to the original
 numbering.
@@ -25,7 +25,7 @@ numbering.
 - m:
 
   Integer: coreset size (`k <= m < N`, as returned by
-  [`.ResolveCap()`](https://ms609.github.io/MaxMin/reference/dot-ResolveCap.md)).
+  [`.ResolveCap()`](https://ms609.github.io/Coreset/reference/dot-ResolveCap.md)).
 
 - d:
 

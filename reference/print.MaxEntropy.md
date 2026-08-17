@@ -1,7 +1,7 @@
 # Format and print maximum-entropy (maxdet) solver results
 
 Terse summary of the object returned by
-[`MaxEntropy()`](https://ms609.github.io/MaxMin/reference/MaxEntropy.md)
+[`MaxEntropy()`](https://ms609.github.io/Coreset/reference/MaxEntropy.md)
 (`"MaxEntropySelection"`), reporting the retained log-determinant
 (\\\log\det K_S\\, the maxdet objective) and the magnitude of the
 positive-semidefinite repair.
@@ -35,11 +35,11 @@ side-effect.
 ## See also
 
 Other reporting functions:
-[`print.KCentre`](https://ms609.github.io/MaxMin/reference/print.KCentre.md),
-[`print.MaxMeanSelection()`](https://ms609.github.io/MaxMin/reference/print.MaxMeanSelection.md),
-[`print.MaxMin`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md),
-[`print.MaxSum`](https://ms609.github.io/MaxMin/reference/print.MaxSum.md),
-[`summary.MaxMin`](https://ms609.github.io/MaxMin/reference/summary.MaxMin.md)
+[`print.Coreset`](https://ms609.github.io/Coreset/reference/print.Coreset.md),
+[`print.KCentre`](https://ms609.github.io/Coreset/reference/print.KCentre.md),
+[`print.MaxMeanSelection()`](https://ms609.github.io/Coreset/reference/print.MaxMeanSelection.md),
+[`print.MaxSum`](https://ms609.github.io/Coreset/reference/print.MaxSum.md),
+[`summary.Coreset`](https://ms609.github.io/Coreset/reference/summary.Coreset.md)
 
 ## Examples
 

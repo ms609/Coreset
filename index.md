@@ -1,6 +1,6 @@
-# MaxMin
+# Coreset
 
-`MaxMin` implements algorithms that select a dispersed subsample of
+`Coreset` implements algorithms that select a dispersed subsample of
 points that maximizes coverage of a larger set, under one of several
 objectives.
 
@@ -20,9 +20,9 @@ elements are maximally separated.
 
 | Function | Method | Use |
 |----|----|----|
-| [`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) | DropAdd tabu search | ~99%-optimal heuristic |
-| [`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md) | GRASP with path-relinking metaheuristic | Slower but powerful heuristic |
-| [`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md) | Node-packing integer program | Proven optimum, small `k` |
+| [`DropAdd()`](https://ms609.github.io/Coreset/reference/DropAdd.md) | DropAdd tabu search | ~99%-optimal heuristic |
+| [`Grasp()`](https://ms609.github.io/Coreset/reference/Grasp.md) | GRASP with path-relinking metaheuristic | Slower but powerful heuristic |
+| [`ExactMaxMin()`](https://ms609.github.io/Coreset/reference/ExactMaxMin.md) | Node-packing integer program | Proven optimum, small `k` |
 
 ### Max-sum dispersion (maximum diversity)
 
@@ -32,7 +32,7 @@ possible.
 
 | Function | Method | Use |
 |----|----|----|
-| [`ExactMaxSum()`](https://ms609.github.io/MaxMin/reference/ExactMaxSum.md) | Per-node MILP linearisation, floored by multi-start local search | Proven optimum for total pairwise distance, small `k` (needs `highs`) |
+| [`ExactMaxSum()`](https://ms609.github.io/Coreset/reference/ExactMaxSum.md) | Per-node MILP linearisation, floored by multi-start local search | Proven optimum for total pairwise distance, small `k` (needs `highs`) |
 
 ### Max-mean dispersion
 
@@ -41,7 +41,7 @@ so as to maximize the mean distance between selected pairs.
 
 | Function | Method | Use |
 |----|----|----|
-| [`MaxMean()`](https://ms609.github.io/MaxMin/reference/MaxMean.md) | Reinforcement-learning tabu search | Maximize mean pairwise distance; subset size free; signed distances supported |
+| [`MaxMean()`](https://ms609.github.io/Coreset/reference/MaxMean.md) | Reinforcement-learning tabu search | Maximize mean pairwise distance; subset size free; signed distances supported |
 
 ### *k*-centre (min-max covering)
 
@@ -51,30 +51,30 @@ element is as small as possible.
 
 | Function | Method | Use |
 |----|----|----|
-| [`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md) | Critical Dominating Set heuristic | ~1–3.5% of optimum at \\O(N^2 \log N)\\, typically far tighter than [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md) |
-| [`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md) | Min-cover integer program | Proven optimum, small `k` (needs `highs`) |
+| [`KCentre()`](https://ms609.github.io/Coreset/reference/KCentre.md) | Critical Dominating Set heuristic | ~1–3.5% of optimum at \\O(N^2 \log N)\\, typically far tighter than [`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md) |
+| [`ExactKCentre()`](https://ms609.github.io/Coreset/reference/ExactKCentre.md) | Min-cover integer program | Proven optimum, small `k` (needs `highs`) |
 
 ### Maximum-entropy (maxdet) selection
 
 The maximum entropy problem selects the \\k\\ elements that contain the
-highest amount of information about the original set: a minimially
+highest amount of information about the original set: a minimally
 redundant pick.
 
 | Function | Method | Use |
 |----|----|----|
-| [`MaxEntropy()`](https://ms609.github.io/MaxMin/reference/MaxEntropy.md) | Greedy pivoted-Cholesky selection, with exact enumeration for small instances | Maximize the log-determinant (spanned volume) of a similarity kernel; density-blind |
+| [`MaxEntropy()`](https://ms609.github.io/Coreset/reference/MaxEntropy.md) | Greedy pivoted-Cholesky selection, with exact enumeration for small instances | Maximize the log-determinant (spanned volume) of a similarity kernel; density-blind |
 
 ## Installation
 
 ``` r
 
 # install.packages("remotes")
-remotes::install_github("ms609/MaxMin")
+remotes::install_github("ms609/Coreset")
 ```
 
 ## Related problems
 
-`MaxMin` selects a subset from a given set of elements. Several
+`Coreset` selects a subset from a given set of elements. Several
 established packages solve neighbouring objectives:
 
 - **k-medoids / k-median** selects elements that minimize the mean
@@ -98,7 +98,7 @@ established packages solve neighbouring objectives:
   ([`TreeDist::KMeansPP()`](https://ms609.github.io/TreeDist/reference/KMeansPP.html))
   initializes its selection using D²-weighted seeding, a randomized
   relative of
-  [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)’s
+  [`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md)’s
   farthest-first traversal.
 
 - [`maximin`](https://cran.r-project.org/package=maximin) solves the

@@ -4,8 +4,8 @@
 largest distance from any of the `N` points to its nearest centre, \\R =
 \max_p \min\_{c \in \mathrm{idx}} d(p, c)\\. This is the min-max
 *k*-centre objective (González 1985) minimized by
-[`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md) and
-[`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md).
+[`KCentre()`](https://ms609.github.io/Coreset/reference/KCentre.md) and
+[`ExactKCentre()`](https://ms609.github.io/Coreset/reference/ExactKCentre.md).
 
 ## Usage
 
@@ -46,10 +46,10 @@ distance.” *Theoretical Computer Science*, **38**, 293–306.
 
 ## See also
 
-[`KCentre()`](https://ms609.github.io/MaxMin/reference/KCentre.md) and
-[`ExactKCentre()`](https://ms609.github.io/MaxMin/reference/ExactKCentre.md)
+[`KCentre()`](https://ms609.github.io/Coreset/reference/KCentre.md) and
+[`ExactKCentre()`](https://ms609.github.io/Coreset/reference/ExactKCentre.md)
 (which minimise this);
-[`MinDist()`](https://ms609.github.io/MaxMin/reference/MinDist.md) for
+[`MinDist()`](https://ms609.github.io/Coreset/reference/MinDist.md) for
 the complementary MMDP objective.
 
 ## Examples

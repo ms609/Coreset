@@ -1,7 +1,7 @@
 # Gonzalez maximin from coordinates (matrix-free)
 
 Coordinate counterpart of
-[`.MaximinFrom()`](https://ms609.github.io/MaxMin/reference/dot-MaximinFrom.md):
+[`.MaximinFrom()`](https://ms609.github.io/Coreset/reference/dot-MaximinFrom.md):
 greedy furthest-point selection that recomputes each needed distance
 column from `points` on the fly, never materialising the `N x N` matrix.
 Bit-identical selection to the matrix path on Euclidean data.

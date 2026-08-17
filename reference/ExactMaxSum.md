@@ -4,7 +4,7 @@
 Problem (the "maximum diversity problem"): select the `k`-subset of
 points maximising the **total** pairwise distance it contains. It is the
 max-sum counterpart of
-[`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
+[`ExactMaxMin()`](https://ms609.github.io/Coreset/reference/ExactMaxMin.md)
 (which maximises the *minimum* pairwise distance), solved by per-node
 integer-program linearisation (Kuo et al. 1993) . As the problem is
 NP-hard it is feasible only for small sets.

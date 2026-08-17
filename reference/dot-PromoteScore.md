@@ -6,8 +6,8 @@ The ensemble drivers read it via
 [`base::attr()`](https://rdrr.io/r/base/attr.html) into
 `strategy_results`; a bare single pass exposes it directly as the
 `score` attribute, matching
-[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) and
-[`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md).
+[`DropAdd()`](https://ms609.github.io/Coreset/reference/DropAdd.md) and
+[`Grasp()`](https://ms609.github.io/Coreset/reference/Grasp.md).
 
 ## Usage
 

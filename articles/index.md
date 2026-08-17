@@ -3,4 +3,4 @@
 ### All vignettes
 
 - [Introduction to
-  MaxMin](https://ms609.github.io/MaxMin/articles/MaxMin.md):
+  Coreset](https://ms609.github.io/Coreset/articles/Coreset.md):

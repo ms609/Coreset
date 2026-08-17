@@ -1,7 +1,7 @@
 # Gonzalez maximin from a distance-column oracle
 
 Implements the distance-column oracle path of
-[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
+[`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md)
 (dispatched there when `d` is a function); see that function's
 *Distance-column oracle* section for the user-facing contract. At each
 greedy step the distances from the newly selected element to all `N`
@@ -17,7 +17,7 @@ materialised: `O(N * k)` oracle calls and `O(N)` memory.
   N,
   k,
   first = NULL,
-  progress = getOption("MaxMin.progress", interactive())
+  progress = getOption("Coreset.progress", interactive())
 )
 ```
 
@@ -28,7 +28,7 @@ materialised: `O(N * k)` oracle calls and `O(N)` memory.
   A function that, when passed an index `i`, must return a vector of
   distances from element `i` to either (i) every element in turn,
   including `i`; or (ii) every other element. See
-  [`.DistColumn()`](https://ms609.github.io/MaxMin/reference/dot-DistColumn.md).
+  [`.DistColumn()`](https://ms609.github.io/Coreset/reference/dot-DistColumn.md).
 
 - N:
 

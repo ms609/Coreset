@@ -17,7 +17,7 @@ tied-best labels) attributes.
 - expanded:
 
   List of `list(label, s1)` specs from
-  [`.ExpandAnchors()`](https://ms609.github.io/MaxMin/reference/dot-ExpandAnchors.md).
+  [`.ExpandAnchors()`](https://ms609.github.io/Coreset/reference/dot-ExpandAnchors.md).
 
 - labels:
 

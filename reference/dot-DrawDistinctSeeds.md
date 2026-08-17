@@ -1,11 +1,11 @@
 # Draw distinct furthest-point seeds from random pivots
 
 Used by
-[`.GonzEnsemble()`](https://ms609.github.io/MaxMin/reference/dot-GonzEnsemble.md)
+[`.GonzEnsemble()`](https://ms609.github.io/Coreset/reference/dot-GonzEnsemble.md)
 and
-[`.GonzEnsembleFromPoints()`](https://ms609.github.io/MaxMin/reference/dot-GonzEnsembleFromPoints.md)
+[`.GonzEnsembleFromPoints()`](https://ms609.github.io/Coreset/reference/dot-GonzEnsembleFromPoints.md)
 to expand the `"random_furthest"` token (see
-[`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)):
+[`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md)):
 walks distinct random pivots (a partial shuffle of `1:nPts`, so no pivot
 is ever tried twice), resolves each pivot's furthest-point seed via
 `SeedFunc`, and collects distinct seed indices until `nSeeds` are found

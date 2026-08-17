@@ -55,7 +55,7 @@ Grasp(
 
   Integer: a composable-coreset tractability cap. When the number of
   candidate points `N` exceeds `maxCandidates`,
-  [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md)
+  [`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md)
   thins the candidates to a `maxCandidates`-point coreset (with the
   deterministic, RNG-free `"peripheral"` seed, so no random stream is
   perturbed), the solver runs on the coreset, and the chosen indices are
@@ -91,7 +91,7 @@ of the selected points, with attributes:
 
 The vector has class `"MaxMinSelection"` and prints as a one-line
 summary (see
-[`print.MaxMinSelection()`](https://ms609.github.io/MaxMin/reference/print.MaxMin.md)).
+[`print.MaxMinSelection()`](https://ms609.github.io/Coreset/reference/print.Coreset.md)).
 
 ## Details
 
@@ -119,7 +119,7 @@ To parallelize computation when OpenMP is available, set the
 
 In interactive sessions, a bar tracks how close the search is to its
 `plateau` stopping criterion, snapping back each time a better solution
-is found. To toggle, set `options("MaxMin.progress" = FALSE)` (or
+is found. To toggle, set `options("Coreset.progress" = FALSE)` (or
 `TRUE`).
 
 ## References
@@ -132,9 +132,9 @@ Research*, **37**(3), 498–508.
 
 ## See also
 
-[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) for
+[`DropAdd()`](https://ms609.github.io/Coreset/reference/DropAdd.md) for
 scalable refinement;
-[`ExactMaxMin()`](https://ms609.github.io/MaxMin/reference/ExactMaxMin.md)
+[`ExactMaxMin()`](https://ms609.github.io/Coreset/reference/ExactMaxMin.md)
 for the proven optimum on small instances.
 
 ## Examples

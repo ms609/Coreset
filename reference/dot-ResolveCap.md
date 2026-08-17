@@ -1,8 +1,8 @@
 # Validate and normalise a `maxCandidates` thinning cap
 
 Shared by
-[`DropAdd()`](https://ms609.github.io/MaxMin/reference/DropAdd.md) and
-[`Grasp()`](https://ms609.github.io/MaxMin/reference/Grasp.md). Decides
+[`DropAdd()`](https://ms609.github.io/Coreset/reference/DropAdd.md) and
+[`Grasp()`](https://ms609.github.io/Coreset/reference/Grasp.md). Decides
 whether candidate thinning is active and, if so, the intermediate
 coreset size `m` to thin to.
 

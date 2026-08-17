@@ -20,7 +20,7 @@ callers.
 - colFn:
 
   Column oracle; see
-  [`FarFirst()`](https://ms609.github.io/MaxMin/reference/FarFirst.md).
+  [`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md).
 
 - i:
 

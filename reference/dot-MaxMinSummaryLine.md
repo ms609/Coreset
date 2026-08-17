@@ -31,7 +31,7 @@ Compose the one-line selection summary shared by both print methods
 - maxShow:
 
   Integer index-list truncation threshold; see
-  [`.FormatIndexList()`](https://ms609.github.io/MaxMin/reference/dot-FormatIndexList.md).
+  [`.FormatIndexList()`](https://ms609.github.io/Coreset/reference/dot-FormatIndexList.md).
 
 ## Value
 
