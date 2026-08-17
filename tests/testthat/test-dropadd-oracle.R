@@ -46,8 +46,8 @@ test_that("the column-oracle loop reproduces the C++ drop/add trajectory", {
     colFn <- function(i) dmat[, i]
     # .DropAddTrace() runs the kernel with its own max-row-sum seed, so hand the
     # oracle loop that same seed to make the two trajectories comparable.
-    tr <- MaxMin:::.DropAddTrace(dmat, k, maxIter = 60L, plateau = 1e9)
-    or <- MaxMin:::.DropAddFromColumn(
+    tr <- Coreset:::.DropAddTrace(dmat, k, maxIter = 60L, plateau = 1e9)
+    or <- Coreset:::.DropAddFromColumn(
       colFn, n, k, first = unname(which.max(rowSums(dmat))),
       plateau = 1e9, maxIter = 60L, trace = TRUE
     )
@@ -116,11 +116,11 @@ test_that(".DropAddPick breaks minDist ties on sumDist, then on index", {
   st$sumDist   <- c(9, 12, 12, 99, 0)
   # minDist wins outright over sumDist; among the minDist ties the largest
   # sumDist wins; among those, the smallest index.
-  expect_identical(MaxMin:::.DropAddPick(st), 2L)
-  expect_identical(MaxMin:::.DropAddPick(st, exclude = 2L), 3L)
+  expect_identical(Coreset:::.DropAddPick(st), 2L)
+  expect_identical(Coreset:::.DropAddPick(st, exclude = 2L), 3L)
   # A single minDist maximum needs no sumDist comparison at all.
   st$minDist <- c(5, 4, 4, 4, Inf)
-  expect_identical(MaxMin:::.DropAddPick(st), 1L)
+  expect_identical(Coreset:::.DropAddPick(st), 1L)
 })
 
 test_that(".DropAddApplyAdd counts equal distances and lowers strict ones", {
@@ -128,7 +128,7 @@ test_that(".DropAddApplyAdd counts equal distances and lowers strict ones", {
   st$minDist      <- c(3, 3, 3, Inf)
   st$sumDist      <- c(10, 10, 10, 10)
   st$minDistCount <- c(1L, 2L, 1L, 0L)
-  MaxMin:::.DropAddApplyAdd(st, col = c(3, 2, 7, 0), xNew = 4L)
+  Coreset:::.DropAddApplyAdd(st, col = c(3, 2, 7, 0), xNew = 4L)
   # 1: equal -> count incremented, minDist unchanged.
   # 2: strictly lower -> minDist replaced, count reset to 1.
   # 3: higher -> untouched. 4: xNew itself -> left for the caller.
@@ -168,7 +168,7 @@ test_that("the default oracle seed is the deterministic peripheral seed", {
   .ExpectSameSelection(a, b)
   # And it is exactly .PeripheralSeedColumn(), the seed FarFirst()'s oracle path
   # already substitutes for its own O(N^2) anchors.
-  periph <- MaxMin:::.PeripheralSeedColumn(colFn, 25L)
+  periph <- Coreset:::.PeripheralSeedColumn(colFn, 25L)
   .ExpectSameSelection(a, DropAdd(4L, colFn, N = 25L, seed = periph))
   # A max-row-sum seed is unreachable from an oracle without N calls, but when
   # asked for explicitly the oracle path reproduces the matrix default exactly.
@@ -185,8 +185,8 @@ test_that(".DropAddColumn restores the zero diagonal .DistColumn masks", {
   # plausible, so assert the convention directly.
   dmat <- as.matrix(dist(matrix(c(0, 1, 4, 0, 2, 5), ncol = 2L)))
   colFn <- function(i) dmat[, i]
-  expect_identical(MaxMin:::.DistColumn(colFn, 2L, 3L)[2L], -Inf)
-  expect_identical(MaxMin:::.DropAddColumn(colFn, 2L, 3L), unname(dmat[, 2L]))
+  expect_identical(Coreset:::.DistColumn(colFn, 2L, 3L)[2L], -Inf)
+  expect_identical(Coreset:::.DropAddColumn(colFn, 2L, 3L), unname(dmat[, 2L]))
   expect_true(is.finite(attr(DropAdd(2L, colFn, N = 3L, seed = 1L), "secondary")))
 })
 
@@ -228,18 +228,18 @@ test_that("the oracle loop honours maxIter, plateau and maxSeconds", {
   set.seed(23)
   dmat <- as.matrix(dist(matrix(rnorm(30L * 2L), ncol = 2L)))
   colFn <- function(i) dmat[, i]
-  capped <- MaxMin:::.DropAddFromColumn(colFn, 30L, 5L, first = 1L,
+  capped <- Coreset:::.DropAddFromColumn(colFn, 30L, 5L, first = 1L,
                                         plateau = 1e9, maxIter = 7L)
   expect_identical(capped$iters, 7L)
   # Stagnation is the primary rule: with a small plateau the run stops early.
-  short <- MaxMin:::.DropAddFromColumn(colFn, 30L, 5L, first = 1L, plateau = 3L)
-  long  <- MaxMin:::.DropAddFromColumn(colFn, 30L, 5L, first = 1L, plateau = 500L)
+  short <- Coreset:::.DropAddFromColumn(colFn, 30L, 5L, first = 1L, plateau = 3L)
+  long  <- Coreset:::.DropAddFromColumn(colFn, 30L, 5L, first = 1L, plateau = 500L)
   expect_lt(short$iters, long$iters)
   expect_gte(long$objective, short$objective)
   # A finite budget engages the wall-clock check (skipped entirely when the
   # budget is infinite, so the default path stays deterministic); an already
   # exhausted budget stops as soon as `proc.time()` ticks past it.
-  budgeted <- MaxMin:::.DropAddFromColumn(colFn, 30L, 5L, first = 1L,
+  budgeted <- Coreset:::.DropAddFromColumn(colFn, 30L, 5L, first = 1L,
                                           maxSeconds = 1e-9)
   expect_lt(budgeted$iters, long$iters)
   expect_length(DropAdd(5L, colFn, N = 30L, seed = 1L, maxSeconds = 0.2), 5L)
@@ -330,7 +330,7 @@ test_that("a malformed or NA/NaN colFn result is rejected", {
 test_that("the oracle path fires the cli progress hooks", {
   set.seed(29)
   dmat <- as.matrix(dist(matrix(rnorm(15L * 2L), ncol = 2L)))
-  old <- options(MaxMin.progress = TRUE)
+  old <- options(Coreset.progress = TRUE)
   on.exit(options(old))
   expect_no_error(suppressMessages(
     DropAdd(3L, function(i) dmat[, i], N = 15L, maxSeconds = 0.1)
@@ -344,8 +344,8 @@ test_that("the oracle path never worsens its own construction", {
   set.seed(37)
   dmat <- as.matrix(dist(matrix(rnorm(45L * 2L), ncol = 2L)))
   colFn <- function(i) dmat[, i]
-  first <- MaxMin:::.PeripheralSeedColumn(colFn, 45L)
-  cons <- MaxMin:::.DropAddConstructColumn(colFn, 45L, 7L, first)
+  first <- Coreset:::.PeripheralSeedColumn(colFn, 45L)
+  cons <- Coreset:::.DropAddConstructColumn(colFn, 45L, 7L, first)
   sub <- dmat[cons$S, cons$S]
   diag(sub) <- Inf
   res <- DropAdd(7L, colFn, N = 45L)

@@ -24,13 +24,13 @@
 # Results and interpretation: dev/dropadd-oracle-treedist.md
 
 suppressPackageStartupMessages({
-  library("MaxMin")
+  library("Coreset")
   library("TreeDist")
   library("TreeTools")
 })
 
-stopifnot(packageVersion("MaxMin") >= "0.0.0.9005")
-options(MaxMin.progress = FALSE)
+stopifnot(packageVersion("Coreset") >= "0.0.0.9005")
+options(Coreset.progress = FALSE)
 
 kPlateau <- 200L      # keep the runs finishable; see the note on plateau below
 kNTips   <- 60L

@@ -2,8 +2,8 @@
 # (farfirst-invariance.R pattern): the same call must return the identical
 # selection, score and secondary at every thread count. Sizes sit above
 # DA_PAR_MIN (16384) so the parallel pass regions genuinely engage.
-library(MaxMin)
-cat("lib:", dirname(system.file(package = "MaxMin")), "\n")
+library(Coreset)
+cat("lib:", dirname(system.file(package = "Coreset")), "\n")
 
 Check <- function(label, th) {
   base <- NULL

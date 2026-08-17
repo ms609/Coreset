@@ -31,10 +31,10 @@ The vector has class \code{"KCentreSelection"} and prints as a one-line summary.
 \code{KCentre()} selects \eqn{k} elements (centres) so as to minimize the largest
 distance from any point to its nearest centre (the covering radius),
 using the Critical Dominating Set heuristic (\acronym{CDSh})
-\insertCite{GarciaDiaz2017,GarciaDiaz2019}{MaxMin}.
+\insertCite{GarciaDiaz2017,GarciaDiaz2019}{Coreset}.
 }
 \details{
-On the benchmark instances of \insertCite{GarciaDiaz2019;textual}{MaxMin},
+On the benchmark instances of \insertCite{GarciaDiaz2019;textual}{Coreset},
 the \acronym{CDS} heuristic reaches roughly 1-3.5\%
 of the optimum at \eqn{O(N^2 \log N)}, far tighter than \code{\link[=FarFirst]{FarFirst()}}
 (typically tens of per cent above optimum).
@@ -62,6 +62,6 @@ KCentreRadius(d, FarFirst(5L, d, nSeeds = 1))
 \seealso{
 \code{\link[=ExactKCentre]{ExactKCentre()}} for the proven optimum;
 \code{\link[=KCentreRadius]{KCentreRadius()}} for a selection's score;
-\code{\link[=FarFirst]{FarFirst()}} for the \insertCite{Gonzalez1985;textual}{MaxMin}
+\code{\link[=FarFirst]{FarFirst()}} for the \insertCite{Gonzalez1985;textual}{Coreset}
 2-approximation baseline.
 }

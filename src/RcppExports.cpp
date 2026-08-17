@@ -12,7 +12,7 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 
 // DropAdd_cpp
 List DropAdd_cpp(NumericMatrix dmat, int m, double time_budget_s, int max_iter, int max_no_improve, bool want_trace, int seed0);
-RcppExport SEXP _MaxMin_DropAdd_cpp(SEXP dmatSEXP, SEXP mSEXP, SEXP time_budget_sSEXP, SEXP max_iterSEXP, SEXP max_no_improveSEXP, SEXP want_traceSEXP, SEXP seed0SEXP) {
+RcppExport SEXP _Coreset_DropAdd_cpp(SEXP dmatSEXP, SEXP mSEXP, SEXP time_budget_sSEXP, SEXP max_iterSEXP, SEXP max_no_improveSEXP, SEXP want_traceSEXP, SEXP seed0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -29,7 +29,7 @@ END_RCPP
 }
 // DropAdd_points_cpp
 List DropAdd_points_cpp(NumericMatrix points, int m, double time_budget_s, int max_iter, int max_no_improve, bool want_trace, int seed0, int n_threads);
-RcppExport SEXP _MaxMin_DropAdd_points_cpp(SEXP pointsSEXP, SEXP mSEXP, SEXP time_budget_sSEXP, SEXP max_iterSEXP, SEXP max_no_improveSEXP, SEXP want_traceSEXP, SEXP seed0SEXP, SEXP n_threadsSEXP) {
+RcppExport SEXP _Coreset_DropAdd_points_cpp(SEXP pointsSEXP, SEXP mSEXP, SEXP time_budget_sSEXP, SEXP max_iterSEXP, SEXP max_no_improveSEXP, SEXP want_traceSEXP, SEXP seed0SEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -47,7 +47,7 @@ END_RCPP
 }
 // TriangleAtLeast_cpp
 NumericVector TriangleAtLeast_cpp(NumericMatrix d, double lowest);
-RcppExport SEXP _MaxMin_TriangleAtLeast_cpp(SEXP dSEXP, SEXP lowestSEXP) {
+RcppExport SEXP _Coreset_TriangleAtLeast_cpp(SEXP dSEXP, SEXP lowestSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -59,7 +59,7 @@ END_RCPP
 }
 // EdgesAtLeast_cpp
 List EdgesAtLeast_cpp(NumericMatrix d, double lambda);
-RcppExport SEXP _MaxMin_EdgesAtLeast_cpp(SEXP dSEXP, SEXP lambdaSEXP) {
+RcppExport SEXP _Coreset_EdgesAtLeast_cpp(SEXP dSEXP, SEXP lambdaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -71,7 +71,7 @@ END_RCPP
 }
 // ThresholdDecide_cpp
 List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj, int n, int k, double maxSeconds);
-RcppExport SEXP _MaxMin_ThresholdDecide_cpp(SEXP hiSEXP, SEXP hjSEXP, SEXP nSEXP, SEXP kSEXP, SEXP maxSecondsSEXP) {
+RcppExport SEXP _Coreset_ThresholdDecide_cpp(SEXP hiSEXP, SEXP hjSEXP, SEXP nSEXP, SEXP kSEXP, SEXP maxSecondsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -86,7 +86,7 @@ END_RCPP
 }
 // Grasp_cpp
 List Grasp_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter, int elite_size, double alpha, double time_budget_s, int n_threads, Rcpp::Nullable<Rcpp::Function> progress_cb);
-RcppExport SEXP _MaxMin_Grasp_cpp(SEXP dmatSEXP, SEXP mSEXP, SEXP max_no_improveSEXP, SEXP max_iterSEXP, SEXP elite_sizeSEXP, SEXP alphaSEXP, SEXP time_budget_sSEXP, SEXP n_threadsSEXP, SEXP progress_cbSEXP) {
+RcppExport SEXP _Coreset_Grasp_cpp(SEXP dmatSEXP, SEXP mSEXP, SEXP max_no_improveSEXP, SEXP max_iterSEXP, SEXP elite_sizeSEXP, SEXP alphaSEXP, SEXP time_budget_sSEXP, SEXP n_threadsSEXP, SEXP progress_cbSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -105,7 +105,7 @@ END_RCPP
 }
 // KCentreCandidates_cpp
 Rcpp::NumericVector KCentreCandidates_cpp(Rcpp::NumericMatrix d);
-RcppExport SEXP _MaxMin_KCentreCandidates_cpp(SEXP dSEXP) {
+RcppExport SEXP _Coreset_KCentreCandidates_cpp(SEXP dSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -116,7 +116,7 @@ END_RCPP
 }
 // KCentreCDSh_cpp
 Rcpp::IntegerVector KCentreCDSh_cpp(Rcpp::NumericMatrix d, int k, int seed, Rcpp::NumericVector cand, bool exhaustive);
-RcppExport SEXP _MaxMin_KCentreCDSh_cpp(SEXP dSEXP, SEXP kSEXP, SEXP seedSEXP, SEXP candSEXP, SEXP exhaustiveSEXP) {
+RcppExport SEXP _Coreset_KCentreCDSh_cpp(SEXP dSEXP, SEXP kSEXP, SEXP seedSEXP, SEXP candSEXP, SEXP exhaustiveSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -131,7 +131,7 @@ END_RCPP
 }
 // MaxEntropyGreedy_cpp
 IntegerVector MaxEntropyGreedy_cpp(const NumericMatrix& K, int k, int seed);
-RcppExport SEXP _MaxMin_MaxEntropyGreedy_cpp(SEXP KSEXP, SEXP kSEXP, SEXP seedSEXP) {
+RcppExport SEXP _Coreset_MaxEntropyGreedy_cpp(SEXP KSEXP, SEXP kSEXP, SEXP seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -144,7 +144,7 @@ END_RCPP
 }
 // MaxEntropyExact_cpp
 IntegerVector MaxEntropyExact_cpp(const NumericMatrix& K, int k);
-RcppExport SEXP _MaxMin_MaxEntropyExact_cpp(SEXP KSEXP, SEXP kSEXP) {
+RcppExport SEXP _Coreset_MaxEntropyExact_cpp(SEXP KSEXP, SEXP kSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -156,7 +156,7 @@ END_RCPP
 }
 // MaxEntropyLogDet_cpp
 double MaxEntropyLogDet_cpp(const NumericMatrix& K, const IntegerVector& idx);
-RcppExport SEXP _MaxMin_MaxEntropyLogDet_cpp(SEXP KSEXP, SEXP idxSEXP) {
+RcppExport SEXP _Coreset_MaxEntropyLogDet_cpp(SEXP KSEXP, SEXP idxSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -168,7 +168,7 @@ END_RCPP
 }
 // MaximinFrom_cpp
 Rcpp::IntegerVector MaximinFrom_cpp(Rcpp::NumericMatrix d, int n, int first, int n_threads);
-RcppExport SEXP _MaxMin_MaximinFrom_cpp(SEXP dSEXP, SEXP nSEXP, SEXP firstSEXP, SEXP n_threadsSEXP) {
+RcppExport SEXP _Coreset_MaximinFrom_cpp(SEXP dSEXP, SEXP nSEXP, SEXP firstSEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -182,7 +182,7 @@ END_RCPP
 }
 // MaximinMultiFrom_cpp
 Rcpp::List MaximinMultiFrom_cpp(Rcpp::NumericMatrix d, int n, Rcpp::IntegerVector firsts, int n_threads);
-RcppExport SEXP _MaxMin_MaximinMultiFrom_cpp(SEXP dSEXP, SEXP nSEXP, SEXP firstsSEXP, SEXP n_threadsSEXP) {
+RcppExport SEXP _Coreset_MaximinMultiFrom_cpp(SEXP dSEXP, SEXP nSEXP, SEXP firstsSEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -196,7 +196,7 @@ END_RCPP
 }
 // MatrixOffDiagMax_cpp
 Rcpp::NumericVector MatrixOffDiagMax_cpp(Rcpp::NumericMatrix d, int n_threads);
-RcppExport SEXP _MaxMin_MatrixOffDiagMax_cpp(SEXP dSEXP, SEXP n_threadsSEXP) {
+RcppExport SEXP _Coreset_MatrixOffDiagMax_cpp(SEXP dSEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -208,7 +208,7 @@ END_RCPP
 }
 // RowSqSumsFromMatrix_cpp
 Rcpp::NumericVector RowSqSumsFromMatrix_cpp(Rcpp::NumericMatrix d, int n_threads);
-RcppExport SEXP _MaxMin_RowSqSumsFromMatrix_cpp(SEXP dSEXP, SEXP n_threadsSEXP) {
+RcppExport SEXP _Coreset_RowSqSumsFromMatrix_cpp(SEXP dSEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -220,7 +220,7 @@ END_RCPP
 }
 // MaximinFromPoints_cpp
 Rcpp::IntegerVector MaximinFromPoints_cpp(Rcpp::NumericMatrix points, int n, int first, int mask, int n_threads);
-RcppExport SEXP _MaxMin_MaximinFromPoints_cpp(SEXP pointsSEXP, SEXP nSEXP, SEXP firstSEXP, SEXP maskSEXP, SEXP n_threadsSEXP) {
+RcppExport SEXP _Coreset_MaximinFromPoints_cpp(SEXP pointsSEXP, SEXP nSEXP, SEXP firstSEXP, SEXP maskSEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -235,7 +235,7 @@ END_RCPP
 }
 // MaximinMultiFromPoints_cpp
 Rcpp::List MaximinMultiFromPoints_cpp(Rcpp::NumericMatrix points, int n, Rcpp::IntegerVector firsts, int n_threads);
-RcppExport SEXP _MaxMin_MaximinMultiFromPoints_cpp(SEXP pointsSEXP, SEXP nSEXP, SEXP firstsSEXP, SEXP n_threadsSEXP) {
+RcppExport SEXP _Coreset_MaximinMultiFromPoints_cpp(SEXP pointsSEXP, SEXP nSEXP, SEXP firstsSEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -249,7 +249,7 @@ END_RCPP
 }
 // RowSumsFromPoints_cpp
 Rcpp::NumericVector RowSumsFromPoints_cpp(Rcpp::NumericMatrix points, int n_threads);
-RcppExport SEXP _MaxMin_RowSumsFromPoints_cpp(SEXP pointsSEXP, SEXP n_threadsSEXP) {
+RcppExport SEXP _Coreset_RowSumsFromPoints_cpp(SEXP pointsSEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -261,7 +261,7 @@ END_RCPP
 }
 // RowSqSumsFromPoints_cpp
 Rcpp::NumericVector RowSqSumsFromPoints_cpp(Rcpp::NumericMatrix points, int n_threads);
-RcppExport SEXP _MaxMin_RowSqSumsFromPoints_cpp(SEXP pointsSEXP, SEXP n_threadsSEXP) {
+RcppExport SEXP _Coreset_RowSqSumsFromPoints_cpp(SEXP pointsSEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -273,7 +273,7 @@ END_RCPP
 }
 // RowSumsSqFromPoints_cpp
 Rcpp::List RowSumsSqFromPoints_cpp(Rcpp::NumericMatrix points, int n_threads);
-RcppExport SEXP _MaxMin_RowSumsSqFromPoints_cpp(SEXP pointsSEXP, SEXP n_threadsSEXP) {
+RcppExport SEXP _Coreset_RowSumsSqFromPoints_cpp(SEXP pointsSEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -285,7 +285,7 @@ END_RCPP
 }
 // EuclidColFromPoints_cpp
 Rcpp::NumericVector EuclidColFromPoints_cpp(Rcpp::NumericMatrix points, int col);
-RcppExport SEXP _MaxMin_EuclidColFromPoints_cpp(SEXP pointsSEXP, SEXP colSEXP) {
+RcppExport SEXP _Coreset_EuclidColFromPoints_cpp(SEXP pointsSEXP, SEXP colSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -297,7 +297,7 @@ END_RCPP
 }
 // DiameterFromPoints_cpp
 Rcpp::NumericVector DiameterFromPoints_cpp(Rcpp::NumericMatrix points, int n_threads);
-RcppExport SEXP _MaxMin_DiameterFromPoints_cpp(SEXP pointsSEXP, SEXP n_threadsSEXP) {
+RcppExport SEXP _Coreset_DiameterFromPoints_cpp(SEXP pointsSEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -309,7 +309,7 @@ END_RCPP
 }
 // MaxMean_cpp
 List MaxMean_cpp(NumericMatrix dmat, double time_budget_s, double iter_budget, int alpha_depth, int T_min, int T_max, double epsilon, double alpha_rl, double gamma_rl, bool use_rl);
-RcppExport SEXP _MaxMin_MaxMean_cpp(SEXP dmatSEXP, SEXP time_budget_sSEXP, SEXP iter_budgetSEXP, SEXP alpha_depthSEXP, SEXP T_minSEXP, SEXP T_maxSEXP, SEXP epsilonSEXP, SEXP alpha_rlSEXP, SEXP gamma_rlSEXP, SEXP use_rlSEXP) {
+RcppExport SEXP _Coreset_MaxMean_cpp(SEXP dmatSEXP, SEXP time_budget_sSEXP, SEXP iter_budgetSEXP, SEXP alpha_depthSEXP, SEXP T_minSEXP, SEXP T_maxSEXP, SEXP epsilonSEXP, SEXP alpha_rlSEXP, SEXP gamma_rlSEXP, SEXP use_rlSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -329,7 +329,7 @@ END_RCPP
 }
 // AllFinite_cpp
 bool AllFinite_cpp(SEXP x, int n_threads);
-RcppExport SEXP _MaxMin_AllFinite_cpp(SEXP xSEXP, SEXP n_threadsSEXP) {
+RcppExport SEXP _Coreset_AllFinite_cpp(SEXP xSEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -341,7 +341,7 @@ END_RCPP
 }
 // SymmetryScan_cpp
 Rcpp::List SymmetryScan_cpp(Rcpp::NumericMatrix d, int n_threads);
-RcppExport SEXP _MaxMin_SymmetryScan_cpp(SEXP dSEXP, SEXP n_threadsSEXP) {
+RcppExport SEXP _Coreset_SymmetryScan_cpp(SEXP dSEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -353,7 +353,7 @@ END_RCPP
 }
 // Symmetrised_cpp
 Rcpp::NumericMatrix Symmetrised_cpp(Rcpp::NumericMatrix d);
-RcppExport SEXP _MaxMin_Symmetrised_cpp(SEXP dSEXP) {
+RcppExport SEXP _Coreset_Symmetrised_cpp(SEXP dSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -364,36 +364,36 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_MaxMin_DropAdd_cpp", (DL_FUNC) &_MaxMin_DropAdd_cpp, 7},
-    {"_MaxMin_DropAdd_points_cpp", (DL_FUNC) &_MaxMin_DropAdd_points_cpp, 8},
-    {"_MaxMin_TriangleAtLeast_cpp", (DL_FUNC) &_MaxMin_TriangleAtLeast_cpp, 2},
-    {"_MaxMin_EdgesAtLeast_cpp", (DL_FUNC) &_MaxMin_EdgesAtLeast_cpp, 2},
-    {"_MaxMin_ThresholdDecide_cpp", (DL_FUNC) &_MaxMin_ThresholdDecide_cpp, 5},
-    {"_MaxMin_Grasp_cpp", (DL_FUNC) &_MaxMin_Grasp_cpp, 9},
-    {"_MaxMin_KCentreCandidates_cpp", (DL_FUNC) &_MaxMin_KCentreCandidates_cpp, 1},
-    {"_MaxMin_KCentreCDSh_cpp", (DL_FUNC) &_MaxMin_KCentreCDSh_cpp, 5},
-    {"_MaxMin_MaxEntropyGreedy_cpp", (DL_FUNC) &_MaxMin_MaxEntropyGreedy_cpp, 3},
-    {"_MaxMin_MaxEntropyExact_cpp", (DL_FUNC) &_MaxMin_MaxEntropyExact_cpp, 2},
-    {"_MaxMin_MaxEntropyLogDet_cpp", (DL_FUNC) &_MaxMin_MaxEntropyLogDet_cpp, 2},
-    {"_MaxMin_MaximinFrom_cpp", (DL_FUNC) &_MaxMin_MaximinFrom_cpp, 4},
-    {"_MaxMin_MaximinMultiFrom_cpp", (DL_FUNC) &_MaxMin_MaximinMultiFrom_cpp, 4},
-    {"_MaxMin_MatrixOffDiagMax_cpp", (DL_FUNC) &_MaxMin_MatrixOffDiagMax_cpp, 2},
-    {"_MaxMin_RowSqSumsFromMatrix_cpp", (DL_FUNC) &_MaxMin_RowSqSumsFromMatrix_cpp, 2},
-    {"_MaxMin_MaximinFromPoints_cpp", (DL_FUNC) &_MaxMin_MaximinFromPoints_cpp, 5},
-    {"_MaxMin_MaximinMultiFromPoints_cpp", (DL_FUNC) &_MaxMin_MaximinMultiFromPoints_cpp, 4},
-    {"_MaxMin_RowSumsFromPoints_cpp", (DL_FUNC) &_MaxMin_RowSumsFromPoints_cpp, 2},
-    {"_MaxMin_RowSqSumsFromPoints_cpp", (DL_FUNC) &_MaxMin_RowSqSumsFromPoints_cpp, 2},
-    {"_MaxMin_RowSumsSqFromPoints_cpp", (DL_FUNC) &_MaxMin_RowSumsSqFromPoints_cpp, 2},
-    {"_MaxMin_EuclidColFromPoints_cpp", (DL_FUNC) &_MaxMin_EuclidColFromPoints_cpp, 2},
-    {"_MaxMin_DiameterFromPoints_cpp", (DL_FUNC) &_MaxMin_DiameterFromPoints_cpp, 2},
-    {"_MaxMin_MaxMean_cpp", (DL_FUNC) &_MaxMin_MaxMean_cpp, 10},
-    {"_MaxMin_AllFinite_cpp", (DL_FUNC) &_MaxMin_AllFinite_cpp, 2},
-    {"_MaxMin_SymmetryScan_cpp", (DL_FUNC) &_MaxMin_SymmetryScan_cpp, 2},
-    {"_MaxMin_Symmetrised_cpp", (DL_FUNC) &_MaxMin_Symmetrised_cpp, 1},
+    {"_Coreset_DropAdd_cpp", (DL_FUNC) &_Coreset_DropAdd_cpp, 7},
+    {"_Coreset_DropAdd_points_cpp", (DL_FUNC) &_Coreset_DropAdd_points_cpp, 8},
+    {"_Coreset_TriangleAtLeast_cpp", (DL_FUNC) &_Coreset_TriangleAtLeast_cpp, 2},
+    {"_Coreset_EdgesAtLeast_cpp", (DL_FUNC) &_Coreset_EdgesAtLeast_cpp, 2},
+    {"_Coreset_ThresholdDecide_cpp", (DL_FUNC) &_Coreset_ThresholdDecide_cpp, 5},
+    {"_Coreset_Grasp_cpp", (DL_FUNC) &_Coreset_Grasp_cpp, 9},
+    {"_Coreset_KCentreCandidates_cpp", (DL_FUNC) &_Coreset_KCentreCandidates_cpp, 1},
+    {"_Coreset_KCentreCDSh_cpp", (DL_FUNC) &_Coreset_KCentreCDSh_cpp, 5},
+    {"_Coreset_MaxEntropyGreedy_cpp", (DL_FUNC) &_Coreset_MaxEntropyGreedy_cpp, 3},
+    {"_Coreset_MaxEntropyExact_cpp", (DL_FUNC) &_Coreset_MaxEntropyExact_cpp, 2},
+    {"_Coreset_MaxEntropyLogDet_cpp", (DL_FUNC) &_Coreset_MaxEntropyLogDet_cpp, 2},
+    {"_Coreset_MaximinFrom_cpp", (DL_FUNC) &_Coreset_MaximinFrom_cpp, 4},
+    {"_Coreset_MaximinMultiFrom_cpp", (DL_FUNC) &_Coreset_MaximinMultiFrom_cpp, 4},
+    {"_Coreset_MatrixOffDiagMax_cpp", (DL_FUNC) &_Coreset_MatrixOffDiagMax_cpp, 2},
+    {"_Coreset_RowSqSumsFromMatrix_cpp", (DL_FUNC) &_Coreset_RowSqSumsFromMatrix_cpp, 2},
+    {"_Coreset_MaximinFromPoints_cpp", (DL_FUNC) &_Coreset_MaximinFromPoints_cpp, 5},
+    {"_Coreset_MaximinMultiFromPoints_cpp", (DL_FUNC) &_Coreset_MaximinMultiFromPoints_cpp, 4},
+    {"_Coreset_RowSumsFromPoints_cpp", (DL_FUNC) &_Coreset_RowSumsFromPoints_cpp, 2},
+    {"_Coreset_RowSqSumsFromPoints_cpp", (DL_FUNC) &_Coreset_RowSqSumsFromPoints_cpp, 2},
+    {"_Coreset_RowSumsSqFromPoints_cpp", (DL_FUNC) &_Coreset_RowSumsSqFromPoints_cpp, 2},
+    {"_Coreset_EuclidColFromPoints_cpp", (DL_FUNC) &_Coreset_EuclidColFromPoints_cpp, 2},
+    {"_Coreset_DiameterFromPoints_cpp", (DL_FUNC) &_Coreset_DiameterFromPoints_cpp, 2},
+    {"_Coreset_MaxMean_cpp", (DL_FUNC) &_Coreset_MaxMean_cpp, 10},
+    {"_Coreset_AllFinite_cpp", (DL_FUNC) &_Coreset_AllFinite_cpp, 2},
+    {"_Coreset_SymmetryScan_cpp", (DL_FUNC) &_Coreset_SymmetryScan_cpp, 2},
+    {"_Coreset_Symmetrised_cpp", (DL_FUNC) &_Coreset_Symmetrised_cpp, 1},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_MaxMin(DllInfo *dll) {
+RcppExport void R_init_Coreset(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }

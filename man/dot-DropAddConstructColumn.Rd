@@ -21,7 +21,7 @@ holding \code{S} (the selection, in add order), \code{inS}, \code{minDist}, \cod
 \code{minDistCount}, matching the record set of \code{.DropAddConstruct()}.
 }
 \description{
-Algorithm 1 of \insertCite{Porumbel2011;textual}{MaxMin} against a column
+Algorithm 1 of \insertCite{Porumbel2011;textual}{Coreset} against a column
 oracle: the counterpart of \code{.DropAddConstruct()}that never materialises the
 distance matrix.
 }

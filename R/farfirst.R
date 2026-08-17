@@ -22,7 +22,7 @@
     stop("`d` must be symmetric: d[i, j] and d[j, i] differ by ",
          format(dev, digits = 3), " relative to their magnitude, beyond the ",
          "tolerance of ", format(tolerance, digits = 3),
-         " set by `options(MaxMin.symmetryTolerance=)`")
+         " set by `options(Coreset.symmetryTolerance=)`")
   }
   warning("`d` is symmetric only to rounding; averaging d[i, j] with d[j, i]. ",
           "Pass `(d + t(d)) / 2` to silence this.", immediate. = TRUE)
@@ -32,9 +32,9 @@
 # Largest scaled discrepancy repaired rather than refused; 0 refuses anything
 # inexact. The default is what R's own `isSymmetric()` allows.
 .SymmetryTolerance <- function() {
-  tol <- getOption("MaxMin.symmetryTolerance", 100 * .Machine$double.eps)
+  tol <- getOption("Coreset.symmetryTolerance", 100 * .Machine$double.eps)
   if (length(tol) != 1L || !is.numeric(tol) || is.na(tol) || tol < 0) {
-    stop("`options(MaxMin.symmetryTolerance=)` must be a single ",
+    stop("`options(Coreset.symmetryTolerance=)` must be a single ",
          "non-negative number")
   }
   tol
@@ -212,7 +212,7 @@
 
 #' Greedy farthest-first point selection
 #'
-#' Greedy farthest-first selection \insertCite{Gonzalez1985,Hochbaum1985}{MaxMin}
+#' Greedy farthest-first selection \insertCite{Gonzalez1985,Hochbaum1985}{Coreset}
 #' iteratively selects the point furthest from the current selection to yield a
 #' 2-approximation to the _k_-centre and Max Min Diversity problems.
 #'
@@ -299,7 +299,7 @@
 #' @export
 FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
                      strategy = "random_furthest", nSeeds = 3L) {
-  progress <- getOption("MaxMin.progress", interactive())
+  progress <- getOption("Coreset.progress", interactive())
   strategyMissing <- missing(strategy)
 
   # Every non-empty FarFirst result is a `MaxMinSelection` (a self-describing
@@ -485,7 +485,7 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
 #' @return `.GonzalezColumn()` returns an integer vector of length `min(k, N)` of selected indices.
 #' @keywords internal
 .GonzalezColumn <- function(colFn, N, k, first = NULL,
-                            progress = getOption("MaxMin.progress", interactive())) {
+                            progress = getOption("Coreset.progress", interactive())) {
   if (!is.function(colFn)) {
     stop("`colFn` must be a function of one index returning numeric(N)")
   }

@@ -270,14 +270,14 @@
 #'
 #' `Grasp()` solves the Max-Min Diversity Problem (discrete _p_-dispersion) with
 #' the static variant of the GRASP / path-relinking metaheuristic
-#' \insertCite{@@@@Resende2010, fig. 4}{MaxMin}{}. This is the most expensive
+#' \insertCite{@@@@Resende2010, fig. 4}{Coreset}{}. This is the most expensive
 #' heuristic in this package, and attains correspondingly high-quality
 #' selections.
 #'
 #' The GRASP with path-relinking algorithm conducts a randomised-greedy
 #' construction with extended-improvement local search builds; it identifies an
 #' elite set, then conducts a single pass of path relinking over all elite
-#' pairs \insertCite{Resende2010}{MaxMin}.
+#' pairs \insertCite{Resende2010}{Coreset}.
 #'
 #' The refinement loop stops after `plateau` consecutive GRASP iterations
 #' fail to improve the best elite objective, or once `maxSeconds` have
@@ -340,7 +340,7 @@
 #' @export
 Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
                   maxSeconds = Inf, maxCandidates = 2000L) {
-  progress <- getOption("MaxMin.progress", interactive())
+  progress <- getOption("Coreset.progress", interactive())
   d <- .AsDistMatrix(d)
   n <- nrow(d)
   k <- as.integer(k)

@@ -3,7 +3,7 @@
 # Saves dev/profiling/.kc-<tag>.rds = list(res by k, ms at k=20).
 args <- commandArgs(trailingOnly = TRUE)
 lib <- args[[1]]; tag <- args[[2]]
-suppressMessages(library(MaxMin, lib.loc = lib))
+suppressMessages(library(Coreset, lib.loc = lib))
 set.seed(5813)
 g <- 12L; per <- 167L
 ctr <- matrix(rnorm(g * 10L, sd = 6), ncol = 10L)

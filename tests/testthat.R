@@ -1,4 +1,4 @@
 library("testthat")
-library("MaxMin", quietly = TRUE, warn.conflicts = FALSE)
+library("Coreset", quietly = TRUE, warn.conflicts = FALSE)
 
-suppressPackageStartupMessages(test_check("MaxMin"))
+suppressPackageStartupMessages(test_check("Coreset"))

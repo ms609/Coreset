@@ -1,15 +1,15 @@
 # Rprof harness for ExactMaxMin (area 4). Line + memory profiling on the
 # penguins n=342 k=10 workload; summarise self/total by function and by line.
 set.seed(5813)
-library(MaxMin)
+library(Coreset)
 load("C:/Users/pjjg18/GitHub/furthest-point/data/cases.rda")
 pts <- as.matrix(cases[["tc22_penguins"]][["points"]]); storage.mode(pts) <- "double"
 d   <- as.matrix(stats::dist(pts))
 
-src <- file.path(find.package("MaxMin"), "R")   # for line numbers if available
+src <- file.path(find.package("Coreset"), "R")   # for line numbers if available
 out <- tempfile(fileext = ".out")
 Rprof(out, line.profiling = TRUE, memory.profiling = TRUE, interval = 0.005)
-r <- MaxMin::ExactMaxMin(d, m = 10L, maxSeconds = 600)
+r <- Coreset::ExactMaxMin(d, m = 10L, maxSeconds = 600)
 Rprof(NULL)
 cat(sprintf("obj=%.6f proven=%s\n\n", r$objective, r$proven))
 

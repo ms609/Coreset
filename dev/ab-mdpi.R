@@ -17,7 +17,7 @@
 #
 # Instance format: lines "i j d_ij" (1-based, upper triangle, signed distances).
 .libPaths(c(".agent-mm", .libPaths()))
-suppressMessages(library(MaxMin))
+suppressMessages(library(Coreset))
 
 best_known <- c(MDPI1_500 = 81.277044, MDPI2_500 = 78.610216, MDPI3_500 = 76.300787)
 

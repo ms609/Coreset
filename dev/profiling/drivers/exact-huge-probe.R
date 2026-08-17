@@ -3,7 +3,7 @@
 # then time the SINGLE infeasibility probe just above the warm-start LB -- the
 # one solve GRASP cannot remove. If that one probe closes fast, exact is viable;
 # if it can't close in a few minutes, no number of GRASP restarts helps.
-suppressMessages({ library(MaxMin); library(Matrix); library(highs) })
+suppressMessages({ library(Coreset); library(Matrix); library(highs) })
 load("C:/Users/pjjg18/GitHub/furthest-point/data/cases.rda")
 case <- Sys.getenv("FP_HUGE_CASE", "tc21_spam")
 k <- 10L; probe_cap <- as.numeric(Sys.getenv("FP_PROBE_CAP", "200"))

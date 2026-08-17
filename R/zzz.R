@@ -1,5 +1,5 @@
 .onUnload <- function(libpath) {
-  library.dynam.unload("MaxMin", libpath)
+  library.dynam.unload("Coreset", libpath)
 }
 
 ## Reminders when releasing for CRAN

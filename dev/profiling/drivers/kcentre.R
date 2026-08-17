@@ -4,7 +4,7 @@
 # representative threshold-graph density (the d(i,j) <= r branch distribution
 # that drives the inner loops), unlike uniform noise.
 # bare: ~? s
-suppressMessages(library(MaxMin, lib.loc = "C:/Users/pjjg18/AppData/Local/Temp/maxmin-optlib"))
+suppressMessages(library(Coreset, lib.loc = "C:/Users/pjjg18/AppData/Local/Temp/maxmin-optlib"))
 set.seed(5813)
 
 g <- 12L; per <- 167L                      # n ~ 2004, 12 clusters in 10-D

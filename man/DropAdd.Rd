@@ -75,12 +75,12 @@ The vector has class \code{"MaxMinSelection"} and prints as a one-line summary
 DropAdd tabu search algorithm, which comprises a greedy construction
 followed by a first-in, first-out drop-add tabu search, with streamlined
 neighbour-evaluation tricks
-\insertCite{@algorithms 1--4 in @Porumbel2011}{MaxMin}.
+\insertCite{@algorithms 1--4 in @Porumbel2011}{Coreset}.
 }
 \section{Progress bar}{
 
 In interactive sessions, status messages are shown.
-To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
+To toggle, set \code{options("Coreset.progress" = FALSE)} (or \code{TRUE}).
 }
 
 \section{Parallelism}{

@@ -5,11 +5,14 @@ binom
 CDSh
 cf
 CMD
+Cholesky
 codecov
 composable
+Coreset
 coreset
 cpp
 det
+Diaz
 determinantal
 doi
 DropAdd
@@ -21,6 +24,7 @@ FastPAM
 FasterPAM
 Fathi
 Gallego
+Garcia
 Gonzalez
 GRASP
 Hao

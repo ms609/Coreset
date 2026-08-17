@@ -5,7 +5,7 @@
 #   (2) that the new seeded search returns the EXACT optimum every time, even
 #       when the heuristic misses (correctness independent of seed quality),
 #   (3) the probe count distribution (worst case vs binary search's ~16).
-suppressMessages({ library(MaxMin); library(Matrix); library(highs) })
+suppressMessages({ library(Coreset); library(Matrix); library(highs) })
 load("C:/Users/pjjg18/GitHub/furthest-point/data/cases.rda")
 source("dev/profiling/drivers/exact-proto3.R", local = TRUE)   # defines Exact_v3, make_oracle
 
@@ -13,8 +13,8 @@ scv <- function(d, idx) { s <- d[idx, idx]; diag(s) <- Inf; min(s) }
 # strongest cheap heuristic seed: Grasp (several seeds) + DropAdd, take the best
 best_heur <- function(d, m) {
   vs <- c(
-    vapply(1:3, function(s) scv(d, MaxMin::Grasp(d, m, plateau = 50L, seed = s)), numeric(1)),
-    scv(d, MaxMin::DropAdd(d = d, m = m, plateau = 512L))
+    vapply(1:3, function(s) scv(d, Coreset::Grasp(d, m, plateau = 50L, seed = s)), numeric(1)),
+    scv(d, Coreset::DropAdd(d = d, m = m, plateau = 512L))
   )
   max(vs)
 }
@@ -30,7 +30,7 @@ for (cs in small) {
   pts <- as.matrix(cases[[cs]][["points"]]); storage.mode(pts) <- "double"
   d <- as.matrix(stats::dist(pts)); n <- nrow(d)
   for (k in ks) {
-    opt <- MaxMin::ExactMaxMin(d, k, maxSeconds = 600)
+    opt <- Coreset::ExactMaxMin(d, k, maxSeconds = 600)
     bh  <- best_heur(d, k)
     rv  <- Exact_v3(d, k, cutoff = FALSE, seedMethod = "best")   # Grasp+DropAdd seed
     rows[[length(rows)+1L]] <- data.frame(

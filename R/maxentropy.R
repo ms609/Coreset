@@ -94,8 +94,8 @@
 #' `MaxEntropy()` selects the `k`-subset of points that maximises the
 #' log-determinant of its kernel block, \eqn{\log\det K_S} -- the spanned volume
 #' of the selection, the maximum-entropy sampling criterion
-#' \insertCite{Shewry1987}{MaxMin} and the maximum-a-posteriori mode of a
-#' determinantal point process \insertCite{Kulesza2012}{MaxMin}. A redundant
+#' \insertCite{Shewry1987}{Coreset} and the maximum-a-posteriori mode of a
+#' determinantal point process \insertCite{Kulesza2012}{Coreset}. A redundant
 #' point lies in the span of those already chosen, adds zero volume, and is
 #' never taken, so the selection is exactly density-blind.
 #'
@@ -103,7 +103,7 @@
 #' the supplied distances (`sigma` defaulting to the median positive distance)
 #' and repaired to a positive-semidefinite matrix, because a general distance is
 #' not of negative type and \eqn{\log\det} requires it. The exact argmax is
-#' NP-hard \insertCite{Kulesza2012}{MaxMin}, so the selection is built greedily
+#' NP-hard \insertCite{Kulesza2012}{Coreset}, so the selection is built greedily
 #' by pivoted Cholesky -- at each step adding the point of largest residual
 #' conditional variance -- with exact enumeration substituted where
 #' \eqn{\binom{n}{k}} does not exceed `maxCombos`. The greedy first pivot is tied

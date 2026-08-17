@@ -1,7 +1,7 @@
 # Speedup of the compiled Grasp kernel vs the pure-R reference, at identical
 # parameters and seed (so both do exactly the same work and return the same
 # answer). Confirms bit-identity and reports the C++/R wall-clock ratio.
-suppressPackageStartupMessages(library(MaxMin))
+suppressPackageStartupMessages(library(Coreset))
 
 bench <- function(n, m, mni, es, seed = 1L) {
   set.seed(123)
@@ -9,7 +9,7 @@ bench <- function(n, m, mni, es, seed = 1L) {
   d <- as.matrix(dist(pts))
 
   set.seed(seed)
-  tr <- system.time(ref <- MaxMin:::.Grasp_R(d, m, max_no_improve = mni,
+  tr <- system.time(ref <- Coreset:::.Grasp_R(d, m, max_no_improve = mni,
                                                elite_size = es))[["elapsed"]]
   set.seed(seed)
   tk <- system.time(ker <- Grasp(d, m, max_no_improve = mni,

@@ -10,7 +10,7 @@ MakeData <- function(seed = 42, N = 20, dim = 4) {
 # ---- .ResolveCap: every branch ---------------------------------------------
 
 test_that(".ResolveCap validates and normalises the cap", {
-  R <- MaxMin:::.ResolveCap
+  R <- Coreset:::.ResolveCap
   # Non-scalar / NA -> error.
   expect_error(R(c(1, 2), 10L, 3L), "single number")
   expect_error(R(NA_real_, 10L, 3L), "single number")
@@ -46,7 +46,7 @@ test_that(".FarFirstThin maps coreset-local indices back to original space", {
               class = "MaxMinSelection", producer = "stub")
   }
   expect_warning(
-    res <- MaxMin:::.FarFirstThin(2L, m, d = dat$d, points = NULL,
+    res <- Coreset:::.FarFirstThin(2L, m, d = dat$d, points = NULL,
                                   RunOnSubset = stub, label = "stub"),
     "thinned 20 candidates to 8"
   )
@@ -71,7 +71,7 @@ test_that(".FarFirstThin draws no session RNG (deterministic coreset)", {
   set.seed(123)
   before <- .Random.seed
   suppressWarnings(
-    MaxMin:::.FarFirstThin(2L, 6L, d = dat$d, points = NULL,
+    Coreset:::.FarFirstThin(2L, 6L, d = dat$d, points = NULL,
                            RunOnSubset = stub, label = "stub")
   )
   # The peripheral seed + the no-RNG stub must leave the stream untouched.

@@ -5,8 +5,8 @@
 # primitives round 7 parallelised but never line-profiled.
 # Usage: Rscript farfirst-vtune9.R <libdir>
 args <- commandArgs(trailingOnly = TRUE)
-library(MaxMin, lib.loc = args[[1L]])
-cat("lib:", dirname(system.file(package = "MaxMin")), "\n")
+library(Coreset, lib.loc = args[[1L]])
+cat("lib:", dirname(system.file(package = "Coreset")), "\n")
 
 set.seed(5813)
 N <- 6000L

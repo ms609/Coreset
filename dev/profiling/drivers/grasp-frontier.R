@@ -29,7 +29,7 @@
 #
 # Wall-clock on this box gives *relative* ratios for choosing between builds,
 # not quotable figures (those belong on Hamilton).
-library(MaxMin)
+library(Coreset)
 args <- commandArgs(trailingOnly = TRUE)
 outFile <- args[[1L]]
 
@@ -65,7 +65,7 @@ if (length(casesPath)) {
 RunCell <- function(d, k, plateau, budget, seed) {
   set.seed(seed)
   t0 <- proc.time()[[3L]]
-  o <- MaxMin:::Grasp_cpp(d, k, plateau, .Machine$integer.max, 10L, 0.8,
+  o <- Coreset:::Grasp_cpp(d, k, plateau, .Machine$integer.max, 10L, 0.8,
                           budget)
   list(time = proc.time()[[3L]] - t0, obj = as.numeric(o$objective),
        iters = as.numeric(o$iters), pr = as.numeric(o$pr_calls))

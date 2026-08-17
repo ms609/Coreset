@@ -1,7 +1,7 @@
-library(MaxMin)
+library(Coreset)
 args <- commandArgs(trailingOnly = TRUE)
 out <- args[[1L]]
-cat("lib:", dirname(system.file(package = "MaxMin")), "\n")
+cat("lib:", dirname(system.file(package = "Coreset")), "\n")
 
 shapes <- list(
   list(n = 2000L, dim = 10L, k = 100L, pl = 8L),
@@ -19,7 +19,7 @@ for (sh in shapes) {
   for (r in seq_len(REPS)) {
     set.seed(1)
     t0 <- proc.time()[[3]]
-    o <- MaxMin:::Grasp_cpp(d, sh$k, sh$pl, .Machine$integer.max, 10L, 0.8, Inf)
+    o <- Coreset:::Grasp_cpp(d, sh$k, sh$pl, .Machine$integer.max, 10L, 0.8, Inf)
     ts[r] <- proc.time()[[3]] - t0
   }
   lab <- sprintf("n=%d k=%d plateau=%d", sh$n, sh$k, sh$pl)

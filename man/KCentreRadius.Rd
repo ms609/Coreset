@@ -27,7 +27,7 @@ column at a time. This supports sets with large \code{N}, in which the full
 \code{KCentreRadius()} computes the covering radius of a set of centres:
 the largest distance from any of the \code{N} points to its nearest centre,
 \eqn{R = \max_p \min_{c \in \mathrm{idx}} d(p, c)}. This is the min-max
-\emph{k}-centre objective \insertCite{Gonzalez1985}{MaxMin} minimized by
+\emph{k}-centre objective \insertCite{Gonzalez1985}{Coreset} minimized by
 \code{\link[=KCentre]{KCentre()}} and \code{\link[=ExactKCentre]{ExactKCentre()}}.
 }
 \examples{

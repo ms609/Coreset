@@ -1,12 +1,12 @@
 ---
-title: "Introduction to MaxMin"
+title: "Introduction to Coreset"
 author: "Martin R. Smith"
 date: today
 format: html
 bibliography: ../inst/REFERENCES.bib
 csl: ../inst/apa.csl
 vignette: >
-  %\VignetteIndexEntry{Introduction to MaxMin}
+  %\VignetteIndexEntry{Introduction to Coreset}
   %\VignetteEngine{quarto::html}
   %\VignetteEncoding{UTF-8}
 ---
@@ -15,10 +15,10 @@ vignette: >
 #| label: setup
 #| include: false
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
-library("MaxMin")
+library("Coreset")
 ```
 
-The MaxMin package selects a subset that represents a fixed pool of *N* items,
+The Coreset package selects a subset that represents a fixed pool of *N* items,
 based on approximate and exact solutions to a suite of objectives:
 
 The **Max-Min Diversity Problem** (MMDP, the discrete *p*-dispersion objective)
@@ -62,7 +62,7 @@ Install from CRAN with:
 ```{r}
 #| label: install
 #| eval: false
-install.packages("MaxMin")
+install.packages("Coreset")
 ```
 
 ## Quick start
@@ -94,7 +94,7 @@ distance within the selection is largest.
 
 ## Methods at a glance
 
-MaxMin provides solvers for each objective:
+Coreset provides solvers for each objective:
 
 | Function | Objective | Quality | Speed | Stochastic? |
 |---|---|---|---|---|
@@ -286,7 +286,7 @@ pchs <- c(FarFirst = 1L, DropAdd = 3L, Grasp = 4L)
 
 plot(pts, pch = 1L, col = "grey75", asp = 1L,
      xlab = "x", ylab = "y", frame.plot = FALSE,
-     main = "MaxMin method comparison")
+     main = "Coreset method comparison")
 
 for (nm in names(methods)) {
   sel <- methods[[nm]]
@@ -566,7 +566,7 @@ For **maximum-entropy (maxdet) selection** (density-blind volume maximization):
 
 ## Related problems
 
-`MaxMin` selects a subset from a given set of elements.
+`Coreset` selects a subset from a given set of elements.
 Several established packages solve neighbouring objectives:
 
 - **k-medoids / k-median** selects elements that minimize the mean distance from

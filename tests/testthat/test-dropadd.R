@@ -70,7 +70,7 @@ test_that("DropAdd never worsens the constructive solution", {
   geo <- geoEnv$read_mdplib_geo(path)
   dmat <- geoEnv$mdplib_geo_dist(geo)
 
-  cons <- MaxMin:::.DropAddConstruct(dmat, 10L)
+  cons <- Coreset:::.DropAddConstruct(dmat, 10L)
   consScore <- .MaxminBrute(cons$S, dmat)
   full <- DropAdd(10L, dmat, plateau = 2000L)
   expect_gte(attr(full, "score"), consScore - 1e-9)
@@ -117,7 +117,7 @@ test_that("DropAdd FIFO drops each initial point once in first k iterations", {
   k <- 4L
 
   # Capture the constructive S via the internal helper.
-  cons <- MaxMin:::.DropAddConstruct(dmat, k)
+  cons <- Coreset:::.DropAddConstruct(dmat, k)
   sInit <- cons$S
   expect_length(sInit, k)
   expect_equal(length(unique(sInit)), k)
@@ -125,7 +125,7 @@ test_that("DropAdd FIFO drops each initial point once in first k iterations", {
   # Drive the PRODUCTION C++ loop for exactly 2*k iterations and capture the
   # drop/add sequences via the internal-only .DropAddTrace() scaffolding (the
   # public DropAdd() deliberately exposes no trace hook).
-  tr <- MaxMin:::.DropAddTrace(dmat, k = k, maxSeconds = 60, maxIter = 2L * k)
+  tr <- Coreset:::.DropAddTrace(dmat, k = k, maxSeconds = 60, maxIter = 2L * k)
   expect_equal(tr$iters, 2L * k)
   expect_length(tr$drops, 2L * k)
   # First k drops are exactly the constructive members, in some order
@@ -187,9 +187,9 @@ test_that("DropAdd is deterministic and validates inputs", {
   expect_error(DropAdd(4L, dmat, maxSeconds = NA_real_), "maxSeconds")
 })
 
-test_that("DropAdd MaxMin.progress option fires the cli hooks", {
+test_that("DropAdd Coreset.progress option fires the cli hooks", {
   dmat <- as.matrix(dist(matrix(rnorm(15 * 2), ncol = 2)))
-  old <- options(MaxMin.progress = TRUE)
+  old <- options(Coreset.progress = TRUE)
   on.exit(options(old))
   expect_no_error(suppressMessages(DropAdd(3L, dmat, maxSeconds = 0.1)))
 })
@@ -344,7 +344,7 @@ test_that("DropAdd seed= reproduces the default seed and honours an override", {
   # Matrix path: the default seed IS the two-sweep peripheral point, so passing
   # that index explicitly must reproduce the default run exactly (within-path;
   # no cross-path FP comparison -- see test 7 on why those flicker).
-  mr <- MaxMin:::.PickPoint(dmat, "peripheral")
+  mr <- Coreset:::.PickPoint(dmat, "peripheral")
   a  <- DropAdd(6L, dmat, plateau = 200L)
   b  <- DropAdd(6L, dmat, plateau = 200L, seed = mr)
   attr(a, "time_s") <- attr(b, "time_s") <- NULL

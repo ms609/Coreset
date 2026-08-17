@@ -2,8 +2,8 @@
 # pattern): the same call must return identical selections and scores at
 # every thread count. Sizes chosen to engage the greedy pass's parallel path
 # (N >= 32768) and the O(N^2) anchor primitives.
-library(MaxMin)
-cat("lib:", dirname(system.file(package = "MaxMin")), "\n")
+library(Coreset)
+cat("lib:", dirname(system.file(package = "Coreset")), "\n")
 
 Check <- function(label, th) {
   base <- NULL

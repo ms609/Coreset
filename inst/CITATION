@@ -1,17 +1,17 @@
-citHeader("To cite MaxMin in publications use:")
+citHeader("To cite Coreset in publications use:")
 
 year <- format(Sys.Date(), "%Y")
 
 bibentry(
   bibtype  = "Manual",
-  title    = "{MaxMin}: Maximum-Minimum Diversity and Dispersion Subset Selection",
+  title    = "{Coreset}: Maximum-Minimum Diversity and Dispersion Subset Selection",
   author   = person("Martin R.", "Smith"),
   year     = year,
   note     = paste("R package version", meta$Version),
-  url      = "https://github.com/ms609/MaxMin",
+  url      = "https://github.com/ms609/Coreset",
   textVersion = paste0(
     "Martin R. Smith (", year,
-    "). MaxMin: Maximum-Minimum Diversity and Dispersion Subset Selection. ",
-    "R package version ", meta$Version, ". https://github.com/ms609/MaxMin"
+    "). Coreset: Maximum-Minimum Diversity and Dispersion Subset Selection. ",
+    "R package version ", meta$Version, ". https://github.com/ms609/Coreset"
   )
 )

@@ -5,8 +5,8 @@
 # Distance matrix is a synthetic non-Euclidean one: eigen FLOPs depend on SIZE
 # not values, and a random symmetric "distance" makes the RBF kernel non-PSD so
 # the clip-repair path is genuinely exercised (negMass > 0).
-.libPaths(c("C:/Users/pjjg18/GitHub/MaxMin/.agent-lib", .libPaths()))
-suppressMessages(library(MaxMin))
+.libPaths(c("C:/Users/pjjg18/GitHub/Coreset/.agent-lib", .libPaths()))
+suppressMessages(library(Coreset))
 set.seed(5813)
 tmN <- function(expr, R) { e <- new.env(); median(replicate(3, system.time(for (i in seq_len(R)) eval(expr, e))[["elapsed"]] / R)) }
 
@@ -21,10 +21,10 @@ mergedPrep <- function(K, tol = 1e-9) {
 
 for (n in c(1000L, 1500L, 2000L)) {
   M <- matrix(runif(n * n), n); D <- (M + t(M)); diag(D) <- 0     # non-Euclidean
-  K <- MaxMin:::.MaxEntropyKernel(D)
+  K <- Coreset:::.MaxEntropyKernel(D)
   R <- if (n <= 1000) 4L else 2L
-  t_neg    <- tmN(quote(MaxMin:::.MaxEntropyNegMass(K)), R)
-  t_repair <- tmN(quote(MaxMin:::.MaxEntropyRepair(K, "clip")), R)
+  t_neg    <- tmN(quote(Coreset:::.MaxEntropyNegMass(K)), R)
+  t_repair <- tmN(quote(Coreset:::.MaxEntropyRepair(K, "clip")), R)
   t_merged <- tmN(quote(mergedPrep(K)), R)
   t_full   <- tmN(quote(MaxEntropy(10L, D)), R)
   cur <- t_neg + t_repair

@@ -35,7 +35,7 @@ Prints as a terse summary via \code{\link[=print.MaxMinSelection]{print.MaxMinSe
 \description{
 \code{ExactMaxMin()} finds the optimal solution to the Max-Min Diversity Problem
 (discrete \emph{p}-dispersion) by iterated node-packing
-\insertCite{Sayyady2016}{MaxMin} (which may be slow or intractable on large
+\insertCite{Sayyady2016}{Coreset} (which may be slow or intractable on large
 sets).
 }
 \details{
@@ -55,7 +55,7 @@ the optimum; the \code{score} does not.
 \section{Progress bar}{
 
 In interactive sessions, a progress indicator is shown.
-To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
+To toggle, set \code{options("Coreset.progress" = FALSE)} (or \code{TRUE}).
 }
 
 \examples{

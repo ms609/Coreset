@@ -1,4 +1,4 @@
-# Shared setup for the MaxMin performance-regression benchmarks.
+# Shared setup for the Coreset performance-regression benchmarks.
 #
 # Each bench-*.R sources this file, builds a realistic fixed instance (outside
 # the timed expression), and calls Benchmark(<call>). The harness saves a
@@ -8,7 +8,7 @@
 # (max_no_improve), never a wall-clock budget: with a time budget every run
 # would measure the budget, not the work, so a regression would be invisible.
 
-library("MaxMin")
+library("Coreset")
 
 `%||%` <- function(x, y) if (is.null(x)) y else x
 

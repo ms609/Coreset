@@ -2,8 +2,8 @@
 # (asserted by grasp-invariance.R), so the objective column must not move.
 # Local relative figures for choosing between implementations; real scaling
 # curves belong on Hamilton.
-library(MaxMin)
-cat("lib:", dirname(system.file(package = "MaxMin")), "\n")
+library(Coreset)
+cat("lib:", dirname(system.file(package = "Coreset")), "\n")
 set.seed(11)
 d <- as.matrix(dist(matrix(rnorm(2000 * 10), 2000)))
 REPS <- 3L
@@ -13,7 +13,7 @@ for (pl in c(8L, 256L)) {
     for (r in seq_len(REPS)) {
       set.seed(1)
       t0 <- proc.time()[[3L]]
-      o <- MaxMin:::Grasp_cpp(d, 100L, pl, .Machine$integer.max, 10L, 0.8,
+      o <- Coreset:::Grasp_cpp(d, 100L, pl, .Machine$integer.max, 10L, 0.8,
                               Inf, nc)
       ts[r] <- proc.time()[[3L]] - t0
     }

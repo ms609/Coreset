@@ -167,7 +167,7 @@
 
 #' Constructive phase of DropAdd from a distance-column oracle
 #'
-#' Algorithm 1 of \insertCite{Porumbel2011;textual}{MaxMin} against a column
+#' Algorithm 1 of \insertCite{Porumbel2011;textual}{Coreset} against a column
 #' oracle: the counterpart of `.DropAddConstruct()`that never materialises the
 #' distance matrix.
 #'
@@ -377,7 +377,7 @@
 #' DropAdd tabu search algorithm, which comprises a greedy construction
 #' followed by a first-in, first-out drop-add tabu search, with streamlined
 #' neighbour-evaluation tricks
-#' \insertCite{@algorithms 1--4 in @Porumbel2011}{MaxMin}.
+#' \insertCite{@algorithms 1--4 in @Porumbel2011}{Coreset}.
 #'
 #' @param k Integer: subset size, \eqn{2 \le k \le N}.
 #' @param d A \code{dist} object, a square symmetric numeric matrix, or a
@@ -473,7 +473,7 @@
 DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
                     points = NULL, maxCandidates = 46340L, seed = NULL,
                     N = NULL) {
-  progress <- getOption("MaxMin.progress", interactive())
+  progress <- getOption("Coreset.progress", interactive())
   if (!is.null(points) && !is.null(d)) {
     stop("supply `d` or `points`, not both")
   }

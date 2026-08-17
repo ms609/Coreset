@@ -6,15 +6,15 @@
 args <- commandArgs(trailingOnly = TRUE)
 libdir <- args[[1L]]
 reps <- if (length(args) >= 2L) as.integer(args[[2L]]) else 6L
-library(MaxMin, lib.loc = libdir)
-cat("lib:", dirname(system.file(package = "MaxMin")), "\n")
+library(Coreset, lib.loc = libdir)
+cat("lib:", dirname(system.file(package = "Coreset")), "\n")
 
 set.seed(11)
 d <- as.matrix(dist(matrix(rnorm(2000L * 10L), 2000L)))
 t0 <- proc.time()[[3L]]
 for (r in seq_len(reps)) {
   set.seed(1)
-  o <- MaxMin:::Grasp_cpp(d, 100L, 256L, .Machine$integer.max, 10L, 0.8, Inf,
+  o <- Coreset:::Grasp_cpp(d, 100L, 256L, .Machine$integer.max, 10L, 0.8, Inf,
                           1L)
 }
 cat(sprintf("Elapsed: %.2f s over %d reps; iters=%d obj=%.17g\n",

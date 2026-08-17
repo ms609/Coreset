@@ -64,12 +64,12 @@ test_that("ExactMaxSum result prints with a total-distance summary", {
 test_that("the local-search helpers return valid k-subsets", {
   set.seed(3)
   d <- as.matrix(dist(matrix(rnorm(40), ncol = 2)))
-  greedy <- MaxMin:::.MaxSumGreedy(d, 5L, seed = which.max(rowSums(d)))
+  greedy <- Coreset:::.MaxSumGreedy(d, 5L, seed = which.max(rowSums(d)))
   expect_length(greedy, 5L)
   expect_true(!anyDuplicated(greedy))
-  improved <- MaxMin:::.MaxSumLocalSearch(d, 5L, greedy)
+  improved <- Coreset:::.MaxSumLocalSearch(d, 5L, greedy)
   expect_length(improved, 5L)
   # local search never worsens the objective
-  expect_gte(MaxMin:::.MaxSumScore(d, improved),
-             MaxMin:::.MaxSumScore(d, greedy))
+  expect_gte(Coreset:::.MaxSumScore(d, improved),
+             Coreset:::.MaxSumScore(d, greedy))
 })

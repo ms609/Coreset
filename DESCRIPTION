@@ -1,6 +1,6 @@
-Package: MaxMin
+Package: Coreset
 Title: Maximum-Minimum Diversity, Discrete k-Centre, and Max-Mean Dispersion Subset Selection
-Version: 0.0.0.9011
+Version: 0.0.0.9000
 Authors@R:
   person("Martin R.", "Smith",
          email = "martin.smith@durham.ac.uk",
@@ -50,8 +50,8 @@ Suggests:
   testthat (>= 3.0.0)
 VignetteBuilder: quarto
 LinkingTo: Rcpp
-URL: https://ms609.github.io/MaxMin/
-BugReports: https://github.com/ms609/MaxMin/issues
+URL: https://ms609.github.io/Coreset/
+BugReports: https://github.com/ms609/Coreset/issues
 Config/Needs/benchmark: bench, highs
 Config/Needs/check: rcmdcheck, testthat
 Config/Needs/coverage: covr

@@ -16,7 +16,7 @@ inst/doc
 revdep/
 *.Rproj*
 .Rproj.user
-!MaxMin.Rproj
+!Coreset.Rproj
 *.site
 *.bak
 .positai
@@ -37,5 +37,5 @@ dev/profiling/.Makevars.symboled
 
 # Other additions
 /*.Rcheck
-MaxMin_*.tar.gz
+Coreset_*.tar.gz
 *.gcda

@@ -45,7 +45,7 @@ to maximise the mean dispersion.
 }
 \details{
 \code{MaxMean()} implements the reinforcement-learning tabu search
-algorithm of \insertCite{Dieudonne2020}{MaxMin}.
+algorithm of \insertCite{Dieudonne2020}{Coreset}.
 An initial solution is constructed randomly for the first restart and
 via \eqn{Q}-learning thereafter; each initial solution is then refined by a
 tabu search using one-flip moves (adding or removing one element per step).
@@ -53,14 +53,14 @@ Restarts continue until either the \code{maxSeconds} or \code{maxIter} budget is
 reached.
 
 The reinforcement-learning and tabu hyperparameters are fixed at the tuned
-values reported by \insertCite{Dieudonne2020}{MaxMin} (greedy factor
+values reported by \insertCite{Dieudonne2020}{Coreset} (greedy factor
 \eqn{\epsilon = 0.7}, learning rate \eqn{\alpha = 0.5}, discount
 \eqn{\gamma = 0.5}, maximum tabu tenure \eqn{120}, search depth 50 000).
 }
 \section{Progress bar}{
 
 In interactive sessions, status messages are shown.
-To toggle, set \code{options("MaxMin.progress" = FALSE)} (or \code{TRUE}).
+To toggle, set \code{options("Coreset.progress" = FALSE)} (or \code{TRUE}).
 }
 
 \examples{

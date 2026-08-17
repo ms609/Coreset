@@ -12,8 +12,8 @@
 #   Rscript exact-grid.R out.rds            # capture
 #   Rscript exact-grid.R new.rds base.rds   # capture + compare
 lib <- Sys.getenv("FP_LIB", "")
-if (nzchar(lib)) library(MaxMin, lib.loc = lib) else library(MaxMin)
-options(MaxMin.progress = FALSE)
+if (nzchar(lib)) library(Coreset, lib.loc = lib) else library(Coreset)
+options(Coreset.progress = FALSE)
 args <- commandArgs(trailingOnly = TRUE)
 stopifnot(length(args) >= 1L)
 

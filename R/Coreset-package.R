@@ -1,4 +1,4 @@
-#' MaxMin: Maximum-Minimum Diversity, Discrete k-Centre, and Max-Mean
+#' Coreset: Maximum-Minimum Diversity, Discrete k-Centre, and Max-Mean
 #' Dispersion Subset Selection
 #'
 #' Selects a representative subset of a fixed candidate set.
@@ -42,7 +42,7 @@
 #' The solvers need `d[i, j]` and `d[j, i]` to agree exactly, being free to
 #' read whichever is the cheaper memory access. A matrix that misses this only
 #' through rounding has its triangles averaged, with a warning;
-#' `options(MaxMin.symmetryTolerance = )` sets how large a discrepancy — scaled
+#' `options(Coreset.symmetryTolerance = )` sets how large a discrepancy — scaled
 #' by `max(1, |d[i, j]|, |d[j, i]|)` — is repaired rather than refused. It
 #' defaults to `100 * .Machine$double.eps`, as R's own `isSymmetric()` does;
 #' set it to `0` to have any inexact matrix refused.
@@ -55,5 +55,5 @@
 #' @keywords internal
 #' @importFrom Rcpp sourceCpp
 #' @importFrom Rdpack reprompt
-#' @useDynLib MaxMin, .registration = TRUE
+#' @useDynLib Coreset, .registration = TRUE
 "_PACKAGE"

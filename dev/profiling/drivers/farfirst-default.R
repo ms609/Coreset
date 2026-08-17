@@ -6,14 +6,14 @@
 # bare: see comment at foot (re-stamped each run)
 .libdir <- tryCatch(readLines("dev/profiling/.libdir", n = 1L), error = function(e) NULL)
 suppressMessages({
-  if (!is.null(.libdir) && nzchar(.libdir)) library(MaxMin, lib.loc = .libdir) else library(MaxMin)
+  if (!is.null(.libdir) && nzchar(.libdir)) library(Coreset, lib.loc = .libdir) else library(Coreset)
   library(bench)
 })
 set.seed(5813)
 
-EuclidCol  <- MaxMin:::EuclidColFromPoints_cpp
-Maximin    <- MaxMin:::MaximinFromPoints_cpp
-MinPair    <- MaxMin:::.MinPairwiseFromPoints
+EuclidCol  <- Coreset:::EuclidColFromPoints_cpp
+Maximin    <- Coreset:::MaximinFromPoints_cpp
+MinPair    <- Coreset:::.MinPairwiseFromPoints
 
 `%then%` <- function(a, b) b  # readability noop
 

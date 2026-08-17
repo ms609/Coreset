@@ -9,7 +9,7 @@
   N,
   k,
   first = NULL,
-  progress = getOption("MaxMin.progress", interactive())
+  progress = getOption("Coreset.progress", interactive())
 )
 }
 \arguments{
