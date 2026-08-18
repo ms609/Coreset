@@ -1,6 +1,6 @@
 Package: Coreset
 Title: Discrete Diversity, Dispersion, and Coverage Subset Selection
-Version: 0.0.0.9001
+Version: 0.0.0.9002
 Authors@R:
   person("Martin R.", "Smith",
          email = "martin.smith@durham.ac.uk",

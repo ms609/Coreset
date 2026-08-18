@@ -63,7 +63,8 @@
 # medium instances; DropAdd adds a deterministic anchor. The best-achieving
 # subset wins. `warmStart`, if a valid k-subset, joins the pool. Returns
 # list(value, witness), or NULL if no heuristic produced a usable subset.
-.ExactWarmStart <- function(d, n, k, warmStart, nStart = 8L) {
+.ExactWarmStart <- function(d, n, k, warmStart, nStart = 8L,
+                            graspPlateau = 50L, dropPlateau = 512L) {
   scv   <- function(idx) { s <- d[idx, idx]; diag(s) <- Inf; min(s) }
   # Coerce a raw selection to a valid sorted k-subset, or drop it (NULL).
   valid <- function(idx) {
@@ -79,14 +80,15 @@
   grasps <- local({
     op <- options(Coreset.progress = FALSE); on.exit(options(op))
     lapply(seq_len(nStart), function(s)
-      tryCatch(Grasp(k, d, plateau = 50L, maxCandidates = 0L),
+      tryCatch(Grasp(k, d, plateau = graspPlateau, maxCandidates = 0L),
                error = function(e) NULL))
   })
   raw <- c(if (is.null(warmStart)) list() else list(warmStart),
            grasps,
            list(tryCatch(local({
              op <- options(Coreset.progress = FALSE); on.exit(options(op))
-             DropAdd(d = d, k = k, plateau = 512L, maxCandidates = 0L)
+             DropAdd(d = d, k = k, plateau = dropPlateau,
+                     maxCandidates = 0L)
            }), error = function(e) NULL)))
   pool <- Filter(Negate(is.null), lapply(raw, valid))
   if (!length(pool)) {
@@ -169,6 +171,12 @@
 #' @param warmStart Integer vector giving indices of a candidate subset to add
 #'  to the heuristic warm-start pool, e.g. a selection computed by another
 #'  solver.
+#' @param nStart Integer: how many [Grasp()] restarts enter the warm-start
+#'  pool.
+#' @param graspPlateau,dropPlateau Integer: the stopping plateaus given to the
+#'  pool's [Grasp()] restarts and its [DropAdd()] pass. Deeper searches cost
+#'  more but raise the lower bound the exact search starts from; the defaults
+#'  are calibrated against the manuscript's cases and ORLIB `pmed`.
 #' @templateVar progress_shows a progress indicator is shown
 #' @template progress
 #' @return `ExactMaxMin()` returns an integer vector of length `k` (sorted
@@ -189,7 +197,8 @@
 #' pts <- matrix(rnorm(18), ncol = 2)
 #' ExactMaxMin(3L, dist(pts))
 #' @export
-ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
+ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
+                        nStart = 8L, graspPlateau = 50L, dropPlateau = 512L) {
   progress <- getOption("Coreset.progress", interactive())
   t0 <- proc.time()[[3L]]
   d <- .ExactAsMatrix(d)
@@ -205,7 +214,9 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
   # <= ws$value is feasible (the witness attains it), so the optimum is at
   # least ws$value. Without a heuristic, fall back to the trivial bound (the
   # smallest distance, whose threshold graph is edgeless).
-  ws <- .ExactWarmStart(d, n, k, warmStart)
+  ws <- .ExactWarmStart(d, n, k, warmStart, nStart = nStart,
+                        graspPlateau = graspPlateau,
+                        dropPlateau = dropPlateau)
   lowest <- if (is.null(ws)) -Inf else ws$value # nocov
 
   # Candidate thresholds: the achieved distinct distances from `lowest` up,

@@ -275,3 +275,39 @@ test_that("a malformed caller warm start is dropped, not trusted", {
   set.seed(1)
   expect_equal(ws$value, .ExactWarmStart(d, 4L, 3L, NULL)$value)
 })
+
+# ---------------------------------------------------------------------------
+# Warm-start depth is a knob, not a correctness lever
+# ---------------------------------------------------------------------------
+test_that("the warm-start knobs change the pool but not the optimum", {
+  set.seed(11L)
+  dmat <- as.matrix(dist(matrix(rnorm(28L), ncol = 2L)))
+  truth <- .BruteMaxmin(dmat, 4L)
+
+  # A shallower pool and a deeper one must certify the same value: the pool
+  # only supplies a lower bound, and everything above it is still searched.
+  set.seed(1L)
+  shallow <- ExactMaxMin(4L, dmat, nStart = 1L, graspPlateau = 1L,
+                         dropPlateau = 1L)
+  set.seed(1L)
+  deep <- ExactMaxMin(4L, dmat, nStart = 3L, graspPlateau = 512L,
+                      dropPlateau = 5000L)
+
+  expect_equal(attr(shallow, "score"), truth$objective)
+  expect_equal(attr(deep, "score"), truth$objective)
+  expect_true(attr(shallow, "proven"))
+  expect_true(attr(deep, "proven"))
+})
+
+test_that("a deeper pool reaches at least as far as a shallower one", {
+  set.seed(12L)
+  dmat <- as.matrix(dist(matrix(rnorm(120L), ncol = 3L)))
+  set.seed(2L)
+  shallow <- .ExactWarmStart(dmat, nrow(dmat), 6L, NULL, nStart = 1L,
+                             graspPlateau = 1L, dropPlateau = 1L)
+  set.seed(2L)
+  deep <- .ExactWarmStart(dmat, nrow(dmat), 6L, NULL, nStart = 8L,
+                          graspPlateau = 512L, dropPlateau = 5000L)
+  expect_true(deep$value >= shallow$value)
+  expect_length(deep$witness, 6L)
+})

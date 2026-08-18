@@ -4,7 +4,15 @@
 \alias{ExactMaxMin}
 \title{Exact Max-Min Diversity Problem solution}
 \usage{
-ExactMaxMin(k, d, maxSeconds = 60, warmStart = NULL)
+ExactMaxMin(
+  k,
+  d,
+  maxSeconds = 60,
+  warmStart = NULL,
+  nStart = 8L,
+  graspPlateau = 50L,
+  dropPlateau = 512L
+)
 }
 \arguments{
 \item{k}{Integer: target subset size, between 2 and \code{nrow(d)}.}
@@ -17,6 +25,14 @@ elapsed, returning largest threshold proven feasible.}
 \item{warmStart}{Integer vector giving indices of a candidate subset to add
 to the heuristic warm-start pool, e.g. a selection computed by another
 solver.}
+
+\item{nStart}{Integer: how many \code{\link[=Grasp]{Grasp()}} restarts enter the warm-start
+pool.}
+
+\item{graspPlateau, dropPlateau}{Integer: the stopping plateaus given to the
+pool's \code{\link[=Grasp]{Grasp()}} restarts and its \code{\link[=DropAdd]{DropAdd()}} pass. Deeper searches cost
+more but raise the lower bound the exact search starts from; the defaults
+are calibrated against the manuscript's cases and ORLIB \code{pmed}.}
 }
 \value{
 \code{ExactMaxMin()} returns an integer vector of length \code{k} (sorted

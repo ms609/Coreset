@@ -1,3 +1,12 @@
+# Coreset 0.0.0.9002 (development)
+
+- `ExactMaxMin()` gains `nStart`, `graspPlateau` and `dropPlateau`, which set
+  how many `Grasp()` restarts seed the search and how long each restart and the
+  `DropAdd()` pass run before stopping. The defaults are what the solver
+  already used, so no existing call changes. The pool only supplies a lower
+  bound, so no setting can alter the optimum reported -- a shallower pool
+  simply leaves more thresholds to be searched.
+
 # Coreset 0.0.0.9001 (development)
 
 - `ExactMaxMin()` answers a threshold from the subset it already holds where
