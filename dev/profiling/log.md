@@ -1726,4 +1726,57 @@ Status: Area not previously in the rotation; `ExactMaxMin` added as a focus
 area, status OPTIMISED for the threshold search, `AT-LIMIT` for the clique
 kernel on the evidence of the three rejected kernel levers.
 
-last_focus: 14
+## Round 15 — `ExactMaxMin` warm-start depth (2026-08-18)
+
+The one lever Round 14 left standing: the search opens at the best selection
+its heuristic pool reaches, and reaching the optimum outright turns the whole
+solve into a single infeasibility proof. The pool's depth was never measured
+against the alternative, so `nStart`, `graspPlateau` and `dropPlateau` were
+exposed (0.0.0.9002, defaults unchanged) and four designs run on one build:
+A = 8 Grasp at plateau 50 + DropAdd at 512 (the defaults); B = 512 + 5000;
+C = 512 + 512; D = 50 + 5000. ORLIB pmed took all four across three RNG draws
+(Hamilton 18424709); the exact ladder took A and B (18424710) then D
+(18431664), one cell per task.
+
+**Deeper Grasp restarts do not pay.** Over the forty pmed instances the pool's
+own cost goes from 16.3 s to 85.3 s (B) and 81.5 s (C) -- a deterministic debit,
+read straight off the `ws_time_s` column, and so immune to the timing spread
+discussed below. Reach does not move: every arm proves and matches all forty at
+every draw. Where the deeper pool does lift the opening bound to the optimum on
+ORLIB -- pmed19, pmed23, pmed37 -- the solve still gets slower, because the pool
+costs more than the probe it saved (pmed19: 0.57 s to 2.3 s). The 20-fold
+estimate in `FurthestPoint`'s `dev/profiling/probe_profile.md` assumed the
+better bound arrived free; it does not, and that recommendation is withdrawn.
+
+The rejection is on net, not universal. `tc7_ring` at k = 24 is the
+counter-example: B lifts the bound from 0.09799 to the optimum 0.10102 and the
+cell halves, 69.9 s to 32.2 s. That is far outside the spread below and is
+real. It is one cell against a debit charged on every cell.
+
+**Deeper DropAdd is free, and lifts one bound reproducibly.** Its plateau is a
+no-improvement cap and the search usually converges well below it, so raising
+512 to the package default 5000 costs 0.2 s across pmed and 1.1 s across the
+ladder's 123 proven cells. It takes pmed30's opening bound from 14 to the
+optimum 15 at all three draws, and that instance from 3.4/4.0/3.9 s to
+2.8/2.6/2.2 s. On the ladder it moves the bound on one cell of 123, and that
+one does not reach the optimum. Everything else it does is within the spread.
+
+**Nothing below about 20% is resolvable here, so no suite total is quoted.**
+Arms A and D open at an identical bound on 122 of 123 proven ladder cells and
+117 of 120 pmed pairs. An identical bound means an identical witness and an
+identical probe sequence -- the search takes no RNG, and the initial witness
+does not seed it -- so those are the same computation timed twice. Charging the
+pool separately and comparing search time alone, the cells above one second
+differ by -17.8% to +11.1% on the ladder and -20.9% to +17.7% on pmed. The
+suite and ladder totals move by more than their signal: pmed's identical-bound
+instances total 112.1/108.8/112.0 s under A and 116.6/93.2/94.3 s under D, on
+work that is byte-for-byte the same. Per-cell single replicates on the `shared`
+partition support "this bound was lifted" and "the pool costs this much"; they
+do not support a percentage.
+
+Status: `graspPlateau` stays at 50 -- deeper is a measured loss.
+`dropPlateau = 5000` is recommended and not yet defaulted; it is free, it
+cannot lower the bound, and it buys pmed30. Adopting it belongs with the
+`b0bbaa7` merge and re-pin, as one re-measure.
+
+last_focus: 15
