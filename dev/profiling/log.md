@@ -767,7 +767,6 @@ clamps are defensive-unreachable by design; codecov may flag those lines
 compiled and run only on Windows/MinGW so far — Linux/gcc is unexercised
 until a push triggers CI, and real scaling curves belong on Hamilton.
 
-
 ## Round 6 — 2026-08-13 — Area 3 (Grasp): VTune certification + two exact levers
 
 **Trigger:** user mandate to eke out every remaining ounce before the PR.
@@ -845,8 +844,6 @@ symboled VTune build still needs one (adds -g -fno-omit-frame-pointer via
 PKG_CXXFLAGS without losing $(SHLIB_OPENMP_CXXFLAGS)).
 last_focus unchanged (targeted continuation of area 3).
 
-
-
 ## Round 7 — 2026-08-13 — Area 1 (FarFirst): argmax fold + nCores-invariant parallel kernels
 
 **Trigger:** user mandate ("direct the same level of effort at ... the
@@ -910,8 +907,6 @@ farfirst-battery.R (925-case old-vs-new + cross-path), farfirst-timing.R,
 farfirst-invariance.R, farfirst-vtune7.R. Baselines refreshed (area 1
 round-7 rows). Cleanup: result_ff7/ and .vtune-lib-* deleted post-round.
 last_focus unchanged (user-targeted round on area 1).
-
-
 
 ## Round 8 — 2026-08-13 — Area 3 (Grasp): memory-layout stab, REFUTED — floor certified on the second axis
 
@@ -1659,4 +1654,76 @@ Status: Area 2 → OPTIMISED; the matrix kernel's serial-at-limit certification
 from round 10 stands for its passes (argmax fusion and threading both measured
 flat there) but not for the recompute branch, which this round moved.
 
-last_focus: 2
+---
+
+## Round 14 — `ExactMaxMin` threshold search (2026-08-18)
+
+**Where the time goes.** Measured on Hamilton by replaying the gallop and
+bisection one probe at a time (`furthest-point/dev/bench/gallop_replay.R`,
+jobs 18418276 / 18418289). Two regimes, and they are opposites:
+
+| cell | warm start | feasible probes | infeasible probes |
+|---|--:|--:|--:|
+| pmed34 (n=700, k=140) | 2.36 s | **54.40 s** | 0.03 s |
+| pmed40 (n=900, k=90) | 1.76 s | **38.98 s** | 0.10 s |
+| `tc7_ring` k=24 | 0.06 s | 1.51 s | **68.12 s** |
+| `tc19_breastcancer` k=48 | 0.44 s | 1.20 s | 7.37 s |
+
+Integer distances with large `k` spend everything on the last *feasible* probe;
+continuous distances spend it on the refutations flanking the optimum. The
+(k-1)-core peel empties the graph at the thresholds above the optimum, which is
+why refutation is free in the first regime and dominant in the second.
+
+**The search barely goes above the optimum.** The warm start is already optimal
+on 32 of the 40 ORLIB instances and 51 of the exact ladder's 69 cells, and the
+gallop overshoots by at most one doubling (optima at candidate 28, 388 and 3047
+on ring / breastcancer / pima; the gallop reached 32, 512 and 3056). An **upper
+bound was therefore rejected without being built**: it can only remove
+candidates above the optimum, which cost 0.01 s each, and it can never excuse
+refuting the first candidate above the answer, because that refutation *is* the
+certificate.
+
+**Kept: answer a threshold from the witness in hand.** A probe returns some
+`k`-clique, not a best one, and its realised minimum is often far above the
+threshold asked for -- on `tc17_vehicle` k=48, eight consecutive gallop probes
+each cost 5.3 s and each returned a witness realising the *same* value,
+candidate 263. Thresholds at or below the best witness's realised value are now
+answered from that witness. The probe trajectory is unchanged, so the change
+cannot cost a probe it did not save.
+
+A/B, three repeats, medians, both arms in one task on one node (job 18419304):
+
+| cell | base | kept | |
+|---|--:|--:|--:|
+| `tc13_pima` k=48 | 2.334 s | 1.471 s | **-37.0%** |
+| `tc19_breastcancer` k=48 | 8.969 s | 8.219 s | **-8.4%** |
+| the other nine cells | | | within 0.7% |
+| suite total | 182.3 s | 179.8 s | -1.4% |
+
+Nothing measurably slower. The ORLIB cells do not move: when the warm start
+misses there it misses by exactly one attainable threshold -- true of all eight
+ORLIB misses and of all 40 synthetic graph metrics searched -- so there is no
+overshoot to exploit. The lever is a continuous-distance one.
+
+**Rejected, all measured, all reverted.** Recorded so they are not retried:
+
+| lever | result |
+|---|---|
+| greedy clique pass before the exhaustive search, 8 starts per component | pmed34 56.76 -> 59.73 s, pmed40 40.46 -> 43.18 s. Highest-degree-first greedy (equivalently min-degree greedy independent set on the sparse side) never found the hard cliques. |
+| per-node `(k - depth - 1)`-core peel of the candidate set | pmed34 56.8 -> 154.1 s (**+171%**). Sound, and far too expensive per node at large `k`. |
+| MCS re-numbering in the colouring (Tomita et al. 2010) | suite 183.8 -> 307.1 s (**+67%**); pmed34 +162%, ring +17.5%. Helped pmed30 (-31%) and pima (-23%) and nothing else. |
+| advancing the search bracket to the witness's realised index (not merely skipping probes) | suite 182.0 -> 185.5 s. Wins 24% and 50% on two cells but moves the probe trajectory, costing ring 10.7% and the sub-second cells 3-9%. |
+
+**Coverage.** The gallop's feasible branch and the *entire* bisection were
+untested: on 3200 random small Euclidean instances the heuristics attain the
+optimum outright, so the search stopped at its first probe every time. Two
+fixtures now reach them -- a sparse-graph shortest-path closure (n=120, k=30),
+where the warm start lands one threshold short, and a 120-point ring (k=6),
+where it lands thirteen short and the first witness covers only six of them.
+`exact.R` 83.9% -> 98.3%.
+
+Status: Area not previously in the rotation; `ExactMaxMin` added as a focus
+area, status OPTIMISED for the threshold search, `AT-LIMIT` for the clique
+kernel on the evidence of the three rejected kernel levers.
+
+last_focus: 14

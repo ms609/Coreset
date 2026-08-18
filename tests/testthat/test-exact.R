@@ -189,3 +189,89 @@ test_that("ExactMaxMin rejects an asymmetric matrix loudly", {
   d[2L, 5L] <- d[2L, 5L] + 1
   expect_error(ExactMaxMin(3L, d), "must be symmetric")
 })
+
+# On small point sets the heuristics attain the optimum outright, so the gallop
+# stops at its first probe and the bisection never runs -- 3200 random Euclidean
+# instances produced no exception. Two shapes do defeat them, and between them
+# they exercise the rest of the search: a graph metric, where the warm start
+# lands one attainable threshold short, and a ring, where it lands short and the
+# first witness reaches several candidates past the threshold it was asked for.
+
+# Shortest-path closure of a sparse weighted graph, as the ORLIB p-median
+# instances are built.
+.GraphMetric <- function(n, m, seed) {
+  set.seed(seed)
+  d <- matrix(Inf, n, n)
+  diag(d) <- 0
+  ends <- matrix(sample.int(n, 2L * m, replace = TRUE), nrow = 2L)
+  w <- sample.int(20L, m, replace = TRUE)
+  for (q in seq_len(m)) {
+    a <- ends[1L, q]
+    b <- ends[2L, q]
+    if (a != b) {
+      d[a, b] <- w[q]
+      d[b, a] <- w[q]
+    }
+  }
+  for (v in seq_len(n)) d <- pmin(d, outer(d[, v], d[v, ], "+"))
+  d
+}
+
+test_that("the gallop and bisection close a graph metric the heuristics miss", {
+  d <- .GraphMetric(120L, 360L, 20L)
+  expect_true(all(is.finite(d)))
+  set.seed(20)
+  ws <- .ExactWarmStart(d, 120L, 30L, NULL)
+  set.seed(20)
+  sel <- ExactMaxMin(k = 30L, d = d, maxSeconds = 60)
+  # The warm start is short, so the search must take a feasible probe before it
+  # can take an infeasible one.
+  expect_lt(ws$value, attr(sel, "score"))
+  expect_true(attr(sel, "proven"))
+  expect_equal(attr(sel, "score"), 16)
+  sub <- d[sel, sel]
+  diag(sub) <- Inf
+  expect_length(sel, 30L)
+  expect_equal(min(sub), attr(sel, "score"))
+})
+
+test_that("a witness reaching past its threshold still yields the optimum", {
+  # Thirteen attainable thresholds separate this warm start from the optimum
+  # and the first witness covers only six of them, so the search must both skip
+  # the thresholds that witness already attains and take a feasible step of its
+  # own on the way down.
+  set.seed(6)
+  ang <- sort(stats::runif(120L, 0, 2 * pi))
+  pts <- cbind(cos(ang), sin(ang)) * (1 + stats::rnorm(120L, sd = 0.02))
+  d <- as.matrix(stats::dist(pts))
+  set.seed(6)
+  ws <- .ExactWarmStart(d, 120L, 6L, NULL)
+  set.seed(6)
+  sel <- ExactMaxMin(k = 6L, d = d, maxSeconds = 60)
+  expect_lt(ws$value, attr(sel, "score"))
+  expect_true(attr(sel, "proven"))
+  sub <- d[sel, sel]
+  diag(sub) <- Inf
+  expect_equal(min(sub), attr(sel, "score"))
+  # Optimality: no 8-subset beats it, checked against the next attainable
+  # threshold rather than the search that produced it.
+  cand <- sort(unique(TriangleAtLeast_cpp(d, attr(sel, "score"))))
+  nxt <- cand[cand > attr(sel, "score")][1L]
+  h <- EdgesAtLeast_cpp(d, nxt)
+  expect_identical(
+    ThresholdDecide_cpp(h[["hi"]], h[["hj"]], 120L, 6L, 60)[["status"]],
+    "infeasible"
+  )
+})
+
+test_that("a malformed caller warm start is dropped, not trusted", {
+  d <- as.matrix(stats::dist(matrix(c(0, 0, 1, 0, 0, 1, 1, 1), ncol = 2L,
+                                    byrow = TRUE)))
+  set.seed(1)
+  # Too short to be a k-subset: the pool must fall back to its own heuristics
+  # rather than carry a bound it cannot justify.
+  ws <- .ExactWarmStart(d, 4L, 3L, warmStart = c(1L, 2L))
+  expect_length(ws$witness, 3L)
+  set.seed(1)
+  expect_equal(ws$value, .ExactWarmStart(d, 4L, 3L, NULL)$value)
+})

@@ -1,3 +1,16 @@
+# Coreset 0.0.0.9001 (development)
+
+- `ExactMaxMin()` answers a threshold from the subset it already holds where
+  that subset attains it. A feasibility probe returns some `k`-clique rather
+  than a best one, and the minimum distance it realises is often well above the
+  threshold that was asked for -- on the larger cases, hundreds of attainable
+  thresholds above -- so the probes in between were re-finding the same subset.
+  The thresholds the search visits are unchanged, and so is every optimum it
+  reports. Worth 37% on `tc13_pima` at `k` = 48 and 8% on `tc19_breastcancer`;
+  no cell of the benchmark suite was slower, and the sub-second cells sat
+  within noise. The gain is a continuous-distance one: where distances are
+  integers the witness rarely reaches past the threshold it was asked for.
+
 # Coreset 0.0.0.9000 (development)
 
 First release. `Coreset` selects a representative subset of a fixed candidate

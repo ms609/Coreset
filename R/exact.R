@@ -258,6 +258,32 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
     )
   }
 
+  # A feasible probe returns some k-clique of H(lambda), not a best one, so the
+  # minimum distance its witness realises is at least lambda and can be far
+  # above -- on the larger instances, hundreds of candidates above, and the
+  # same subset is then returned again by every probe in between. Every
+  # threshold up to that value is attained by the subset already in hand, so
+  # those probes decide nothing and are answered from the witness instead of
+  # the oracle. The thresholds the search visits are unchanged; only the ones
+  # whose answer is already known stop being paid for.
+  best <- new.env(parent = emptyenv())
+  best$obj <- -Inf
+  Realised <- function(witness) {
+    sub <- d[witness, witness, drop = FALSE]
+    diag(sub) <- Inf
+    min(sub)
+  }
+  Feasible <- function(idx, remaining) {
+    if (cand[idx] <= best$obj) {
+      return(list(verdict = "feasible", witness = bestWitness, known = TRUE))
+    }
+    v <- feas(idx, remaining)
+    if (identical(v$verdict, "feasible")) {
+      best$obj <- Realised(v$witness)
+    }
+    v
+  }
+
   # cand[1] is the warm start's own realised value, so the search starts there.
   i0 <- 1L
   bestIdx <- 1L
@@ -265,6 +291,7 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
     bestWitness <- seq_len(n)
   } else { # nocov end
     bestWitness <- ws$witness
+    best$obj <- ws$value
   }
   inconclusive <- FALSE
 
@@ -276,7 +303,7 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
   while (probe <= nCand) {
     rem <- maxSeconds - Elapsed()
     if (rem <= 0) { inconclusive <- TRUE; break } # nocov
-    v <- feas(probe, rem); tick()
+    v <- Feasible(probe, rem); tick()
     if (identical(v$verdict, "feasible")) {
       loF <- probe; bestIdx <- probe; bestWitness <- v$witness
       step <- step * 2L; probe <- probe + step
@@ -296,7 +323,7 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
       rem <- maxSeconds - Elapsed()
       if (rem <= 0) { inconclusive <- TRUE; break } # nocov
       mid <- (lo + hi) %/% 2L
-      v <- feas(mid, rem); tick()
+      v <- Feasible(mid, rem); tick()
       if (identical(v$verdict, "feasible")) {
         bestIdx <- mid; bestWitness <- v$witness; lo <- mid + 1L
       } else if (identical(v$verdict, "infeasible")) {
@@ -313,5 +340,9 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
   # bestIdx certified feasible (heuristic witness or IP witness) and the next
   # candidate certified infeasible (or bestIdx is the largest distance).
   proven <- !inconclusive
+  # `bestIdx` is the largest index certified feasible, and whichever witness
+  # certified it -- probed there, or carried down from a higher threshold it
+  # already attained -- realises exactly that threshold: any more would
+  # contradict the infeasibility proven just above it. Recover() checks that.
   Recover(bestWitness, cand[bestIdx], proven)
 }
