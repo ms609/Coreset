@@ -311,3 +311,19 @@ test_that("a deeper pool reaches at least as far as a shallower one", {
   expect_true(deep$value >= shallow$value)
   expect_length(deep$witness, 6L)
 })
+
+test_that("threads change neither the selection nor the score", {
+  set.seed(88)
+  pts <- matrix(stats::rnorm(60 * 3), ncol = 3)
+  d <- as.matrix(stats::dist(pts))
+
+  # Identical pools (same seed), so any divergence would be the search's.
+  set.seed(5); one <- ExactMaxMin(6L, d)
+  set.seed(5); two <- ExactMaxMin(6L, d, threads = 2L)
+  expect_true(isTRUE(attr(two, "proven")))
+  expect_identical(as.integer(two), as.integer(one))
+  expect_identical(attr(two, "score"), attr(one, "score"))
+
+  expect_error(ExactMaxMin(3L, d, threads = 0L), "positive integer")
+  expect_error(ExactMaxMin(3L, d, threads = NA), "positive integer")
+})

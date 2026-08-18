@@ -1,3 +1,16 @@
+# Coreset 0.0.0.9003 (development)
+
+- `ExactMaxMin()` gains `threads`, which lets each feasibility probe search
+  the branches of its root node concurrently (OpenMP; silently serial where
+  that is unavailable). The default of 1 is the previous behaviour exactly.
+  The selection cannot depend on the thread count: an infeasibility proof
+  exhausts every branch whatever order they run in, and when a worker thread
+  finds a witness the probe is re-run serially, so the witness kept is always
+  the serial one. Only where `maxSeconds` cuts a probe off can the outcome
+  shift, and that boundary was never deterministic. The gain concentrates in
+  infeasibility proofs, which dominate exactly when the warm start already
+  sits at or near the optimum and the search's job is certification.
+
 # Coreset 0.0.0.9002 (development)
 
 - `ExactMaxMin()` gains `nStart`, `graspPlateau` and `dropPlateau`, which set

@@ -28,14 +28,35 @@
 // vertex's neighbourhood -- the operation the search performs at every node --
 // a linear word-AND pass.
 //
-// All tie-breaks are by vertex index, so the output is deterministic.
+// All tie-breaks are by vertex index, so the output is deterministic. With
+// `threads > 1` the branches of the root node are searched concurrently, and
+// determinism survives because of what each verdict needs: an infeasibility
+// proof exhausts every branch, so its verdict cannot depend on the order the
+// branches were visited in; and a witness found by a worker thread is never
+// returned -- it only establishes that one exists, and the probe is then
+// re-run serially so the witness reported is the one the serial search finds.
 
 #include <Rcpp.h>
 #include <vector>
 #include <algorithm>
+#include <atomic>
 #include <cstdint>
 #include <chrono>
+#include <memory>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 using namespace Rcpp;
+
+// Detect a pending user interrupt without longjmp-ing: R_CheckUserInterrupt
+// inside R_ToplevelExec turns the jump into a FALSE return. Main R thread
+// only.
+static void CheckInterruptFn(void*) {
+  R_CheckUserInterrupt();
+}
+static bool PendingInterrupt() {
+  return R_ToplevelExec(CheckInterruptFn, NULL) == FALSE;
+}
 
 typedef uint64_t BitWord;
 static const int kBits = 64;
@@ -47,7 +68,8 @@ struct CliqueSearch {
   int nv;
   int nw;
   int k;
-  std::vector<BitWord> adj;                    // nv * nw
+  std::vector<BitWord> adjStore;               // nv * nw; empty in a worker
+  const BitWord* adj;                          // adjStore's data, or shared
   std::vector<std::vector<BitWord> > cand;     // candidate set per depth
   std::vector<std::vector<int> > order, colour;
   std::vector<BitWord> uncoloured, sameColour; // colouring scratch
@@ -56,6 +78,13 @@ struct CliqueSearch {
   bool expired;
   long long nodes;
   std::chrono::steady_clock::time_point deadline;
+  // Worker mode (stop != NULL): abandon when *stop is raised, and never touch
+  // the R API. The thread that owns the R stack additionally polls for a
+  // pending interrupt and raises *stop itself, recording it in *interrupted;
+  // the throw happens after the threads join.
+  std::atomic<bool>* stop;
+  std::atomic<bool>* interrupted;
+  bool pollInterrupt;
 
   inline void SetBit(BitWord* s, int v) const {
     s[v >> 6] |= (BitWord(1) << (v & 63));
@@ -75,12 +104,31 @@ struct CliqueSearch {
 
   CliqueSearch(int nv_, int k_, std::chrono::steady_clock::time_point end)
     : nv(nv_), nw((nv_ + kBits - 1) / kBits), k(k_),
-      adj(static_cast<size_t>(nv_) * nw, 0),
+      adjStore(static_cast<size_t>(nv_) * nw, 0), adj(adjStore.data()),
       cand(k_ + 1, std::vector<BitWord>(nw, 0)),
       order(k_ + 1, std::vector<int>(nv_, 0)),
       colour(k_ + 1, std::vector<int>(nv_, 0)),
       uncoloured(nw, 0), sameColour(nw, 0),
-      found(false), expired(false), nodes(0), deadline(end) {}
+      found(false), expired(false), nodes(0), deadline(end),
+      stop(NULL), interrupted(NULL), pollInterrupt(false) {
+    cur.reserve(k_ + 1);
+  }
+
+  // A worker sharing the master's adjacency read-only. All of its own state
+  // is allocated here, before the parallel region, so nothing in the search
+  // itself can throw across a thread boundary.
+  CliqueSearch(const CliqueSearch& master,
+               std::atomic<bool>* stop_, std::atomic<bool>* interrupted_)
+    : nv(master.nv), nw(master.nw), k(master.k),
+      adjStore(), adj(master.adj),
+      cand(master.k + 1, std::vector<BitWord>(master.nw, 0)),
+      order(master.k + 1, std::vector<int>(master.nv, 0)),
+      colour(master.k + 1, std::vector<int>(master.nv, 0)),
+      uncoloured(master.nw, 0), sameColour(master.nw, 0),
+      found(false), expired(false), nodes(0), deadline(master.deadline),
+      stop(stop_), interrupted(interrupted_), pollInterrupt(false) {
+    cur.reserve(master.k + 1);
+  }
 
   // Greedy colouring of `set`, writing its vertices to order/colour sorted by
   // colour ascending. Colour c is a set of pairwise non-adjacent vertices, so
@@ -117,7 +165,18 @@ struct CliqueSearch {
       if (std::chrono::steady_clock::now() > deadline) {
         expired = true;
       }
-      checkUserInterrupt();
+      if (stop == NULL) {
+        checkUserInterrupt();
+      } else {
+        if (pollInterrupt && PendingInterrupt()) {  // # nocov start
+          interrupted->store(true);
+          stop->store(true);
+        }                                           // # nocov end
+        if (expired || stop->load(std::memory_order_relaxed)) {
+          expired = true;
+          stop->store(true);
+        }
+      }
     }
     if (expired) {
       return;
@@ -155,6 +214,116 @@ struct CliqueSearch {
     }
   }
 };
+
+#ifdef _OPENMP
+// Search one component's root branches across `threads` OpenMP threads.
+//
+// Branch i of the root loop is the search below root vertex ord[i], whose
+// candidates are {ord[0..i-1]} & N(ord[i]) -- the serial loop reaches that
+// set by clearing each visited root from the candidate bitmap, but it is
+// computable directly from a prefix mask, so the branches need no sequential
+// prefix and are independent. Workers share the master's adjacency read-only
+// and own everything else; the only R-API call in the region is the
+// interrupt poll on the thread that owns the R stack.
+//
+// Returns 0 when every branch was exhausted with no clique (the verdict
+// "infeasible", identical to serial because exhaustion has no order), 1 when
+// some thread found a witness (the caller re-runs the probe serially, so the
+// witness reported is the serial one), 2 when the deadline or an interrupt
+// cut the search short. `*interrupted` reports a pending user interrupt; the
+// caller must throw for it after the join, and treat the search as expired.
+static int RootParallel(CliqueSearch& cs, int threads, bool* interrupted) {
+  std::vector<int>& ord = cs.order[0];
+  std::vector<int>& col = cs.colour[0];
+  const int m = cs.ColourSort(cs.cand[0].data(), ord, col);
+  // Colours ascend along `ord`, so the roots the colour bound admits --
+  // those with col[i] >= k -- are the suffix from iLo up. The serial loop
+  // visits exactly these before its bound breaks.
+  int iLo = 0;
+  while (iLo < m && col[iLo] < cs.k) {
+    ++iLo;
+  }
+  const int nBranch = m - iLo;
+  if (nBranch <= 0) {
+    return 0;
+  }
+
+  // prefix[i] holds {ord[0..i-1]}: branch i's candidate pool before the
+  // neighbourhood intersection.
+  const int nw = cs.nw;
+  std::vector<BitWord> prefix(static_cast<size_t>(m) * nw, 0);
+  for (int i = 1; i < m; ++i) {
+    const BitWord* prev = &prefix[static_cast<size_t>(i - 1) * nw];
+    BitWord* here = &prefix[static_cast<size_t>(i) * nw];
+    std::copy(prev, prev + nw, here);
+    cs.SetBit(here, ord[i - 1]);
+  }
+
+  const int nT = threads > nBranch ? nBranch : threads;
+  std::atomic<bool> stop(false), witness(false), interruptSeen(false);
+  // Workers are built before the region so no allocation can throw inside it.
+  std::vector<std::unique_ptr<CliqueSearch> > workers;
+  workers.reserve(nT);
+  for (int t = 0; t < nT; ++t) {
+    workers.emplace_back(new CliqueSearch(cs, &stop, &interruptSeen));
+  }
+
+#pragma omp parallel num_threads(nT)
+  {
+    CliqueSearch& w = *workers[omp_get_thread_num()];
+    w.pollInterrupt = omp_get_thread_num() == 0;
+#pragma omp for schedule(dynamic)
+    for (int j = 0; j < nBranch; ++j) {
+      if (stop.load(std::memory_order_relaxed)) {
+        continue;
+      }
+      // Visit in the serial loop's order, colour descending, so the branch
+      // likeliest to hold a witness under the colouring heuristic goes first.
+      const int i = m - 1 - j;
+      const int v = ord[i];
+      w.cur.clear();
+      w.cur.push_back(v);
+      if (1 >= w.k) {                          // # nocov start
+        // Unreachable: the caller guards k >= 2.
+        witness.store(true);
+        stop.store(true);
+        continue;
+      }                                        // # nocov end
+      const BitWord* pv = &prefix[static_cast<size_t>(i) * nw];
+      const BitWord* av = &w.adj[static_cast<size_t>(v) * nw];
+      std::vector<BitWord>& next = w.cand[1];
+      bool any = false;
+      for (int t = 0; t < nw; ++t) {
+        next[t] = pv[t] & av[t];
+        any = any || next[t];
+      }
+      if (any) {
+        w.Expand(1);
+        if (w.found) {
+          w.found = false;
+          witness.store(true);
+          stop.store(true);
+        }
+      }
+    }
+  }
+
+  for (int t = 0; t < nT; ++t) {
+    cs.nodes += workers[t]->nodes;
+  }
+  if (interruptSeen.load()) {          // # nocov start
+    *interrupted = true;
+    return 2;
+  }                                    // # nocov end
+  if (witness.load()) {
+    return 1;
+  }
+  if (std::chrono::steady_clock::now() > cs.deadline) {
+    return 2;
+  }
+  return 0;
+}
+#endif
 
 // The strict upper triangle of `d`, keeping only entries >= `lowest`: the
 // candidate thresholds the search can still reach. Column-major, so a column
@@ -203,11 +372,21 @@ List EdgesAtLeast_cpp(NumericMatrix d, double lambda) {
 //   "feasible"     -- witness is a k-clique of H (ascending, 1-based),
 //   "infeasible"   -- the search was exhaustive and found none,
 //   "inconclusive" -- `maxSeconds` elapsed first.
+// With `threads > 1` each component's root branches are searched
+// concurrently. The verdict and witness are those of the serial search:
+// infeasibility is exhaustive, so it cannot depend on visiting order, and a
+// threaded witness is only a signal to re-run the probe serially. What can
+// shift is where the deadline falls, and that was never deterministic.
 // [[Rcpp::export]]
 List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
-                         int n, int k, double maxSeconds) {
+                         int n, int k, double maxSeconds, int threads = 1) {
   const R_xlen_t nE = hi.size();
   const int need = k - 1;
+#ifdef _OPENMP
+  const int nT = threads < 1 ? 1 : threads;
+#else
+  (void)threads;                               // # nocov
+#endif
   // One deadline for the whole probe: components share the caller's budget.
   const std::chrono::steady_clock::time_point deadline =
     std::chrono::steady_clock::now() +
@@ -316,7 +495,7 @@ List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
     CliqueSearch cs(nv, k, deadline);
     for (int t = 0; t < nv; ++t) {
       const int u = vars[t];
-      BitWord* row = &cs.adj[static_cast<size_t>(t) * cs.nw];
+      BitWord* row = &cs.adjStore[static_cast<size_t>(t) * cs.nw];
       for (R_xlen_t p = off[u]; p < off[u + 1]; ++p) {
         const int w = adj[p];
         if (!dead[w] && comp[w] == c) {
@@ -327,7 +506,27 @@ List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
     for (int t = 0; t < nv; ++t) {
       cs.SetBit(cs.cand[0].data(), t);
     }
-    cs.Expand(0);
+#ifdef _OPENMP
+    if (nT > 1) {
+      bool interrupted = false;
+      const int outcome = RootParallel(cs, nT, &interrupted);
+      if (interrupted) {
+        checkUserInterrupt();                  // # nocov
+      }
+      if (outcome == 1) {
+        // A witness exists; find the serial one. cand[0] is untouched by the
+        // root driver, so this is the plain search racing what remains of
+        // the deadline.
+        cs.Expand(0);
+      } else if (outcome == 2) {
+        cs.expired = true;
+      }
+    } else {
+      cs.Expand(0);
+    }
+#else
+    cs.Expand(0);                              // # nocov
+#endif
     for (int t = 0; t < nv; ++t) {
       loc[vars[t]] = -1;
     }

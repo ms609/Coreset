@@ -37,8 +37,9 @@
   d
 }
 
-.Decide <- function(hi, hj, n, k, maxSeconds = 60) {
-  Coreset:::ThresholdDecide_cpp(as.integer(hi), as.integer(hj), n, k, maxSeconds)
+.Decide <- function(hi, hj, n, k, maxSeconds = 60, threads = 1L) {
+  Coreset:::ThresholdDecide_cpp(as.integer(hi), as.integer(hj), n, k,
+                                maxSeconds, threads)
 }
 
 # Is `cl` a clique of hAdj?
@@ -257,4 +258,38 @@ test_that(".MaxISVerdict decides probes and validates its witness", {
   # A budget that cannot buy any search is inconclusive, never a verdict.
   v <- Coreset:::.MaxISVerdict(d, 6L, pa$hi, pa$hj, 5, 3L, 0)
   expect_identical(v$verdict, "inconclusive")
+})
+
+test_that("threads leave every verdict and witness at the serial answer", {
+  # The same 300-vertex random H as the expiry test: dense enough that both
+  # verdicts take real search. Infeasibility is exhaustive, so threading
+  # cannot move it; a threaded witness is only a signal to re-run the probe
+  # serially, so the witness kept must be bit-identical to the serial one.
+  set.seed(1350)
+  n <- 300L
+  m <- matrix(stats::runif(n * n), n, n)
+  hAdj <- (m + t(m)) > 1
+  diag(hAdj) <- FALSE
+  hi <- row(hAdj)[upper.tri(hAdj) & hAdj]
+  hj <- col(hAdj)[upper.tri(hAdj) & hAdj]
+
+  serialNo <- .Decide(hi, hj, n, 16L)
+  expect_identical(serialNo$status, "infeasible")
+  expect_identical(.Decide(hi, hj, n, 16L, threads = 2L), serialNo)
+
+  serialYes <- .Decide(hi, hj, n, 6L)
+  expect_identical(serialYes$status, "feasible")
+  expect_identical(.Decide(hi, hj, n, 6L, threads = 2L), serialYes)
+
+  # Expiry with threads: no witness exists at k = 16, so a zero budget leaves
+  # the probe undecided however many workers were looking.
+  expiredT <- .Decide(hi, hj, n, 16L, maxSeconds = 0, threads = 2L)
+  expect_identical(expiredT$status, "inconclusive")
+  expect_identical(expiredT$witness, integer(0))
+
+  # A component the colour bound closes before any root branch opens: the
+  # 4-cycle greedily colours with 2 < k = 3, so the threaded driver has no
+  # branches to hand out.
+  sq <- .Decide(c(1L, 2L, 3L, 1L), c(2L, 3L, 4L, 4L), 4L, 3L, threads = 2L)
+  expect_identical(sq$status, "infeasible")
 })
