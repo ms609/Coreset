@@ -102,8 +102,6 @@ test_that("KCentre rejects bad k and non-finite distances", {
 # ----- ExactKCentre ---------------------------------------------------------
 
 test_that("ExactKCentre proves the brute-force optimum on small instances", {
-  skip_if_not_installed("highs")
-  skip_if_not_installed("Matrix")
   for (seed in c(31L, 32L, 33L)) {
     set.seed(seed)
     pts <- matrix(rnorm(20), ncol = 2)          # n = 10
@@ -121,8 +119,6 @@ test_that("ExactKCentre proves the brute-force optimum on small instances", {
 })
 
 test_that("ExactKCentre is no worse than CDSh, which is no worse than optimal", {
-  skip_if_not_installed("highs")
-  skip_if_not_installed("Matrix")
   set.seed(41)
   d <- as.matrix(stats::dist(matrix(rnorm(24), ncol = 2)))   # n = 12
   k <- 3L
@@ -133,8 +129,6 @@ test_that("ExactKCentre is no worse than CDSh, which is no worse than optimal", 
 })
 
 test_that("ExactKCentre handles k = n trivially", {
-  skip_if_not_installed("highs")
-  skip_if_not_installed("Matrix")
   d <- as.matrix(stats::dist(matrix(rnorm(16), ncol = 2)))
   res <- ExactKCentre(d = d, nrow(d))
   expect_true(attr(res, "proven"))
@@ -156,8 +150,6 @@ test_that("US-spelling aliases give the same results as the UK functions", {
   idx <- c(1L, 5L, 9L)
   expect_equal(KCenterRadius(d = d, idx), KCentreRadius(d = d, idx))
 
-  skip_if_not_installed("highs")
-  skip_if_not_installed("Matrix")
   d10 <- d[1:10, 1:10]
   expect_equal(attr(ExactKCenter(d = d10, 3L), "radius"),
                attr(ExactKCentre(d = d10, 3L), "radius"))
@@ -180,8 +172,6 @@ test_that("KCentre is never worse than Gonzalez on small random instances (KC-00
 })
 
 test_that("KCentre never exceeds twice the optimum (restored 2-approx; KC-001)", {
-  skip_if_not_installed("highs")
-  skip_if_not_installed("Matrix")
   for (seed in 1:6) {
     set.seed(200L + seed)
     d <- as.matrix(stats::dist(matrix(rnorm(40L), ncol = 2L)))   # n = 20 (exhaustive)
@@ -199,8 +189,6 @@ test_that("KCentre and ExactKCentre reject asymmetric distance matrices (KC-002)
   # so it scores the matrix as written.
   expect_identical(KCentreRadius(d, c(1L, 4L)),
                    max(pmin(d[, 1L], d[, 4L])))
-  skip_if_not_installed("highs")
-  skip_if_not_installed("Matrix")
   expect_error(ExactKCentre(d = d, 3L), "symmetric")
 })
 
@@ -214,8 +202,6 @@ test_that("KCentreRadius rejects out-of-range indices on both paths (KC-003)", {
 })
 
 test_that("ExactKCentre returns a consistent unproven incumbent under a tiny budget (KC-004, KC-005)", {
-  skip_if_not_installed("highs")
-  skip_if_not_installed("Matrix")
   set.seed(61)
   d <- as.matrix(stats::dist(matrix(rnorm(60L), ncol = 2L)))     # n = 30
   res <- ExactKCentre(d = d, 4L, maxSeconds = 1e-6)
@@ -281,8 +267,6 @@ test_that("the Gonzalez floor strictly improves a sub-Gonzalez CDSh result (KC-0
 # ----- ExactKCentre argument validation -------------------------------------
 
 test_that("ExactKCentre rejects an unsupported solver and bad k", {
-  skip_if_not_installed("highs")
-  skip_if_not_installed("Matrix")
   d <- as.matrix(stats::dist(matrix(rnorm(20L), ncol = 2L)))     # n = 10
   expect_error(ExactKCentre(d = d, c(1L, 2L)), "single positive")
   expect_error(ExactKCentre(d = d, 0L), "single positive")
@@ -305,15 +289,15 @@ test_that("KCentreExact format and print cover proven and unproven states", {
   proven <- structure(
     c(2L, 5L),
     radius = 0.5, proven = TRUE, time_s = 0.1,
-    solver = "highs", n = 10L, k = 2L,
+    solver = "cover search", n = 10L, k = 2L,
     class = c("KCentreExact", "KCentreSelection"))
   unproven <- structure(
     3L,
     radius = 1.2, proven = FALSE, time_s = 0.1,
-    solver = "highs", n = 10L, k = 1L,
+    solver = "cover search", n = 10L, k = 1L,
     class = c("KCentreExact", "KCentreSelection"))
   expect_match(format(proven), "proven optimal, covering radius = ")
   expect_match(format(unproven), "unproven incumbent, covering radius <= ")
   expect_match(format(unproven), "^1 centre ")   # singular
-  expect_output(print(proven), "highs")
+  expect_output(print(proven), "cover search")
 })
