@@ -1720,18 +1720,39 @@ reaches.
   frozen-baseline reference** — the old `-1L` matrix cases are unreproducible
   under the new script by design.
 
-**Re-baselined on Hamilton** (`cn059`, EPYC 7702, r/4.5.1, serial; three
-whole-script reps, objectives identical throughout). Full table in
-baselines.md; the structural figure is `matrix n=4e3 m=10 construct` at
-**0.2 ms**. Under the old protocol that cell was dominated by the row-sum
-sweep, so it was almost entirely timing a warm start `DropAdd()` had already
-abandoned; what remains is the ten column passes the construction performs.
-No cell here is a speedup over rounds 4-13 — the matrix cells changed
-protocol and the points cells changed machine — and the log says so rather
-than banking a number the code did not earn. Rep spread reaches 4.0 ms (6.5% on
-`m=400 search1500`, 4.9% on `m=600`, <=2% elsewhere) — tighter than the
-Windows box's ±20-35%, but the two cells either side of the `m = n/8` switch
-are the noisiest, so a sub-7% movement on those is unproven.
+**Re-baselined on Hamilton** (r/4.5.1, serial, three whole-script reps per
+job, objectives identical throughout). Full tables in baselines.md. Two
+findings beyond the numbers, both of which change how this area is measured:
+
+*A kernel row is not a call cost.* The cells call the kernels directly, so
+they exclude what `DropAdd()` pays first: the O(n^2) `.AsDistMatrix` symmetry
+scan (32.5 ms at n = 4000) and the O(n) peripheral seed (0.1 ms). The scan is
+**160x the `m=10 construct` cell and 78% of a whole `DropAdd(20, d4)` call**.
+Round 13 kept that scan for DropAdd deliberately — the recompute branch's
+triangle choice needs exact symmetry — so it is required per-call work that
+no kernel row contains. Worse for cross-area reading, `farfirst-timing.R`
+times `FarFirst()` through the public API: its rows carry an intake of the
+same kind, so a kernel row set beside a FarFirst row understates DropAdd by
+roughly the intake, which is most of a small-k call. Cells for the intake,
+the seed, and two whole-API calls are now in the driver; only the latter
+compare with the FarFirst area.
+
+*The switch pair is not trustworthy across jobs.* Within a job, rep spread
+reaches 6.5%. Between two jobs on different `-p shared` nodes, identical code
+walking identical trajectories, `m=400 search1500` moved **49%** and `m=600`
+**18%** — the two cells either side of the `m = n/8` recompute switch, and the
+most memory-bandwidth-sensitive in the set, on a partition where another job
+can contend for bandwidth. Everything else held to ~4%. So a matrix cell must
+not be regressed against an absolute number from a previous job; both arms
+belong interleaved inside one job on one node, as `coreset-kc/kcab.sh` does.
+
+No cell is a speedup over rounds 4-13 — the matrix cells changed protocol and
+the points cells changed machine — and the record says so rather than banking
+a number the code did not earn. The structural figure is
+`matrix n=4e3 m=10 construct` at **0.2 ms**: under the old protocol that cell
+was dominated by the row-sum sweep, so it was almost entirely timing a warm
+start `DropAdd()` had abandoned; what remains is the ten column passes the
+construction performs.
 
 **Refuted by design — fusing the seed row-sums into `.AsDistMatrix`'s symmetry
 scan.** The scan already reads every element, but it runs on the *pre-averaged*

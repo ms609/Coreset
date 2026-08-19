@@ -617,9 +617,9 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
       .auto_close = FALSE
     )
   }
-  # The O(n) peripheral anchor gives a lower post-tabu-search gap to the
-  # optimum than the kernel's own O(n^2) max-row-sum fallback (seed0 = -1),
-  # matching the points-path and oracle-path defaults.
+  # The kernel takes no start of its own, so supply the O(n) peripheral
+  # anchor: the lowest post-tabu-search gap to the optimum of the seven
+  # profiled at 0214ab2, and the points- and oracle-path default.
   matrixSeed0 <- if (is.null(seed)) {
     as.integer(.PickPoint(dmat, "peripheral")) - 1L
   } else {
