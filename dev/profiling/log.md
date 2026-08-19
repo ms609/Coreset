@@ -1957,10 +1957,13 @@ same value); the verdict-level evidence is the suite's IP/brute-force
 agreement tests, the audit's omega-preservation self-test, and pmed1-3
 matching their published optima under both builds.
 
-**Reach:** tc18_vowel k48 still caps at 7200 s under both pools, but the
-incumbents jump to 2.9676 (from 2.9555/2.9310) — the best seen anywhere,
-under both pools independently. The cell looks closable now rather than
-hopeless; a single uncapped run would answer it.
+**Reach: tc18_vowel k48 is closed.** Never proven at 7200 s by any prior
+build — 8 threads included — it proves at 8824 s single-threaded under
+0.0.0.9006 (job 18461564): t_k = 2.967608, exactly the incumbent both A/B
+pools had already reached at the cap. Threading compressed cost and
+extended no reach (Round 16); dominance extends reach. The two remaining
+always-capped ladder cells, tc17_vehicle k100 and tc18_vowel k100, get the
+same treatment at a 160000 s cap (job 18482321).
 
 **ORLIB:** the paired pmed30/34/40 A/B first mis-ran as pmed1-3 —
 `02_run_pmed.R` prefers `$SLURM_ARRAY_TASK_ID` over its argument inside an
