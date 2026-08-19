@@ -1962,11 +1962,16 @@ incumbents jump to 2.9676 (from 2.9555/2.9310) — the best seen anywhere,
 under both pools independently. The cell looks closable now rather than
 hopeless; a single uncapped run would answer it.
 
-**ORLIB:** the paired pmed30/34/40 A/B mis-ran as pmed1-3 —
+**ORLIB:** the paired pmed30/34/40 A/B first mis-ran as pmed1-3 —
 `02_run_pmed.R` prefers `$SLURM_ARRAY_TASK_ID` over its argument inside an
-array task, so the index passed was ignored; resubmitted with the variable
-unset (18460744), result pending. The accident still paired pmed1-3: match
-verdicts under both builds, 1.30 -> 0.35 s on pmed1.
+array task — and was resubmitted with the variable unset (18460744).
+Corrected pairs, all matching their published optima under both builds:
+pmed30 7.71 -> 3.53 s (0.46), pmed34 81.8 -> 43.9 s (0.54), pmed40
+57.8 -> 43.1 s (0.75). pmed40 is the audit's barely-shrinks caveat case
+(1.07x vertices), and it still pays 25% — the reduction's own cost is
+invisible even where it removes almost nothing. No regime pays: pool A,
+pool E, and the integer/ORLIB regime all win. (The accidental pmed1-3
+pairs also matched, 0.27-0.80x.)
 
 Status: dominance shipped and kept — on the symmetric criterion there is no
 tradeoff to weigh; nothing pays. The exact ladder's canonical timings are
