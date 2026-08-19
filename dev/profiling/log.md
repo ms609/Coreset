@@ -1779,4 +1779,64 @@ Status: `graspPlateau` stays at 50 -- deeper is a measured loss.
 cannot lower the bound, and it buys pmed30. Adopting it belongs with the
 `b0bbaa7` merge and re-pin, as one re-measure.
 
-last_focus: 15
+
+## Round 16 — 2026-08-19 — Area 4 (ExactMaxMin): the declined root-branch
+parallelism revived for refutations, and measured in both regimes
+
+**Trigger:** user go-ahead on Round 12's declined lever once the selection
+objection fell. A refuted probe returns no witness, so threads can only ever
+*find* one — and re-running the probe serially whenever that happens keeps the
+reported subset bit-identical at every thread count. Round 12's decline was on
+the selection trade, not the scaling; both halves are now had.
+
+**Shipped (0.0.0.9003, `b5c098b`):** `ExactMaxMin(threads = )`, default 1 =
+the previous path exactly. Root branch i's candidates are
+`{ord[0..i-1]} & N(ord[i])`, computed from a prefix mask instead of the serial
+prefix removal, so the branches fan out with no sequential dependency. Workers
+share the master's adjacency read-only and own everything else; nothing off
+the main R thread touches the R API — the interrupt is polled without
+longjmp-ing on the thread that owns the R stack and thrown after the join.
+A worker witness triggers a serial re-run racing the same deadline; an
+infeasibility proof exhausts every branch, so its verdict cannot depend on
+visiting order (Round 12: node counts identical at every thread count).
+
+**Measured** (job 18445672): 1T and 8T in one process on one node, so each
+pair shares its node's weather and needs no cross-job noise model —
+Round 15's lesson applied. `cpu_s/solve_s` up to 7.8 on 8T runs confirms the
+allocation parallelised (`--cpus-per-task=8`; under the campaign's usual
+1-core pinning this measurement would have timeshared and read as a loss).
+Ten cells x pool A (certification regime) and pool E (the weak-opening
+instrument: nStart 1, plateaus 1). Proven optima identical 1T vs 8T on every
+pair, asserted in-runner.
+
+- Proven cells at >= 5 s (n = 11): **geometric-mean speedup 2.48x**, range
+  1.69–3.88x. Every one clears the ±20% single-replicate noise floor.
+- tc17_vehicle k48 under A: **4326 -> 1227 s (3.53x)** — the ladder's
+  costliest cell, 72 minutes to 20.
+- The weak-opening regime holds: pool-E cells gain 1.69–3.88x even though
+  every feasible probe there pays a threaded find *plus* the serial redo.
+- The redo is the ceiling, not a regression: on capped pool-E runs
+  (tc17_vehicle k100, tc18_vowel k100) `cpu/wall` sits at 1.0 — the budget
+  went into phases the redo keeps serial — but wall time matched 1T exactly.
+  No cell anywhere was slower under threads.
+- tc17_vehicle k100 and tc18_vowel k48/k100 cap at 7200 s under both pools
+  and both thread counts: beyond this solver at this budget regardless of
+  opening or threading.
+
+**Arm E, full readout (72 cells, job 18445575):** 68 prove under the weakest
+pool the knobs allow. Opening 1.2–9.4% below the optimum costs a geometric
+mean of ~1.0x on the >1 s cells (range 0.43–4.72; only tc1_uniform k48 pays
+visibly, 1.6 -> 7.4 s). The four non-proofs are 3600 s cap artefacts —
+tc17_vehicle k48 proves in 5393 s at the 7200 s cap — and three of the four
+cap under pool A too. The suite's confirmation bias is real (the default pool
+opens at the optimum on 105 of 123 ladder cells), but the search kernel is
+not fragile to weak openings, and search-side changes can now be judged in
+both regimes by construction.
+
+Status: `threads` stays opt-in at 1 — CRAN's <= 2-core default policy, and
+the canon's timings are 1T. Adopting 8T for the heavy ladder cells is a
+deploy decision that belongs with the `b0bbaa7`/`c504558` merge and re-pin.
+DSATUR-at-root (Round 14 left it open) is the remaining recorded lever, to be
+judged in the arm-E regime.
+
+last_focus: 16
