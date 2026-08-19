@@ -195,7 +195,7 @@ ExactMaxSum <- function(k, d, maxSeconds = 60, warmStart = NULL) {
   if (milpVal >= lsVal) {
     idx <- milpIdx; score <- milpVal
   } else {
-    idx <- lsIdx; score <- lsVal; proven <- FALSE
+    idx <- lsIdx; score <- lsVal; proven <- FALSE # nocov
   }
 
   # Return:
