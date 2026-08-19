@@ -1,3 +1,16 @@
+# Coreset 0.0.0.9003 (development)
+
+- `ExactKCentre()` no longer solves a set-cover integer program per probe, and
+  so no longer needs `highs` or `Matrix`. Each probe -- "can `k` centres cover
+  every point within this radius?" -- is now decided by an exhaustive
+  combinatorial search: unit propagation, point and centre dominance reduction
+  run to a fixed point, a component split, then a bounded depth-first search
+  over the remainder. This is the covering dual of the clique search that
+  `ExactMaxMin()` moved to, and it settles most probes by reduction alone
+  without reaching the search at all. The proven optimum
+  is unchanged on every case measured; the witness may differ where several
+  optimal centre sets exist, which was already the contract.
+
 # Coreset 0.0.0.9002 (development)
 
 - `ExactMaxMin()` gains `nStart`, `graspPlateau` and `dropPlateau`, which set

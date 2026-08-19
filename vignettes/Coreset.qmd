@@ -553,7 +553,7 @@ For **covering** (minimise the radius; no point far from a centre):
 |---|---|
 | Near-optimal covering, fast and deterministic | `KCentre()` (CDSh) |
 | Quick 2-approximation baseline | `FarFirst(strategy = "peripheral")` |
-| Proven optimum, small N, **highs** installed | `ExactKCentre()` |
+| Proven optimum, small N | `ExactKCentre()` |
 | Score a centre set's covering radius (matrix-free at large N) | `KCentreRadius(points = ...)` |
 
 For **maximum-entropy (maxdet) selection** (density-blind volume maximization):

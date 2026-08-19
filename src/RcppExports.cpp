@@ -129,6 +129,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// CoverDecide_cpp
+List CoverDecide_cpp(NumericMatrix d, double r, int k, double maxSeconds);
+RcppExport SEXP _Coreset_CoverDecide_cpp(SEXP dSEXP, SEXP rSEXP, SEXP kSEXP, SEXP maxSecondsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type d(dSEXP);
+    Rcpp::traits::input_parameter< double >::type r(rSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< double >::type maxSeconds(maxSecondsSEXP);
+    rcpp_result_gen = Rcpp::wrap(CoverDecide_cpp(d, r, k, maxSeconds));
+    return rcpp_result_gen;
+END_RCPP
+}
 // MaxEntropyGreedy_cpp
 IntegerVector MaxEntropyGreedy_cpp(const NumericMatrix& K, int k, int seed);
 RcppExport SEXP _Coreset_MaxEntropyGreedy_cpp(SEXP KSEXP, SEXP kSEXP, SEXP seedSEXP) {
@@ -372,6 +386,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_Coreset_Grasp_cpp", (DL_FUNC) &_Coreset_Grasp_cpp, 9},
     {"_Coreset_KCentreCandidates_cpp", (DL_FUNC) &_Coreset_KCentreCandidates_cpp, 1},
     {"_Coreset_KCentreCDSh_cpp", (DL_FUNC) &_Coreset_KCentreCDSh_cpp, 5},
+    {"_Coreset_CoverDecide_cpp", (DL_FUNC) &_Coreset_CoverDecide_cpp, 4},
     {"_Coreset_MaxEntropyGreedy_cpp", (DL_FUNC) &_Coreset_MaxEntropyGreedy_cpp, 3},
     {"_Coreset_MaxEntropyExact_cpp", (DL_FUNC) &_Coreset_MaxEntropyExact_cpp, 2},
     {"_Coreset_MaxEntropyLogDet_cpp", (DL_FUNC) &_Coreset_MaxEntropyLogDet_cpp, 2},

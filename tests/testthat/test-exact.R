@@ -5,12 +5,6 @@
 # true MaxMin optimum, against which ExactMaxMin must agree -- both on the
 # objective value and on returning a subset that *achieves* it. (The argmax
 # subset itself need not match: ties admit several optima.)
-#
-# All tests skip when the `highs` solver is unavailable.
-
-skip_if_no_highs <- function() {
-  testthat::skip_if_not_installed("highs")
-}
 
 # Brute-force MaxMin objective for a selection.
 .MaxminObj <- function(S, dmat) {
@@ -31,7 +25,6 @@ skip_if_no_highs <- function() {
 # 1. Brute-force oracle agreement on random small instances
 # ---------------------------------------------------------------------------
 test_that("ExactMaxMin matches the brute-force optimum (random instances)", {
-  skip_if_no_highs()
   cases <- list(
     list(n = 10L, k = 3L, seed = 1L),
     list(n = 12L, k = 4L, seed = 2L),
@@ -63,7 +56,6 @@ test_that("ExactMaxMin matches the brute-force optimum (random instances)", {
 # 2. dist-object input is accepted and agrees with the matrix path
 # ---------------------------------------------------------------------------
 test_that("ExactMaxMin accepts a dist object", {
-  skip_if_no_highs()
   set.seed(11)
   pts <- matrix(stats::rnorm(12 * 3), ncol = 3)
   dobj <- stats::dist(pts)
@@ -78,7 +70,6 @@ test_that("ExactMaxMin accepts a dist object", {
 # 3. Edge cases: k = 2 (diameter) and k = n (global minimum distance)
 # ---------------------------------------------------------------------------
 test_that("ExactMaxMin handles k=2 (diameter) and k=n (all points)", {
-  skip_if_no_highs()
   set.seed(21)
   pts <- matrix(stats::rnorm(8 * 3), ncol = 3)
   d <- as.matrix(stats::dist(pts))
@@ -97,7 +88,6 @@ test_that("ExactMaxMin handles k=2 (diameter) and k=n (all points)", {
 # 3b. proven=FALSE on budget expiry
 # ---------------------------------------------------------------------------
 test_that("ExactMaxMin returns proven=FALSE on budget expiry", {
-  skip_if_no_highs()
   set.seed(42)
   # Use a large enough instance that 1 microsecond is not enough to certify optimality.
   pts <- matrix(stats::rnorm(30 * 4), ncol = 4)
@@ -121,7 +111,6 @@ test_that("ExactMaxMin returns proven=FALSE on budget expiry", {
 #    can -- and is pinned by set.seed(), matching Grasp().
 # ---------------------------------------------------------------------------
 test_that("ExactMaxMin objective is RNG-independent; selection seed-reproducible", {
-  skip_if_no_highs()
   set.seed(31)
   pts <- matrix(stats::rnorm(13 * 4), ncol = 4)
   d <- as.matrix(stats::dist(pts))
@@ -141,7 +130,6 @@ test_that("ExactMaxMin objective is RNG-independent; selection seed-reproducible
 # 5. Input validation
 # ---------------------------------------------------------------------------
 test_that("ExactMaxMin validates k and solver", {
-  skip_if_no_highs()
   d <- as.matrix(stats::dist(matrix(stats::rnorm(20), ncol = 2)))   # n = 10
   expect_error(ExactMaxMin(1L, d), "2 <= k <= nrow")
   expect_error(ExactMaxMin(11L, d), "2 <= k <= nrow")
@@ -154,7 +142,6 @@ test_that("ExactMaxMin validates k and solver", {
 # 7. Coreset.progress option fires the cli progress bar
 # ---------------------------------------------------------------------------
 test_that("ExactMaxMin Coreset.progress option fires the cli hooks", {
-  skip_if_no_highs()
   set.seed(1)
   d <- as.matrix(stats::dist(matrix(stats::rnorm(12 * 2), ncol = 2)))
   old <- options(Coreset.progress = TRUE)
@@ -166,7 +153,6 @@ test_that("ExactMaxMin Coreset.progress option fires the cli hooks", {
 # 6. Return contract
 # ---------------------------------------------------------------------------
 test_that("ExactMaxMin returns the documented fields", {
-  skip_if_no_highs()
   set.seed(41)
   d <- as.matrix(stats::dist(matrix(stats::rnorm(40), ncol = 4)))   # n = 10
   res <- ExactMaxMin(3L, d)

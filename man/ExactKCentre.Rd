@@ -48,10 +48,11 @@ problem.
 The optimum covering radius is the smallest threshold \code{r}, over the achieved
 distinct distances, for which \code{k} centres can cover every point within \code{r}.
 
-Each probe solves a minimum-cardinality \emph{set-cover} integer program with
-the \code{highs} MILP backend, the covering constraints held as a sparse matrix --
-the covering dual of \code{\link[=ExactMaxMin]{ExactMaxMin()}}'s node-packing program. The search is
-warm-started from the \code{\link[=KCentre]{KCentre()}} (CDSh) radius, a proven feasible upper bound
+Each probe asks whether \code{k} centres cover every point within a candidate
+radius -- a minimum-dominating-set question on the threshold graph, and the
+covering dual of \code{\link[=ExactMaxMin]{ExactMaxMin()}}'s node-packing probe. It is decided
+combinatorially: unit propagation and dominance reduction, then an
+exhaustive component-wise search. The search is warm-started from the \code{\link[=KCentre]{KCentre()}} (CDSh) radius, a proven feasible upper bound
 that caps the binary search, then bisects downward to the smallest feasible
 radius.
 }
@@ -62,15 +63,10 @@ To toggle, set \code{options("Coreset.progress" = FALSE)} (or \code{TRUE}).
 }
 
 \examples{
-\donttest{
-if (requireNamespace("highs", quietly = TRUE) &&
-    requireNamespace("Matrix", quietly = TRUE)) {
-  set.seed(1)
-  pts <- matrix(rnorm(40), ncol = 2)
-  d <- dist(pts)
-  ExactKCentre(3L, d)
-}
-}
+set.seed(1)
+pts <- matrix(rnorm(40), ncol = 2)
+d <- dist(pts)
+ExactKCentre(3L, d)
 }
 \references{
 \insertAllCited{}
