@@ -20,7 +20,8 @@ stopifnot(requireNamespace("highs", quietly = TRUE),
 args <- commandArgs(trailingOnly = TRUE)
 maxN <- if (length(args) >= 1L) as.integer(args[[1L]]) else 400L
 
-load("C:/Users/pjjg18/GitHub/furthest-point/data/cases.rda")
+load(Sys.getenv("FP_CASES",
+                "C:/Users/pjjg18/GitHub/furthest-point/data/cases.rda"))
 CASES <- c("tc20_zoo", "tc7_ring", "tc9_iris", "tc8_highdim_gaussians",
            "tc3_multiscale", "tc1_uniform", "tc2_two_unequal",
            "tc6_density_gradient", "tc16_sonar", "tc5_clusters_outliers",

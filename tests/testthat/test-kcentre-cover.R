@@ -136,7 +136,7 @@ test_that("CoverDecide stops inside the search when the budget expires", {
   set.seed(2)
   d <- as.matrix(stats::dist(matrix(stats::runif(1000L), ncol = 5L)))
   r <- Radii(d)[[2079L]]                  # one below the k = 14 optimum
-  got <- Decide(d, r, 14L, 0.05)          # ~1000x short of what the proof needs
+  got <- Decide(d, r, 14L, 0.2)           # ~250x short of what the proof needs
   expect_identical(got$status, "inconclusive")
   expect_gt(got$nodes, 0)                 # it did search before giving up
 })

@@ -9,7 +9,8 @@ options(Coreset.progress = FALSE)
 args <- commandArgs(trailingOnly = TRUE)
 out <- if (length(args) >= 1L) args[[1L]] else "kcentre-audit2.rds"
 
-load("C:/Users/pjjg18/GitHub/furthest-point/data/cases.rda")
+load(Sys.getenv("FP_CASES",
+                "C:/Users/pjjg18/GitHub/furthest-point/data/cases.rda"))
 CELLS <- list(c("tc22_penguins", 10), c("tc11_ionosphere", 10),
               c("tc10_glass", 4), c("tc9_iris", 6), c("tc1_uniform", 10))
 
