@@ -61,6 +61,24 @@ test_that("ExactMaxSum result prints with a total-distance summary", {
   expect_invisible(print(res))
 })
 
+test_that("the contribution cap is attained, not merely valid", {
+  # U_i must equal the largest total distance from i to the k - 1 other members
+  # of any selection containing i. Bounding it by k distances instead would
+  # still be valid but would leave slack in every w_i <= U_i x_i constraint,
+  # and so in the relaxation the branch and bound is steered by.
+  set.seed(4)
+  d <- as.matrix(dist(matrix(rnorm(16), ncol = 2)))              # 8 points
+  n <- nrow(d)
+  for (k in c(2L, 4L, 6L)) {
+    U <- Coreset:::.MaxSumCaps(d, k)
+    expect_length(U, n)
+    for (i in seq_len(n)) {
+      rest <- utils::combn(setdiff(seq_len(n), i), k - 1L)
+      expect_equal(U[[i]], max(apply(rest, 2L, function(s) sum(d[i, s]))))
+    }
+  }
+})
+
 test_that("the local-search helpers return valid k-subsets", {
   set.seed(3)
   d <- as.matrix(dist(matrix(rnorm(40), ncol = 2)))
