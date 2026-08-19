@@ -150,9 +150,9 @@ test_that("CoverDecide reports inconclusive before it starts", {
   expect_identical(got$nodes, 0)
 })
 
-test_that("branching that strands a point is refuted, not mis-answered", {
-  # A refutation deep enough that the branch loop removes every centre
-  # covering some other point, which the bound must then reject.
+test_that("a refutation the reduction cannot make runs and is exhaustive", {
+  # Below the optimum by one radius: the reduction leaves a real instance and
+  # the search has to prove the refutation itself.
   set.seed(1)
   d <- as.matrix(stats::dist(matrix(stats::runif(500L), ncol = 2L)))
   radii <- Radii(d)

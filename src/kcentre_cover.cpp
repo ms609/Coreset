@@ -159,7 +159,6 @@ struct CoverSearch {
 
   // Greedy pairwise-disjoint-neighbourhood bound: points chosen so that no
   // available centre covers two of them each need a centre of their own.
-  // Returns `cap + 1` if some uncovered point has no available centre at all.
   int LowerBound(int depth) {
     std::vector<BitWord> left(un[depth]);
     const BitWord* avd = av[depth].data();
@@ -176,8 +175,8 @@ struct CoverSearch {
         return cnt;
       }
       ++cnt;
+      ClearBit(left.data(), j);            // progress even if j has no cover
       const BitWord* nj = Nb(j);
-      bool coverable = false;
       for (int w = 0; w < nw; ++w) {
         BitWord x = nj[w] & avd[w];
         while (x) {
@@ -185,12 +184,8 @@ struct CoverSearch {
           for (int u = 0; u < nw; ++u) {
             left[u] &= ~nc[u];
           }
-          coverable = true;
           x &= x - 1;
         }
-      }
-      if (!coverable) {
-        return cap + 1;
       }
       if (cnt > cap) {
         return cnt;
@@ -227,6 +222,12 @@ struct CoverSearch {
     }
     // Branch on the uncovered point with the fewest available centres: one of
     // them must be open, and the fewest branches settle first.
+    //
+    // Minimum degree is also what keeps every child well formed. A point
+    // stranded in a child -- all its centres removed by this loop's earlier
+    // branches -- would need fewer available centres than `pick` had, which
+    // is what `pick` minimises. So no child ever sees an uncoverable point,
+    // and an empty branch list below prunes the node on its own.
     int pick = -1;
     int pickDeg = 0;
     for (int w = 0; w < nw; ++w) {
@@ -240,9 +241,6 @@ struct CoverSearch {
         }
         x &= x - 1;
       }
-    }
-    if (pickDeg == 0) {
-      return;                              // uncoverable: dead branch
     }
     std::vector<int> branch;
     CollectOf(Nb(pick), av[depth].data(), nw, &branch);
