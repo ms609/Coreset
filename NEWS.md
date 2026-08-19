@@ -1,13 +1,3 @@
-# Coreset 0.0.0.9001 (development)
-
-- `ExactMaxSum()` bounds each selected point's contribution by its `k - 1`
-  largest distances rather than its `k` largest. The summed distance from a
-  point to the rest of the selection runs over `k - 1` others, so the old cap
-  was valid but never attained, leaving slack in the relaxation that guides the
-  branch and bound. The optimum is unchanged; `HiGHS` reaches it in 6 to 36
-  times fewer nodes on the cases measured, and `proven` can now be `TRUE`
-  where the budget previously expired first.
-
 # Coreset 0.0.0.9000 (development)
 
 First release. `Coreset` selects a representative subset of a fixed candidate
