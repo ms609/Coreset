@@ -1841,4 +1841,75 @@ the 8T-for-canon question is closed.
 DSATUR-at-root (Round 14 left it open) is the remaining recorded lever, to be
 judged in the arm-E regime.
 
-last_focus: 16
+## Round 17 — 2026-08-19 — Area 4 (ExactMaxMin): DSATUR at the root — the
+order rejected, the bound kept
+
+**Trigger:** Round 16 left DSATUR-at-root as the one recorded lever. Shipped
+as 0.0.0.9004 (8dbf935): one saturation colouring per probe, its order used
+for the root descent. Measured paired on Hamilton (array 18448784): eight
+cells x pools A/E, baseline 0.0.0.9003 then DSATUR back to back in the same
+task on the same node.
+
+**The order is a gamble and lost.** Proven optima identical on all 14
+jointly-proven cells; the time was not:
+
+| cell | pool | base | DSATUR | ratio |
+|---|---|--:|--:|--:|
+| tc7_ring k24 | A | 72.7 s | 1.5 s | **0.02** |
+| tc7_ring k24 | E | 42.1 s | 0.8 s | **0.02** |
+| tc17_vehicle k48 | A | 5083 s | 7130 s | **1.40** |
+| tc17_vehicle k48 | E | 5407 s | 4684 s | 0.87 |
+| k=100 cells (4) | A+E | | | 0.92–1.05 |
+| small cells (6) | A+E | | | 0.83–1.27 |
+
+The vehicle-A regression is real compute, not weather: cpu_s/solve_s = 0.995
+in both arms of the pair. Excluding ring, pool A geo-means to 1.10 and pool E
+to 0.94 (>= 1 s proven cells); the suite's proven total went 14895 -> 15924 s
+(+7%). Reordering the root reshapes the whole tree unpredictably — the same
+cell wins 13% under one pool and pays 40% under the other. By the Round 14
+bar (levers rejected for far smaller collateral) the order is out.
+
+**The win was never the order.** Ring's refutation graphs colour to
+chi = 23 < k = 24 under DSATUR; the greedy pass stays at >= k and searches
+68 s for a bound DSATUR hands over before any branch opens. So 0.0.0.9005
+keeps the colouring as a bound only: chi < k refutes the component
+immediately; otherwise the DSATUR order is discarded and the search runs the
+0.0.0.9003 tree exactly — witnesses and selections return to that release's,
+and the vehicle regression is structurally impossible (feasible probes can
+never fire the bound, since omega >= k forces chi >= k). Verification A/B
+submitted with a sharp prediction: ring ~0.02, every other cell ~1.00 within
+the small-cell noise band; any non-ring move beyond it falsifies the
+tree-identity claim and the change does not ship on a geo-mean.
+
+**Capped cells:** vowel k48 stays capped under both builds and both pools —
+no reach change. Incumbents moved both ways (order effect): pool A 2.9555 ->
+2.9497 (worse), pool E 2.9310 -> 2.9665 (better — the best vowel k48
+incumbent seen anywhere; recorded here so it is not lost with the 9004 lib).
+
+**Next lever, justified by counts: vertex dominance at the probe root.** The
+ExactKCentre round (PR #16) asked whether the packing side misses its
+dominance analogue. Audited on the certifying and last-feasible graphs of the
+four cells Round 14 priced, plus vehicle k48 and the capped vowel k48
+(furthest-point/dev/bench/dominance_audit.R, counts only): the (k-1)-core
+peel removes *nothing* on any hard graph; dominance to a fixpoint removes
+breastcancer k48 7.5x of edges, vowel 2.2x, vehicle 1.8x, pmed34 1.7x,
+pmed40 1.1x, and collapses ring's feasible graph to exactly its optimal
+24-clique and its certifying graph to empty. Two corrections the audit
+forced: (i) the rule as quoted in the covering round's lead — closed
+neighbourhoods, adjacent pair — is unsound for cliques (it eats a triangle);
+the sound form is open N(u) subseteq N(v) for a NON-adjacent pair, discard u.
+(ii) Round 14's line that the core peel "empties the graph above the
+optimum" is wrong for pmed — those refutations were free because the greedy
+colour bound sat below k, not because the peel bit. Contract note, flagged
+before implementing: dominance on feasible probes returns a reduced-graph
+witness, so selections can change between releases — witness pins re-pin
+then, and FurthestPoint's bit-identity expectations move with them.
+
+**Numbering:** the kcentre branch (PR #16) also carries a "Round 16";
+renumber one side when the branches merge.
+
+Status: order rejected and reverted, bound shipped opt-out-free (0.0.0.9005);
+verification A/B pending; dominance-at-root is the open lever, to be built
+against the 0.0.0.9005 base and judged in both regimes.
+
+last_focus: 17

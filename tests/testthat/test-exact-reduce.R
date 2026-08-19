@@ -287,9 +287,34 @@ test_that("threads leave every verdict and witness at the serial answer", {
   expect_identical(expiredT$status, "inconclusive")
   expect_identical(expiredT$witness, integer(0))
 
-  # A component the colour bound closes before any root branch opens: the
-  # 4-cycle greedily colours with 2 < k = 3, so the threaded driver has no
-  # branches to hand out.
+  # A component the DSATUR bound refutes before any search is dispatched:
+  # the 4-cycle colours with 2 < k = 3.
   sq <- .Decide(c(1L, 2L, 3L, 1L), c(2L, 3L, 4L, 4L), 4L, 3L, threads = 2L)
   expect_identical(sq$status, "infeasible")
+})
+
+test_that("a bound the greedy pass beats still closes every root branch", {
+  # Sixteen vertices whose component DSATUR colours with 8 but the greedy
+  # pass colours with 7: at k = 8 the bound cannot refute, so the search is
+  # dispatched, and the driver's own colouring then admits no root branch --
+  # the one shape that reaches the threaded no-branch exit.
+  hi <- c(2L, 1L, 2L, 3L, 4L, 5L, 1L, 2L, 5L, 6L, 1L, 2L, 3L, 4L, 7L, 1L,
+          2L, 3L, 4L, 5L, 6L, 8L, 1L, 3L, 4L, 5L, 7L, 8L, 2L, 3L, 4L, 5L,
+          7L, 8L, 10L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 10L, 11L, 1L, 2L, 3L,
+          4L, 5L, 9L, 1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 12L, 13L,
+          1L, 2L, 3L, 5L, 7L, 9L, 10L, 11L, 13L, 1L, 2L, 3L, 4L, 5L, 6L,
+          8L, 10L, 11L, 13L, 14L, 15L)
+  hj <- c(3L, 5L, 6L, 6L, 6L, 6L, 7L, 7L, 7L, 7L, 8L, 8L, 8L, 8L, 8L, 9L,
+          9L, 9L, 9L, 9L, 9L, 9L, 10L, 10L, 10L, 10L, 10L, 10L, 11L, 11L,
+          11L, 11L, 11L, 11L, 11L, 12L, 12L, 12L, 12L, 12L, 12L, 12L, 12L,
+          12L, 13L, 13L, 13L, 13L, 13L, 13L, 14L, 14L, 14L, 14L, 14L, 14L,
+          14L, 14L, 14L, 14L, 14L, 14L, 15L, 15L, 15L, 15L, 15L, 15L, 15L,
+          15L, 15L, 16L, 16L, 16L, 16L, 16L, 16L, 16L, 16L, 16L, 16L, 16L,
+          16L)
+  serial <- .Decide(hi, hj, 16L, 8L)
+  expect_identical(serial$status, "infeasible")
+  expect_identical(serial$witness, integer(0))
+  par <- .Decide(hi, hj, 16L, 8L, threads = 2L)
+  expect_identical(par$status, "infeasible")
+  expect_identical(par$witness, integer(0))
 })

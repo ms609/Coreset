@@ -1,3 +1,15 @@
+# Coreset 0.0.0.9005 (development)
+
+- The DSATUR root colouring introduced in 0.0.0.9004 is now a bound only.
+  A colouring below `k` still refutes a probe before any branch opens --
+  on near-regular geometry that is the whole solve -- but where it cannot
+  refute, the search keeps its own greedy order: descending the DSATUR
+  order in its place reshaped the tree unpredictably, growing the
+  costliest refutation measured by 40% while shrinking others. With the
+  order gone the search tree is the 0.0.0.9003 tree exactly, so witnesses
+  and selections match that release again; only the probes the bound
+  refutes get cheaper.
+
 # Coreset 0.0.0.9004 (development)
 
 - Each feasibility probe now colours its root by DSATUR -- saturation order,
