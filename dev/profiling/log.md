@@ -1866,8 +1866,15 @@ The vehicle-A regression is real compute, not weather: cpu_s/solve_s = 0.995
 in both arms of the pair. Excluding ring, pool A geo-means to 1.10 and pool E
 to 0.94 (>= 1 s proven cells); the suite's proven total went 14895 -> 15924 s
 (+7%). Reordering the root reshapes the whole tree unpredictably — the same
-cell wins 13% under one pool and pays 40% under the other. By the Round 14
-bar (levers rejected for far smaller collateral) the order is out.
+cell wins 13% under one pool and pays 40% under the other. Judged
+symmetrically, as a fresh choice between the two trees with ring's
+root-refutations credited to the bound both ways (either order colours ring
+below k): the DSATUR order loses the non-ring totals 14780 -> 15922 s
+(+7.7%), sits at ~1.02 on the non-ring geo-mean, and its per-cell sign is
+unpredictable ex ante, so no conditional rule can keep its wins and shed its
+losses. The order is out on the tradeoff, not on incumbency — a
+no-cell-slower bar would be path-dependent, ratifying whichever tree
+happened to be measured as the base.
 
 **The win was never the order.** Ring's refutation graphs colour to
 chi = 23 < k = 24 under DSATUR; the greedy pass stays at >= k and searches
