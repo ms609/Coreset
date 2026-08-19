@@ -1834,8 +1834,10 @@ not fragile to weak openings, and search-side changes can now be judged in
 both regimes by construction.
 
 Status: `threads` stays opt-in at 1 — CRAN's <= 2-core default policy, and
-the canon's timings are 1T. Adopting 8T for the heavy ladder cells is a
-deploy decision that belongs with the `b0bbaa7`/`c504558` merge and re-pin.
+the canon's timings are 1T. Decided 2026-08-19: manuscript timings all use
+`threads = 1`, to compare the core algorithm rather than how economically it
+multithreads — threading ships as a feature, not part of the timing story, so
+the 8T-for-canon question is closed.
 DSATUR-at-root (Round 14 left it open) is the remaining recorded lever, to be
 judged in the arm-E regime.
 
