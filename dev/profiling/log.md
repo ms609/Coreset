@@ -1919,4 +1919,60 @@ Status: order rejected and reverted, bound shipped opt-out-free (0.0.0.9005);
 verification A/B pending; dominance-at-root is the open lever, to be built
 against the 0.0.0.9005 base and judged in both regimes.
 
-last_focus: 17
+**Postscript — verification passed (array 18451481).** Ring 0.020x under
+both pools; proven optima identical on all 14 cells; the capped vowel runs
+end at bit-identical incumbents, which only an identical probe trajectory
+delivers. The non-ring cells scattered 0.96-1.06 with proven totals +2.8% —
+read that as the noise floor of the back-to-back pairing itself (the second
+run inherits different co-tenancy), since the tree is proven identical: a
+paired cell ratio inside ~1.06, or a suite total inside ~3%, is not signal.
+Vehicle A's +40% in the Round 17 order A/B stands an order above that floor.
+
+## Round 18 — 2026-08-19 — Area 4 (ExactMaxMin): vertex dominance at the
+probe root — a rout
+
+**Shipped as 0.0.0.9006 (8d5f1af)**, judged symmetrically as a fresh choice
+against 0.0.0.9005 (paired array 18451557, same discipline): every probe
+component now peels and dominance-reduces to a fixpoint before anything is
+coloured or searched. The counts audit undersold it — removing vertices
+compounds through the whole bisection, and the harder regime wins more:
+
+| cell | pool | 9005 | 9006 | ratio |
+|---|---|--:|--:|--:|
+| tc19_breastcancer k100 | E | 1533 s | 0.22 s | **0.0001** |
+| tc19_breastcancer k100 | A | 1224 s | 1.1 s | **0.001** |
+| tc17_vehicle k48 | E | 6841 s | 2134 s | 0.31 |
+| tc17_vehicle k48 | A | 5738 s | 3001 s | 0.52 |
+| tc13_pima k100 | A/E | ~1300 s | ~590 s | 0.44-0.45 |
+| tc1_uniform k48 | E | 7.6 s | 0.03 s | 0.003 |
+| every other proven cell | | | | 0.02-0.63 |
+
+Proven totals 18011 -> 6323 s (**-65%**); geo-mean on >= 1 s proven cells
+**0.064** (pool A 0.100, pool E 0.039 — both regimes, the weaker-pool one
+more). No cell slower anywhere, and the accidental pmed1-3 pairs (see
+below) put even the smallest instances at 0.27-0.80x. Proven optima
+identical on every jointly-proven cell — noting that value-equality alone
+cannot certify the refutation side (a too-eager refuter would confirm the
+same value); the verdict-level evidence is the suite's IP/brute-force
+agreement tests, the audit's omega-preservation self-test, and pmed1-3
+matching their published optima under both builds.
+
+**Reach:** tc18_vowel k48 still caps at 7200 s under both pools, but the
+incumbents jump to 2.9676 (from 2.9555/2.9310) — the best seen anywhere,
+under both pools independently. The cell looks closable now rather than
+hopeless; a single uncapped run would answer it.
+
+**ORLIB:** the paired pmed30/34/40 A/B mis-ran as pmed1-3 —
+`02_run_pmed.R` prefers `$SLURM_ARRAY_TASK_ID` over its argument inside an
+array task, so the index passed was ignored; resubmitted with the variable
+unset (18460744), result pending. The accident still paired pmed1-3: match
+verdicts under both builds, 1.30 -> 0.35 s on pmed1.
+
+Status: dominance shipped and kept — on the symmetric criterion there is no
+tradeoff to weigh; nothing pays. The exact ladder's canonical timings are
+now stale by an order of magnitude on several cells; the re-pin bundle
+(b0bbaa7, c504558, b5c098b, c056ac0, 8d5f1af) is a user decision. Open
+leads: an uncapped vowel k48 run, and re-checking the warm-start pool's
+price against probes this much cheaper (Round 15's economics shifted).
+
+last_focus: 18
