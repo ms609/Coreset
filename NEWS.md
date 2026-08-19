@@ -1,3 +1,14 @@
+# Coreset 0.0.0.9004 (development)
+
+- Each feasibility probe now colours its root by DSATUR -- saturation order,
+  once per probe -- in place of the single greedy pass used at every other
+  node. A colour saved at the root either refutes the probe before any branch
+  opens or shortens the run of branches the root loop must visit; deeper
+  nodes keep the cheap pass, whose speed is what the bound's per-node use
+  demands. Verdicts and optima are unchanged; the particular optimal subset
+  reported can differ from earlier releases where several attain the optimum,
+  which the contract already allows.
+
 # Coreset 0.0.0.9003 (development)
 
 - `ExactMaxMin()` gains `threads`, which lets each feasibility probe search

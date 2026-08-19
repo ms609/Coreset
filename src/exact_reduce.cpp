@@ -85,6 +85,9 @@ struct CliqueSearch {
   std::atomic<bool>* stop;
   std::atomic<bool>* interrupted;
   bool pollInterrupt;
+  // When set, order[0]/colour[0] hold a precomputed root colouring and
+  // Expand(0) uses it instead of colouring the root itself.
+  bool rootReady;
 
   inline void SetBit(BitWord* s, int v) const {
     s[v >> 6] |= (BitWord(1) << (v & 63));
@@ -110,7 +113,7 @@ struct CliqueSearch {
       colour(k_ + 1, std::vector<int>(nv_, 0)),
       uncoloured(nw, 0), sameColour(nw, 0),
       found(false), expired(false), nodes(0), deadline(end),
-      stop(NULL), interrupted(NULL), pollInterrupt(false) {
+      stop(NULL), interrupted(NULL), pollInterrupt(false), rootReady(false) {
     cur.reserve(k_ + 1);
   }
 
@@ -126,7 +129,8 @@ struct CliqueSearch {
       colour(master.k + 1, std::vector<int>(master.nv, 0)),
       uncoloured(master.nw, 0), sameColour(master.nw, 0),
       found(false), expired(false), nodes(0), deadline(master.deadline),
-      stop(stop_), interrupted(interrupted_), pollInterrupt(false) {
+      stop(stop_), interrupted(interrupted_), pollInterrupt(false),
+      rootReady(false) {
     cur.reserve(master.k + 1);
   }
 
@@ -160,6 +164,71 @@ struct CliqueSearch {
     return idx;
   }
 
+  // DSATUR colouring of the full root candidate set, written to
+  // order[0]/colour[0] sorted by colour ascending. Choosing each vertex by
+  // saturation -- how many distinct colours its neighbours already hold --
+  // typically closes a colouring in fewer colours than the one greedy pass
+  // ColourSort makes, and at the root a colour saved either refutes the probe
+  // before any branch opens (a chi-colouring below k bounds omega below k) or
+  // shortens the suffix of branches the root loop must visit. The root pays
+  // this once per probe; every deeper node keeps the cheap pass -- Round 14
+  // measured re-ordering each node and the ordering cost far outran the
+  // pruning it bought.
+  void DSaturRoot() {
+    std::vector<int> vcol(nv, 0);                // 1-based; 0 = uncoloured
+    std::vector<int> sat(nv, 0), deg(nv, 0);
+    // Distinct neighbour colours per vertex, one bit per colour. At most nv
+    // colours exist, so the mask reuses the bitmap geometry.
+    std::vector<BitWord> seen(static_cast<size_t>(nv) * nw, 0);
+    for (int v = 0; v < nv; ++v) {
+      const BitWord* av = &adj[static_cast<size_t>(v) * nw];
+      for (int w = 0; w < nw; ++w) {
+        deg[v] += static_cast<int>(__builtin_popcountll(av[w]));
+      }
+    }
+    for (int done = 0; done < nv; ++done) {
+      int v = -1;
+      for (int u = 0; u < nv; ++u) {
+        if (vcol[u]) {
+          continue;
+        }
+        if (v < 0 || sat[u] > sat[v] ||
+            (sat[u] == sat[v] && deg[u] > deg[v])) {
+          v = u;
+        }
+      }
+      const BitWord* sv = &seen[static_cast<size_t>(v) * nw];
+      int c = 0;
+      while (sv[(c >> 6)] & (BitWord(1) << (c & 63))) {
+        ++c;
+      }
+      vcol[v] = c + 1;
+      const BitWord* av = &adj[static_cast<size_t>(v) * nw];
+      for (int u = 0; u < nv; ++u) {
+        if (vcol[u] || !(av[u >> 6] & (BitWord(1) << (u & 63)))) {
+          continue;
+        }
+        BitWord& word = seen[static_cast<size_t>(u) * nw + (c >> 6)];
+        const BitWord bit = BitWord(1) << (c & 63);
+        if (!(word & bit)) {
+          word |= bit;
+          ++sat[u];
+        }
+      }
+    }
+    std::vector<int>& ord = order[0];
+    std::vector<int>& col = colour[0];
+    for (int v = 0; v < nv; ++v) {
+      ord[v] = v;
+    }
+    std::stable_sort(ord.begin(), ord.end(),
+                     [&](int a, int b) { return vcol[a] < vcol[b]; });
+    for (int i = 0; i < nv; ++i) {
+      col[i] = vcol[ord[i]];
+    }
+    rootReady = true;
+  }
+
   void Expand(int depth) {
     if (((++nodes) & 1023LL) == 0) {
       if (std::chrono::steady_clock::now() > deadline) {
@@ -184,7 +253,8 @@ struct CliqueSearch {
     std::vector<BitWord>& set = cand[depth];
     std::vector<int>& ord = order[depth];
     std::vector<int>& col = colour[depth];
-    const int m = ColourSort(set.data(), ord, col);
+    const int m = (depth == 0 && rootReady) ? nv
+                                            : ColourSort(set.data(), ord, col);
     for (int i = m - 1; i >= 0; --i) {
       if (depth + col[i] < k) {
         return;                     // colour bound: no k-clique below here
@@ -233,9 +303,11 @@ struct CliqueSearch {
 // cut the search short. `*interrupted` reports a pending user interrupt; the
 // caller must throw for it after the join, and treat the search as expired.
 static int RootParallel(CliqueSearch& cs, int threads, bool* interrupted) {
+  // The caller has already coloured the root (DSaturRoot), so order[0] and
+  // colour[0] stand ready and the serial redo will reuse them unchanged.
   std::vector<int>& ord = cs.order[0];
   std::vector<int>& col = cs.colour[0];
-  const int m = cs.ColourSort(cs.cand[0].data(), ord, col);
+  const int m = cs.nv;
   // Colours ascend along `ord`, so the roots the colour bound admits --
   // those with col[i] >= k -- are the suffix from iLo up. The serial loop
   // visits exactly these before its bound breaks.
@@ -506,6 +578,7 @@ List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
     for (int t = 0; t < nv; ++t) {
       cs.SetBit(cs.cand[0].data(), t);
     }
+    cs.DSaturRoot();
 #ifdef _OPENMP
     if (nT > 1) {
       bool interrupted = false;
