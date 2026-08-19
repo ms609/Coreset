@@ -383,6 +383,102 @@ static int RootParallel(CliqueSearch& cs, int threads, bool* interrupted) {
 }
 #endif
 
+// Is some live vertex v interchangeable for `u` -- non-adjacent to it, with
+// every live neighbour of u among its own? Any clique through u then swaps
+// u for v at equal size, so u can be discarded without losing a maximum
+// clique. (The closed-neighbourhood form over adjacent pairs, natural for
+// independent sets, is unsound here: it eats a triangle.) Candidates come
+// from one neighbourhood, not all pairs: a dominator is adjacent to every
+// live neighbour of u, so in particular to the first one found.
+static bool Dominated(const std::vector<BitWord>& adjBits,
+                      const std::vector<BitWord>& alive, int nw, int u) {
+  const BitWord* au = &adjBits[static_cast<size_t>(u) * nw];
+  int w0 = -1;
+  for (int w = 0; w < nw; ++w) {
+    const BitWord b = au[w] & alive[w];
+    if (b) {
+      w0 = (w << 6) + static_cast<int>(__builtin_ctzll(b));
+      break;
+    }
+  }
+  // Unreachable: the peel enters the sweep with every live degree >= k - 1
+  // >= 1, and a dominance removal cannot take u's last live neighbour --
+  // the dominator that removed it is adjacent to everything it was adjacent
+  // to, u included, and still live when it dominates.
+  if (w0 < 0) {                          // # nocov start
+    return false;
+  }                                      // # nocov end
+  const BitWord* a0 = &adjBits[static_cast<size_t>(w0) * nw];
+  for (int w = 0; w < nw; ++w) {
+    BitWord cb = a0[w] & alive[w] & ~au[w];
+    if (w == (u >> 6)) {
+      cb &= ~(BitWord(1) << (u & 63));
+    }
+    while (cb) {
+      const int v = (w << 6) + static_cast<int>(__builtin_ctzll(cb));
+      cb &= cb - 1;
+      const BitWord* av = &adjBits[static_cast<size_t>(v) * nw];
+      bool subset = true;
+      for (int x = 0; x < nw; ++x) {
+        if (au[x] & alive[x] & ~av[x]) {
+          subset = false;
+          break;
+        }
+      }
+      if (subset) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Shrink a component to a fixpoint of two rules that cannot lose a maximum
+// clique: the (k-1)-core peel, and vertex dominance. Each rule feeds the
+// other -- a discarded vertex lowers its neighbours' degrees, and a peeled
+// vertex shrinks the neighbourhoods the subset test compares -- so they
+// alternate until a full dominance sweep removes nothing. The sweep visits
+// vertices in component order (degree descending) and removals apply
+// immediately, so equal-neighbourhood twins lose exactly one member and the
+// result is deterministic. `alive` is trimmed in place.
+static void PackReduce(const std::vector<BitWord>& adjBits,
+                       std::vector<BitWord>& alive, int nv, int nw, int k) {
+  const int need = k - 1;
+  for (;;) {
+    bool peeled = true;
+    while (peeled) {
+      peeled = false;
+      for (int u = 0; u < nv; ++u) {
+        if (!(alive[u >> 6] & (BitWord(1) << (u & 63)))) {
+          continue;
+        }
+        const BitWord* au = &adjBits[static_cast<size_t>(u) * nw];
+        int deg = 0;
+        for (int w = 0; w < nw; ++w) {
+          deg += static_cast<int>(__builtin_popcountll(au[w] & alive[w]));
+        }
+        if (deg < need) {
+          alive[u >> 6] &= ~(BitWord(1) << (u & 63));
+          peeled = true;
+        }
+      }
+    }
+    bool removed = false;
+    for (int u = 0; u < nv; ++u) {
+      if (!(alive[u >> 6] & (BitWord(1) << (u & 63)))) {
+        continue;
+      }
+      if (Dominated(adjBits, alive, nw, u)) {
+        alive[u >> 6] &= ~(BitWord(1) << (u & 63));
+        removed = true;
+      }
+    }
+    if (!removed) {
+      return;
+    }
+  }
+}
+
 // The strict upper triangle of `d`, keeping only entries >= `lowest`: the
 // candidate thresholds the search can still reach. Column-major, so a column
 // is a contiguous read.
@@ -545,7 +641,53 @@ List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
     }
     std::stable_sort(vars.begin(), vars.end(),
                      [&](int a, int b) { return dg[a] > dg[b]; });
+    const int nv0 = static_cast<int>(vars.size());
+    for (int t = 0; t < nv0; ++t) {
+      loc[vars[t]] = t;
+    }
+
+    // Peel and dominance to a fixpoint before any search structure is
+    // built: on the probes that carry a cell's cost, the peel alone bites
+    // nowhere and dominance removes up to seven eighths of the edges
+    // (Round 17's audit). Vertices it discards keep the maximum clique
+    // reachable through an interchangeable survivor, so the verdict is
+    // unchanged; a witness is a clique of the reduced graph, which is a
+    // clique of H.
+    const int nw0 = (nv0 + kBits - 1) / kBits;
+    std::vector<BitWord> tadj(static_cast<size_t>(nv0) * nw0, 0);
+    for (int t = 0; t < nv0; ++t) {
+      const int u = vars[t];
+      BitWord* row = &tadj[static_cast<size_t>(t) * nw0];
+      for (R_xlen_t p = off[u]; p < off[u + 1]; ++p) {
+        const int w = adj[p];
+        if (loc[w] >= 0) {
+          row[loc[w] >> 6] |= BitWord(1) << (loc[w] & 63);
+        }
+      }
+    }
+    std::vector<BitWord> aliveBits(nw0, 0);
+    for (int t = 0; t < nv0; ++t) {
+      aliveBits[t >> 6] |= BitWord(1) << (t & 63);
+    }
+    PackReduce(tadj, aliveBits, nv0, nw0, k);
+    {
+      int kept = 0;
+      for (int t = 0; t < nv0; ++t) {
+        if (aliveBits[t >> 6] & (BitWord(1) << (t & 63))) {
+          vars[kept++] = vars[t];
+        } else {
+          loc[vars[t]] = -1;
+        }
+      }
+      vars.resize(kept);
+    }
     const int nv = static_cast<int>(vars.size());
+    // The reduction ends on a peel, so any surviving vertex has >= k - 1
+    // live neighbours and any non-empty remnant has >= k members: `vars` is
+    // either big enough to search or empty, with no locs left to reset.
+    if (nv < k) {
+      continue;
+    }
     for (int t = 0; t < nv; ++t) {
       loc[vars[t]] = t;
     }
@@ -556,7 +698,7 @@ List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
       BitWord* row = &cs.adjStore[static_cast<size_t>(t) * cs.nw];
       for (R_xlen_t p = off[u]; p < off[u + 1]; ++p) {
         const int w = adj[p];
-        if (!dead[w] && comp[w] == c) {
+        if (loc[w] >= 0) {
           cs.SetBit(row, loc[w]);
         }
       }

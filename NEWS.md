@@ -1,3 +1,15 @@
+# Coreset 0.0.0.9006 (development)
+
+- Each feasibility probe now discards, before searching, every vertex whose
+  live neighbourhood sits inside a non-adjacent vertex's: any clique through
+  the discarded vertex swaps it for the survivor at equal size, so verdicts
+  and proven optima are untouched. Interleaved with the core peel to a
+  fixpoint, this removes most of the hard probes' graphs outright on
+  structured geometry and a quarter to a half of their edges elsewhere.
+  The witness a feasible probe returns is a clique of the reduced graph, so
+  the particular optimal subset reported can differ from earlier releases
+  where several attain the optimum, which the contract already allows.
+
 # Coreset 0.0.0.9005 (development)
 
 - The DSATUR root colouring introduced in 0.0.0.9004 is now a bound only.

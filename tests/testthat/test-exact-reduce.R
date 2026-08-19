@@ -287,10 +287,32 @@ test_that("threads leave every verdict and witness at the serial answer", {
   expect_identical(expiredT$status, "inconclusive")
   expect_identical(expiredT$witness, integer(0))
 
-  # A component the DSATUR bound refutes before any search is dispatched:
-  # the 4-cycle colours with 2 < k = 3.
+  # A component the reduction empties before anything is coloured: in the
+  # 4-cycle each vertex's neighbourhood sits inside its opposite's, and the
+  # peel finishes what dominance starts.
   sq <- .Decide(c(1L, 2L, 3L, 1L), c(2L, 3L, 4L, 4L), 4L, 3L, threads = 2L)
   expect_identical(sq$status, "infeasible")
+
+  # A component the DSATUR bound refutes: the 6-cycle holds no dominated
+  # vertex, so it reaches the colouring intact and 2 < k = 3 ends it there.
+  hex <- .Decide(c(1L, 2L, 3L, 4L, 5L, 1L), c(2L, 3L, 4L, 5L, 6L, 6L),
+                 6L, 3L, threads = 2L)
+  expect_identical(hex$status, "infeasible")
+})
+
+test_that("dominance discards one open twin and the witness uses the other", {
+  # K5 plus an open twin of vertex 1 (adjacent to 2:5, not to 1). The twins
+  # have equal neighbourhoods, so the sweep discards exactly the one it
+  # visits first -- vertex 1, in degree order -- and the 5-clique reported
+  # swaps in the survivor. At k = 6 the peel leaves nothing: the twins are
+  # not adjacent, so no 6-clique ever existed.
+  k5 <- t(utils::combn(5L, 2L))
+  hi <- c(k5[, 1L], rep(6L, 4L))
+  hj <- c(k5[, 2L], 2:5)
+  five <- .Decide(hi, hj, 6L, 5L)
+  expect_identical(five$status, "feasible")
+  expect_identical(five$witness, 2:6)
+  expect_identical(.Decide(hi, hj, 6L, 6L)$status, "infeasible")
 })
 
 test_that("a bound the greedy pass beats still closes every root branch", {
