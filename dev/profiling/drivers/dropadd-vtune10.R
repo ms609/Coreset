@@ -13,10 +13,13 @@ d4 <- as.matrix(dist(pts4))
 big2  <- matrix(rnorm(20000L * 2L),  ncol = 2L)
 big10 <- matrix(rnorm(20000L * 10L), ncol = 10L)
 PL <- .Machine$integer.max
+# Matrix cells take DropAdd()'s peripheral seed (the kernel's max-row-sum
+# fallback was removed); the round-10 hotspot shares predate that change.
+s4 <- as.integer(Coreset:::.PickPoint(d4, "peripheral")) - 1L
 
 t0 <- proc.time()[[3L]]
-for (r in 1:20) o1 <- Coreset:::DropAdd_cpp(d4, 10L, Inf, 1500L, PL, FALSE, -1L)
-for (r in 1:8)  o2 <- Coreset:::DropAdd_cpp(d4, 2000L, Inf, 1500L, PL, FALSE, -1L)
+for (r in 1:20) o1 <- Coreset:::DropAdd_cpp(d4, 10L, Inf, 1500L, PL, FALSE, s4)
+for (r in 1:8)  o2 <- Coreset:::DropAdd_cpp(d4, 2000L, Inf, 1500L, PL, FALSE, s4)
 for (r in 1:4)  o3 <- Coreset:::DropAdd_points_cpp(big2, 10L, Inf, 1000L, PL, FALSE, -1L)
 for (r in 1:3)  o4 <- Coreset:::DropAdd_points_cpp(big10, 10L, Inf, 600L, PL, FALSE, -1L)
 o5 <- Coreset:::DropAdd_points_cpp(big10, 10000L, Inf, 0L, PL, FALSE, -1L)

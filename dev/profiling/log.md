@@ -1659,4 +1659,77 @@ Status: Area 2 → OPTIMISED; the matrix kernel's serial-at-limit certification
 from round 10 stands for its passes (argmax fusion and threading both measured
 flat there) but not for the recompute branch, which this round moved.
 
+## Round 14 — 2026-08-18 — Area 2 (DropAdd): the last symmetry site was dead
+code; removed, and the drivers moved onto the production protocol
+
+**Trigger:** user decision. With asymmetric input refused at intake (round 13),
+the matrix kernel may treat `d` as exactly symmetric everywhere, so this round
+swept it for any remaining site where symmetry removes a read.
+
+**There is exactly one, and it was API-dead.** Every other matrix read in the
+kernel is a whole column that is genuinely needed: the drop and add passes
+touch `d(i, x)` for all `i`, and the recompute branch's layout choice was
+already taken in round 13. The one full-matrix sweep left was the
+construction's max-row-sum seed (`seed0 = -1`), and `DropAdd()` had not
+reached it since `0214ab2`: the wrapper fills `matrixSeed0` from
+`.PickPoint(dmat, "peripheral")`, which returns >= 1 on every branch, so the
+`seed0 >= 0` arm was always taken. `0214ab2` made that change deliberately —
+the max-row-sum anchor was both O(n^2) *and* the worst of the seven profiled
+(mean gap to the proven optimum 0.029 against the peripheral anchor's 0.011
+over a 40-cell grid). Only `.DropAddTrace()` and the profiling drivers still
+reached it.
+
+**The lever was built and verified before the reach problem surfaced,** so its
+cost is recorded rather than guessed. Column `j`'s entry `i < j` serves both
+`rs[i]` and `rs[j]`, so the upper triangle alone suffices — `n(n+1)/2` elements
+rather than `n^2` — with `rs[j]` accumulated in a register chain stored once,
+complete, at the diagonal. Summation order is untouched: `rs[k]` still
+receives `d(k, 0..k-1)`, then `d(k, k)`, then `d(k, k+1..n-1)`, the same
+left-associated chain, exact because `d(i, j) == d(j, i)` exactly. Columns
+band four at a time, since the chain is a loop-carried dependency and one
+chain per column would trade the halved traffic for a serial add latency
+costing more than it saves. (Round 9's banding result does not refute this:
+that loop was memory-bound, where banding cannot help; here banding breaks a
+latency chain.) **295/295 battery bit-identical, suite green** — then declined,
+and the sweep it optimised removed instead. Never timed: the disposition was
+reachability-based, so a measurement would only have priced a branch no caller
+reaches.
+
+**What shipped.**
+- `src/dropadd.cpp`: the max-row-sum fallback is gone. The kernel now requires
+  `seed0` in `[0, n)` and errors otherwise — a range the wrapper already
+  validated, so this is a tightening for direct callers only. The points
+  kernel's `-1` anti-centroid fallback is untouched: it **is** the points
+  path's production default.
+- `.DropAddTrace()` and `.DropAddConstruct()` seed at the peripheral anchor,
+  so the trace helper and the pure-R twin walk the trajectory `DropAdd()`
+  actually walks. `.DropAddConstruct()` gained a `first =` argument mirroring
+  `.DropAddConstructColumn()`. The oracle test's compensating row-sum seed
+  went with it.
+- `dropadd-timing.R` and `dropadd-vtune10.R`: matrix cells take the production
+  peripheral seed, computed once outside the timed thunks. **Every matrix
+  timing from rounds 4-13 measured `seed0 = -1`** and billed each construct
+  cell for an O(n^2) sweep the wrapper had stopped running, so those numbers
+  are not comparable with anything measured after this round. Points cells are
+  unaffected — their protocol was already production.
+- `dropadd-battery.R`: the matrix cases move from `-1L` to fixed explicit
+  seeds (0/1/3, keeping all three shapes); the `recP(..., -1L)` cases keep the
+  default, exercising the live points fallback. Verified by capturing the
+  updated script against the pre-removal kernel and comparing after: 295/295
+  bit-identical, within-build invariants OK. **This commit is the new
+  frozen-baseline reference** — the old `-1L` matrix cases are unreproducible
+  under the new script by design.
+
+**Refuted by design — fusing the seed row-sums into `.AsDistMatrix`'s symmetry
+scan.** The scan already reads every element, but it runs on the *pre-averaged*
+matrix, so scan-time row sums would be sums of the wrong matrix whenever
+intake repairs a rounding asymmetry; and it would tax Grasp and k-centre
+intake for a DropAdd-only benefit that no longer exists.
+
+Status: Area 2 → OPTIMISED, unchanged. The matrix kernel is at its symmetry
+limit on every live path, and the triangle-sweep lever is closed permanently —
+its target no longer exists. Round 13's leads stand: lazy second-minimum
+record (re-measure the branch share first) and the K-row coordinate pre-gather
+for the points recompute.
+
 last_focus: 2
