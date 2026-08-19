@@ -9,10 +9,10 @@
 # END-TO-END rows here compare with that area's.
 # The matrix cells pass the SAME peripheral seed DropAdd() computes, so they
 # time the trajectory a caller actually walks; it is computed once, outside
-# the timed thunks. Matrix figures recorded before round 14 timed the kernel's
-# O(n^2) max-row-sum seed instead and are NOT comparable with these. The
-# points cells pass -1L: the anti-centroid fallback IS that path's production
-# default.
+# the timed thunks. In baselines.md, only the round-14 section shares this
+# protocol; the matrix rows in the sections above it timed an O(n^2)
+# max-row-sum seed and do NOT compare with these. The points cells pass -1L:
+# the anti-centroid fallback IS that path's production default.
 # Usage: Rscript dropadd-timing.R <out.rds>
 library(Coreset)
 args <- commandArgs(trailingOnly = TRUE)

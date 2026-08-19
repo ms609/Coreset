@@ -13,8 +13,8 @@ d4 <- as.matrix(dist(pts4))
 big2  <- matrix(rnorm(20000L * 2L),  ncol = 2L)
 big10 <- matrix(rnorm(20000L * 10L), ncol = 10L)
 PL <- .Machine$integer.max
-# Matrix cells take DropAdd()'s peripheral seed. The round-10 hotspot shares
-# in log.md were measured on the kernel's O(n^2) max-row-sum seed instead.
+# Matrix cells take DropAdd()'s peripheral seed. log.md's round-10 hotspot
+# shares are against an O(n^2) max-row-sum seed, not this one.
 s4 <- as.integer(Coreset:::.PickPoint(d4, "peripheral")) - 1L
 
 t0 <- proc.time()[[3L]]
