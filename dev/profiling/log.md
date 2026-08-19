@@ -1779,4 +1779,183 @@ Status: `graspPlateau` stays at 50 -- deeper is a measured loss.
 cannot lower the bound, and it buys pmed30. Adopting it belongs with the
 `b0bbaa7` merge and re-pin, as one re-measure.
 
-last_focus: 15
+## Round 16 — `ExactKCentre`: the covering IP replaced by an exhaustive search (2026-08-19)
+
+**Trigger:** T-011, PENDING since round 6 (2026-06-11) and the only focus area with
+no measurement at all. Round 6 predicted the cost would sit in the `highs`
+covering-IP solves, with the per-probe `which(d <= r, arr.ind = TRUE)` over an
+n x n logical as the actionable pure-R lever.
+
+**The prediction was half right, and the wrong half set the round.** Decomposing
+one probe (20 reps, ionosphere n=351 and penguins n=342): `highs_solve` **84-97%**,
+`which(arr.ind)` 1-2%, `Matrix::sparseMatrix` 1-15%, witness validation ~0. Round
+5's sparse rewrite had already taken the R glue out, so the IP was indeed the
+cost -- but not because the problem was hard.
+
+**What the audit found.** Over the 56-cell grid the bisection visits **707**
+thresholds, 494 infeasible and 213 feasible. Two facts about them, both counts
+and so both local-safe:
+
+- Standard set-cover reductions -- unit propagation, point dominance (N[a] a
+  subset of N[b] means covering a covers b), centre dominance -- collapse the
+  model from 342 points to **11-98**, and from 351 points to **10-57**.
+- Probe cost is **uniform** across the bisection: the costliest probe is 7-39% of
+  its cell, where a genuinely hard search concentrates near the optimum.
+
+Uniform cost on a model that reduces to a few dozen points is the signature of
+fixed per-solve overhead, not of search. So the IP is removed rather than tuned,
+as round 12 did on the packing side -- and for the opposite reason. There the IP
+was too slow at a hard problem; here it was too slow at an easy one.
+
+**Shipped -- `CoverDecide_cpp` (`src/kcentre_cover.cpp`).** Because `d(i,j) <= r`
+is symmetric, the coverage incidence IS the closed neighbourhood of the threshold
+graph, so a probe is "does G(r) admit a dominating set of size <= k" and one array
+of bitmaps serves centres and points alike. The kernel runs unit propagation, then
+both dominance rules to a fixpoint, splits what survives into components (their
+minimum covers add, so each is solved against the budget the earlier ones left),
+and searches each with a depth-first descent branching on the least-covered
+uncovered point -- a complete branch, so the search is exhaustive and "infeasible"
+is a proof rather than a solver status. It is bounded by a greedy
+disjoint-neighbourhood count: points that no available centre covers together each
+need a centre of their own. `highs` and `Matrix` leave `ExactKCentre`'s path
+entirely; both stay in Suggests for `MaxSum` and the test oracles.
+
+Minimum-degree branching turned out to carry a second guarantee worth recording:
+a point stranded in a child -- every centre covering it removed by the branch
+loop's earlier siblings -- would need fewer available centres than the branch
+point, which is what the branch point minimises. So no child ever sees an
+uncoverable point, and two guards written for that case were deleted rather than
+tested.
+
+**Measured, and NOT shipped: the certificate that literally reuses the packing
+kernel.** Two points that no single centre can cover need separate centres, so a
+set of pairwise non-co-coverable points of size k+1 refutes a threshold outright
+-- and such a set is a clique in the complement of the co-coverability graph,
+which is exactly the question `ThresholdDecide_cpp` answers. Fed the conflict
+edges, it settles **323 of the 494** infeasible probes with no search of our own.
+It is real, and it is the concrete structural duality between the two solvers, but
+the dominance-plus-search route settles all 494 and costs less, so it stays a
+recorded fact rather than code. It does not assume the triangle inequality: the
+metric shortcut "k+1 points pairwise more than 2r apart" is the same statement
+only when `d` is a metric, and `.AsDistMatrix` guarantees symmetry, not that.
+
+**Verification.**
+
+- **Probe-level oracle** (`kcentre-exact-oracle.R`): over all **707** thresholds
+  the grid's bisection visits, the kernel and the set-cover IP agree on **every**
+  verdict -- 0 mismatches -- and every feasible witness independently covers
+  within the probed radius. Because the search is exhaustive this is exact
+  agreement, not merely verdict-preservation. Search nodes: 666,650 total,
+  86,877 in the worst probe.
+- **Grid battery** (`kcentre-exact-grid.R`, 56 cells): radius bit-identical,
+  `proven` identical, every witness independently valid, on both Hamilton runs.
+  The witness is free to differ where several optimal centre sets exist -- the
+  round-11 steer on the dual -- but radius identity is witness-independent: a
+  proven optimum's witness achieves exactly the smallest feasible candidate,
+  since its own achieved radius is itself a feasible candidate.
+- Kernel unit tests against brute-force minimum cover (>200 probes at n=9, exact
+  agreement) and against a `highs` set-cover oracle at n=30, past brute force's
+  reach; targeted structures for propagation, dominance ties, components, both
+  timeout paths, and determinism.
+- Full suite **0 fail / 2 skip** (Geo loader only); covr **100%** on
+  `R/kcentre.R` and `src/kcentre_cover.cpp`.
+
+**Result (Hamilton, job 18448838; both arms built and run in one task on one
+node, interleaved, 3 repeats, per-cell medians).** Base is `ef45de3`, the
+round-15 tip.
+
+| | base | new | |
+|---|--:|--:|--:|
+| grid, 56 cells | 59.85 s | 5.39 s | **11.1x** |
+| per-repeat totals | 59.76 / 59.78 / 59.59 | 5.32 / 5.41 / 5.40 | |
+
+Per cell the range is 1.2x to 188x, and the shape of that range is the finding:
+every cell except four lands between 23x and 188x, while `tc7_ring` and `tc9_iris`
+(both n = 150) sit at 1.2-1.9x. Those two are not search-bound.
+
+**The residue is the warm start, and it is round 15's lesson in mirror.** On the
+shipped build (same job, 3 repeats, medians):
+
+| cell | n | candidates | CDSh warm start | threshold search | warm start % | probes from CDSh | probes from Gonzalez | same optimum |
+|---|--:|--:|--:|--:|--:|--:|--:|:--|
+| `tc7_ring` | 150 | 0.001 s | 0.767 s | 0.001 s | 100% | 10 | 11 | yes |
+| `tc9_iris` | 150 | 0.001 s | 0.475 s | 0.001 s | 100% | 11 | 12 | yes |
+| `tc20_zoo` | 101 | 0.001 s | 0.038 s | 0.000 s | 97% | 7 | 8 | yes |
+| `tc22_penguins` | 342 | 0.004 s | 0.010 s | 0.007 s | 48% | 13 | 14 | yes |
+| `tc11_ionosphere` | 351 | 0.005 s | 0.012 s | 0.008 s | 48% | 16 | 16 | yes |
+| `tc8_highdim_gaussians` | 155 | 0.001 s | 0.003 s | 0.018 s | 14% | 12 | 14 | yes |
+| `tc1_uniform` | 200 | 0.002 s | 0.004 s | 0.059 s | 6% | 12 | 12 | yes |
+
+`KCentre()` runs an exhaustive candidate scan below `.kCentreExhaustiveMaxCand`
+(n <= 150), which is why the two floor cells cost what they do. Round 15 priced
+`ExactMaxMin`'s heuristic pool against the probes it saves and found it wanting;
+the same arithmetic holds here and is now far more lopsided, because the probes it
+saves have become free. A Gonzalez peripheral pass costs nothing measurable, opens
+0-2 probes higher, and reaches the **same optimum on all seven cells** --
+correctness never depended on warm-start quality, which only sets where the
+bisection starts.
+
+**Not shipped, deliberately.** Which heuristic seeds `ExactKCentre` is a question
+about `KCentre()`'s API surface, not about this kernel, and it is separable: the
+gain is confined to n <= 150 and it would move the probe trajectory and the
+returned witness. Recorded for the maintainer, on round 15's precedent
+("recommended, not yet defaulted").
+
+**The search's own wall, for whoever comes next.** Refutation is what the kernel
+spends its nodes on, and the cost climbs steeply with k: 200 points in five
+dimensions need 7.4M nodes to refute at k = 10 and **1.2 x 10^8** at k = 14. The
+grid never approaches that -- its worst probe is 86,877 nodes -- but it is the
+area's limit, and the obvious lever is one to **import** from area 4 rather than
+export to it: the covering search has no colouring-style bound, only the greedy
+disjoint-neighbourhood count.
+
+### What might transfer to `ExactMaxMin`
+
+Its threshold search is OPTIMISED and its clique kernel AT-LIMIT (rounds 5, 11,
+12, 14, 15), so the question is what the dual turned out to need that the packing
+side has not tried. Three answers, one of them a live candidate:
+
+1. **Vertex dominance is absent from `ThresholdDecide_cpp`, and it is not on
+   round 14's closed list.** Dominance was this round's single biggest lever --
+   it is what turns a 342-point probe into an 11-point one. The packing kernel
+   peels to the (k-1)-core and bounds by colouring, but never applies the clique
+   analogue: if N[u] is contained in N[v] for adjacent u, v, then u can be
+   discarded, because any clique through u extends through v. Round 14 closed MCS
+   re-numbering, a greedy clique pass, and a per-node core peel -- not this.
+   **But do not build it on the strength of this round.** The two sides' costs sit
+   in different places: covering probes were cheap and uniform, with the time
+   going to solver overhead, whereas round 14 showed the packing cost concentrated
+   in a few genuinely hard probes (pmed34's single 54 s feasible probe). Dominance
+   pays only if it shrinks *those* graphs. The measurement that decides it is
+   cheap and has the same shape as this round's audit: count how far a dominance
+   pass peels the certifying probe's graph on pmed34, pmed40 and `tc7_ring`,
+   before writing any kernel.
+
+2. **Unit propagation does not transfer, and that is worth saying so nobody
+   chases it.** A point with one available centre forces that centre open, and the
+   cascade settles most covering probes outright. There is no packing analogue: no
+   vertex is ever forced *into* a clique, so the covering side's most productive
+   reduction has no image on the max-min side at all. The duality between the two
+   solvers is real, but it is not a symmetry.
+
+3. **The warm-start economics replicate exactly** (see the table above), which is
+   corroboration rather than a new lever: round 15's finding that a heuristic pool
+   must be priced against the probes it saves is not an artefact of `Grasp`'s cost
+   curve. It is what happens whenever a solver's search gets fast enough, and it
+   will happen again to any future round that speeds one up.
+
+The traffic also runs the other way, and that is the more valuable direction right
+now: **the colour bound belongs in the covering search**. Area 4's Tomita
+colour-sort is what makes its refutations cheap; the covering kernel has only a
+greedy disjoint-neighbourhood count, and its 10^8-node refutations at k = 14 are
+where that gap shows.
+
+**Cleanup.** Hamilton scratch under `/nobackup/pjjg18/coreset-kc/`; scratch
+libraries and audit rds files in the session scratchpad, outside the repo. No
+VTune this round -- the hot compiled code being replaced was `highs`'s, not ours,
+so an R-level decomposition plus counts located it, and the skill's triage step
+was answered without a sampling profiler. Drivers added: `kcentre-exact-audit.R`,
+`kcentre-exact-audit2.R`, `kcentre-exact-oracle.R`, `kcentre-exact-grid.R`.
+In-round fixes, so no issues filed (skill rule).
+
+last_focus: 5

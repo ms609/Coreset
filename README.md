@@ -55,7 +55,7 @@ as possible.
 | Function | Method | Use |
 |---|---|---|
 | `KCentre()` | Critical Dominating Set heuristic | ~1–3.5% of optimum at $O(N^2 \log N)$, typically far tighter than `FarFirst()` |
-| `ExactKCentre()` | Min-cover integer program | Proven optimum, small `k` (needs `highs`) |
+| `ExactKCentre()` | Exhaustive covering search | Proven optimum, small `k` |
 
 ### Maximum-entropy (maxdet) selection
 

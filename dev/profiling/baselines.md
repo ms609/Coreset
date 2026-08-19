@@ -266,7 +266,23 @@ Clustered Gaussian n=2004, dim=10, k=20; per-call median (6 reps), `-O2`.
 | KCentre, n=2004, dim=10, k=20 | 1275 | 307 | 4.16× |
 
 Centres + radius bit-identical at k∈{5,20,50}. `test_local(filter=kcentre)` 70/70.
-ExactKCentre baseline pending (T-011).
+**ExactKCentre — AFTER round 16** (the per-probe set-cover IP replaced by
+`CoverDecide_cpp`). Ground-truth grid, 14 cases x k in {2,4,6,10}; Hamilton job
+18448838, both arms in one task on one node, interleaved, 3 repeats, per-cell
+medians. Regress against the `new` column.
+
+| case | base (highs IP) | new (cover search) | speedup |
+|------|----------------:|-------------------:|--------:|
+| grid, 56 cells | 59.85 s | 5.39 s | 11.1x |
+
+Per-repeat grid totals: base 59.76 / 59.78 / 59.59; new 5.32 / 5.41 / 5.40.
+Per-cell range 1.2x-188x; the 1.2-1.9x floor is `tc7_ring` and `tc9_iris`
+(n = 150), which are warm-start-bound, not search-bound (CDSh is 100% of those
+cells' wall). 56/56 radii bit-identical, `proven` identical, witnesses valid;
+707/707 probe verdicts match the IP.
+
+**Do not benchmark this area on the Windows box** — the round's local figures
+ran 67 s -> 5.4 s, in the same direction but not the same number.
 
 **Update (red-team Round 8, KC-001 fix):** `KCentre` end-to-end is now ~440 ms at
 n=2004 k=20 (matrix input), not 307 ms — the added correctness guards (in-place

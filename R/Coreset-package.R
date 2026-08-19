@@ -27,7 +27,7 @@
 #' element to its nearest selected element ('centre').
 #' \describe{
 #'   \item{[KCentre()]}{CDSh covering heuristic.}
-#'   \item{[ExactKCentre()]}{Exact minimum-cover optimum (needs \pkg{highs}).}
+#'   \item{[ExactKCentre()]}{Exact minimum-cover optimum.}
 #' }
 #'
 #' @section Scoring:
