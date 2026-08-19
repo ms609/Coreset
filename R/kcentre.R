@@ -231,8 +231,7 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L) {
 # `CoverDecide_cpp` reduces the probe (unit propagation, then point and centre
 # dominance to a fixpoint), splits what survives into components and searches
 # each exhaustively, so "infeasible" is a proof rather than a solver status.
-# This is the covering dual of `ThresholdDecide_cpp`'s clique search, and like
-# it needs no MILP backend.
+# This is the covering dual of `ThresholdDecide_cpp`'s clique search.
 #
 # A returned witness is validated against `d` independently of what produced
 # it -- its covering radius is scored and compared with r -- exactly as
@@ -267,10 +266,8 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L) {
 #' Each probe asks whether `k` centres cover every point within a candidate
 #' radius -- a minimum-dominating-set question on the threshold graph, and the
 #' covering dual of [ExactMaxMin()]'s node-packing probe. It is decided
-#' combinatorially, by unit propagation and dominance reduction followed by an
-#' exhaustive component-wise search, so no MILP backend is involved. The search
-#' is
-#' warm-started from the [KCentre()] (CDSh) radius, a proven feasible upper bound
+#' combinatorially: unit propagation and dominance reduction, then an
+#' exhaustive component-wise search. The search is warm-started from the [KCentre()] (CDSh) radius, a proven feasible upper bound
 #' that caps the binary search, then bisects downward to the smallest feasible
 #' radius.
 #'

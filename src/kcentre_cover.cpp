@@ -338,10 +338,9 @@ List CoverDecide_cpp(NumericMatrix d, double r, int k, double maxSeconds) {
         continue;
       }
       const BitWord* nj = &nb[static_cast<size_t>(j) * nw];
-      // A point never loses every available centre here: a centre is dropped
-      // only when another available centre covers a superset, which therefore
-      // still covers this point. A point with no cover at all -- which the
-      // branching can create -- is refuted by the search's own bound.
+      // An alive point always retains at least one available centre: a centre
+      // is dropped only when another available one covers a superset, and that
+      // one therefore still covers this point.
       const int deg = AndCount(nj, avail.data(), nw);
       if (deg == 1) {
         const int c = FirstOf(nj, avail.data(), nw);
@@ -379,10 +378,10 @@ List CoverDecide_cpp(NumericMatrix d, double r, int k, double maxSeconds) {
           if (b == a || !TestBit(alive.data(), b)) {
             continue;
           }
-          // Equal neighbourhoods need no tie-break here: `a` ascends, so the
-          // lowest member of an equal class is reached while the rest are
-          // still alive and drops them, and is itself never reached as `b`
-          // afterwards. Some point therefore always survives this pass.
+          // `a` ascends, so the lowest member of a class of equal
+          // neighbourhoods is reached while the rest are still alive and
+          // drops them, and is itself never reached as `b` afterwards. Some
+          // point therefore always survives this pass.
           if (SubsetOf(na, &nb[static_cast<size_t>(b) * nw], avail.data(),
                        nw)) {
             ClearBit(alive.data(), b);

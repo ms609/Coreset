@@ -33,7 +33,7 @@ Cands <- getFromNamespace(".KCentreCandidates", "Coreset")
 Decide <- getFromNamespace("CoverDecide_cpp", "Coreset")
 AsD   <- getFromNamespace(".AsDistMatrix", "Coreset")
 
-# The set-cover IP this round removes, kept here as the oracle.
+# The set-cover IP the kernel replaces, kept here as the oracle.
 IpVerdict <- function(d, n, r, k) {
   cover <- which(d <= r, arr.ind = TRUE)
   A <- Matrix::sparseMatrix(i = cover[, 2L], j = cover[, 1L], x = 1,
