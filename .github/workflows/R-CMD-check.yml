@@ -423,6 +423,24 @@ jobs:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
+      # setup-r's first act on Linux is an internal `apt-get update`, and apt
+      # applies no transfer timeout by default: when a mirror accepts the
+      # connection and then stalls, the fetch never returns and the step burns
+      # the job's entire 6-hour budget. Observed 2026-08-19, when
+      # azure.archive.ubuntu.com went dark and the archive.ubuntu.com fallback
+      # stalled part-way through the index fetch -- a step whose healthy cost is
+      # ~35 s sat at 75 minutes. Capping the timeout turns that into a retry.
+      - name: Make apt fail fast on a stalled mirror
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo tee /etc/apt/apt.conf.d/99-ci-timeouts > /dev/null <<'EOF'
+          Acquire::Retries "3";
+          Acquire::http::Timeout "20";
+          Acquire::https::Timeout "20";
+          Acquire::ftp::Timeout "20";
+          EOF
+
       - uses: ms609/actions/revdepcheck@main
         with:
           deps: ${{ matrix.config.deps }}
