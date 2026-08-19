@@ -199,17 +199,14 @@ struct CoverSearch {
   }
 
   bool Expired() {
-    if (expired) {
-      return true;
-    }
-    if (((nodes - 1) & 1023LL) == 0) {   // fires on the first node too
+    if (!expired && ((nodes - 1) & 1023LL) == 0) {   // node 1 included
       if (std::chrono::steady_clock::now() > deadline) {
         expired = true;
-        return true;
+      } else {
+        R_CheckUserInterrupt();
       }
-      R_CheckUserInterrupt();
     }
-    return false;
+    return expired;
   }
 
   void Search(int depth) {
@@ -374,30 +371,27 @@ List CoverDecide_cpp(NumericMatrix d, double r, int k, double maxSeconds) {
         continue;
       }
       const BitWord* na = &nb[static_cast<size_t>(a) * nw];
+      // An alive point always keeps a cover (see the propagation note above),
+      // so `c` is a real centre; the test is structural, not a case.
       const int c = FirstOf(na, avail.data(), nw);
-      if (c < 0) {
-        continue;
+      if (c >= 0) {
+        CollectOf(&nb[static_cast<size_t>(c) * nw], alive.data(), nw, &buf);
+        for (size_t t = 0; t < buf.size(); ++t) {
+          const int b = buf[t];
+          if (b == a || !TestBit(alive.data(), b)) {
+            continue;
+          }
+          // Equal neighbourhoods need no tie-break here: `a` ascends, so the
+          // lowest member of an equal class is reached while the rest are
+          // still alive and drops them, and is itself never reached as `b`
+          // afterwards. Some point therefore always survives this pass.
+          if (SubsetOf(na, &nb[static_cast<size_t>(b) * nw], avail.data(),
+                       nw)) {
+            ClearBit(alive.data(), b);
+            changed = true;
+          }
+        }
       }
-      CollectOf(&nb[static_cast<size_t>(c) * nw], alive.data(), nw, &buf);
-      for (size_t t = 0; t < buf.size(); ++t) {
-        const int b = buf[t];
-        if (b == a || !TestBit(alive.data(), b)) {
-          continue;
-        }
-        const BitWord* nbb = &nb[static_cast<size_t>(b) * nw];
-        if (!SubsetOf(na, nbb, avail.data(), nw)) {
-          continue;
-        }
-        // Equal neighbourhoods: keep the lower index, so exactly one lives.
-        if (a > b && SubsetOf(nbb, na, avail.data(), nw)) {
-          continue;
-        }
-        ClearBit(alive.data(), b);
-        changed = true;
-      }
-    }
-    if (!AnyBit(alive.data(), nw)) {
-      break;
     }
 
     // Centre dominance. Any x dominating y covers y's first alive point, so

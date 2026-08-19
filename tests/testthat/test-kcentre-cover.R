@@ -123,15 +123,46 @@ test_that("independent components are budgeted separately", {
   expect_true(ValidCover(d, Decide(d, r, 2L * one)$witness, r))
 })
 
-test_that("CoverDecide reports inconclusive when the budget expires", {
+# Two probes that genuinely need the search, with their radii pinned by index
+# so the tests do not pay for a bisection. Both instances come from the
+# Mersenne-Twister stream, so the ordering of the distinct distances -- and
+# hence the index -- is the same everywhere.
+Radii <- function(d) sort(unique(d[upper.tri(d)]))
+
+test_that("CoverDecide stops inside the search when the budget expires", {
+  # 200 points in five dimensions: k = 14 cannot cover at this radius, and the
+  # exhaustive proof runs to ~10^8 nodes, so the deadline lands inside the
+  # search rather than inside the reduction.
+  set.seed(2)
+  d <- as.matrix(stats::dist(matrix(stats::runif(1000L), ncol = 5L)))
+  r <- Radii(d)[[2079L]]                  # one below the k = 14 optimum
+  got <- Decide(d, r, 14L, 0.05)          # ~1000x short of what the proof needs
+  expect_identical(got$status, "inconclusive")
+  expect_gt(got$nodes, 0)                 # it did search before giving up
+})
+
+test_that("CoverDecide reports inconclusive before it starts", {
   set.seed(9)
   d <- as.matrix(stats::dist(matrix(stats::rnorm(400L), ncol = 2L)))
-  radii <- sort(unique(d[upper.tri(d)]))
-  got <- Decide(d, radii[[round(length(radii) / 40)]], 12L, 1e-9)
-  expect_true(got$status %in% c("inconclusive", "infeasible", "feasible"))
-  # With no budget at all the deadline is already past at the first check.
-  expect_identical(Decide(d, radii[[round(length(radii) / 40)]], 12L,
-                          -1)$status, "inconclusive")
+  # No budget at all: the deadline is past before the first reduction pass.
+  got <- Decide(d, Radii(d)[[50L]], 12L, -1)
+  expect_identical(got$status, "inconclusive")
+  expect_identical(got$nodes, 0)
+})
+
+test_that("branching that strands a point is refuted, not mis-answered", {
+  # A refutation deep enough that the branch loop removes every centre
+  # covering some other point, which the bound must then reject.
+  set.seed(1)
+  d <- as.matrix(stats::dist(matrix(stats::runif(500L), ncol = 2L)))
+  radii <- Radii(d)
+  deep <- Decide(d, radii[[3568L]], 10L, 60)
+  expect_identical(deep$status, "infeasible")
+  expect_gt(deep$nodes, 1000)
+  # The next radius up is the optimum, and its witness covers.
+  at <- Decide(d, radii[[3569L]], 10L, 60)
+  expect_identical(at$status, "feasible")
+  expect_true(ValidCover(d, at$witness, radii[[3569L]]))
 })
 
 test_that("CoverDecide is deterministic", {

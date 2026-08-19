@@ -4,9 +4,10 @@
   so no longer needs `highs` or `Matrix`. Each probe -- "can `k` centres cover
   every point within this radius?" -- is now decided by an exhaustive
   combinatorial search: unit propagation, point and centre dominance reduction
-  to a fixpoint, a component split, then a bounded depth-first search over the
-  remainder. This is the covering dual of the clique search `ExactMaxMin()`
-  moved to, and it settles most probes by reduction alone. The proven optimum
+  run to a fixed point, a component split, then a bounded depth-first search
+  over the remainder. This is the covering dual of the clique search that
+  `ExactMaxMin()` moved to, and it settles most probes by reduction alone
+  without reaching the search at all. The proven optimum
   is unchanged on every case measured; the witness may differ where several
   optimal centre sets exist, which was already the contract.
 
