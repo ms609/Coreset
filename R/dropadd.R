@@ -21,8 +21,8 @@
   n <- nrow(dmat)
   S <- integer(k)
   # Seed point: the peripheral anchor, as DropAdd() and the C++ kernel use.
-  # Porumbel seeds at argmax over Z of sum_y d(x, y) (the eq. before Alg. 1);
-  # 0214ab2 measured that anchor the weaker of the two and routed past it.
+  # (Porumbel seeds at argmax over Z of sum_y d(x, y), the eq. before Alg. 1 —
+  # the weaker anchor of the two by the 0214ab2 grid.)
   S[1L] <- as.integer(first)
   inS <- logical(n)
   inS[S[1L]] <- TRUE

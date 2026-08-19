@@ -46,13 +46,11 @@ List DropAdd_cpp(NumericMatrix dmat, int m, double time_budget_s,
   std::vector<int> min_dist_count(n, 0);
 
   // -- Construction (Algorithm 1) -----------------------------------------
-  // The construction starts from a caller-supplied 0-based index.
-  // R/dropadd.R::DropAdd() validates it and fills it from the O(n) two-sweep
-  // peripheral anchor. The kernel carried its own O(n^2) max-row-sum seed
-  // until 0214ab2, which measured that anchor the worst of the seven profiled
-  // (mean gap to the proven optimum 0.029 against the peripheral anchor's
-  // 0.011 over a 40-cell grid) and routed the wrapper past it; no caller has
-  // reached it since, so it is gone rather than left for drivers to measure.
+  // The construction starts from a caller-supplied 0-based index; the kernel
+  // has no seed of its own. R/dropadd.R::DropAdd() validates the index and
+  // fills it from the O(n) two-sweep peripheral anchor, the strongest of the
+  // seven profiled at 0214ab2 (mean gap to the proven optimum 0.011 over a
+  // 40-cell grid, against 0.029 for the max-row-sum anchor Porumbel uses).
   if (seed0 < 0 || seed0 >= n) {
     stop("seed0 must be a 0-based start index in [0, nrow(dmat)); "
          "DropAdd() supplies the peripheral anchor");

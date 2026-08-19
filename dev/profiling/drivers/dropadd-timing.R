@@ -6,12 +6,11 @@
 # identical deterministic trajectory (objective printed as an identity
 # probe).
 # The matrix cells pass the SAME peripheral seed DropAdd() computes, so they
-# time the trajectory a caller actually walks. They used to pass seed0 = -1,
-# billing every construct cell for an O(n^2) max-row-sum sweep the wrapper has
-# not run since 0214ab2; matrix numbers from rounds 4-13 measure that protocol
-# and are not comparable with these. The seed is computed once, outside the
-# timed thunks. The points cells keep -1L: the anti-centroid fallback IS the
-# points path's production default.
+# time the trajectory a caller actually walks; it is computed once, outside
+# the timed thunks. Matrix figures recorded before round 14 timed the kernel's
+# O(n^2) max-row-sum seed instead and are NOT comparable with these. The
+# points cells pass -1L: the anti-centroid fallback IS that path's production
+# default.
 # Usage: Rscript dropadd-timing.R <out.rds>
 library(Coreset)
 args <- commandArgs(trailingOnly = TRUE)

@@ -382,14 +382,14 @@ test_that("DropAdd seed= validates its range and rejects candidate thinning", {
 })
 
 # ---------------------------------------------------------------------------
-# 12b. The matrix kernel requires a start index (no max-row-sum fallback)
+# 12b. The matrix kernel requires a start index
 # ---------------------------------------------------------------------------
 test_that("DropAdd_cpp rejects a start index outside [0, n)", {
   dmat <- as.matrix(dist(matrix(rnorm(12L * 2L), ncol = 2L)))
   n <- nrow(dmat)
-  # 0214ab2 routed DropAdd() past the kernel's own O(n^2) max-row-sum seed;
-  # the fallback is gone, so seed0 = -1 (the signature default, and what the
-  # profiling drivers used to pass) is now an error rather than a slow path.
+  # The kernel has no seed of its own, so seed0 = -1 -- the signature default
+  # -- is rejected rather than standing for one; DropAdd() always supplies the
+  # peripheral anchor.
   expect_error(
     Coreset:::DropAdd_cpp(dmat, 4L, Inf, 10L, 100L, FALSE, -1L),
     "seed0")

@@ -1720,6 +1720,17 @@ reaches.
   frozen-baseline reference** — the old `-1L` matrix cases are unreproducible
   under the new script by design.
 
+**Re-baselined on Hamilton** (`cn059`, EPYC 7702, r/4.5.1, serial; three
+whole-script reps, objectives identical throughout). Full table in
+baselines.md; the structural figure is `matrix n=4e3 m=10 construct` at
+**0.2 ms**. Under the old protocol that cell was dominated by the row-sum
+sweep, so it was almost entirely timing a warm start `DropAdd()` had already
+abandoned; what remains is the ten column passes the construction performs.
+No cell here is a speedup over rounds 4-13 — the matrix cells changed
+protocol and the points cells changed machine — and the log says so rather
+than banking a number the code did not earn. Rep spread is at or below 1 ms
+on every matrix cell, tighter than the Windows box's ±20-35%.
+
 **Refuted by design — fusing the seed row-sums into `.AsDistMatrix`'s symmetry
 scan.** The scan already reads every element, but it runs on the *pre-averaged*
 matrix, so scan-time row sums would be sums of the wrong matrix whenever
