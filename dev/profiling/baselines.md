@@ -98,8 +98,11 @@ probe, so a changed objective means a changed trajectory, not a faster one.
 | points n=2e4 d10 m=1e4 construct | 2.0170 | 1.547869051 |
 | points n=2e4 d10 m=1e4 search600 | 2.2990 | 1.547869051 |
 
-Rep-to-rep spread is at or below 1 ms on every matrix cell, so a real matrix
-movement is visible well under the ±20-35% the Windows box imposes.
+Rep-to-rep spread runs to 4.0 ms — 6.5% on `m=400 search1500`, 4.9% on
+`m=600`, at or below 2% on the other four. Tighter than the ±20-35% the
+Windows box imposes on sub-second cells, but the two cells either side of the
+`m = n/8` switch are the noisiest here, so treat a movement below ~7% on those
+as unproven.
 
 **No row here is a speedup over the sections above.** The matrix cells changed
 protocol (peripheral seed, not `seed0 = -1`), so they walk different

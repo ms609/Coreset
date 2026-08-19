@@ -1728,8 +1728,10 @@ sweep, so it was almost entirely timing a warm start `DropAdd()` had already
 abandoned; what remains is the ten column passes the construction performs.
 No cell here is a speedup over rounds 4-13 — the matrix cells changed
 protocol and the points cells changed machine — and the log says so rather
-than banking a number the code did not earn. Rep spread is at or below 1 ms
-on every matrix cell, tighter than the Windows box's ±20-35%.
+than banking a number the code did not earn. Rep spread reaches 4.0 ms (6.5% on
+`m=400 search1500`, 4.9% on `m=600`, <=2% elsewhere) — tighter than the
+Windows box's ±20-35%, but the two cells either side of the `m = n/8` switch
+are the noisiest, so a sub-7% movement on those is unproven.
 
 **Refuted by design — fusing the seed row-sums into `.AsDistMatrix`'s symmetry
 scan.** The scan already reads every element, but it runs on the *pre-averaged*
