@@ -10,3 +10,12 @@ Benchmark(ExactMaxMin(8L, d40))
 # certifying threshold, rather than the warm start and the setup scans.
 d1200 <- BenchDist(1200L, 12L, seed = 3L)
 Benchmark(ExactMaxMin(12L, d1200))
+
+# Near-regular geometry: the core peel never bites, every threshold graph is
+# dense, and the whole solve is the refutations flanking the optimum -- the
+# regime that prices the search kernel's reductions (vertex dominance and the
+# DSATUR root bound). Points on a circle are the hardest such instance for
+# their size.
+thRing <- seq(0, 2 * pi, length.out = 151L)[-151L]
+dRing <- as.matrix(dist(cbind(cos(thRing), sin(thRing))))
+Benchmark(ExactMaxMin(24L, dRing))
