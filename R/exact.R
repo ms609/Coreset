@@ -154,41 +154,26 @@
 #' The search is warm-started from a heuristic lower bound (the best of several
 #' [Grasp()] restarts and a [DropAdd()] pass), then gallops upward from that
 #' bound to the first infeasible threshold and bisects the resulting bracket.
-#' When a heuristic already attains the optimum, a single infeasibility proof
-#' certifies it.
-#' Each feasibility probe is first reduced to its \eqn{(k-1)}-core and greedily
-#' coloured, then searched exhaustively for a witness under a colouring bound.
 #'
 #' To parallelize computation when OpenMP is available, set the `"mc.cores"`
-#' option (silently serial without OpenMP):
+#' option:
 #' \preformatted{
 #' options(mc.cores = 2L)                       # use a fixed number of cores
 #' options(mc.cores = parallel::detectCores())  # or all available cores
 #' }
-#' Under `mc.cores > 1` the branches of each probe's root node are searched
-#' concurrently. The selection is unaffected: an infeasibility proof -- the
-#' only verdict that parallelises well -- exhausts every branch, so it cannot
-#' depend on the order they were visited in, and when a worker thread finds a
-#' witness the probe is re-run serially so that the witness kept is the serial
-#' one. What the thread count can shift is where `maxSeconds` cuts a probe
-#' off, which was never deterministic: near the budget, a probe the serial
-#' search would settle can come back inconclusive, or the reverse.
-#' The indices returned may vary between releases where several subsets attain
-#' the optimum; the `score` does not.
+#' Parallelization returns identical results under a given seed.
 #'
 #' @param k Integer: target subset size, between 2 and `nrow(d)`.
 #' @param d `dist` object or a square symmetric numeric distance matrix.
 #' @param maxSeconds Numeric: search terminates after this many seconds have
 #' elapsed, returning largest threshold proven feasible.
-#' @param warmStart Integer vector giving indices of a candidate subset to add
-#'  to the heuristic warm-start pool, e.g. a selection computed by another
-#'  solver.
+#' @param warmStart Optional integer vector giving indices of a candidate subset to add
+#'  to the heuristic warm-start pool.
 #' @param nStart Integer: how many [Grasp()] restarts enter the warm-start
 #'  pool.
 #' @param graspPlateau,dropPlateau Integer: the stopping plateaus given to the
 #'  pool's [Grasp()] restarts and its [DropAdd()] pass. Deeper searches cost
-#'  more but raise the lower bound the exact search starts from; the defaults
-#'  are calibrated against the manuscript's cases and ORLIB `pmed`.
+#'  more, but raise the lower bound the exact search starts from.
 #' @templateVar progress_shows a progress indicator is shown
 #' @template progress
 #' @return `ExactMaxMin()` returns an integer vector of length `k` (sorted
