@@ -1766,4 +1766,38 @@ its target no longer exists. Round 13's leads stand: lazy second-minimum
 record (re-measure the branch share first) and the K-row coordinate pre-gather
 for the points recompute.
 
+**The CI benchmark's DropAdd verdict on this branch is an artefact.** The
+workflow reported `DropAdd(20, d500, plateau=2000)` −6.59% and
+`DropAdd(250, d500, plateau=2000)` −5.4%, both "slower", with the points cell
+NSD. Nothing on the executed path can account for it: with `seed0 >= 0` — which
+`DropAdd()` always supplies — the old kernel did `seed = seed0` and the new one
+does a bounds check plus the same assignment, and no loop moved. Two
+interleaved A/B jobs (merge-base 266351b vs branch head, both arms inside one
+job on one node, 25 inner reps per matrix cell, scores identical throughout)
+put the new code **faster**, not slower:
+
+| cell | base-first, 7 reps (cn027) | order-swapped, 8 reps (cn025) |
+|------|---------------------------:|------------------------------:|
+| `DropAdd(20, d500, plateau=2000)` | 0.952 | 0.975 |
+| `DropAdd(250, d500, plateau=2000)` | 0.959 | 0.965 |
+| `DropAdd(20, pts4000, plateau=1000)` | 0.985 | 0.988 |
+
+Same magnitude as CI, opposite sign. This extends round 11's precedent, where
+the runner reported +9.09% on this very cell while the round shipped nothing
+for the kernel, and ±13% on two FarFirst cells whose only diff was three
+deleted `// nocov` comment lines.
+
+Two cautions for whoever reads those ratios. **Running one arm always first
+biases every cell**: base-first put cell A at 0.952, and swapping the order on
+alternate reps moved it to 0.975. **The points cell is the floor** — its kernel
+(`dropadd_mf.cpp`) is byte-identical in both arms, yet it reads 1.2% fast, so
+~1.2% is this harness's systematic error, not signal. Against that floor the
+m=250 cell (3.5%, non-overlapping rep distributions) looks real and the m=20
+cell (2.5%, overlapping) is suggestive. A plausible mechanism is that the
+removed branch declared a `std::vector<double> rs(n, 0.0)`: a
+non-trivially-destructible local forces exception-handling cleanup paths even
+when never executed, so deleting it can simplify codegen across the whole
+function. **Recorded, not banked** — the round removed dead code and claims no
+speedup, and 2-3% at a 1.2% floor does not deserve one.
+
 last_focus: 2
