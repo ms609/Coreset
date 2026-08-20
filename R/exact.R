@@ -158,14 +158,21 @@
 #' certifies it.
 #' Each feasibility probe is first reduced to its \eqn{(k-1)}-core and greedily
 #' coloured, then searched exhaustively for a witness under a colouring bound.
-#' With `threads > 1` the branches of each probe's root node are searched
+#'
+#' To parallelize computation when OpenMP is available, set the `"mc.cores"`
+#' option (silently serial without OpenMP):
+#' \preformatted{
+#' options(mc.cores = 2L)                       # use a fixed number of cores
+#' options(mc.cores = parallel::detectCores())  # or all available cores
+#' }
+#' Under `mc.cores > 1` the branches of each probe's root node are searched
 #' concurrently. The selection is unaffected: an infeasibility proof -- the
 #' only verdict that parallelises well -- exhausts every branch, so it cannot
 #' depend on the order they were visited in, and when a worker thread finds a
 #' witness the probe is re-run serially so that the witness kept is the serial
-#' one. What `threads` can shift is where `maxSeconds` cuts a probe off,
-#' which was never deterministic: near the budget, a probe the serial search
-#' would settle can come back inconclusive, or the reverse.
+#' one. What the thread count can shift is where `maxSeconds` cuts a probe
+#' off, which was never deterministic: near the budget, a probe the serial
+#' search would settle can come back inconclusive, or the reverse.
 #' The indices returned may vary between releases where several subsets attain
 #' the optimum; the `score` does not.
 #'
@@ -182,11 +189,6 @@
 #'  pool's [Grasp()] restarts and its [DropAdd()] pass. Deeper searches cost
 #'  more but raise the lower bound the exact search starts from; the defaults
 #'  are calibrated against the manuscript's cases and ORLIB `pmed`.
-#' @param threads Integer: how many threads each feasibility probe may search
-#'  its root branches on. Requires OpenMP (silently serial without it); the
-#'  gain concentrates in infeasibility proofs, so it is largest when the warm
-#'  start is already near the optimum and the work that remains is
-#'  certification.
 #' @templateVar progress_shows a progress indicator is shown
 #' @template progress
 #' @return `ExactMaxMin()` returns an integer vector of length `k` (sorted
@@ -208,8 +210,7 @@
 #' ExactMaxMin(3L, dist(pts))
 #' @export
 ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
-                        nStart = 8L, graspPlateau = 50L, dropPlateau = 512L,
-                        threads = 1L) {
+                        nStart = 8L, graspPlateau = 50L, dropPlateau = 512L) {
   progress <- getOption("Coreset.progress", interactive())
   t0 <- proc.time()[[3L]]
   d <- .ExactAsMatrix(d)
@@ -218,10 +219,7 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
   if (is.na(k) || k < 2L || k > n) {
     stop("`k` must satisfy 2 <= k <= nrow(d)")
   }
-  threads <- as.integer(threads)
-  if (is.na(threads) || threads < 1L) {
-    stop("`threads` must be a positive integer")
-  }
+  nThreads <- .NThreads()
 
   Elapsed <- function() proc.time()[[3L]] - t0
 
@@ -252,7 +250,7 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
   feas <- function(idx, remaining) {
     lambda <- cand[idx]
     h <- EdgesAtLeast_cpp(d, lambda)
-    .MaxISVerdict(d, n, h[["hi"]], h[["hj"]], lambda, k, remaining, threads)
+    .MaxISVerdict(d, n, h[["hi"]], h[["hj"]], lambda, k, remaining, nThreads)
   }
 
   # Helper to package a result for a proven-feasible candidate index.
