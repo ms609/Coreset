@@ -4,7 +4,15 @@
 \alias{ExactMaxMin}
 \title{Exact Max-Min Diversity Problem solution}
 \usage{
-ExactMaxMin(k, d, maxSeconds = 60, warmStart = NULL)
+ExactMaxMin(
+  k,
+  d,
+  maxSeconds = 60,
+  warmStart = NULL,
+  nStart = 8L,
+  graspPlateau = 50L,
+  dropPlateau = 512L
+)
 }
 \arguments{
 \item{k}{Integer: target subset size, between 2 and \code{nrow(d)}.}
@@ -14,9 +22,15 @@ ExactMaxMin(k, d, maxSeconds = 60, warmStart = NULL)
 \item{maxSeconds}{Numeric: search terminates after this many seconds have
 elapsed, returning largest threshold proven feasible.}
 
-\item{warmStart}{Integer vector giving indices of a candidate subset to add
-to the heuristic warm-start pool, e.g. a selection computed by another
-solver.}
+\item{warmStart}{Optional integer vector giving indices of a candidate subset to add
+to the heuristic warm-start pool.}
+
+\item{nStart}{Integer: how many \code{\link[=Grasp]{Grasp()}} restarts enter the warm-start
+pool.}
+
+\item{graspPlateau, dropPlateau}{Integer: the stopping plateaus given to the
+pool's \code{\link[=Grasp]{Grasp()}} restarts and its \code{\link[=DropAdd]{DropAdd()}} pass. Deeper searches cost
+more, but raise the lower bound the exact search starts from.}
 }
 \value{
 \code{ExactMaxMin()} returns an integer vector of length \code{k} (sorted
@@ -42,15 +56,14 @@ sets).
 The search is warm-started from a heuristic lower bound (the best of several
 \code{\link[=Grasp]{Grasp()}} restarts and a \code{\link[=DropAdd]{DropAdd()}} pass), then gallops upward from that
 bound to the first infeasible threshold and bisects the resulting bracket.
-When a heuristic already attains the optimum, a single infeasibility proof
-certifies it.
-Each feasibility probe is first reduced to its \eqn{(k-1)}-core and greedily
-coloured, then searched exhaustively for a witness under a colouring bound.
-The search runs on one core: its branches parallelise, but measurably only
-for infeasibility proofs, and threads would make the reported subset
-thread-dependent.
-The indices returned may vary between releases where several subsets attain
-the optimum; the \code{score} does not.
+
+To parallelize computation when OpenMP is available, set the \code{"mc.cores"}
+option:
+\preformatted{
+options(mc.cores = 2L)                       # use a fixed number of cores
+options(mc.cores = parallel::detectCores())  # or all available cores
+}
+Parallelization returns identical results under a given seed.
 }
 \section{Progress bar}{
 

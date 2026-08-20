@@ -63,7 +63,8 @@
 # medium instances; DropAdd adds a deterministic anchor. The best-achieving
 # subset wins. `warmStart`, if a valid k-subset, joins the pool. Returns
 # list(value, witness), or NULL if no heuristic produced a usable subset.
-.ExactWarmStart <- function(d, n, k, warmStart, nStart = 8L) {
+.ExactWarmStart <- function(d, n, k, warmStart, nStart = 8L,
+                            graspPlateau = 50L, dropPlateau = 512L) {
   scv   <- function(idx) { s <- d[idx, idx]; diag(s) <- Inf; min(s) }
   # Coerce a raw selection to a valid sorted k-subset, or drop it (NULL).
   valid <- function(idx) {
@@ -79,14 +80,15 @@
   grasps <- local({
     op <- options(Coreset.progress = FALSE); on.exit(options(op))
     lapply(seq_len(nStart), function(s)
-      tryCatch(Grasp(k, d, plateau = 50L, maxCandidates = 0L),
+      tryCatch(Grasp(k, d, plateau = graspPlateau, maxCandidates = 0L),
                error = function(e) NULL))
   })
   raw <- c(if (is.null(warmStart)) list() else list(warmStart),
            grasps,
            list(tryCatch(local({
              op <- options(Coreset.progress = FALSE); on.exit(options(op))
-             DropAdd(d = d, k = k, plateau = 512L, maxCandidates = 0L)
+             DropAdd(d = d, k = k, plateau = dropPlateau,
+                     maxCandidates = 0L)
            }), error = function(e) NULL)))
   pool <- Filter(Negate(is.null), lapply(raw, valid))
   if (!length(pool)) {
@@ -115,7 +117,7 @@
 #                     (witness = integer(0)),
 #   "inconclusive" -- the budget expired before either could be established
 #                     (witness = integer(0)).
-.MaxISVerdict <- function(d, n, hi, hj, lambda, k, timeLimit) {
+.MaxISVerdict <- function(d, n, hi, hj, lambda, k, timeLimit, threads = 1L) {
   if (!is.finite(timeLimit) || timeLimit <= 0) { # nocov start
     return(list(verdict = "inconclusive", witness = integer(0)))
   } # nocov end
@@ -127,7 +129,7 @@
     return(list(verdict = "feasible", witness = seq_len(n)))
   }
 
-  res <- ThresholdDecide_cpp(hi, hj, n, k, timeLimit)
+  res <- ThresholdDecide_cpp(hi, hj, n, k, timeLimit, threads)
   witness <- res[["witness"]]
   if (identical(res[["status"]], "feasible")) {
     sub <- d[witness, witness, drop = FALSE]
@@ -152,23 +154,26 @@
 #' The search is warm-started from a heuristic lower bound (the best of several
 #' [Grasp()] restarts and a [DropAdd()] pass), then gallops upward from that
 #' bound to the first infeasible threshold and bisects the resulting bracket.
-#' When a heuristic already attains the optimum, a single infeasibility proof
-#' certifies it.
-#' Each feasibility probe is first reduced to its \eqn{(k-1)}-core and greedily
-#' coloured, then searched exhaustively for a witness under a colouring bound.
-#' The search runs on one core: its branches parallelise, but measurably only
-#' for infeasibility proofs, and threads would make the reported subset
-#' thread-dependent.
-#' The indices returned may vary between releases where several subsets attain
-#' the optimum; the `score` does not.
+#'
+#' To parallelize computation when OpenMP is available, set the `"mc.cores"`
+#' option:
+#' \preformatted{
+#' options(mc.cores = 2L)                       # use a fixed number of cores
+#' options(mc.cores = parallel::detectCores())  # or all available cores
+#' }
+#' Parallelization returns identical results under a given seed.
 #'
 #' @param k Integer: target subset size, between 2 and `nrow(d)`.
 #' @param d `dist` object or a square symmetric numeric distance matrix.
 #' @param maxSeconds Numeric: search terminates after this many seconds have
 #' elapsed, returning largest threshold proven feasible.
-#' @param warmStart Integer vector giving indices of a candidate subset to add
-#'  to the heuristic warm-start pool, e.g. a selection computed by another
-#'  solver.
+#' @param warmStart Optional integer vector giving indices of a candidate subset to add
+#'  to the heuristic warm-start pool.
+#' @param nStart Integer: how many [Grasp()] restarts enter the warm-start
+#'  pool.
+#' @param graspPlateau,dropPlateau Integer: the stopping plateaus given to the
+#'  pool's [Grasp()] restarts and its [DropAdd()] pass. Deeper searches cost
+#'  more, but raise the lower bound the exact search starts from.
 #' @templateVar progress_shows a progress indicator is shown
 #' @template progress
 #' @return `ExactMaxMin()` returns an integer vector of length `k` (sorted
@@ -189,7 +194,8 @@
 #' pts <- matrix(rnorm(18), ncol = 2)
 #' ExactMaxMin(3L, dist(pts))
 #' @export
-ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
+ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
+                        nStart = 8L, graspPlateau = 50L, dropPlateau = 512L) {
   progress <- getOption("Coreset.progress", interactive())
   t0 <- proc.time()[[3L]]
   d <- .ExactAsMatrix(d)
@@ -198,6 +204,7 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
   if (is.na(k) || k < 2L || k > n) {
     stop("`k` must satisfy 2 <= k <= nrow(d)")
   }
+  nThreads <- .NThreads()
 
   Elapsed <- function() proc.time()[[3L]] - t0
 
@@ -205,7 +212,9 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
   # <= ws$value is feasible (the witness attains it), so the optimum is at
   # least ws$value. Without a heuristic, fall back to the trivial bound (the
   # smallest distance, whose threshold graph is edgeless).
-  ws <- .ExactWarmStart(d, n, k, warmStart)
+  ws <- .ExactWarmStart(d, n, k, warmStart, nStart = nStart,
+                        graspPlateau = graspPlateau,
+                        dropPlateau = dropPlateau)
   lowest <- if (is.null(ws)) -Inf else ws$value # nocov
 
   # Candidate thresholds: the achieved distinct distances from `lowest` up,
@@ -226,7 +235,7 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
   feas <- function(idx, remaining) {
     lambda <- cand[idx]
     h <- EdgesAtLeast_cpp(d, lambda)
-    .MaxISVerdict(d, n, h[["hi"]], h[["hj"]], lambda, k, remaining)
+    .MaxISVerdict(d, n, h[["hi"]], h[["hj"]], lambda, k, remaining, nThreads)
   }
 
   # Helper to package a result for a proven-feasible candidate index.
@@ -258,6 +267,32 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
     )
   }
 
+  # A feasible probe returns some k-clique of H(lambda), not a best one, so the
+  # minimum distance its witness realises is at least lambda and can be far
+  # above -- on the larger instances, hundreds of candidates above, and the
+  # same subset is then returned again by every probe in between. Every
+  # threshold up to that value is attained by the subset already in hand, so
+  # those probes decide nothing and are answered from the witness instead of
+  # the oracle. The thresholds the search visits are unchanged; only the ones
+  # whose answer is already known stop being paid for.
+  best <- new.env(parent = emptyenv())
+  best$obj <- -Inf
+  Realised <- function(witness) {
+    sub <- d[witness, witness, drop = FALSE]
+    diag(sub) <- Inf
+    min(sub)
+  }
+  Feasible <- function(idx, remaining) {
+    if (cand[idx] <= best$obj) {
+      return(list(verdict = "feasible", witness = bestWitness, known = TRUE))
+    }
+    v <- feas(idx, remaining)
+    if (identical(v$verdict, "feasible")) {
+      best$obj <- Realised(v$witness)
+    }
+    v
+  }
+
   # cand[1] is the warm start's own realised value, so the search starts there.
   i0 <- 1L
   bestIdx <- 1L
@@ -265,6 +300,7 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
     bestWitness <- seq_len(n)
   } else { # nocov end
     bestWitness <- ws$witness
+    best$obj <- ws$value
   }
   inconclusive <- FALSE
 
@@ -276,7 +312,7 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
   while (probe <= nCand) {
     rem <- maxSeconds - Elapsed()
     if (rem <= 0) { inconclusive <- TRUE; break } # nocov
-    v <- feas(probe, rem); tick()
+    v <- Feasible(probe, rem); tick()
     if (identical(v$verdict, "feasible")) {
       loF <- probe; bestIdx <- probe; bestWitness <- v$witness
       step <- step * 2L; probe <- probe + step
@@ -296,7 +332,7 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
       rem <- maxSeconds - Elapsed()
       if (rem <= 0) { inconclusive <- TRUE; break } # nocov
       mid <- (lo + hi) %/% 2L
-      v <- feas(mid, rem); tick()
+      v <- Feasible(mid, rem); tick()
       if (identical(v$verdict, "feasible")) {
         bestIdx <- mid; bestWitness <- v$witness; lo <- mid + 1L
       } else if (identical(v$verdict, "infeasible")) {
@@ -313,5 +349,9 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL) {
   # bestIdx certified feasible (heuristic witness or IP witness) and the next
   # candidate certified infeasible (or bestIdx is the largest distance).
   proven <- !inconclusive
+  # `bestIdx` is the largest index certified feasible, and whichever witness
+  # certified it -- probed there, or carried down from a higher threshold it
+  # already attained -- realises exactly that threshold: any more would
+  # contradict the infeasibility proven just above it. Recover() checks that.
   Recover(bestWitness, cand[bestIdx], proven)
 }
