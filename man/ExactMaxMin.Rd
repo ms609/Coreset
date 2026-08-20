@@ -22,17 +22,15 @@ ExactMaxMin(
 \item{maxSeconds}{Numeric: search terminates after this many seconds have
 elapsed, returning largest threshold proven feasible.}
 
-\item{warmStart}{Integer vector giving indices of a candidate subset to add
-to the heuristic warm-start pool, e.g. a selection computed by another
-solver.}
+\item{warmStart}{Optional integer vector giving indices of a candidate subset to add
+to the heuristic warm-start pool.}
 
 \item{nStart}{Integer: how many \code{\link[=Grasp]{Grasp()}} restarts enter the warm-start
 pool.}
 
 \item{graspPlateau, dropPlateau}{Integer: the stopping plateaus given to the
 pool's \code{\link[=Grasp]{Grasp()}} restarts and its \code{\link[=DropAdd]{DropAdd()}} pass. Deeper searches cost
-more but raise the lower bound the exact search starts from; the defaults
-are calibrated against the manuscript's cases and ORLIB \code{pmed}.}
+more, but raise the lower bound the exact search starts from.}
 }
 \value{
 \code{ExactMaxMin()} returns an integer vector of length \code{k} (sorted
@@ -58,27 +56,14 @@ sets).
 The search is warm-started from a heuristic lower bound (the best of several
 \code{\link[=Grasp]{Grasp()}} restarts and a \code{\link[=DropAdd]{DropAdd()}} pass), then gallops upward from that
 bound to the first infeasible threshold and bisects the resulting bracket.
-When a heuristic already attains the optimum, a single infeasibility proof
-certifies it.
-Each feasibility probe is first reduced to its \eqn{(k-1)}-core and greedily
-coloured, then searched exhaustively for a witness under a colouring bound.
 
 To parallelize computation when OpenMP is available, set the \code{"mc.cores"}
-option (silently serial without OpenMP):
+option:
 \preformatted{
 options(mc.cores = 2L)                       # use a fixed number of cores
 options(mc.cores = parallel::detectCores())  # or all available cores
 }
-Under \code{mc.cores > 1} the branches of each probe's root node are searched
-concurrently. The selection is unaffected: an infeasibility proof -- the
-only verdict that parallelises well -- exhausts every branch, so it cannot
-depend on the order they were visited in, and when a worker thread finds a
-witness the probe is re-run serially so that the witness kept is the serial
-one. What the thread count can shift is where \code{maxSeconds} cuts a probe
-off, which was never deterministic: near the budget, a probe the serial
-search would settle can come back inconclusive, or the reverse.
-The indices returned may vary between releases where several subsets attain
-the optimum; the \code{score} does not.
+Parallelization returns identical results under a given seed.
 }
 \section{Progress bar}{
 
