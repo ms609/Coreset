@@ -2,6 +2,7 @@ antimedoid
 argmax
 Arthur
 binom
+bound's
 CDSh
 cf
 CMD
@@ -17,12 +18,14 @@ determinantal
 doi
 DropAdd
 Duarte
+DSATUR
 ejor
 Euclidean
 Fahrbach
 FastPAM
 FasterPAM
 Fathi
+fixpoint
 Gallego
 Garcia
 Gonzalez
@@ -47,9 +50,11 @@ medoids
 Nijimbere
 OpenMP
 ORCID
+ORLIB
 parametrise
 parametrised
 Porumbel
+probe's
 RCL
 relinking
 Resende
