@@ -17,8 +17,8 @@ EdgesAtLeast_cpp <- function(d, lambda) {
     .Call(`_Coreset_EdgesAtLeast_cpp`, d, lambda)
 }
 
-ThresholdDecide_cpp <- function(hi, hj, n, k, maxSeconds) {
-    .Call(`_Coreset_ThresholdDecide_cpp`, hi, hj, n, k, maxSeconds)
+ThresholdDecide_cpp <- function(hi, hj, n, k, maxSeconds, threads = 1L) {
+    .Call(`_Coreset_ThresholdDecide_cpp`, hi, hj, n, k, maxSeconds, threads)
 }
 
 Grasp_cpp <- function(dmat, m, max_no_improve, max_iter, elite_size, alpha, time_budget_s, n_threads = 1L, progress_cb = NULL) {

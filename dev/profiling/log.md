@@ -767,7 +767,6 @@ clamps are defensive-unreachable by design; codecov may flag those lines
 compiled and run only on Windows/MinGW so far — Linux/gcc is unexercised
 until a push triggers CI, and real scaling curves belong on Hamilton.
 
-
 ## Round 6 — 2026-08-13 — Area 3 (Grasp): VTune certification + two exact levers
 
 **Trigger:** user mandate to eke out every remaining ounce before the PR.
@@ -845,8 +844,6 @@ symboled VTune build still needs one (adds -g -fno-omit-frame-pointer via
 PKG_CXXFLAGS without losing $(SHLIB_OPENMP_CXXFLAGS)).
 last_focus unchanged (targeted continuation of area 3).
 
-
-
 ## Round 7 — 2026-08-13 — Area 1 (FarFirst): argmax fold + nCores-invariant parallel kernels
 
 **Trigger:** user mandate ("direct the same level of effort at ... the
@@ -910,8 +907,6 @@ farfirst-battery.R (925-case old-vs-new + cross-path), farfirst-timing.R,
 farfirst-invariance.R, farfirst-vtune7.R. Baselines refreshed (area 1
 round-7 rows). Cleanup: result_ff7/ and .vtune-lib-* deleted post-round.
 last_focus unchanged (user-targeted round on area 1).
-
-
 
 ## Round 8 — 2026-08-13 — Area 3 (Grasp): memory-layout stab, REFUTED — floor certified on the second axis
 
@@ -1800,4 +1795,333 @@ when never executed, so deleting it can simplify codegen across the whole
 function. **Recorded, not banked** — the round removed dead code and claims no
 speedup, and 2-3% at a 1.2% floor does not deserve one.
 
-last_focus: 2
+---
+
+## Round 14 — `ExactMaxMin` threshold search (2026-08-18)
+
+**Where the time goes.** Measured on Hamilton by replaying the gallop and
+bisection one probe at a time (`furthest-point/dev/bench/gallop_replay.R`,
+jobs 18418276 / 18418289). Two regimes, and they are opposites:
+
+| cell | warm start | feasible probes | infeasible probes |
+|---|--:|--:|--:|
+| pmed34 (n=700, k=140) | 2.36 s | **54.40 s** | 0.03 s |
+| pmed40 (n=900, k=90) | 1.76 s | **38.98 s** | 0.10 s |
+| `tc7_ring` k=24 | 0.06 s | 1.51 s | **68.12 s** |
+| `tc19_breastcancer` k=48 | 0.44 s | 1.20 s | 7.37 s |
+
+Integer distances with large `k` spend everything on the last *feasible* probe;
+continuous distances spend it on the refutations flanking the optimum. The
+(k-1)-core peel empties the graph at the thresholds above the optimum, which is
+why refutation is free in the first regime and dominant in the second.
+
+**The search barely goes above the optimum.** The warm start is already optimal
+on 32 of the 40 ORLIB instances and 51 of the exact ladder's 69 cells, and the
+gallop overshoots by at most one doubling (optima at candidate 28, 388 and 3047
+on ring / breastcancer / pima; the gallop reached 32, 512 and 3056). An **upper
+bound was therefore rejected without being built**: it can only remove
+candidates above the optimum, which cost 0.01 s each, and it can never excuse
+refuting the first candidate above the answer, because that refutation *is* the
+certificate.
+
+**Kept: answer a threshold from the witness in hand.** A probe returns some
+`k`-clique, not a best one, and its realised minimum is often far above the
+threshold asked for -- on `tc17_vehicle` k=48, eight consecutive gallop probes
+each cost 5.3 s and each returned a witness realising the *same* value,
+candidate 263. Thresholds at or below the best witness's realised value are now
+answered from that witness. The probe trajectory is unchanged, so the change
+cannot cost a probe it did not save.
+
+A/B, three repeats, medians, both arms in one task on one node (job 18419304):
+
+| cell | base | kept | |
+|---|--:|--:|--:|
+| `tc13_pima` k=48 | 2.334 s | 1.471 s | **-37.0%** |
+| `tc19_breastcancer` k=48 | 8.969 s | 8.219 s | **-8.4%** |
+| the other nine cells | | | within 0.7% |
+| suite total | 182.3 s | 179.8 s | -1.4% |
+
+Nothing measurably slower. The ORLIB cells do not move: when the warm start
+misses there it misses by exactly one attainable threshold -- true of all eight
+ORLIB misses and of all 40 synthetic graph metrics searched -- so there is no
+overshoot to exploit. The lever is a continuous-distance one.
+
+**Rejected, all measured, all reverted.** Recorded so they are not retried:
+
+| lever | result |
+|---|---|
+| greedy clique pass before the exhaustive search, 8 starts per component | pmed34 56.76 -> 59.73 s, pmed40 40.46 -> 43.18 s. Highest-degree-first greedy (equivalently min-degree greedy independent set on the sparse side) never found the hard cliques. |
+| per-node `(k - depth - 1)`-core peel of the candidate set | pmed34 56.8 -> 154.1 s (**+171%**). Sound, and far too expensive per node at large `k`. |
+| MCS re-numbering in the colouring (Tomita et al. 2010) | suite 183.8 -> 307.1 s (**+67%**); pmed34 +162%, ring +17.5%. Helped pmed30 (-31%) and pima (-23%) and nothing else. |
+| advancing the search bracket to the witness's realised index (not merely skipping probes) | suite 182.0 -> 185.5 s. Wins 24% and 50% on two cells but moves the probe trajectory, costing ring 10.7% and the sub-second cells 3-9%. |
+
+**Coverage.** The gallop's feasible branch and the *entire* bisection were
+untested: on 3200 random small Euclidean instances the heuristics attain the
+optimum outright, so the search stopped at its first probe every time. Two
+fixtures now reach them -- a sparse-graph shortest-path closure (n=120, k=30),
+where the warm start lands one threshold short, and a 120-point ring (k=6),
+where it lands thirteen short and the first witness covers only six of them.
+`exact.R` 83.9% -> 98.3%.
+
+Status: Area not previously in the rotation; `ExactMaxMin` added as a focus
+area, status OPTIMISED for the threshold search, `AT-LIMIT` for the clique
+kernel on the evidence of the three rejected kernel levers.
+
+## Round 15 — `ExactMaxMin` warm-start depth (2026-08-18)
+
+The one lever Round 14 left standing: the search opens at the best selection
+its heuristic pool reaches, and reaching the optimum outright turns the whole
+solve into a single infeasibility proof. The pool's depth was never measured
+against the alternative, so `nStart`, `graspPlateau` and `dropPlateau` were
+exposed (0.0.0.9002, defaults unchanged) and four designs run on one build:
+A = 8 Grasp at plateau 50 + DropAdd at 512 (the defaults); B = 512 + 5000;
+C = 512 + 512; D = 50 + 5000. ORLIB pmed took all four across three RNG draws
+(Hamilton 18424709); the exact ladder took A and B (18424710) then D
+(18431664), one cell per task.
+
+**Deeper Grasp restarts do not pay.** Over the forty pmed instances the pool's
+own cost goes from 16.3 s to 85.3 s (B) and 81.5 s (C) -- a deterministic debit,
+read straight off the `ws_time_s` column, and so immune to the timing spread
+discussed below. Reach does not move: every arm proves and matches all forty at
+every draw. Where the deeper pool does lift the opening bound to the optimum on
+ORLIB -- pmed19, pmed23, pmed37 -- the solve still gets slower, because the pool
+costs more than the probe it saved (pmed19: 0.57 s to 2.3 s). The 20-fold
+estimate in `FurthestPoint`'s `dev/profiling/probe_profile.md` assumed the
+better bound arrived free; it does not, and that recommendation is withdrawn.
+
+The rejection is on net, not universal. `tc7_ring` at k = 24 is the
+counter-example: B lifts the bound from 0.09799 to the optimum 0.10102 and the
+cell halves, 69.9 s to 32.2 s. That is far outside the spread below and is
+real. It is one cell against a debit charged on every cell.
+
+**Deeper DropAdd is free, and lifts one bound reproducibly.** Its plateau is a
+no-improvement cap and the search usually converges well below it, so raising
+512 to the package default 5000 costs 0.2 s across pmed and 1.1 s across the
+ladder's 123 proven cells. It takes pmed30's opening bound from 14 to the
+optimum 15 at all three draws, and that instance from 3.4/4.0/3.9 s to
+2.8/2.6/2.2 s. On the ladder it moves the bound on one cell of 123, and that
+one does not reach the optimum. Everything else it does is within the spread.
+
+**Nothing below about 20% is resolvable here, so no suite total is quoted.**
+Arms A and D open at an identical bound on 122 of 123 proven ladder cells and
+117 of 120 pmed pairs. An identical bound means an identical witness and an
+identical probe sequence -- the search takes no RNG, and the initial witness
+does not seed it -- so those are the same computation timed twice. Charging the
+pool separately and comparing search time alone, the cells above one second
+differ by -17.8% to +11.1% on the ladder and -20.9% to +17.7% on pmed. The
+suite and ladder totals move by more than their signal: pmed's identical-bound
+instances total 112.1/108.8/112.0 s under A and 116.6/93.2/94.3 s under D, on
+work that is byte-for-byte the same. Per-cell single replicates on the `shared`
+partition support "this bound was lifted" and "the pool costs this much"; they
+do not support a percentage.
+
+Status: `graspPlateau` stays at 50 -- deeper is a measured loss.
+`dropPlateau = 5000` is recommended and not yet defaulted; it is free, it
+cannot lower the bound, and it buys pmed30. Adopting it belongs with the
+`b0bbaa7` merge and re-pin, as one re-measure.
+
+
+## Round 16 — 2026-08-19 — Area 4 (ExactMaxMin): the declined root-branch
+parallelism revived for refutations, and measured in both regimes
+
+**Trigger:** user go-ahead on Round 12's declined lever once the selection
+objection fell. A refuted probe returns no witness, so threads can only ever
+*find* one — and re-running the probe serially whenever that happens keeps the
+reported subset bit-identical at every thread count. Round 12's decline was on
+the selection trade, not the scaling; both halves are now had.
+
+**Shipped (0.0.0.9003, `b5c098b`):** `ExactMaxMin(threads = )`, default 1 =
+the previous path exactly. Root branch i's candidates are
+`{ord[0..i-1]} & N(ord[i])`, computed from a prefix mask instead of the serial
+prefix removal, so the branches fan out with no sequential dependency. Workers
+share the master's adjacency read-only and own everything else; nothing off
+the main R thread touches the R API — the interrupt is polled without
+longjmp-ing on the thread that owns the R stack and thrown after the join.
+A worker witness triggers a serial re-run racing the same deadline; an
+infeasibility proof exhausts every branch, so its verdict cannot depend on
+visiting order (Round 12: node counts identical at every thread count).
+
+**Measured** (job 18445672): 1T and 8T in one process on one node, so each
+pair shares its node's weather and needs no cross-job noise model —
+Round 15's lesson applied. `cpu_s/solve_s` up to 7.8 on 8T runs confirms the
+allocation parallelised (`--cpus-per-task=8`; under the campaign's usual
+1-core pinning this measurement would have timeshared and read as a loss).
+Ten cells x pool A (certification regime) and pool E (the weak-opening
+instrument: nStart 1, plateaus 1). Proven optima identical 1T vs 8T on every
+pair, asserted in-runner.
+
+- Proven cells at >= 5 s (n = 11): **geometric-mean speedup 2.48x**, range
+  1.69–3.88x. Every one clears the ±20% single-replicate noise floor.
+- tc17_vehicle k48 under A: **4326 -> 1227 s (3.53x)** — the ladder's
+  costliest cell, 72 minutes to 20.
+- The weak-opening regime holds: pool-E cells gain 1.69–3.88x even though
+  every feasible probe there pays a threaded find *plus* the serial redo.
+- The redo is the ceiling, not a regression: on capped pool-E runs
+  (tc17_vehicle k100, tc18_vowel k100) `cpu/wall` sits at 1.0 — the budget
+  went into phases the redo keeps serial — but wall time matched 1T exactly.
+  No cell anywhere was slower under threads.
+- tc17_vehicle k100 and tc18_vowel k48/k100 cap at 7200 s under both pools
+  and both thread counts: beyond this solver at this budget regardless of
+  opening or threading.
+
+**Arm E, full readout (72 cells, job 18445575):** 68 prove under the weakest
+pool the knobs allow. Opening 1.2–9.4% below the optimum costs a geometric
+mean of ~1.0x on the >1 s cells (range 0.43–4.72; only tc1_uniform k48 pays
+visibly, 1.6 -> 7.4 s). The four non-proofs are 3600 s cap artefacts —
+tc17_vehicle k48 proves in 5393 s at the 7200 s cap — and three of the four
+cap under pool A too. The suite's confirmation bias is real (the default pool
+opens at the optimum on 105 of 123 ladder cells), but the search kernel is
+not fragile to weak openings, and search-side changes can now be judged in
+both regimes by construction.
+
+Status: `threads` stays opt-in at 1 — CRAN's <= 2-core default policy, and
+the canon's timings are 1T. Decided 2026-08-19: manuscript timings all use
+`threads = 1`, to compare the core algorithm rather than how economically it
+multithreads — threading ships as a feature, not part of the timing story, so
+the 8T-for-canon question is closed.
+DSATUR-at-root (Round 14 left it open) is the remaining recorded lever, to be
+judged in the arm-E regime.
+
+## Round 17 — 2026-08-19 — Area 4 (ExactMaxMin): DSATUR at the root — the
+order rejected, the bound kept
+
+**Trigger:** Round 16 left DSATUR-at-root as the one recorded lever. Shipped
+as 0.0.0.9004 (8dbf935): one saturation colouring per probe, its order used
+for the root descent. Measured paired on Hamilton (array 18448784): eight
+cells x pools A/E, baseline 0.0.0.9003 then DSATUR back to back in the same
+task on the same node.
+
+**The order is a gamble and lost.** Proven optima identical on all 14
+jointly-proven cells; the time was not:
+
+| cell | pool | base | DSATUR | ratio |
+|---|---|--:|--:|--:|
+| tc7_ring k24 | A | 72.7 s | 1.5 s | **0.02** |
+| tc7_ring k24 | E | 42.1 s | 0.8 s | **0.02** |
+| tc17_vehicle k48 | A | 5083 s | 7130 s | **1.40** |
+| tc17_vehicle k48 | E | 5407 s | 4684 s | 0.87 |
+| k=100 cells (4) | A+E | | | 0.92–1.05 |
+| small cells (6) | A+E | | | 0.83–1.27 |
+
+The vehicle-A regression is real compute, not weather: cpu_s/solve_s = 0.995
+in both arms of the pair. Excluding ring, pool A geo-means to 1.10 and pool E
+to 0.94 (>= 1 s proven cells); the suite's proven total went 14895 -> 15924 s
+(+7%). Reordering the root reshapes the whole tree unpredictably — the same
+cell wins 13% under one pool and pays 40% under the other. Judged
+symmetrically, as a fresh choice between the two trees with ring's
+root-refutations credited to the bound both ways (either order colours ring
+below k): the DSATUR order loses the non-ring totals 14780 -> 15922 s
+(+7.7%), sits at ~1.02 on the non-ring geo-mean, and its per-cell sign is
+unpredictable ex ante, so no conditional rule can keep its wins and shed its
+losses. The order is out on the tradeoff, not on incumbency — a
+no-cell-slower bar would be path-dependent, ratifying whichever tree
+happened to be measured as the base.
+
+**The win was never the order.** Ring's refutation graphs colour to
+chi = 23 < k = 24 under DSATUR; the greedy pass stays at >= k and searches
+68 s for a bound DSATUR hands over before any branch opens. So 0.0.0.9005
+keeps the colouring as a bound only: chi < k refutes the component
+immediately; otherwise the DSATUR order is discarded and the search runs the
+0.0.0.9003 tree exactly — witnesses and selections return to that release's,
+and the vehicle regression is structurally impossible (feasible probes can
+never fire the bound, since omega >= k forces chi >= k). Verification A/B
+submitted with a sharp prediction: ring ~0.02, every other cell ~1.00 within
+the small-cell noise band; any non-ring move beyond it falsifies the
+tree-identity claim and the change does not ship on a geo-mean.
+
+**Capped cells:** vowel k48 stays capped under both builds and both pools —
+no reach change. Incumbents moved both ways (order effect): pool A 2.9555 ->
+2.9497 (worse), pool E 2.9310 -> 2.9665 (better — the best vowel k48
+incumbent seen anywhere; recorded here so it is not lost with the 9004 lib).
+
+**Next lever, justified by counts: vertex dominance at the probe root.** The
+ExactKCentre round (PR #16) asked whether the packing side misses its
+dominance analogue. Audited on the certifying and last-feasible graphs of the
+four cells Round 14 priced, plus vehicle k48 and the capped vowel k48
+(furthest-point/dev/bench/dominance_audit.R, counts only): the (k-1)-core
+peel removes *nothing* on any hard graph; dominance to a fixpoint removes
+breastcancer k48 7.5x of edges, vowel 2.2x, vehicle 1.8x, pmed34 1.7x,
+pmed40 1.1x, and collapses ring's feasible graph to exactly its optimal
+24-clique and its certifying graph to empty. Two corrections the audit
+forced: (i) the rule as quoted in the covering round's lead — closed
+neighbourhoods, adjacent pair — is unsound for cliques (it eats a triangle);
+the sound form is open N(u) subseteq N(v) for a NON-adjacent pair, discard u.
+(ii) Round 14's line that the core peel "empties the graph above the
+optimum" is wrong for pmed — those refutations were free because the greedy
+colour bound sat below k, not because the peel bit. Contract note, flagged
+before implementing: dominance on feasible probes returns a reduced-graph
+witness, so selections can change between releases — witness pins re-pin
+then, and FurthestPoint's bit-identity expectations move with them.
+
+**Numbering:** the kcentre branch (PR #16) also carries a "Round 16";
+renumber one side when the branches merge.
+
+Status: order rejected and reverted, bound shipped opt-out-free (0.0.0.9005);
+verification A/B pending; dominance-at-root is the open lever, to be built
+against the 0.0.0.9005 base and judged in both regimes.
+
+**Postscript — verification passed (array 18451481).** Ring 0.020x under
+both pools; proven optima identical on all 14 cells; the capped vowel runs
+end at bit-identical incumbents, which only an identical probe trajectory
+delivers. The non-ring cells scattered 0.96-1.06 with proven totals +2.8% —
+read that as the noise floor of the back-to-back pairing itself (the second
+run inherits different co-tenancy), since the tree is proven identical: a
+paired cell ratio inside ~1.06, or a suite total inside ~3%, is not signal.
+Vehicle A's +40% in the Round 17 order A/B stands an order above that floor.
+
+## Round 18 — 2026-08-19 — Area 4 (ExactMaxMin): vertex dominance at the
+probe root — a rout
+
+**Shipped as 0.0.0.9006 (8d5f1af)**, judged symmetrically as a fresh choice
+against 0.0.0.9005 (paired array 18451557, same discipline): every probe
+component now peels and dominance-reduces to a fixpoint before anything is
+coloured or searched. The counts audit undersold it — removing vertices
+compounds through the whole bisection, and the harder regime wins more:
+
+| cell | pool | 9005 | 9006 | ratio |
+|---|---|--:|--:|--:|
+| tc19_breastcancer k100 | E | 1533 s | 0.22 s | **0.0001** |
+| tc19_breastcancer k100 | A | 1224 s | 1.1 s | **0.001** |
+| tc17_vehicle k48 | E | 6841 s | 2134 s | 0.31 |
+| tc17_vehicle k48 | A | 5738 s | 3001 s | 0.52 |
+| tc13_pima k100 | A/E | ~1300 s | ~590 s | 0.44-0.45 |
+| tc1_uniform k48 | E | 7.6 s | 0.03 s | 0.003 |
+| every other proven cell | | | | 0.02-0.63 |
+
+Proven totals 18011 -> 6323 s (**-65%**); geo-mean on >= 1 s proven cells
+**0.064** (pool A 0.100, pool E 0.039 — both regimes, the weaker-pool one
+more). No cell slower anywhere, and the accidental pmed1-3 pairs (see
+below) put even the smallest instances at 0.27-0.80x. Proven optima
+identical on every jointly-proven cell — noting that value-equality alone
+cannot certify the refutation side (a too-eager refuter would confirm the
+same value); the verdict-level evidence is the suite's IP/brute-force
+agreement tests, the audit's omega-preservation self-test, and pmed1-3
+matching their published optima under both builds.
+
+**Reach: tc18_vowel k48 is closed.** Never proven at 7200 s by any prior
+build — 8 threads included — it proves at 8824 s single-threaded under
+0.0.0.9006 (job 18461564): t_k = 2.967608, exactly the incumbent both A/B
+pools had already reached at the cap. Threading compressed cost and
+extended no reach (Round 16); dominance extends reach. The two remaining
+always-capped ladder cells, tc17_vehicle k100 and tc18_vowel k100, get the
+same treatment at a 160000 s cap (job 18482321).
+
+**ORLIB:** the paired pmed30/34/40 A/B first mis-ran as pmed1-3 —
+`02_run_pmed.R` prefers `$SLURM_ARRAY_TASK_ID` over its argument inside an
+array task — and was resubmitted with the variable unset (18460744).
+Corrected pairs, all matching their published optima under both builds:
+pmed30 7.71 -> 3.53 s (0.46), pmed34 81.8 -> 43.9 s (0.54), pmed40
+57.8 -> 43.1 s (0.75). pmed40 is the audit's barely-shrinks caveat case
+(1.07x vertices), and it still pays 25% — the reduction's own cost is
+invisible even where it removes almost nothing. No regime pays: pool A,
+pool E, and the integer/ORLIB regime all win. (The accidental pmed1-3
+pairs also matched, 0.27-0.80x.)
+
+Status: dominance shipped and kept — on the symmetric criterion there is no
+tradeoff to weigh; nothing pays. The exact ladder's canonical timings are
+now stale by an order of magnitude on several cells; the re-pin bundle
+(b0bbaa7, c504558, b5c098b, c056ac0, 8d5f1af) is a user decision. Open
+leads: an uncapped vowel k48 run, and re-checking the warm-start pool's
+price against probes this much cheaper (Round 15's economics shifted).
+
+last_focus: 18
