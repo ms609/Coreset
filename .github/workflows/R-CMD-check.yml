@@ -56,6 +56,7 @@ jobs:
   # ---------------------------------------------------------------------------
   sense-check:
     runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30  # healthy run is ~5 min
     name: sense-check (ubuntu-24.04-arm, release)
 
     env:
@@ -83,8 +84,27 @@ jobs:
           fi
         shell: bash
 
+      # setup-r's first act on Linux is an internal `apt-get update`, and apt
+      # applies no transfer timeout by default: when a mirror accepts the
+      # connection and then stalls, the fetch never returns and the step burns
+      # the job's entire 6-hour budget. Observed 2026-08-19, when
+      # azure.archive.ubuntu.com went dark and the archive.ubuntu.com fallback
+      # stalled part-way through the index fetch -- a step whose healthy cost is
+      # ~35 s sat at 75 minutes. Capping the timeout turns that into a retry.
+      - name: Make apt fail fast on a stalled mirror
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo tee /etc/apt/apt.conf.d/99-ci-timeouts > /dev/null <<'EOF'
+          Acquire::Retries "3";
+          Acquire::http::Timeout "20";
+          Acquire::https::Timeout "20";
+          Acquire::ftp::Timeout "20";
+          EOF
+
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
+        timeout-minutes: 15
         with:
           r-version: release
 
@@ -128,6 +148,7 @@ jobs:
   core:
     needs: sense-check
     runs-on: ${{ matrix.config.os }}
+    timeout-minutes: 45  # healthy run is ~11 min
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
 
     concurrency:
@@ -173,8 +194,27 @@ jobs:
           echo "Current package version is now: $(grep "Version:" DESCRIPTION | awk '{print $2}')"
         shell: bash
 
+      # setup-r's first act on Linux is an internal `apt-get update`, and apt
+      # applies no transfer timeout by default: when a mirror accepts the
+      # connection and then stalls, the fetch never returns and the step burns
+      # the job's entire 6-hour budget. Observed 2026-08-19, when
+      # azure.archive.ubuntu.com went dark and the archive.ubuntu.com fallback
+      # stalled part-way through the index fetch -- a step whose healthy cost is
+      # ~35 s sat at 75 minutes. Capping the timeout turns that into a retry.
+      - name: Make apt fail fast on a stalled mirror
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo tee /etc/apt/apt.conf.d/99-ci-timeouts > /dev/null <<'EOF'
+          Acquire::Retries "3";
+          Acquire::http::Timeout "20";
+          Acquire::https::Timeout "20";
+          Acquire::ftp::Timeout "20";
+          EOF
+
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
+        timeout-minutes: 15
         with:
           r-version: ${{ matrix.config.r }}
 
@@ -246,6 +286,7 @@ jobs:
   full:
     needs: core
     runs-on: ${{ matrix.config.os }}
+    timeout-minutes: 60  # macOS legs are the slow ones
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
 
     concurrency:
@@ -290,8 +331,27 @@ jobs:
           echo "Current package version is now: $(grep "Version:" DESCRIPTION | awk '{print $2}')"
         shell: bash
 
+      # setup-r's first act on Linux is an internal `apt-get update`, and apt
+      # applies no transfer timeout by default: when a mirror accepts the
+      # connection and then stalls, the fetch never returns and the step burns
+      # the job's entire 6-hour budget. Observed 2026-08-19, when
+      # azure.archive.ubuntu.com went dark and the archive.ubuntu.com fallback
+      # stalled part-way through the index fetch -- a step whose healthy cost is
+      # ~35 s sat at 75 minutes. Capping the timeout turns that into a retry.
+      - name: Make apt fail fast on a stalled mirror
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo tee /etc/apt/apt.conf.d/99-ci-timeouts > /dev/null <<'EOF'
+          Acquire::Retries "3";
+          Acquire::http::Timeout "20";
+          Acquire::https::Timeout "20";
+          Acquire::ftp::Timeout "20";
+          EOF
+
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
+        timeout-minutes: 15
         with:
           r-version: ${{ matrix.config.r }}
 
@@ -335,6 +395,7 @@ jobs:
   rev-dep-check:
     needs: core
     runs-on: ubuntu-latest
+    timeout-minutes: 90  # revdepchecks are genuinely long
 
     name: revdepcheck (${{ matrix.config.deps }})
 
@@ -362,6 +423,24 @@ jobs:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
+      # setup-r's first act on Linux is an internal `apt-get update`, and apt
+      # applies no transfer timeout by default: when a mirror accepts the
+      # connection and then stalls, the fetch never returns and the step burns
+      # the job's entire 6-hour budget. Observed 2026-08-19, when
+      # azure.archive.ubuntu.com went dark and the archive.ubuntu.com fallback
+      # stalled part-way through the index fetch -- a step whose healthy cost is
+      # ~35 s sat at 75 minutes. Capping the timeout turns that into a retry.
+      - name: Make apt fail fast on a stalled mirror
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo tee /etc/apt/apt.conf.d/99-ci-timeouts > /dev/null <<'EOF'
+          Acquire::Retries "3";
+          Acquire::http::Timeout "20";
+          Acquire::https::Timeout "20";
+          Acquire::ftp::Timeout "20";
+          EOF
+
       - uses: ms609/actions/revdepcheck@main
         with:
           deps: ${{ matrix.config.deps }}
