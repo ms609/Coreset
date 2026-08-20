@@ -37,8 +37,9 @@
   d
 }
 
-.Decide <- function(hi, hj, n, k, maxSeconds = 60) {
-  Coreset:::ThresholdDecide_cpp(as.integer(hi), as.integer(hj), n, k, maxSeconds)
+.Decide <- function(hi, hj, n, k, maxSeconds = 60, threads = 1L) {
+  Coreset:::ThresholdDecide_cpp(as.integer(hi), as.integer(hj), n, k,
+                                maxSeconds, threads)
 }
 
 # Is `cl` a clique of hAdj?
@@ -257,4 +258,85 @@ test_that(".MaxISVerdict decides probes and validates its witness", {
   # A budget that cannot buy any search is inconclusive, never a verdict.
   v <- Coreset:::.MaxISVerdict(d, 6L, pa$hi, pa$hj, 5, 3L, 0)
   expect_identical(v$verdict, "inconclusive")
+})
+
+test_that("threads leave every verdict and witness at the serial answer", {
+  # The same 300-vertex random H as the expiry test: dense enough that both
+  # verdicts take real search. Infeasibility is exhaustive, so threading
+  # cannot move it; a threaded witness is only a signal to re-run the probe
+  # serially, so the witness kept must be bit-identical to the serial one.
+  set.seed(1350)
+  n <- 300L
+  m <- matrix(stats::runif(n * n), n, n)
+  hAdj <- (m + t(m)) > 1
+  diag(hAdj) <- FALSE
+  hi <- row(hAdj)[upper.tri(hAdj) & hAdj]
+  hj <- col(hAdj)[upper.tri(hAdj) & hAdj]
+
+  serialNo <- .Decide(hi, hj, n, 16L)
+  expect_identical(serialNo$status, "infeasible")
+  expect_identical(.Decide(hi, hj, n, 16L, threads = 2L), serialNo)
+
+  serialYes <- .Decide(hi, hj, n, 6L)
+  expect_identical(serialYes$status, "feasible")
+  expect_identical(.Decide(hi, hj, n, 6L, threads = 2L), serialYes)
+
+  # Expiry with threads: no witness exists at k = 16, so a zero budget leaves
+  # the probe undecided however many workers were looking.
+  expiredT <- .Decide(hi, hj, n, 16L, maxSeconds = 0, threads = 2L)
+  expect_identical(expiredT$status, "inconclusive")
+  expect_identical(expiredT$witness, integer(0))
+
+  # A component the reduction empties before anything is coloured: in the
+  # 4-cycle each vertex's neighbourhood sits inside its opposite's, and the
+  # peel finishes what dominance starts.
+  sq <- .Decide(c(1L, 2L, 3L, 1L), c(2L, 3L, 4L, 4L), 4L, 3L, threads = 2L)
+  expect_identical(sq$status, "infeasible")
+
+  # A component the DSATUR bound refutes: the 6-cycle holds no dominated
+  # vertex, so it reaches the colouring intact and 2 < k = 3 ends it there.
+  hex <- .Decide(c(1L, 2L, 3L, 4L, 5L, 1L), c(2L, 3L, 4L, 5L, 6L, 6L),
+                 6L, 3L, threads = 2L)
+  expect_identical(hex$status, "infeasible")
+})
+
+test_that("dominance discards one open twin and the witness uses the other", {
+  # K5 plus an open twin of vertex 1 (adjacent to 2:5, not to 1). The twins
+  # have equal neighbourhoods, so the sweep discards exactly the one it
+  # visits first -- vertex 1, in degree order -- and the 5-clique reported
+  # swaps in the survivor. At k = 6 the peel leaves nothing: the twins are
+  # not adjacent, so no 6-clique ever existed.
+  k5 <- t(utils::combn(5L, 2L))
+  hi <- c(k5[, 1L], rep(6L, 4L))
+  hj <- c(k5[, 2L], 2:5)
+  five <- .Decide(hi, hj, 6L, 5L)
+  expect_identical(five$status, "feasible")
+  expect_identical(five$witness, 2:6)
+  expect_identical(.Decide(hi, hj, 6L, 6L)$status, "infeasible")
+})
+
+test_that("a bound the greedy pass beats still closes every root branch", {
+  # Sixteen vertices whose component DSATUR colours with 8 but the greedy
+  # pass colours with 7: at k = 8 the bound cannot refute, so the search is
+  # dispatched, and the driver's own colouring then admits no root branch --
+  # the one shape that reaches the threaded no-branch exit.
+  hi <- c(2L, 1L, 2L, 3L, 4L, 5L, 1L, 2L, 5L, 6L, 1L, 2L, 3L, 4L, 7L, 1L,
+          2L, 3L, 4L, 5L, 6L, 8L, 1L, 3L, 4L, 5L, 7L, 8L, 2L, 3L, 4L, 5L,
+          7L, 8L, 10L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 10L, 11L, 1L, 2L, 3L,
+          4L, 5L, 9L, 1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 12L, 13L,
+          1L, 2L, 3L, 5L, 7L, 9L, 10L, 11L, 13L, 1L, 2L, 3L, 4L, 5L, 6L,
+          8L, 10L, 11L, 13L, 14L, 15L)
+  hj <- c(3L, 5L, 6L, 6L, 6L, 6L, 7L, 7L, 7L, 7L, 8L, 8L, 8L, 8L, 8L, 9L,
+          9L, 9L, 9L, 9L, 9L, 9L, 10L, 10L, 10L, 10L, 10L, 10L, 11L, 11L,
+          11L, 11L, 11L, 11L, 11L, 12L, 12L, 12L, 12L, 12L, 12L, 12L, 12L,
+          12L, 13L, 13L, 13L, 13L, 13L, 13L, 14L, 14L, 14L, 14L, 14L, 14L,
+          14L, 14L, 14L, 14L, 14L, 14L, 15L, 15L, 15L, 15L, 15L, 15L, 15L,
+          15L, 15L, 16L, 16L, 16L, 16L, 16L, 16L, 16L, 16L, 16L, 16L, 16L,
+          16L)
+  serial <- .Decide(hi, hj, 16L, 8L)
+  expect_identical(serial$status, "infeasible")
+  expect_identical(serial$witness, integer(0))
+  par <- .Decide(hi, hj, 16L, 8L, threads = 2L)
+  expect_identical(par$status, "infeasible")
+  expect_identical(par$witness, integer(0))
 })

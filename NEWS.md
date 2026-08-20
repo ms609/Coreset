@@ -18,7 +18,7 @@ Maximises the minimum pairwise distance within a subset of size `k`.
 - `Grasp()`: GRASP with path relinking (Resende et al. 2010), attaining the
   highest `T_k` of the package's heuristics on small to medium instances.
 - `ExactMaxMin()`: exact node-packing optimum (Sayyady & Fathi 2016), decided
-  by clique search rather than an integer program.
+  by clique search.
 
 ## Max-Mean dispersion
 
