@@ -32,9 +32,8 @@ ExactMaxSum(k, d, maxSeconds = 60, warmStart = NULL)
 
 - warmStart:
 
-  Integer vector giving indices of a candidate subset to add to the
-  heuristic warm-start pool, e.g. a selection computed by another
-  solver.
+  Optional integer vector giving indices of a candidate subset to add to
+  the heuristic warm-start pool.
 
 ## Value
 

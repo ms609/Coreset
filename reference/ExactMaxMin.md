@@ -7,7 +7,15 @@ Fathi 2016) (which may be slow or intractable on large sets).
 ## Usage
 
 ``` r
-ExactMaxMin(k, d, maxSeconds = 60, warmStart = NULL)
+ExactMaxMin(
+  k,
+  d,
+  maxSeconds = 60,
+  warmStart = NULL,
+  nStart = 8L,
+  graspPlateau = 50L,
+  dropPlateau = 512L
+)
 ```
 
 ## Arguments
@@ -27,9 +35,23 @@ ExactMaxMin(k, d, maxSeconds = 60, warmStart = NULL)
 
 - warmStart:
 
-  Integer vector giving indices of a candidate subset to add to the
-  heuristic warm-start pool, e.g. a selection computed by another
-  solver.
+  Optional integer vector giving indices of a candidate subset to add to
+  the heuristic warm-start pool.
+
+- nStart:
+
+  Integer: how many
+  [`Grasp()`](https://ms609.github.io/Coreset/reference/Grasp.md)
+  restarts enter the warm-start pool.
+
+- graspPlateau, dropPlateau:
+
+  Integer: the stopping plateaus given to the pool's
+  [`Grasp()`](https://ms609.github.io/Coreset/reference/Grasp.md)
+  restarts and its
+  [`DropAdd()`](https://ms609.github.io/Coreset/reference/DropAdd.md)
+  pass. Deeper searches cost more, but raise the lower bound the exact
+  search starts from.
 
 ## Value
 
@@ -64,14 +86,16 @@ several [`Grasp()`](https://ms609.github.io/Coreset/reference/Grasp.md)
 restarts and a
 [`DropAdd()`](https://ms609.github.io/Coreset/reference/DropAdd.md)
 pass), then gallops upward from that bound to the first infeasible
-threshold and bisects the resulting bracket. When a heuristic already
-attains the optimum, a single infeasibility proof certifies it. Each
-feasibility probe is first reduced to its \\(k-1)\\-core and greedily
-coloured, then searched exhaustively for a witness under a colouring
-bound. The search runs on one core: its branches parallelise, but
-measurably only for infeasibility proofs, and threads would make the
-reported subset thread-dependent. The indices returned may vary between
-releases where several subsets attain the optimum; the `score` does not.
+threshold and bisects the resulting bracket.
+
+To parallelize computation when OpenMP is available, set the
+`"mc.cores"` option:
+
+
+    options(mc.cores = 2L)                       # use a fixed number of cores
+    options(mc.cores = parallel::detectCores())  # or all available cores
+
+Parallelization returns identical results under a given seed.
 
 ## Progress bar
 

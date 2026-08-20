@@ -25,7 +25,7 @@ Maximises the minimum pairwise distance within a subset of size `k`.
   of the package’s heuristics on small to medium instances.
 - [`ExactMaxMin()`](https://ms609.github.io/Coreset/reference/ExactMaxMin.md):
   exact node-packing optimum (Sayyady & Fathi 2016), decided by clique
-  search rather than an integer program.
+  search.
 
 ### Max-Mean dispersion
 
