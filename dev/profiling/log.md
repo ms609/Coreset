@@ -2124,4 +2124,54 @@ now stale by an order of magnitude on several cells; the re-pin bundle
 leads: an uncapped vowel k48 run, and re-checking the warm-start pool's
 price against probes this much cheaper (Round 15's economics shifted).
 
-last_focus: 18
+## Round 19 — 2026-08-20 — Area 4 (ExactMaxMin): pool depth re-priced under
+dominance — one restart is the better default
+
+**Trigger:** Round 18's open lead. Dominance made probes cheap enough to
+invert Round 15's economics, so the pool ladder re-ran as a fresh three-way
+choice: A = the 8-restart incumbent, F = 1 restart at the same plateaus
+(50/512), E = the plateau-1 instrument. Eight ladder cells (18502494) and
+all forty pmed (18502495), arms back to back in one task per cell, seed 1,
+`ws_time_s`/`ws_value` charging the pool separately from the solve.
+
+**Verdict: F.** Totals — ladder 13206 (A) / 10943 (F) / 14154 (E) s, pmed
+93 / 78 / 78 s. Reach identical: every arm proves all 8 and all 40, every
+pmed optimum matches its published value, jointly-proven optima agree
+everywhere. F is never slower than A on any cell at or above a second in
+either suite (11 of 11), and it beats E exactly where E's weak bound bites
+(tc18_vowel k48: 8518 vs 11579 s; tc13_pima k100: 563 vs 630 s). The
+plateaus earn their keep; the extra restarts do not.
+
+The 11-of-11 is three effects, not one, and only the first is the win:
+
+- **Pool cost, removed (systematic).** Seven-eighths of the pool spend is a
+  deterministic debit read off `ws_time_s` (ladder 5.2 -> 0.7 s, pmed
+  16.6 -> 2.2 s), and on pmed it is most of the solve — geo-mean F/A 0.296
+  on the >= 1 s instances, while search-dominated pmed34/40 sit at
+  0.94–0.96. This is Round 15's pmed19 lesson made the default.
+- **Tied bounds are the same computation timed twice (weather).** Same seed
+  makes F's one restart A's first, so `ws_F <= ws_A` by pool inclusion,
+  with equality on 5 of 8 ladder cells and 39 of 40 pmed. An equal bound is
+  an identical probe sequence (Round 15), so tc18_vowel k48's 10052 -> 8518
+  is node weather, not a search change — and at 10^4 s it is outside the
+  ±6% floor the 9005 postscript calibrated on far shorter cells; that floor
+  does not transfer to this scale.
+- **A lower bound can luck into a cheaper gallop (lottery).** tc17_vehicle
+  k48: F opens 0.097 *below* A and still wins 27% (1860 vs 2554 s) — E,
+  opening lower again, also beats A. Counter-mechanism, sign unpredictable
+  ex ante, exactly the scatter the symmetric rule says not to count — for
+  either side.
+
+One seed, but the downside is bounded by construction: E is the worst pool
+the knobs allow, and even it costs only +7% on ladder totals against A. A
+bad draw under F cannot underperform the instrument.
+
+Status: `nStart` defaults to 1 (folded into 0.0.0.9000, no separate
+version). The `benchmark/bench-exact.R` d1200 cell is pool-dominated and
+should now drop visibly in CI — if it reads NSD instead, the pool-share
+claim is wrong and wants investigating before the canon. Canonical
+re-measure of the exact rows on the frozen bundle is the remaining step;
+tc17_vehicle k100 / tc18_vowel k100 verdicts at the 160000 s cap
+(18482321) fold into it.
+
+last_focus: 19
