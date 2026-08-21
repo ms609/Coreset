@@ -381,6 +381,56 @@ test_that("DropAdd seed= validates its range and rejects candidate thinning", {
     "thinning")
 })
 
+# ---------------------------------------------------------------------------
+# 12b. The matrix kernel requires a start index
+# ---------------------------------------------------------------------------
+test_that("DropAdd_cpp rejects a start index outside [0, n)", {
+  dmat <- as.matrix(dist(matrix(rnorm(12L * 2L), ncol = 2L)))
+  n <- nrow(dmat)
+  # The kernel has no seed of its own, so seed0 = -1 -- the signature default
+  # -- is rejected rather than standing for one; DropAdd() always supplies the
+  # peripheral anchor.
+  expect_error(
+    Coreset:::DropAdd_cpp(dmat, 4L, Inf, 10L, 100L, FALSE, -1L),
+    "seed0")
+  expect_error(
+    Coreset:::DropAdd_cpp(dmat, 4L, Inf, 10L, 100L, FALSE, n),
+    "seed0")
+  # The two ends of the valid range are accepted.
+  expect_length(
+    Coreset:::DropAdd_cpp(dmat, 4L, Inf, 10L, 100L, FALSE, 0L)$indices, 4L)
+  expect_length(
+    Coreset:::DropAdd_cpp(dmat, 4L, Inf, 10L, 100L, FALSE, n - 1L)$indices, 4L)
+})
+
+test_that(".DropAddConstruct breaks lex ties and counts equal-distance peers", {
+  # Three distinct distances over 12 points, so the ADD scan routinely finds
+  # several candidates sharing bestMin (the sumDist tie-break) and several
+  # points whose nearest-peer distance is EQUALLED rather than beaten by the
+  # new member (the count-increment case).
+  set.seed(414)
+  n <- 12L
+  d <- matrix(as.double(sample.int(3L, n * n, TRUE)), n, n)
+  d <- pmax(d, t(d))                      # symmetric, heavily tied
+  diag(d) <- 0
+  cons <- Coreset:::.DropAddConstruct(d, 5L, first = 1L)
+  expect_length(cons$S, 5L)
+  expect_equal(anyDuplicated(cons$S), 0L)
+  # The kernel walks the same construction from the same start.
+  kern <- Coreset:::DropAdd_cpp(d, 5L, Inf, 0L, .Machine$integer.max,
+                                FALSE, 0L)
+  expect_setequal(as.integer(kern$indices), cons$S)
+})
+
+test_that(".DropAddConstruct seeds where DropAdd() does", {
+  dmat <- as.matrix(dist(matrix(rnorm(25L * 3L), ncol = 3L)))
+  expect_identical(Coreset:::.DropAddConstruct(dmat, 5L)$S[[1L]],
+                   as.integer(Coreset:::.PickPoint(dmat, "peripheral")))
+  # `first` overrides, so the twin can be pointed at any start the kernel can.
+  expect_identical(Coreset:::.DropAddConstruct(dmat, 5L, first = 7L)$S[[1L]],
+                   7L)
+})
+
 test_that("DropAdd points results are invariant to mc.cores (round 10)", {
   # n above the kernel threads-engagement threshold (~16k), so the fused
   # parallel pass regions really run chunked; the chunk argmax merge and

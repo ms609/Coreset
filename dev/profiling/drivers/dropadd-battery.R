@@ -4,8 +4,9 @@
 # and iters — any tie-break slip in a fused argmax shows up as a trajectory
 # divergence even when the final selection happens to coincide. Axes:
 # matrix path (Euclidean and two TIE-DENSE shapes, all symmetric as the
-# solvers require;
-# default and explicit seeds; small and large m), points path (dim 1/2/7/10),
+# solvers require; several explicit seeds -- the matrix kernel takes no other
+# kind, DropAdd() always passing the peripheral anchor -- and small and large
+# m), points path (dim 1/2/7/10, on its own anti-centroid default seed),
 # plus two within-build invariants that need no baseline:
 #   * cross-path: matrix vs points kernels with the same explicit seed on
 #     d = dist(pts) must produce the identical trajectory bit-for-bit;
@@ -51,9 +52,9 @@ for (ds in 1:3) {
     ms <- unique(c(2L, 5L, n %/% 4L, n %/% 2L, n - 1L))
     for (m in ms) {
       key <- paste("da", ds, n, m, sep = "_")
-      res[[paste0(key, "_eu")]]  <- recM(dEu,  m, 30L, -1L)
-      res[[paste0(key, "_tie")]] <- recM(dTie, m, 30L, -1L)
-      res[[paste0(key, "_rnd")]] <- recM(dRnd, m, 30L, -1L)
+      res[[paste0(key, "_eu")]]  <- recM(dEu,  m, 30L, 0L)
+      res[[paste0(key, "_tie")]] <- recM(dTie, m, 30L, 1L)
+      res[[paste0(key, "_rnd")]] <- recM(dRnd, m, 30L, 3L)
       res[[paste0(key, "_eu_s3")]] <- recM(dEu, m, 30L, 2L)  # explicit seed
       # Points kernel (its own anti-centroid default seed) + cross-path
       # trajectory identity at an explicit shared seed.
@@ -65,7 +66,7 @@ for (ds in 1:3) {
     }
     # One deep-plateau cell per shape (long trajectory).
     res[[paste0("da_", ds, "_", n, "_deep")]] <-
-      recM(dEu, max(2L, n %/% 5L), 2000L, -1L)
+      recM(dEu, max(2L, n %/% 5L), 2000L, 0L)
   }
 }
 

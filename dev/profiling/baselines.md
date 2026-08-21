@@ -19,6 +19,16 @@ Median wall time, `bench::mark`, R-devel, `-O2`. Refresh each round.
 
 ## Area 2 — DropAdd — AFTER T-005a (matrix seed reorder)
 
+> **Every matrix row in this section and the two below measures the retired
+> `seed0 = -1` protocol.** The cells passed the kernel's max-row-sum warm
+> start, which `DropAdd()` stopped using at `0214ab2` and round 14 removed, so
+> each `construct` row is billed for an O(n^2) sweep no caller ran. They are
+> kept as the record of what was measured, and are **not comparable** with
+> anything timed after round 14. Points rows are unaffected — that path's
+> `-1` anti-centroid seed is its production default. Regress against the
+> round-14 section.
+
+
 | case | metric | ms |
 |------|--------|---:|
 | matrix construction, n=4000, m=10 (maxIter=0) | median | 10.3 |
@@ -66,6 +76,77 @@ Kernel-direct, n = 4000, interleaved min-of-3. Objectives identical per cell.
 
 Recompute reads switch to column-major at m > n/8. 295-case trajectory battery
 bit-identical (asymmetric axis retired with the symmetry contract).
+
+## Area 2 — DropAdd — AFTER round 14 (production seed protocol) — REGRESS HERE
+
+Hamilton8, r/4.5.1, gcc/12.2, `OMP_NUM_THREADS=1`, `mc.cores` unset.
+`drivers/dropadd-timing.R`, three whole-script reps per job, each cell an
+internal min-of-3. Objectives were identical on every cell of every rep in
+both jobs — they are the trajectory identity probe, so a changed objective
+means a changed trajectory, not a faster one.
+
+Two jobs are shown because they landed on different nodes of `-p shared`, and
+the difference is the point (see the variance note below).
+
+| cell | cn059 s | cn058 s | node Δ |
+|------|--------:|--------:|-------:|
+| matrix n=4e3 m=10 construct | 0.0002 | 0.0002 | 0% |
+| matrix n=4e3 m=2000 construct | 0.0245 | 0.0247 | +1% |
+| matrix n=4e3 m=10 search1500 | 0.0672 | 0.0670 | 0% |
+| matrix n=4e3 m=2000 search1500 | 0.0893 | 0.0927 | +4% |
+| matrix n=4e3 m=400 search1500 | 0.0620 | 0.0923 | **+49%** |
+| matrix n=4e3 m=600 search1500 | 0.0820 | 0.0967 | **+18%** |
+| points n=2e4 d2 m=10 search1000 | 0.3680 | 0.3680 | 0% |
+| points n=2e4 d10 m=10 search600 | 0.3987 | 0.4060 | +2% |
+| points n=2e4 d10 m=1e4 construct | 2.0170 | 2.0230 | 0% |
+| points n=2e4 d10 m=1e4 search600 | 2.2990 | 2.2930 | 0% |
+
+### A kernel row is not the cost of a call
+
+Measured on cn058, same job:
+
+| | s | share of a `DropAdd(20, d4)` call |
+|---|---:|---:|
+| `.AsDistMatrix(d4)` intake scan (O(n²)) | 0.0325 | **78%** |
+| `.PickPoint(d4, "peripheral")` seed (O(n)) | 0.0001 | <1% |
+| END-TO-END `DropAdd(20, d4, plateau=200)` | 0.0417 | — |
+| END-TO-END `DropAdd(600, d4, plateau=200)` | 0.0483 | — |
+
+The intake scan is **160× the `m=10 construct` kernel cell** and about
+four-fifths of a whole small-`k` call. Round 13 kept that scan for DropAdd
+deliberately — the recompute branch's triangle choice needs exact symmetry —
+so it is real, required, per-call work that no kernel row contains.
+
+`farfirst-timing.R` times `FarFirst()` through the **public API**, so its rows
+include an intake of the same kind. Only the `END-TO-END` rows here compare
+with it. Reading a kernel row against a FarFirst row understates DropAdd by
+roughly the intake, which is most of the call at small `k`.
+
+### Variance: interleave within one job, and distrust the switch pair
+
+Within a job, rep spread reaches 4.0 ms (6.5% on `m=400 search1500`). **Across
+jobs it is far worse**: `m=400` moved 49% and `m=600` 18% between cn059 and
+cn058, on identical code walking identical trajectories. Those two cells sit
+either side of the `m = n/8` recompute switch and are the most
+memory-bandwidth-sensitive in the set, so on `-p shared` — where another job
+can be competing for bandwidth on the same node — their absolute values are
+not trustworthy to better than ~50%.
+
+Consequence for future rounds: **do not regress a matrix cell against an
+absolute number from a previous job.** Run both arms interleaved inside one
+job on one node, as `coreset-kc/kcab.sh` does. The stable cells (everything
+except the switch pair) hold to ~4% across nodes and can be read absolutely.
+
+**No row here is a speedup over the sections above.** The matrix cells changed
+protocol (peripheral seed, not `seed0 = -1`) so they walk different
+trajectories, and the points cells changed machine. Ratios across that
+boundary are meaningless in both directions.
+
+The one figure worth reading structurally: `m=10 construct` at **0.2 ms**. The
+same cell under the old protocol was dominated by the O(n²) max-row-sum
+sweep, which no caller ran — the cell was almost entirely measuring a warm
+start `DropAdd()` had already abandoned. What remains is the ten column
+passes the construction actually performs.
 
 ## Area 3 — Grasp — AFTER T-007 (base_z min-edge witness hoist)
 

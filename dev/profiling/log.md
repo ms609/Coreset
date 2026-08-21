@@ -1654,6 +1654,147 @@ Status: Area 2 → OPTIMISED; the matrix kernel's serial-at-limit certification
 from round 10 stands for its passes (argmax fusion and threading both measured
 flat there) but not for the recompute branch, which this round moved.
 
+## Round 14 — 2026-08-18 — Area 2 (DropAdd): the last symmetry site was dead
+code; removed, and the drivers moved onto the production protocol
+
+**Trigger:** user decision. With asymmetric input refused at intake (round 13),
+the matrix kernel may treat `d` as exactly symmetric everywhere, so this round
+swept it for any remaining site where symmetry removes a read.
+
+**There is exactly one, and it was API-dead.** Every other matrix read in the
+kernel is a whole column that is genuinely needed: the drop and add passes
+touch `d(i, x)` for all `i`, and the recompute branch's layout choice was
+already taken in round 13. The one full-matrix sweep left was the
+construction's max-row-sum seed (`seed0 = -1`), and `DropAdd()` had not
+reached it since `0214ab2`: the wrapper fills `matrixSeed0` from
+`.PickPoint(dmat, "peripheral")`, which returns >= 1 on every branch, so the
+`seed0 >= 0` arm was always taken. `0214ab2` made that change deliberately —
+the max-row-sum anchor was both O(n^2) *and* the worst of the seven profiled
+(mean gap to the proven optimum 0.029 against the peripheral anchor's 0.011
+over a 40-cell grid). Only `.DropAddTrace()` and the profiling drivers still
+reached it.
+
+**The lever was built and verified before the reach problem surfaced,** so its
+cost is recorded rather than guessed. Column `j`'s entry `i < j` serves both
+`rs[i]` and `rs[j]`, so the upper triangle alone suffices — `n(n+1)/2` elements
+rather than `n^2` — with `rs[j]` accumulated in a register chain stored once,
+complete, at the diagonal. Summation order is untouched: `rs[k]` still
+receives `d(k, 0..k-1)`, then `d(k, k)`, then `d(k, k+1..n-1)`, the same
+left-associated chain, exact because `d(i, j) == d(j, i)` exactly. Columns
+band four at a time, since the chain is a loop-carried dependency and one
+chain per column would trade the halved traffic for a serial add latency
+costing more than it saves. (Round 9's banding result does not refute this:
+that loop was memory-bound, where banding cannot help; here banding breaks a
+latency chain.) **295/295 battery bit-identical, suite green** — then declined,
+and the sweep it optimised removed instead. Never timed: the disposition was
+reachability-based, so a measurement would only have priced a branch no caller
+reaches.
+
+**What shipped.**
+- `src/dropadd.cpp`: the max-row-sum fallback is gone. The kernel now requires
+  `seed0` in `[0, n)` and errors otherwise — a range the wrapper already
+  validated, so this is a tightening for direct callers only. The points
+  kernel's `-1` anti-centroid fallback is untouched: it **is** the points
+  path's production default.
+- `.DropAddTrace()` and `.DropAddConstruct()` seed at the peripheral anchor,
+  so the trace helper and the pure-R twin walk the trajectory `DropAdd()`
+  actually walks. `.DropAddConstruct()` gained a `first =` argument mirroring
+  `.DropAddConstructColumn()`. The oracle test's compensating row-sum seed
+  went with it.
+- `dropadd-timing.R` and `dropadd-vtune10.R`: matrix cells take the production
+  peripheral seed, computed once outside the timed thunks. **Every matrix
+  timing from rounds 4-13 measured `seed0 = -1`** and billed each construct
+  cell for an O(n^2) sweep the wrapper had stopped running, so those numbers
+  are not comparable with anything measured after this round. Points cells are
+  unaffected — their protocol was already production.
+- `dropadd-battery.R`: the matrix cases move from `-1L` to fixed explicit
+  seeds (0/1/3, keeping all three shapes); the `recP(..., -1L)` cases keep the
+  default, exercising the live points fallback. Verified by capturing the
+  updated script against the pre-removal kernel and comparing after: 295/295
+  bit-identical, within-build invariants OK. **This commit is the new
+  frozen-baseline reference** — the old `-1L` matrix cases are unreproducible
+  under the new script by design.
+
+**Re-baselined on Hamilton** (r/4.5.1, serial, three whole-script reps per
+job, objectives identical throughout). Full tables in baselines.md. Two
+findings beyond the numbers, both of which change how this area is measured:
+
+*A kernel row is not a call cost.* The cells call the kernels directly, so
+they exclude what `DropAdd()` pays first: the O(n^2) `.AsDistMatrix` symmetry
+scan (32.5 ms at n = 4000) and the O(n) peripheral seed (0.1 ms). The scan is
+**160x the `m=10 construct` cell and 78% of a whole `DropAdd(20, d4)` call**.
+Round 13 kept that scan for DropAdd deliberately — the recompute branch's
+triangle choice needs exact symmetry — so it is required per-call work that
+no kernel row contains. Worse for cross-area reading, `farfirst-timing.R`
+times `FarFirst()` through the public API: its rows carry an intake of the
+same kind, so a kernel row set beside a FarFirst row understates DropAdd by
+roughly the intake, which is most of a small-k call. Cells for the intake,
+the seed, and two whole-API calls are now in the driver; only the latter
+compare with the FarFirst area.
+
+*The switch pair is not trustworthy across jobs.* Within a job, rep spread
+reaches 6.5%. Between two jobs on different `-p shared` nodes, identical code
+walking identical trajectories, `m=400 search1500` moved **49%** and `m=600`
+**18%** — the two cells either side of the `m = n/8` recompute switch, and the
+most memory-bandwidth-sensitive in the set, on a partition where another job
+can contend for bandwidth. Everything else held to ~4%. So a matrix cell must
+not be regressed against an absolute number from a previous job; both arms
+belong interleaved inside one job on one node, as `coreset-kc/kcab.sh` does.
+
+No cell is a speedup over rounds 4-13 — the matrix cells changed protocol and
+the points cells changed machine — and the record says so rather than banking
+a number the code did not earn. The structural figure is
+`matrix n=4e3 m=10 construct` at **0.2 ms**: under the old protocol that cell
+was dominated by the row-sum sweep, so it was almost entirely timing a warm
+start `DropAdd()` had abandoned; what remains is the ten column passes the
+construction performs.
+
+**Refuted by design — fusing the seed row-sums into `.AsDistMatrix`'s symmetry
+scan.** The scan already reads every element, but it runs on the *pre-averaged*
+matrix, so scan-time row sums would be sums of the wrong matrix whenever
+intake repairs a rounding asymmetry; and it would tax Grasp and k-centre
+intake for a DropAdd-only benefit that no longer exists.
+
+Status: Area 2 → OPTIMISED, unchanged. The matrix kernel is at its symmetry
+limit on every live path, and the triangle-sweep lever is closed permanently —
+its target no longer exists. Round 13's leads stand: lazy second-minimum
+record (re-measure the branch share first) and the K-row coordinate pre-gather
+for the points recompute.
+
+**The CI benchmark's DropAdd verdict on this branch is an artefact.** The
+workflow reported `DropAdd(20, d500, plateau=2000)` −6.59% and
+`DropAdd(250, d500, plateau=2000)` −5.4%, both "slower", with the points cell
+NSD. Nothing on the executed path can account for it: with `seed0 >= 0` — which
+`DropAdd()` always supplies — the old kernel did `seed = seed0` and the new one
+does a bounds check plus the same assignment, and no loop moved. Two
+interleaved A/B jobs (merge-base 266351b vs branch head, both arms inside one
+job on one node, 25 inner reps per matrix cell, scores identical throughout)
+put the new code **faster**, not slower:
+
+| cell | base-first, 7 reps (cn027) | order-swapped, 8 reps (cn025) |
+|------|---------------------------:|------------------------------:|
+| `DropAdd(20, d500, plateau=2000)` | 0.952 | 0.975 |
+| `DropAdd(250, d500, plateau=2000)` | 0.959 | 0.965 |
+| `DropAdd(20, pts4000, plateau=1000)` | 0.985 | 0.988 |
+
+Same magnitude as CI, opposite sign. This extends round 11's precedent, where
+the runner reported +9.09% on this very cell while the round shipped nothing
+for the kernel, and ±13% on two FarFirst cells whose only diff was three
+deleted `// nocov` comment lines.
+
+Two cautions for whoever reads those ratios. **Running one arm always first
+biases every cell**: base-first put cell A at 0.952, and swapping the order on
+alternate reps moved it to 0.975. **The points cell is the floor** — its kernel
+(`dropadd_mf.cpp`) is byte-identical in both arms, yet it reads 1.2% fast, so
+~1.2% is this harness's systematic error, not signal. Against that floor the
+m=250 cell (3.5%, non-overlapping rep distributions) looks real and the m=20
+cell (2.5%, overlapping) is suggestive. A plausible mechanism is that the
+removed branch declared a `std::vector<double> rs(n, 0.0)`: a
+non-trivially-destructible local forces exception-handling cleanup paths even
+when never executed, so deleting it can simplify codegen across the whole
+function. **Recorded, not banked** — the round removed dead code and claims no
+speedup, and 2-3% at a 1.2% floor does not deserve one.
+
 ---
 
 ## Round 14 — `ExactMaxMin` threshold search (2026-08-18)
