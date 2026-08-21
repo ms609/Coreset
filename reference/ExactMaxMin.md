@@ -12,7 +12,7 @@ ExactMaxMin(
   d,
   maxSeconds = 60,
   warmStart = NULL,
-  nStart = 8L,
+  nStart = 1L,
   graspPlateau = 50L,
   dropPlateau = 512L
 )
@@ -82,7 +82,7 @@ Prints as a terse summary via
 ## Details
 
 The search is warm-started from a heuristic lower bound (the best of
-several [`Grasp()`](https://ms609.github.io/Coreset/reference/Grasp.md)
+`nStart` [`Grasp()`](https://ms609.github.io/Coreset/reference/Grasp.md)
 restarts and a
 [`DropAdd()`](https://ms609.github.io/Coreset/reference/DropAdd.md)
 pass), then gallops upward from that bound to the first infeasible

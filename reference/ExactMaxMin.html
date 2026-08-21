@@ -63,7 +63,7 @@ sets).</p>
 <span>  <span class="va">d</span>,</span>
 <span>  maxSeconds <span class="op">=</span> <span class="fl">60</span>,</span>
 <span>  warmStart <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  nStart <span class="op">=</span> <span class="fl">8L</span>,</span>
+<span>  nStart <span class="op">=</span> <span class="fl">1L</span>,</span>
 <span>  graspPlateau <span class="op">=</span> <span class="fl">50L</span>,</span>
 <span>  dropPlateau <span class="op">=</span> <span class="fl">512L</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -125,8 +125,8 @@ the budget, <code>FALSE</code> if it returned an unproven incumbent.</p></dd>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The search is warm-started from a heuristic lower bound (the best of several
-<code><a href="Grasp.html">Grasp()</a></code> restarts and a <code><a href="DropAdd.html">DropAdd()</a></code> pass), then gallops upward from that
+    <p>The search is warm-started from a heuristic lower bound (the best of
+<code>nStart</code> <code><a href="Grasp.html">Grasp()</a></code> restarts and a <code><a href="DropAdd.html">DropAdd()</a></code> pass), then gallops upward from that
 bound to the first infeasible threshold and bisects the resulting bracket.</p>
 <p>To parallelize computation when OpenMP is available, set the <code>"mc.cores"</code>
 option:</p><div class="sourceCode"><pre><code><span></span>
