@@ -59,11 +59,11 @@
 }
 
 # A provably-achievable k-subset, as a lower bound on the optimum. Grasp
-# (several RNG restarts) attains the package's best heuristic T_k on small-to-
-# medium instances; DropAdd adds a deterministic anchor. The best-achieving
-# subset wins. `warmStart`, if a valid k-subset, joins the pool. Returns
+# attains the package's best heuristic T_k on small-to-medium instances;
+# DropAdd adds a deterministic anchor. The best-achieving subset wins.
+# `warmStart`, if a valid k-subset, joins the pool. Returns
 # list(value, witness), or NULL if no heuristic produced a usable subset.
-.ExactWarmStart <- function(d, n, k, warmStart, nStart = 8L,
+.ExactWarmStart <- function(d, n, k, warmStart, nStart = 1L,
                             graspPlateau = 50L, dropPlateau = 512L) {
   scv   <- function(idx) { s <- d[idx, idx]; diag(s) <- Inf; min(s) }
   # Coerce a raw selection to a valid sorted k-subset, or drop it (NULL).
@@ -71,9 +71,10 @@
     idx <- tryCatch(sort(unique(as.integer(idx))), error = function(e) integer(0))
     if (length(idx) == k && idx[1L] >= 1L && idx[k] <= n) idx else NULL
   }
-  # Heuristic pool: optional caller warmStart, several Grasp restarts (drawing
-  # on the session RNG -- this is where their diversity comes from), one
-  # deterministic DropAdd. Like Grasp() itself, this advances the session RNG.
+  # Heuristic pool: optional caller warmStart, `nStart` Grasp restarts
+  # (drawing on the session RNG -- this is where their diversity comes from),
+  # one deterministic DropAdd. Like Grasp() itself, this advances the session
+  # RNG.
   # `maxCandidates = 0L` pins both to no thinning: the warm starts must see the
   # full matrix the user handed to the exact solver, regardless of the solvers'
   # own default coreset caps.
@@ -151,8 +152,8 @@
 #' \insertCite{Sayyady2016}{Coreset} (which may be slow or intractable on large
 #' sets).
 #'
-#' The search is warm-started from a heuristic lower bound (the best of several
-#' [Grasp()] restarts and a [DropAdd()] pass), then gallops upward from that
+#' The search is warm-started from a heuristic lower bound (the best of
+#' `nStart` [Grasp()] restarts and a [DropAdd()] pass), then gallops upward from that
 #' bound to the first infeasible threshold and bisects the resulting bracket.
 #'
 #' To parallelize computation when OpenMP is available, set the `"mc.cores"`
@@ -195,7 +196,7 @@
 #' ExactMaxMin(3L, dist(pts))
 #' @export
 ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
-                        nStart = 8L, graspPlateau = 50L, dropPlateau = 512L) {
+                        nStart = 1L, graspPlateau = 50L, dropPlateau = 512L) {
   progress <- getOption("Coreset.progress", interactive())
   t0 <- proc.time()[[3L]]
   d <- .ExactAsMatrix(d)
