@@ -1935,6 +1935,15 @@ valued a lift the kernel has since made free to skip, and it was measured beside
 eight Grasp restarts. Do not re-open without a kernel change that makes an
 opening bound matter again.
 
+Nor is 512 too high, which the A/B alone could not have told us -- it tested one
+direction, and its reasoning is symmetric. A ten-point sweep from 4 to 5000
+(`FurthestPoint` job 18549031), calling `DropAdd()` directly so no Grasp restart
+can mask a degraded bound, puts 512 on the knee: it is the smallest cap holding
+the bound on all eight ladder cells, while 256 costs tc18_vowel k=48 1.9%, 128
+costs two cells up to 4.5%, and 64 costs five up to 4.9%. On ORLIB 512 holds
+39 of 40 -- pmed30 wants 1024 -- so the margin above the shipped value is thin
+and the margin below it is not.
+
 
 ## Round 16 — 2026-08-19 — Area 4 (ExactMaxMin): the declined root-branch
 parallelism revived for refutations, and measured in both regimes
