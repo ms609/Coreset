@@ -1916,9 +1916,24 @@ partition support "this bound was lifted" and "the pool costs this much"; they
 do not support a percentage.
 
 Status: `graspPlateau` stays at 50 -- deeper is a measured loss.
-`dropPlateau = 5000` is recommended and not yet defaulted; it is free, it
-cannot lower the bound, and it buys pmed30. Adopting it belongs with the
-`b0bbaa7` merge and re-pin, as one re-measure.
+`dropPlateau` stays at 512. The recommendation to raise it stood here until
+2026-08-21, when it was re-measured on the frozen engine and lost: see the
+postscript below.
+
+**Postscript, 2026-08-21: the `dropPlateau = 5000` recommendation is withdrawn.**
+Re-run against `6eb4681` under Round 19's one-restart pool, on ORLIB at three
+seeds and on eight ladder cells (`FurthestPoint` jobs 18538570 / 18538571,
+harness `dev/dplat/`). Quality is identical on all 128 cells. The deeper pass
+lifts the opening bound on three of them -- pmed30 at each seed -- and on none
+of the ladder's eight; dominance has since made pmed30 sub-second from either
+bound, so the probe the lift saves is worth nothing. What remains is the pool's
+own debit, +2.63 s over ORLIB and +0.14 s over the ladder, which is +33.2% on
+ORLIB's 114 sub-second cells.
+
+The reasoning above was sound about the mechanism and wrong about the price: it
+valued a lift the kernel has since made free to skip, and it was measured beside
+eight Grasp restarts. Do not re-open without a kernel change that makes an
+opening bound matter again.
 
 
 ## Round 16 — 2026-08-19 — Area 4 (ExactMaxMin): the declined root-branch
