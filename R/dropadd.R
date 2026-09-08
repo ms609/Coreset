@@ -16,12 +16,14 @@
 # Constructive phase (Algorithm 1).
 # Returns list(S = integer(k), iter_add = integer(k)) where iter_add[i] is
 # the iteration at which S[i] was added (= i).
-.DropAddConstruct <- function(dmat, k) {
+.DropAddConstruct <- function(dmat, k,
+                              first = .PickPoint(dmat, "peripheral")) {
   n <- nrow(dmat)
   S <- integer(k)
-  # Seed point: argmax over Z of sum_y d(x, y) (Porumbel's eq. before Alg. 1).
-  rowSumsD <- rowSums(dmat)
-  S[1L] <- which.max(rowSumsD)
+  # Seed point: the peripheral anchor, as DropAdd() and the C++ kernel use.
+  # (Porumbel seeds at argmax over Z of sum_y d(x, y), the eq. before Alg. 1 —
+  # the weaker anchor of the two by the 0214ab2 grid.)
+  S[1L] <- as.integer(first)
   inS <- logical(n)
   inS[S[1L]] <- TRUE
 
@@ -352,14 +354,16 @@
 # Runs the production C++ DropAdd with tracing enabled and returns the
 # dropped/added index sequences alongside the result, so the FIFO + tabu
 # invariants can be asserted without exposing a `.trace` argument on `DropAdd()`.
-# Kept deliberately thin: it mirrors only the `d`-path coercion and the single
-# C++ call.
+# Kept deliberately thin: it mirrors the `d`-path coercion, the peripheral
+# seed and the single C++ call, so the traced trajectory is the one DropAdd()
+# actually walks.
 .DropAddTrace <- function(d, k, maxIter = NULL, plateau = 5000L,
                           maxSeconds = Inf) {
   dmat <- .AsDistMatrix(d)
   cppMaxIter <- if (is.null(maxIter)) .Machine$integer.max else as.integer(maxIter)
   out <- DropAdd_cpp(dmat, as.integer(k), as.double(maxSeconds),
-                       cppMaxIter, as.integer(plateau), TRUE)
+                       cppMaxIter, as.integer(plateau), TRUE,
+                       as.integer(.PickPoint(dmat, "peripheral")) - 1L)
   list(
     indices = sort(as.integer(out$indices)),
     score   = as.numeric(out$objective),
@@ -613,9 +617,9 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
       .auto_close = FALSE
     )
   }
-  # The O(n) peripheral anchor gives a lower post-tabu-search gap to the
-  # optimum than the kernel's own O(n^2) max-row-sum fallback (seed0 = -1),
-  # matching the points-path and oracle-path defaults.
+  # The kernel takes no start of its own, so supply the O(n) peripheral
+  # anchor: the lowest post-tabu-search gap to the optimum of the seven
+  # profiled at 0214ab2, and the points- and oracle-path default.
   matrixSeed0 <- if (is.null(seed)) {
     as.integer(.PickPoint(dmat, "peripheral")) - 1L
   } else {

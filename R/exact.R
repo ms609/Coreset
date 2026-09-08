@@ -59,11 +59,11 @@
 }
 
 # A provably-achievable k-subset, as a lower bound on the optimum. Grasp
-# (several RNG restarts) attains the package's best heuristic T_k on small-to-
-# medium instances; DropAdd adds a deterministic anchor. The best-achieving
-# subset wins. `warmStart`, if a valid k-subset, joins the pool. Returns
+# attains the package's best heuristic T_k on small-to-medium instances;
+# DropAdd adds a deterministic anchor. The best-achieving subset wins.
+# `warmStart`, if a valid k-subset, joins the pool. Returns
 # list(value, witness), or NULL if no heuristic produced a usable subset.
-.ExactWarmStart <- function(d, n, k, warmStart, nStart = 8L,
+.ExactWarmStart <- function(d, n, k, warmStart, nStart = 1L,
                             graspPlateau = 50L, dropPlateau = 512L) {
   scv   <- function(idx) { s <- d[idx, idx]; diag(s) <- Inf; min(s) }
   # Coerce a raw selection to a valid sorted k-subset, or drop it (NULL).
@@ -71,9 +71,10 @@
     idx <- tryCatch(sort(unique(as.integer(idx))), error = function(e) integer(0))
     if (length(idx) == k && idx[1L] >= 1L && idx[k] <= n) idx else NULL
   }
-  # Heuristic pool: optional caller warmStart, several Grasp restarts (drawing
-  # on the session RNG -- this is where their diversity comes from), one
-  # deterministic DropAdd. Like Grasp() itself, this advances the session RNG.
+  # Heuristic pool: optional caller warmStart, `nStart` Grasp restarts
+  # (drawing on the session RNG -- this is where their diversity comes from),
+  # one deterministic DropAdd. Like Grasp() itself, this advances the session
+  # RNG.
   # `maxCandidates = 0L` pins both to no thinning: the warm starts must see the
   # full matrix the user handed to the exact solver, regardless of the solvers'
   # own default coreset caps.
@@ -117,7 +118,7 @@
 #                     (witness = integer(0)),
 #   "inconclusive" -- the budget expired before either could be established
 #                     (witness = integer(0)).
-.MaxISVerdict <- function(d, n, hi, hj, lambda, k, timeLimit) {
+.MaxISVerdict <- function(d, n, hi, hj, lambda, k, timeLimit, threads = 1L) {
   if (!is.finite(timeLimit) || timeLimit <= 0) { # nocov start
     return(list(verdict = "inconclusive", witness = integer(0)))
   } # nocov end
@@ -129,7 +130,7 @@
     return(list(verdict = "feasible", witness = seq_len(n)))
   }
 
-  res <- ThresholdDecide_cpp(hi, hj, n, k, timeLimit)
+  res <- ThresholdDecide_cpp(hi, hj, n, k, timeLimit, threads)
   witness <- res[["witness"]]
   if (identical(res[["status"]], "feasible")) {
     sub <- d[witness, witness, drop = FALSE]
@@ -151,32 +152,29 @@
 #' \insertCite{Sayyady2016}{Coreset} (which may be slow or intractable on large
 #' sets).
 #'
-#' The search is warm-started from a heuristic lower bound (the best of several
-#' [Grasp()] restarts and a [DropAdd()] pass), then gallops upward from that
+#' The search is warm-started from a heuristic lower bound (the best of
+#' `nStart` [Grasp()] restarts and a [DropAdd()] pass), then gallops upward from that
 #' bound to the first infeasible threshold and bisects the resulting bracket.
-#' When a heuristic already attains the optimum, a single infeasibility proof
-#' certifies it.
-#' Each feasibility probe is first reduced to its \eqn{(k-1)}-core and greedily
-#' coloured, then searched exhaustively for a witness under a colouring bound.
-#' The search runs on one core: its branches parallelise, but measurably only
-#' for infeasibility proofs, and threads would make the reported subset
-#' thread-dependent.
-#' The indices returned may vary between releases where several subsets attain
-#' the optimum; the `score` does not.
+#'
+#' To parallelize computation when OpenMP is available, set the `"mc.cores"`
+#' option:
+#' \preformatted{
+#' options(mc.cores = 2L)                       # use a fixed number of cores
+#' options(mc.cores = parallel::detectCores())  # or all available cores
+#' }
+#' Parallelization returns identical results under a given seed.
 #'
 #' @param k Integer: target subset size, between 2 and `nrow(d)`.
 #' @param d `dist` object or a square symmetric numeric distance matrix.
 #' @param maxSeconds Numeric: search terminates after this many seconds have
 #' elapsed, returning largest threshold proven feasible.
-#' @param warmStart Integer vector giving indices of a candidate subset to add
-#'  to the heuristic warm-start pool, e.g. a selection computed by another
-#'  solver.
+#' @param warmStart Optional integer vector giving indices of a candidate subset to add
+#'  to the heuristic warm-start pool.
 #' @param nStart Integer: how many [Grasp()] restarts enter the warm-start
 #'  pool.
 #' @param graspPlateau,dropPlateau Integer: the stopping plateaus given to the
 #'  pool's [Grasp()] restarts and its [DropAdd()] pass. Deeper searches cost
-#'  more but raise the lower bound the exact search starts from; the defaults
-#'  are calibrated against the manuscript's cases and ORLIB `pmed`.
+#'  more, but raise the lower bound the exact search starts from.
 #' @templateVar progress_shows a progress indicator is shown
 #' @template progress
 #' @return `ExactMaxMin()` returns an integer vector of length `k` (sorted
@@ -198,7 +196,7 @@
 #' ExactMaxMin(3L, dist(pts))
 #' @export
 ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
-                        nStart = 8L, graspPlateau = 50L, dropPlateau = 512L) {
+                        nStart = 1L, graspPlateau = 50L, dropPlateau = 512L) {
   progress <- getOption("Coreset.progress", interactive())
   t0 <- proc.time()[[3L]]
   d <- .ExactAsMatrix(d)
@@ -207,6 +205,7 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
   if (is.na(k) || k < 2L || k > n) {
     stop("`k` must satisfy 2 <= k <= nrow(d)")
   }
+  nThreads <- .NThreads()
 
   Elapsed <- function() proc.time()[[3L]] - t0
 
@@ -237,7 +236,7 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
   feas <- function(idx, remaining) {
     lambda <- cand[idx]
     h <- EdgesAtLeast_cpp(d, lambda)
-    .MaxISVerdict(d, n, h[["hi"]], h[["hj"]], lambda, k, remaining)
+    .MaxISVerdict(d, n, h[["hi"]], h[["hj"]], lambda, k, remaining, nThreads)
   }
 
   # Helper to package a result for a proven-feasible candidate index.

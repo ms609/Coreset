@@ -14,9 +14,8 @@ ExactMaxSum(k, d, maxSeconds = 60, warmStart = NULL)
 \item{maxSeconds}{Numeric: search terminates after this many seconds have
 elapsed, returning largest threshold proven feasible.}
 
-\item{warmStart}{Integer vector giving indices of a candidate subset to add
-to the heuristic warm-start pool, e.g. a selection computed by another
-solver.}
+\item{warmStart}{Optional integer vector giving indices of a candidate subset to add
+to the heuristic warm-start pool.}
 }
 \value{
 \code{ExactMaxSum()} returns an integer vector of length \code{k} (sorted

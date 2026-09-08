@@ -44,11 +44,12 @@ test_that("the column-oracle loop reproduces the C++ drop/add trajectory", {
     k <- sample(2:7, 1L)
     dmat <- as.matrix(dist(matrix(rnorm(n * 2L), ncol = 2L)))
     colFn <- function(i) dmat[, i]
-    # .DropAddTrace() runs the kernel with its own max-row-sum seed, so hand the
-    # oracle loop that same seed to make the two trajectories comparable.
+    # .DropAddTrace() runs the kernel from the peripheral anchor, as DropAdd()
+    # does, so hand the oracle loop that same seed to make the two
+    # trajectories comparable.
     tr <- Coreset:::.DropAddTrace(dmat, k, maxIter = 60L, plateau = 1e9)
     or <- Coreset:::.DropAddFromColumn(
-      colFn, n, k, first = unname(which.max(rowSums(dmat))),
+      colFn, n, k, first = Coreset:::.PickPoint(dmat, "peripheral"),
       plateau = 1e9, maxIter = 60L, trace = TRUE
     )
     expect_identical(or$drops, tr$drops)

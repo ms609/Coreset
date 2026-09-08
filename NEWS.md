@@ -1,38 +1,3 @@
-# Coreset 0.0.0.9003 (development)
-
-- `ExactKCentre()` no longer solves a set-cover integer program per probe, and
-  so no longer needs `highs` or `Matrix`. Each probe -- "can `k` centres cover
-  every point within this radius?" -- is now decided by an exhaustive
-  combinatorial search: unit propagation, point and centre dominance reduction
-  run to a fixed point, a component split, then a bounded depth-first search
-  over the remainder. This is the covering dual of the clique search that
-  `ExactMaxMin()` moved to, and it settles most probes by reduction alone
-  without reaching the search at all. The proven optimum
-  is unchanged on every case measured; the witness may differ where several
-  optimal centre sets exist, which was already the contract.
-
-# Coreset 0.0.0.9002 (development)
-
-- `ExactMaxMin()` gains `nStart`, `graspPlateau` and `dropPlateau`, which set
-  how many `Grasp()` restarts seed the search and how long each restart and the
-  `DropAdd()` pass run before stopping. The defaults are what the solver
-  already used, so no existing call changes. The pool only supplies a lower
-  bound, so no setting can alter the optimum reported -- a shallower pool
-  simply leaves more thresholds to be searched.
-
-# Coreset 0.0.0.9001 (development)
-
-- `ExactMaxMin()` answers a threshold from the subset it already holds where
-  that subset attains it. A feasibility probe returns some `k`-clique rather
-  than a best one, and the minimum distance it realises is often well above the
-  threshold that was asked for -- on the larger cases, hundreds of attainable
-  thresholds above -- so the probes in between were re-finding the same subset.
-  The thresholds the search visits are unchanged, and so is every optimum it
-  reports. Worth 37% on `tc13_pima` at `k` = 48 and 8% on `tc19_breastcancer`;
-  no cell of the benchmark suite was slower, and the sub-second cells sat
-  within noise. The gain is a continuous-distance one: where distances are
-  integers the witness rarely reaches past the threshold it was asked for.
-
 # Coreset 0.0.0.9000 (development)
 
 First release. `Coreset` selects a representative subset of a fixed candidate
@@ -53,7 +18,7 @@ Maximises the minimum pairwise distance within a subset of size `k`.
 - `Grasp()`: GRASP with path relinking (Resende et al. 2010), attaining the
   highest `T_k` of the package's heuristics on small to medium instances.
 - `ExactMaxMin()`: exact node-packing optimum (Sayyady & Fathi 2016), decided
-  by clique search rather than an integer program.
+  by clique search.
 
 ## Max-Mean dispersion
 

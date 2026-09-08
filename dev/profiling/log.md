@@ -1654,6 +1654,147 @@ Status: Area 2 → OPTIMISED; the matrix kernel's serial-at-limit certification
 from round 10 stands for its passes (argmax fusion and threading both measured
 flat there) but not for the recompute branch, which this round moved.
 
+## Round 14 — 2026-08-18 — Area 2 (DropAdd): the last symmetry site was dead
+code; removed, and the drivers moved onto the production protocol
+
+**Trigger:** user decision. With asymmetric input refused at intake (round 13),
+the matrix kernel may treat `d` as exactly symmetric everywhere, so this round
+swept it for any remaining site where symmetry removes a read.
+
+**There is exactly one, and it was API-dead.** Every other matrix read in the
+kernel is a whole column that is genuinely needed: the drop and add passes
+touch `d(i, x)` for all `i`, and the recompute branch's layout choice was
+already taken in round 13. The one full-matrix sweep left was the
+construction's max-row-sum seed (`seed0 = -1`), and `DropAdd()` had not
+reached it since `0214ab2`: the wrapper fills `matrixSeed0` from
+`.PickPoint(dmat, "peripheral")`, which returns >= 1 on every branch, so the
+`seed0 >= 0` arm was always taken. `0214ab2` made that change deliberately —
+the max-row-sum anchor was both O(n^2) *and* the worst of the seven profiled
+(mean gap to the proven optimum 0.029 against the peripheral anchor's 0.011
+over a 40-cell grid). Only `.DropAddTrace()` and the profiling drivers still
+reached it.
+
+**The lever was built and verified before the reach problem surfaced,** so its
+cost is recorded rather than guessed. Column `j`'s entry `i < j` serves both
+`rs[i]` and `rs[j]`, so the upper triangle alone suffices — `n(n+1)/2` elements
+rather than `n^2` — with `rs[j]` accumulated in a register chain stored once,
+complete, at the diagonal. Summation order is untouched: `rs[k]` still
+receives `d(k, 0..k-1)`, then `d(k, k)`, then `d(k, k+1..n-1)`, the same
+left-associated chain, exact because `d(i, j) == d(j, i)` exactly. Columns
+band four at a time, since the chain is a loop-carried dependency and one
+chain per column would trade the halved traffic for a serial add latency
+costing more than it saves. (Round 9's banding result does not refute this:
+that loop was memory-bound, where banding cannot help; here banding breaks a
+latency chain.) **295/295 battery bit-identical, suite green** — then declined,
+and the sweep it optimised removed instead. Never timed: the disposition was
+reachability-based, so a measurement would only have priced a branch no caller
+reaches.
+
+**What shipped.**
+- `src/dropadd.cpp`: the max-row-sum fallback is gone. The kernel now requires
+  `seed0` in `[0, n)` and errors otherwise — a range the wrapper already
+  validated, so this is a tightening for direct callers only. The points
+  kernel's `-1` anti-centroid fallback is untouched: it **is** the points
+  path's production default.
+- `.DropAddTrace()` and `.DropAddConstruct()` seed at the peripheral anchor,
+  so the trace helper and the pure-R twin walk the trajectory `DropAdd()`
+  actually walks. `.DropAddConstruct()` gained a `first =` argument mirroring
+  `.DropAddConstructColumn()`. The oracle test's compensating row-sum seed
+  went with it.
+- `dropadd-timing.R` and `dropadd-vtune10.R`: matrix cells take the production
+  peripheral seed, computed once outside the timed thunks. **Every matrix
+  timing from rounds 4-13 measured `seed0 = -1`** and billed each construct
+  cell for an O(n^2) sweep the wrapper had stopped running, so those numbers
+  are not comparable with anything measured after this round. Points cells are
+  unaffected — their protocol was already production.
+- `dropadd-battery.R`: the matrix cases move from `-1L` to fixed explicit
+  seeds (0/1/3, keeping all three shapes); the `recP(..., -1L)` cases keep the
+  default, exercising the live points fallback. Verified by capturing the
+  updated script against the pre-removal kernel and comparing after: 295/295
+  bit-identical, within-build invariants OK. **This commit is the new
+  frozen-baseline reference** — the old `-1L` matrix cases are unreproducible
+  under the new script by design.
+
+**Re-baselined on Hamilton** (r/4.5.1, serial, three whole-script reps per
+job, objectives identical throughout). Full tables in baselines.md. Two
+findings beyond the numbers, both of which change how this area is measured:
+
+*A kernel row is not a call cost.* The cells call the kernels directly, so
+they exclude what `DropAdd()` pays first: the O(n^2) `.AsDistMatrix` symmetry
+scan (32.5 ms at n = 4000) and the O(n) peripheral seed (0.1 ms). The scan is
+**160x the `m=10 construct` cell and 78% of a whole `DropAdd(20, d4)` call**.
+Round 13 kept that scan for DropAdd deliberately — the recompute branch's
+triangle choice needs exact symmetry — so it is required per-call work that
+no kernel row contains. Worse for cross-area reading, `farfirst-timing.R`
+times `FarFirst()` through the public API: its rows carry an intake of the
+same kind, so a kernel row set beside a FarFirst row understates DropAdd by
+roughly the intake, which is most of a small-k call. Cells for the intake,
+the seed, and two whole-API calls are now in the driver; only the latter
+compare with the FarFirst area.
+
+*The switch pair is not trustworthy across jobs.* Within a job, rep spread
+reaches 6.5%. Between two jobs on different `-p shared` nodes, identical code
+walking identical trajectories, `m=400 search1500` moved **49%** and `m=600`
+**18%** — the two cells either side of the `m = n/8` recompute switch, and the
+most memory-bandwidth-sensitive in the set, on a partition where another job
+can contend for bandwidth. Everything else held to ~4%. So a matrix cell must
+not be regressed against an absolute number from a previous job; both arms
+belong interleaved inside one job on one node, as `coreset-kc/kcab.sh` does.
+
+No cell is a speedup over rounds 4-13 — the matrix cells changed protocol and
+the points cells changed machine — and the record says so rather than banking
+a number the code did not earn. The structural figure is
+`matrix n=4e3 m=10 construct` at **0.2 ms**: under the old protocol that cell
+was dominated by the row-sum sweep, so it was almost entirely timing a warm
+start `DropAdd()` had abandoned; what remains is the ten column passes the
+construction performs.
+
+**Refuted by design — fusing the seed row-sums into `.AsDistMatrix`'s symmetry
+scan.** The scan already reads every element, but it runs on the *pre-averaged*
+matrix, so scan-time row sums would be sums of the wrong matrix whenever
+intake repairs a rounding asymmetry; and it would tax Grasp and k-centre
+intake for a DropAdd-only benefit that no longer exists.
+
+Status: Area 2 → OPTIMISED, unchanged. The matrix kernel is at its symmetry
+limit on every live path, and the triangle-sweep lever is closed permanently —
+its target no longer exists. Round 13's leads stand: lazy second-minimum
+record (re-measure the branch share first) and the K-row coordinate pre-gather
+for the points recompute.
+
+**The CI benchmark's DropAdd verdict on this branch is an artefact.** The
+workflow reported `DropAdd(20, d500, plateau=2000)` −6.59% and
+`DropAdd(250, d500, plateau=2000)` −5.4%, both "slower", with the points cell
+NSD. Nothing on the executed path can account for it: with `seed0 >= 0` — which
+`DropAdd()` always supplies — the old kernel did `seed = seed0` and the new one
+does a bounds check plus the same assignment, and no loop moved. Two
+interleaved A/B jobs (merge-base 266351b vs branch head, both arms inside one
+job on one node, 25 inner reps per matrix cell, scores identical throughout)
+put the new code **faster**, not slower:
+
+| cell | base-first, 7 reps (cn027) | order-swapped, 8 reps (cn025) |
+|------|---------------------------:|------------------------------:|
+| `DropAdd(20, d500, plateau=2000)` | 0.952 | 0.975 |
+| `DropAdd(250, d500, plateau=2000)` | 0.959 | 0.965 |
+| `DropAdd(20, pts4000, plateau=1000)` | 0.985 | 0.988 |
+
+Same magnitude as CI, opposite sign. This extends round 11's precedent, where
+the runner reported +9.09% on this very cell while the round shipped nothing
+for the kernel, and ±13% on two FarFirst cells whose only diff was three
+deleted `// nocov` comment lines.
+
+Two cautions for whoever reads those ratios. **Running one arm always first
+biases every cell**: base-first put cell A at 0.952, and swapping the order on
+alternate reps moved it to 0.975. **The points cell is the floor** — its kernel
+(`dropadd_mf.cpp`) is byte-identical in both arms, yet it reads 1.2% fast, so
+~1.2% is this harness's systematic error, not signal. Against that floor the
+m=250 cell (3.5%, non-overlapping rep distributions) looks real and the m=20
+cell (2.5%, overlapping) is suggestive. A plausible mechanism is that the
+removed branch declared a `std::vector<double> rs(n, 0.0)`: a
+non-trivially-destructible local forces exception-handling cleanup paths even
+when never executed, so deleting it can simplify codegen across the whole
+function. **Recorded, not banked** — the round removed dead code and claims no
+speedup, and 2-3% at a 1.2% floor does not deserve one.
+
 ---
 
 ## Round 14 — `ExactMaxMin` threshold search (2026-08-18)
@@ -1775,11 +1916,15 @@ partition support "this bound was lifted" and "the pool costs this much"; they
 do not support a percentage.
 
 Status: `graspPlateau` stays at 50 -- deeper is a measured loss.
-`dropPlateau = 5000` is recommended and not yet defaulted; it is free, it
-cannot lower the bound, and it buys pmed30. Adopting it belongs with the
-`b0bbaa7` merge and re-pin, as one re-measure.
+We tried raising `dropPlateau` from 512 to 5000 by running against `6eb4681`
+under Round 19's one-restart pool, on ORLIB at 
+three seeds and on eight ladder cells (`FurthestPoint` jobs 18538570 / 18538571,
+harness `dev/dplat/`). Quality is identical on all 128 cells. The deeper pass
+lifts the opening bound on three cells, but the probe the lift saves is worth
+nothing, leaving only the pool's debit, +2.63 s over ORLIB and +0.14 s over 
+the ladder.
 
-## Round 16 — `ExactKCentre`: the covering IP replaced by an exhaustive search (2026-08-19)
+## Round 16a — `ExactKCentre`: the covering IP replaced by an exhaustive search (2026-08-19)
 
 **Trigger:** T-011, PENDING since round 6 (2026-06-11) and the only focus area with
 no measurement at all. Round 6 predicted the cost would sit in the `highs`
@@ -1958,4 +2103,258 @@ was answered without a sampling profiler. Drivers added: `kcentre-exact-audit.R`
 `kcentre-exact-audit2.R`, `kcentre-exact-oracle.R`, `kcentre-exact-grid.R`.
 In-round fixes, so no issues filed (skill rule).
 
-last_focus: 5
+
+## Round 16b — 2026-08-19 — Area 4 (ExactMaxMin): the declined root-branch
+parallelism revived for refutations, and measured in both regimes
+
+**Trigger:** user go-ahead on Round 12's declined lever once the selection
+objection fell. A refuted probe returns no witness, so threads can only ever
+*find* one — and re-running the probe serially whenever that happens keeps the
+reported subset bit-identical at every thread count. Round 12's decline was on
+the selection trade, not the scaling; both halves are now had.
+
+**Shipped (0.0.0.9003, `b5c098b`):** `ExactMaxMin(threads = )`, default 1 =
+the previous path exactly. Root branch i's candidates are
+`{ord[0..i-1]} & N(ord[i])`, computed from a prefix mask instead of the serial
+prefix removal, so the branches fan out with no sequential dependency. Workers
+share the master's adjacency read-only and own everything else; nothing off
+the main R thread touches the R API — the interrupt is polled without
+longjmp-ing on the thread that owns the R stack and thrown after the join.
+A worker witness triggers a serial re-run racing the same deadline; an
+infeasibility proof exhausts every branch, so its verdict cannot depend on
+visiting order (Round 12: node counts identical at every thread count).
+
+**Measured** (job 18445672): 1T and 8T in one process on one node, so each
+pair shares its node's weather and needs no cross-job noise model —
+Round 15's lesson applied. `cpu_s/solve_s` up to 7.8 on 8T runs confirms the
+allocation parallelised (`--cpus-per-task=8`; under the campaign's usual
+1-core pinning this measurement would have timeshared and read as a loss).
+Ten cells x pool A (certification regime) and pool E (the weak-opening
+instrument: nStart 1, plateaus 1). Proven optima identical 1T vs 8T on every
+pair, asserted in-runner.
+
+- Proven cells at >= 5 s (n = 11): **geometric-mean speedup 2.48x**, range
+  1.69–3.88x. Every one clears the ±20% single-replicate noise floor.
+- tc17_vehicle k48 under A: **4326 -> 1227 s (3.53x)** — the ladder's
+  costliest cell, 72 minutes to 20.
+- The weak-opening regime holds: pool-E cells gain 1.69–3.88x even though
+  every feasible probe there pays a threaded find *plus* the serial redo.
+- The redo is the ceiling, not a regression: on capped pool-E runs
+  (tc17_vehicle k100, tc18_vowel k100) `cpu/wall` sits at 1.0 — the budget
+  went into phases the redo keeps serial — but wall time matched 1T exactly.
+  No cell anywhere was slower under threads.
+- tc17_vehicle k100 and tc18_vowel k48/k100 cap at 7200 s under both pools
+  and both thread counts: beyond this solver at this budget regardless of
+  opening or threading.
+
+**Arm E, full readout (72 cells, job 18445575):** 68 prove under the weakest
+pool the knobs allow. Opening 1.2–9.4% below the optimum costs a geometric
+mean of ~1.0x on the >1 s cells (range 0.43–4.72; only tc1_uniform k48 pays
+visibly, 1.6 -> 7.4 s). The four non-proofs are 3600 s cap artefacts —
+tc17_vehicle k48 proves in 5393 s at the 7200 s cap — and three of the four
+cap under pool A too. The suite's confirmation bias is real (the default pool
+opens at the optimum on 105 of 123 ladder cells), but the search kernel is
+not fragile to weak openings, and search-side changes can now be judged in
+both regimes by construction.
+
+Status: `threads` stays opt-in at 1 — CRAN's <= 2-core default policy, and
+the canon's timings are 1T. Decided 2026-08-19: manuscript timings all use
+`threads = 1`, to compare the core algorithm rather than how economically it
+multithreads — threading ships as a feature, not part of the timing story, so
+the 8T-for-canon question is closed.
+DSATUR-at-root (Round 14 left it open) is the remaining recorded lever, to be
+judged in the arm-E regime.
+
+## Round 17 — 2026-08-19 — Area 4 (ExactMaxMin): DSATUR at the root — the
+order rejected, the bound kept
+
+**Trigger:** Round 16 left DSATUR-at-root as the one recorded lever. Shipped
+as 0.0.0.9004 (8dbf935): one saturation colouring per probe, its order used
+for the root descent. Measured paired on Hamilton (array 18448784): eight
+cells x pools A/E, baseline 0.0.0.9003 then DSATUR back to back in the same
+task on the same node.
+
+**The order is a gamble and lost.** Proven optima identical on all 14
+jointly-proven cells; the time was not:
+
+| cell | pool | base | DSATUR | ratio |
+|---|---|--:|--:|--:|
+| tc7_ring k24 | A | 72.7 s | 1.5 s | **0.02** |
+| tc7_ring k24 | E | 42.1 s | 0.8 s | **0.02** |
+| tc17_vehicle k48 | A | 5083 s | 7130 s | **1.40** |
+| tc17_vehicle k48 | E | 5407 s | 4684 s | 0.87 |
+| k=100 cells (4) | A+E | | | 0.92–1.05 |
+| small cells (6) | A+E | | | 0.83–1.27 |
+
+The vehicle-A regression is real compute, not weather: cpu_s/solve_s = 0.995
+in both arms of the pair. Excluding ring, pool A geo-means to 1.10 and pool E
+to 0.94 (>= 1 s proven cells); the suite's proven total went 14895 -> 15924 s
+(+7%). Reordering the root reshapes the whole tree unpredictably — the same
+cell wins 13% under one pool and pays 40% under the other. Judged
+symmetrically, as a fresh choice between the two trees with ring's
+root-refutations credited to the bound both ways (either order colours ring
+below k): the DSATUR order loses the non-ring totals 14780 -> 15922 s
+(+7.7%), sits at ~1.02 on the non-ring geo-mean, and its per-cell sign is
+unpredictable ex ante, so no conditional rule can keep its wins and shed its
+losses. The order is out on the tradeoff, not on incumbency — a
+no-cell-slower bar would be path-dependent, ratifying whichever tree
+happened to be measured as the base.
+
+**The win was never the order.** Ring's refutation graphs colour to
+chi = 23 < k = 24 under DSATUR; the greedy pass stays at >= k and searches
+68 s for a bound DSATUR hands over before any branch opens. So 0.0.0.9005
+keeps the colouring as a bound only: chi < k refutes the component
+immediately; otherwise the DSATUR order is discarded and the search runs the
+0.0.0.9003 tree exactly — witnesses and selections return to that release's,
+and the vehicle regression is structurally impossible (feasible probes can
+never fire the bound, since omega >= k forces chi >= k). Verification A/B
+submitted with a sharp prediction: ring ~0.02, every other cell ~1.00 within
+the small-cell noise band; any non-ring move beyond it falsifies the
+tree-identity claim and the change does not ship on a geo-mean.
+
+**Capped cells:** vowel k48 stays capped under both builds and both pools —
+no reach change. Incumbents moved both ways (order effect): pool A 2.9555 ->
+2.9497 (worse), pool E 2.9310 -> 2.9665 (better — the best vowel k48
+incumbent seen anywhere; recorded here so it is not lost with the 9004 lib).
+
+**Next lever, justified by counts: vertex dominance at the probe root.** The
+ExactKCentre round (PR #16) asked whether the packing side misses its
+dominance analogue. Audited on the certifying and last-feasible graphs of the
+four cells Round 14 priced, plus vehicle k48 and the capped vowel k48
+(furthest-point/dev/bench/dominance_audit.R, counts only): the (k-1)-core
+peel removes *nothing* on any hard graph; dominance to a fixpoint removes
+breastcancer k48 7.5x of edges, vowel 2.2x, vehicle 1.8x, pmed34 1.7x,
+pmed40 1.1x, and collapses ring's feasible graph to exactly its optimal
+24-clique and its certifying graph to empty. Two corrections the audit
+forced: (i) the rule as quoted in the covering round's lead — closed
+neighbourhoods, adjacent pair — is unsound for cliques (it eats a triangle);
+the sound form is open N(u) subseteq N(v) for a NON-adjacent pair, discard u.
+(ii) Round 14's line that the core peel "empties the graph above the
+optimum" is wrong for pmed — those refutations were free because the greedy
+colour bound sat below k, not because the peel bit. Contract note, flagged
+before implementing: dominance on feasible probes returns a reduced-graph
+witness, so selections can change between releases — witness pins re-pin
+then, and FurthestPoint's bit-identity expectations move with them.
+
+**Numbering:** the kcentre branch (PR #16) also carries a "Round 16";
+renumber one side when the branches merge.
+
+Status: order rejected and reverted, bound shipped opt-out-free (0.0.0.9005);
+verification A/B pending; dominance-at-root is the open lever, to be built
+against the 0.0.0.9005 base and judged in both regimes.
+
+**Postscript — verification passed (array 18451481).** Ring 0.020x under
+both pools; proven optima identical on all 14 cells; the capped vowel runs
+end at bit-identical incumbents, which only an identical probe trajectory
+delivers. The non-ring cells scattered 0.96-1.06 with proven totals +2.8% —
+read that as the noise floor of the back-to-back pairing itself (the second
+run inherits different co-tenancy), since the tree is proven identical: a
+paired cell ratio inside ~1.06, or a suite total inside ~3%, is not signal.
+Vehicle A's +40% in the Round 17 order A/B stands an order above that floor.
+
+## Round 18 — 2026-08-19 — Area 4 (ExactMaxMin): vertex dominance at the
+probe root — a rout
+
+**Shipped as 0.0.0.9006 (8d5f1af)**, judged symmetrically as a fresh choice
+against 0.0.0.9005 (paired array 18451557, same discipline): every probe
+component now peels and dominance-reduces to a fixpoint before anything is
+coloured or searched. The counts audit undersold it — removing vertices
+compounds through the whole bisection, and the harder regime wins more:
+
+| cell | pool | 9005 | 9006 | ratio |
+|---|---|--:|--:|--:|
+| tc19_breastcancer k100 | E | 1533 s | 0.22 s | **0.0001** |
+| tc19_breastcancer k100 | A | 1224 s | 1.1 s | **0.001** |
+| tc17_vehicle k48 | E | 6841 s | 2134 s | 0.31 |
+| tc17_vehicle k48 | A | 5738 s | 3001 s | 0.52 |
+| tc13_pima k100 | A/E | ~1300 s | ~590 s | 0.44-0.45 |
+| tc1_uniform k48 | E | 7.6 s | 0.03 s | 0.003 |
+| every other proven cell | | | | 0.02-0.63 |
+
+Proven totals 18011 -> 6323 s (**-65%**); geo-mean on >= 1 s proven cells
+**0.064** (pool A 0.100, pool E 0.039 — both regimes, the weaker-pool one
+more). No cell slower anywhere, and the accidental pmed1-3 pairs (see
+below) put even the smallest instances at 0.27-0.80x. Proven optima
+identical on every jointly-proven cell — noting that value-equality alone
+cannot certify the refutation side (a too-eager refuter would confirm the
+same value); the verdict-level evidence is the suite's IP/brute-force
+agreement tests, the audit's omega-preservation self-test, and pmed1-3
+matching their published optima under both builds.
+
+**Reach: tc18_vowel k48 is closed.** Never proven at 7200 s by any prior
+build — 8 threads included — it proves at 8824 s single-threaded under
+0.0.0.9006 (job 18461564): t_k = 2.967608, exactly the incumbent both A/B
+pools had already reached at the cap. Threading compressed cost and
+extended no reach (Round 16); dominance extends reach. The two remaining
+always-capped ladder cells, tc17_vehicle k100 and tc18_vowel k100, get the
+same treatment at a 160000 s cap (job 18482321).
+
+**ORLIB:** the paired pmed30/34/40 A/B first mis-ran as pmed1-3 —
+`02_run_pmed.R` prefers `$SLURM_ARRAY_TASK_ID` over its argument inside an
+array task — and was resubmitted with the variable unset (18460744).
+Corrected pairs, all matching their published optima under both builds:
+pmed30 7.71 -> 3.53 s (0.46), pmed34 81.8 -> 43.9 s (0.54), pmed40
+57.8 -> 43.1 s (0.75). pmed40 is the audit's barely-shrinks caveat case
+(1.07x vertices), and it still pays 25% — the reduction's own cost is
+invisible even where it removes almost nothing. No regime pays: pool A,
+pool E, and the integer/ORLIB regime all win. (The accidental pmed1-3
+pairs also matched, 0.27-0.80x.)
+
+Status: dominance shipped and kept — on the symmetric criterion there is no
+tradeoff to weigh; nothing pays. The exact ladder's canonical timings are
+now stale by an order of magnitude on several cells; the re-pin bundle
+(b0bbaa7, c504558, b5c098b, c056ac0, 8d5f1af) is a user decision. Open
+leads: an uncapped vowel k48 run, and re-checking the warm-start pool's
+price against probes this much cheaper (Round 15's economics shifted).
+
+## Round 19 — 2026-08-20 — Area 4 (ExactMaxMin): pool depth re-priced under
+dominance — one restart is the better default
+
+**Trigger:** Round 18's open lead. Dominance made probes cheap enough to
+invert Round 15's economics, so the pool ladder re-ran as a fresh three-way
+choice: A = the 8-restart incumbent, F = 1 restart at the same plateaus
+(50/512), E = the plateau-1 instrument. Eight ladder cells (18502494) and
+all forty pmed (18502495), arms back to back in one task per cell, seed 1,
+`ws_time_s`/`ws_value` charging the pool separately from the solve.
+
+**Verdict: F.** Totals — ladder 13206 (A) / 10943 (F) / 14154 (E) s, pmed
+93 / 78 / 78 s. Reach identical: every arm proves all 8 and all 40, every
+pmed optimum matches its published value, jointly-proven optima agree
+everywhere. F is never slower than A on any cell at or above a second in
+either suite (11 of 11), and it beats E exactly where E's weak bound bites
+(tc18_vowel k48: 8518 vs 11579 s; tc13_pima k100: 563 vs 630 s). The
+plateaus earn their keep; the extra restarts do not.
+
+The 11-of-11 is three effects, not one, and only the first is the win:
+
+- **Pool cost, removed (systematic).** Seven-eighths of the pool spend is a
+  deterministic debit read off `ws_time_s` (ladder 5.2 -> 0.7 s, pmed
+  16.6 -> 2.2 s), and on pmed it is most of the solve — geo-mean F/A 0.296
+  on the >= 1 s instances, while search-dominated pmed34/40 sit at
+  0.94–0.96. This is Round 15's pmed19 lesson made the default.
+- **Tied bounds are the same computation timed twice (weather).** Same seed
+  makes F's one restart A's first, so `ws_F <= ws_A` by pool inclusion,
+  with equality on 5 of 8 ladder cells and 39 of 40 pmed. An equal bound is
+  an identical probe sequence (Round 15), so tc18_vowel k48's 10052 -> 8518
+  is node weather, not a search change — and at 10^4 s it is outside the
+  ±6% floor the 9005 postscript calibrated on far shorter cells; that floor
+  does not transfer to this scale.
+- **A lower bound can luck into a cheaper gallop (lottery).** tc17_vehicle
+  k48: F opens 0.097 *below* A and still wins 27% (1860 vs 2554 s) — E,
+  opening lower again, also beats A. Counter-mechanism, sign unpredictable
+  ex ante, exactly the scatter the symmetric rule says not to count — for
+  either side.
+
+One seed, but the downside is bounded by construction: E is the worst pool
+the knobs allow, and even it costs only +7% on ladder totals against A. A
+bad draw under F cannot underperform the instrument.
+
+Status: `nStart` defaults to 1 (folded into 0.0.0.9000, no separate
+version). The `benchmark/bench-exact.R` d1200 cell is pool-dominated and
+should now drop visibly in CI — if it reads NSD instead, the pool-share
+claim is wrong and wants investigating before the canon. Canonical
+re-measure of the exact rows on the frozen bundle is the remaining step;
+tc17_vehicle k100 / tc18_vowel k100 verdicts at the 160000 s cap
+(18482321) fold into it.
+
+last_focus: 19
