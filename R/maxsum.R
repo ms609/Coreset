@@ -141,7 +141,10 @@
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(20), ncol = 2)
-#' ExactMaxSum(3L, dist(pts))
+#' # Package 'highs' is required for ExactMaxSum
+#' if (requireNamespace("highs", quietly = TRUE)) {
+#'   ExactMaxSum(3L, dist(pts))
+#' }
 #' @export
 ExactMaxSum <- function(k, d, maxSeconds = 30, warmStart = NULL) {
   t0 <- proc.time()[[3L]]
