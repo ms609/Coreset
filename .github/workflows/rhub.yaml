@@ -8,7 +8,7 @@
 
 name: R-hub
 run-name: >-
-  ${{ github.event.inputs.name || _ }} |
+  ${{ github.event.inputs.name }} |
   platforms: ${{ github.event.inputs.config }}
   | ${{ format('Triggered by @{0}', github.triggering_actor) }}
 
