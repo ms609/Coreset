@@ -65,6 +65,14 @@ jobs:
 
       - uses: dcarbone/install-jq-action@v4.0.1
 
+      - name: Quarto installation - provide dummy 'sudo'
+        run: |
+          if ! command -v sudo >/dev/null 2>&1; then
+            echo '#!/bin/sh' > /usr/local/bin/sudo
+            echo 'exec "$@"' >> /usr/local/bin/sudo
+            chmod +x /usr/local/bin/sudo
+          fi
+
       - name: Detect OS distribution
         id: os-check
         run: |
