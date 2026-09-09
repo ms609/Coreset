@@ -1,4 +1,4 @@
-# R-hub's generic GitHub Actions workflow file. It's canonical location is at
+# R-hub's generic GitHub Actions workflow file. Its canonical location is at
 # https://github.com/r-hub/actions/blob/v1/workflows/rhub.yaml
 # You can update this file to a newer version using the rhub2 package:
 #
@@ -61,6 +61,10 @@ jobs:
         with:
           token: ${{ secrets.RHUB_TOKEN }}
           job-config: ${{ matrix.config.job-config }}
+      - uses: quarto-dev/quarto-actions/setup@v2
+      - name: Pre-install package for Quarto vignette subprocess
+        run: R CMD INSTALL .
+        shell: bash
       - uses: r-hub/actions/run-check@v1
         with:
           token: ${{ secrets.RHUB_TOKEN }}
@@ -82,7 +86,6 @@ jobs:
         with:
           job-config: ${{ matrix.config.job-config }}
           token: ${{ secrets.RHUB_TOKEN }}
-      - uses: quarto-dev/quarto-actions/setup@v2
       - uses: r-hub/actions/platform-info@v1
         with:
           token: ${{ secrets.RHUB_TOKEN }}
@@ -91,6 +94,10 @@ jobs:
         with:
           job-config: ${{ matrix.config.job-config }}
           token: ${{ secrets.RHUB_TOKEN }}
+      - uses: quarto-dev/quarto-actions/setup@v2
+      - name: Pre-install package for Quarto vignette subprocess
+        run: R CMD INSTALL .
+        shell: bash
       - uses: r-hub/actions/run-check@v1
         with:
           job-config: ${{ matrix.config.job-config }}
