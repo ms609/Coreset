@@ -83,7 +83,7 @@ neighbour-evaluation tricks
 
 <dt id="arg-d">d<a class="anchor" aria-label="anchor" href="#arg-d"></a></dt>
 <dd><p>A <code>dist</code> object, a square symmetric numeric matrix, or a
-distance-column function (see §<em>Distance-column function</em>).</p></dd>
+distance-column function (see below).</p></dd>
 
 
 <dt id="arg-plateau">plateau<a class="anchor" aria-label="anchor" href="#arg-plateau"></a></dt>
@@ -113,10 +113,8 @@ chosen by  <code><a href="FarFirst.html">FarFirst()</a></code>.
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
-<dd><p>Optional integer: a 1-based start index that overrides the
-construction's default warm-start seed.
-<code>NULL</code> (default) keeps the method's own seed. Not supported when
-<code>maxCandidates = 0L</code>.</p></dd>
+<dd><p>Optional integer specifying the index of an element with which to
+seed the warm-start search.</p></dd>
 
 
 <dt id="arg-n">N<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>

@@ -29,7 +29,7 @@ DropAdd(
 - d:
 
   A `dist` object, a square symmetric numeric matrix, or a
-  distance-column function (see §*Distance-column function*).
+  distance-column function (see below).
 
 - plateau:
 
@@ -57,9 +57,8 @@ DropAdd(
 
 - seed:
 
-  Optional integer: a 1-based start index that overrides the
-  construction's default warm-start seed. `NULL` (default) keeps the
-  method's own seed. Not supported when `maxCandidates = 0L`.
+  Optional integer specifying the index of an element with which to seed
+  the warm-start search.
 
 - N:
 

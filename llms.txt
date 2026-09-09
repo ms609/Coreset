@@ -22,7 +22,7 @@ elements are maximally separated.
 |----|----|----|
 | [`DropAdd()`](https://ms609.github.io/Coreset/reference/DropAdd.md) | DropAdd tabu search | ~99%-optimal heuristic |
 | [`Grasp()`](https://ms609.github.io/Coreset/reference/Grasp.md) | GRASP with path-relinking metaheuristic | Slower but powerful heuristic |
-| [`ExactMaxMin()`](https://ms609.github.io/Coreset/reference/ExactMaxMin.md) | Node-packing integer program | Proven optimum, small `k` |
+| [`ExactMaxMin()`](https://ms609.github.io/Coreset/reference/ExactMaxMin.md) | Node-packing integer program | Proven optimum, small \\k\\ |
 
 ### Max-sum dispersion (maximum diversity)
 
@@ -32,7 +32,7 @@ possible.
 
 | Function | Method | Use |
 |----|----|----|
-| [`ExactMaxSum()`](https://ms609.github.io/Coreset/reference/ExactMaxSum.md) | Per-node MILP linearisation, floored by multi-start local search | Proven optimum for total pairwise distance, small `k` (needs `highs`) |
+| [`ExactMaxSum()`](https://ms609.github.io/Coreset/reference/ExactMaxSum.md) | Per-node MILP linearisation, floored by multi-start local search | Proven optimum for total pairwise distance, small \\k\\ (needs `highs`) |
 
 ### Max-mean dispersion
 
@@ -52,7 +52,7 @@ element is as small as possible.
 | Function | Method | Use |
 |----|----|----|
 | [`KCentre()`](https://ms609.github.io/Coreset/reference/KCentre.md) | Critical Dominating Set heuristic | ~1–3.5% of optimum at \\O(N^2 \log N)\\, typically far tighter than [`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md) |
-| [`ExactKCentre()`](https://ms609.github.io/Coreset/reference/ExactKCentre.md) | Exhaustive covering search | Proven optimum, small `k` |
+| [`ExactKCentre()`](https://ms609.github.io/Coreset/reference/ExactKCentre.md) | Exhaustive covering search | Proven optimum, small \\k\\ |
 
 ### Maximum-entropy (maxdet) selection
 
