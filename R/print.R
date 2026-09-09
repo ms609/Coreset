@@ -290,7 +290,10 @@ print.KCentreSelection <- function(x, ...) {
 #' @family reporting functions
 #' @examples
 #' set.seed(1)
-#' ExactMaxSum(3L, dist(matrix(rnorm(20), ncol = 2)))
+#' # Package 'highs' is required for ExactMaxSum()
+#' if (requireNamespace("highs", quietly = TRUE)) {
+#'   ExactMaxSum(3L, dist(matrix(rnorm(20), ncol = 2)))
+#' }
 #' @export
 format.MaxSumSelection <- function(x, ...) {
   idx <- as.integer(x)
