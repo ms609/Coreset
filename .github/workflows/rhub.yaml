@@ -62,59 +62,53 @@ jobs:
         with:
           token: ${{ secrets.RHUB_TOKEN }}
           job-config: ${{ matrix.config.job-config }}
-      - name: Quarto installation - provide dummy `sudo`
-        run: |
-          if ! command -v sudo >/dev/null 2>&1; then
-            echo '#!/bin/sh\nexec "$@"' >> /usr/local/bin/sudo
-            chmod +x /usr/local/bin/sudo
-          fi
-      - name: Quarto installation - Install dependencies
+
+      - name: Detect OS distribution
+        id: os-check
         run: |
           if [ -f /etc/os-release ]; then
             . /etc/os-release
             case "$ID" in
               fedora|rhel|centos|rocky|almalinux)
-                dnf install -y wget glibc glibc-common libstdc++ || yum install -y wget glibc libstdc++
-
-                # Apt shim for Fedora
-                printf '#!/bin/sh\nif [ "$1" = "install" ]; then shift; exec dnf install -y "$@"; fi\nexit 0\n' > /usr/local/bin/apt
-                chmod +x /usr/local/bin/apt
-                cp /usr/local/bin/apt /usr/local/bin/apt-get
+                echo "is_fedora=true" >> $GITHUB_OUTPUT
                 ;;
-              alpine)
-                apk add --no-cache wget
+              *)
+                echo "is_fedora=false" >> $GITHUB_OUTPUT
                 ;;
             esac
+          else
+            echo "is_fedora=false" >> $GITHUB_OUTPUT
           fi
-      - uses: dcarbone/install-jq-action@v4.0.1
-      - uses: quarto-dev/quarto-actions/setup@v2
-      - name: Ensure Quarto system availability
+
+      - if: ${{ steps.os-check.outputs.is_fedora != 'true' }}
+        uses: dcarbone/install-jq-action@v4.0.1
+      - if: ${{ steps.os-check.outputs.is_fedora != 'true' }}
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Install Quarto CLI via Tarball (Fedora)
+        if: ${{ steps.os-check.outputs.is_fedora == 'true' }}
         run: |
-          # Find where quarto-actions actually installed the binary
-          REAL_QUARTO=$(command -v quarto || find / -name quarto -type f -executable 2>/dev/null | head -n 1)
+          # Fetch glibc dependencies needed by Quarto dynamic binary
+          dnf install -y wget glibc glibc-common libstdc++ tar || yum install -y wget glibc libstdc++ tar
 
-          if [ -z "$REAL_QUARTO" ]; then
-            echo "Error: Quarto binary not found."
-            exit 1
+          QUARTO_URL=$(curl -s https://api.github.com/repos/quarto-dev/quarto-cli/releases/latest | jq -r '.assets[] | select(.name | endswith("linux-amd64.tar.gz")) | .browser_download_url')
+
+          if [ -z "$QUARTO_URL" ] || [ "$QUARTO_URL" = "null" ]; then
+            QUARTO_URL="https://github.com/quarto-dev/quarto-cli/releases/download/v1.5.57/quarto-1.5.57-linux-amd64.tar.gz"
           fi
 
-          QUARTO_DIR=$(dirname "$REAL_QUARTO")
+          mkdir -p /opt/quarto
+          curl -sL "$QUARTO_URL" | tar -xz -C /opt/quarto --strip-components=1
 
-          # If quarto isn't in /usr/bin/quarto, create the non-interactive wrapper there
-          if [ "$REAL_QUARTO" != "/usr/bin/quarto" ]; then
-            cat << EOF > /usr/bin/quarto
-          #!/bin/sh
-          TARGET="/usr/local/bin/quarto"
-          if [ ! -f "$TARGET" ]; then
-            TARGET=$(which quarto 2>/dev/null)
-          fi
-          exec "$TARGET" "$@"
-          EOF
-          chmod +x /usr/bin/quarto
+          ln -sf /opt/quarto/bin/quarto /usr/local/bin/quarto
 
-          # Set environment variables for R's processx / find_quarto()
-          echo "QUARTO_PATH=/usr/bin/quarto" >> $GITHUB_ENV
-          echo "QUARTO_BIN_PATH=/usr/local/bin" >> $GITHUB_ENV
+      - name: Configure Quarto environment
+        run: |
+          QUARTO_BIN=$(command -v quarto || echo "/opt/quarto/bin/quarto")
+          QUARTO_DIR=$(dirname "$QUARTO_BIN")
+          echo "QUARTO_PATH=$QUARTO_BIN" >> $GITHUB_ENV
+          echo "QUARTO_BIN_PATH=$QUARTO_DIR" >> $GITHUB_ENV
+
       - name: Pre-install package for Quarto vignette subprocess
         run: R CMD INSTALL .
         shell: bash
