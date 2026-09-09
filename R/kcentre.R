@@ -150,7 +150,8 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' [KCentreRadius()] for a selection's score;
 #' [FarFirst()] for the \insertCite{Gonzalez1985;textual}{Coreset}
 #' 2-approximation baseline.
-#' @references \insertAllCited{}
+# insertNoCite works around https://github.com/GeoBosh/Rdpack/issues/44
+#' @references \insertNoCite{Gonzalez1985}{Coreset}\insertAllCited{}
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(120), ncol = 2)

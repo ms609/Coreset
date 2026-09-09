@@ -56,7 +56,7 @@ KCentreRadius(d, centres)
 KCentreRadius(d, FarFirst(5L, d, nSeeds = 1))
 }
 \references{
-\insertAllCited{}
+\insertNoCite{Gonzalez1985}{Coreset}\insertAllCited{}
 }
 \seealso{
 \code{\link[=ExactKCentre]{ExactKCentre()}} for the proven optimum;
