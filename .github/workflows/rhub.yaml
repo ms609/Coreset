@@ -17,7 +17,7 @@ on:
       config:
         description: >-
           Comma-separated list of R-hub platforms to use.
-          Full list: https://r-hub.github.io/containers/
+          Full list: summary(rhub::rhub_platforms())
         type: string
         default: 'linux,windows,macos'
       name:
