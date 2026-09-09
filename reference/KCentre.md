@@ -71,6 +71,11 @@ García-Díaz J, Sánchez-Hernández J, Menchaca-Méndez R, Menchaca-Méndez R
 3-approximation algorithm for the vertex \\k\\-center problem.” *Journal
 of Heuristics*, **23**(5), 349–366.
 [doi:10.1007/s10732-017-9345-x](https://doi.org/10.1007/s10732-017-9345-x)
+.  
+  
+González TF (1985). “Clustering to minimize the maximum intercluster
+distance.” *Theoretical Computer Science*, **38**, 293–306.
+[doi:10.1016/0304-3975(85)90224-5](https://doi.org/10.1016/0304-3975%2885%2990224-5)
 .
 
 ## See also
