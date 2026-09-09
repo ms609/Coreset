@@ -270,9 +270,10 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L) {
 #' then bisects downward to the smallest feasible radius.
 #'
 #' @inheritParams KCentre
-#' @param maxSeconds Wall-clock budget in seconds for the whole search.
-#' If it expires before the optimum is proven, the smallest radius proven
-#' feasible so far is returned, with the attribute `proven = FALSE`.
+#' @param maxSeconds Numeric specifying wall-clock budget, in seconds, for
+#' the whole search.
+#' If the time expires before the optimum is proven, the smallest radius proven
+#' feasible is returned, with the attribute `proven = FALSE`.
 #' @templateVar progress_shows a progress indicator is shown
 #' @template progress
 #' @return `ExactKCentre()` returns an integer vector of length \eqn{\le k}
