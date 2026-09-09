@@ -33,6 +33,10 @@ KCentreCDSh_cpp <- function(d, k, seed, cand, exhaustive) {
     .Call(`_Coreset_KCentreCDSh_cpp`, d, k, seed, cand, exhaustive)
 }
 
+CoverDecide_cpp <- function(d, r, k, maxSeconds) {
+    .Call(`_Coreset_CoverDecide_cpp`, d, r, k, maxSeconds)
+}
+
 MaxEntropyGreedy_cpp <- function(K, k, seed) {
     .Call(`_Coreset_MaxEntropyGreedy_cpp`, K, k, seed)
 }
