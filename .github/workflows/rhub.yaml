@@ -82,12 +82,15 @@ jobs:
 
       - uses: dcarbone/install-jq-action@v4.0.1
 
-      - name: Fetch dependencies needed by Quarto dynamic binary
+      - name: Fetch Fedora dependencies needed by Quarto dynamic binary
         if: ${{ steps.os-check.outputs.is_fedora != 'true' }}
         run: |
           dnf install -y wget glibc glibc-common libstdc++ tar || yum install -y wget glibc libstdc++ tar
 
-
+      - name: Fetch Ubuntu dependencies needed by Quarto dynamic binary
+        if: ${{ steps.os-check.outputs.is_fedora != 'true' }}
+        run: |
+          apt-get update -qq && apt-get install -y -qq wget libc6
 
       - if: ${{ steps.os-check.outputs.is_fedora != 'true' }}
         uses: quarto-dev/quarto-actions/setup@v2
