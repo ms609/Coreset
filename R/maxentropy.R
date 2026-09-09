@@ -94,8 +94,8 @@
 #' `MaxEntropy()` selects the `k` points that maximise the log-determinant of
 #' their kernel block, \eqn{\log\det K_S}. This is equivalent to finding the set
 #' of `k` points that span the largest volume, which corresponds to
-#' the maximum-entropy sampling criterion\insertCite{Shewry1987}{Coreset} and
-#' the maximum-a-posteriori mode of a determinantal point process
+#' the maximum-entropy sampling criterion \insertCite{Shewry1987}{Coreset} and
+#' the maximum-_a-posteriori_ mode of a determinantal point process
 #' \insertCite{Kulesza2012}{Coreset}.
 #'
 #' A radial-basis kernel \eqn{K_{ij} = \exp(-d_{ij}^2 / 2\sigma^2)} is built from

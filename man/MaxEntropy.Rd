@@ -52,8 +52,8 @@ optimum was certified by enumeration.}
 \code{MaxEntropy()} selects the \code{k} points that maximise the log-determinant of
 their kernel block, \eqn{\log\det K_S}. This is equivalent to finding the set
 of \code{k} points that span the largest volume, which corresponds to
-the maximum-entropy sampling criterion\insertCite{Shewry1987}{Coreset} and
-the maximum-a-posteriori mode of a determinantal point process
+the maximum-entropy sampling criterion \insertCite{Shewry1987}{Coreset} and
+the maximum-\emph{a-posteriori} mode of a determinantal point process
 \insertCite{Kulesza2012}{Coreset}.
 }
 \details{
