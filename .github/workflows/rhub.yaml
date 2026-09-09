@@ -93,6 +93,8 @@ jobs:
           # Create an explicit execution wrapper in /usr/bin/quarto
           cat << 'EOF' > /usr/bin/quarto
           #!/bin/sh
+          export QUARTO_INTERACTIVE=0
+          export CI=true
           TARGET="/usr/local/bin/quarto"
           if [ ! -f "$TARGET" ]; then
             TARGET=$(which quarto 2>/dev/null)
