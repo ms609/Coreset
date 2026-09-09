@@ -75,21 +75,46 @@ jobs:
             . /etc/os-release
             case "$ID" in
               ubuntu|debian)
-                apt-get update -qq && apt-get install -y -qq wget
+                apt-get update -qq && apt-get install -y -qq wget curl
                 ;;
-              fedora)
-                dnf install -y wget curl || yum install -y wget
-                ;;
-              rhel|centos|rocky|almalinux)
-                yum install -y wget
+              fedora|rhel|centos|rocky|almalinux)
+                # Install essential tools via native manager
+                dnf install -y wget curl tar libxkbcommon || yum install -y wget curl tar libxkbcommon
+
+                # Create 'apt' and 'apt-get' shims that translate calls to dnf/yum
+                cat << 'EOF' > /usr/local/bin/apt
+#!/bin/sh
+cmd="$1"
+shift
+case "$cmd" in
+  update)
+    exit 0
+    ;;
+  install)
+    # Strip apt flags like -y, -qq and forward package requests to dnf/yum
+    pkgs=""
+    for arg in "$@"; do
+      case "$arg" in
+        -*) ;; # skip flags
+        *) pkgs="$pkgs $arg" ;;
+      esac
+    done
+    if command -v dnf >/dev/null 2>&1; then
+      exec dnf install -y $pkgs
+    else
+      exec yum install -y $pkgs
+    fi
+    ;;
+  *)
+    exit 0
+    ;;
+esac
+EOF
+                chmod +x /usr/local/bin/apt
+                cp /usr/local/bin/apt /usr/local/bin/apt-get
                 ;;
               alpine)
-                apk add --no-cache wget
-                ;;
-              *)
-                echo "Unknown ID: $ID, attempting dnf/apt fallback..."
-                command -v dnf >/dev/null 2>&1 && dnf install -y wget || true
-                command -v apt-get >/dev/null 2>&1 && apt-get update -qq && apt-get install -y -qq wget || true
+                apk add --no-cache wget curl tar
                 ;;
             esac
           fi
