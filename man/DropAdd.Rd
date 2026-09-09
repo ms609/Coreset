@@ -19,7 +19,7 @@ DropAdd(
 \item{k}{Integer: subset size, \eqn{2 \le k \le N}.}
 
 \item{d}{A \code{dist} object, a square symmetric numeric matrix, or a
-distance-column function (see §\emph{Distance-column function}).}
+distance-column function (see below).}
 
 \item{plateau}{Integer: stop after this many consecutive drop-add
 iterations do not improve the score.}
@@ -39,10 +39,8 @@ exceeds \code{maxCandidates}, the solver runs on a coreset of \code{maxCandidate
 chosen by  \code{\link[=FarFirst]{FarFirst()}}.
 \code{maxCandidates = 0} (or \code{Inf}) disables thinning.}
 
-\item{seed}{Optional integer: a 1-based start index that overrides the
-construction's default warm-start seed.
-\code{NULL} (default) keeps the method's own seed. Not supported when
-\code{maxCandidates = 0L}.}
+\item{seed}{Optional integer specifying the index of an element with which to
+seed the warm-start search.}
 
 \item{N}{Integer: the total number of elements. Required only if \code{d} is a
 function.}

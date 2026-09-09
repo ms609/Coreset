@@ -385,9 +385,7 @@
 #'
 #' @param k Integer: subset size, \eqn{2 \le k \le N}.
 #' @param d A \code{dist} object, a square symmetric numeric matrix, or a
-#'  distance-column function (see §*Distance-column function*).
-#' @param N Integer: the total number of elements. Required only if `d` is a
-#'  function.
+#'  distance-column function (see below).
 #' @param points A numeric \eqn{N \times \mathrm{dim}} coordinate matrix (or an
 #'  object coercible to one via \code{as.matrix}).
 #'  Must be complete (no \code{NA}).
@@ -398,17 +396,14 @@
 #'  iterations do not improve the score.
 #' @param maxSeconds Numeric: terminate search after this many seconds have
 #' elapsed.
-#' @param seed Optional integer: a 1-based start index that overrides the
-#'  construction's default warm-start seed.
-#'  `NULL` (default) keeps the method's own seed. Not supported when
-#'  `maxCandidates = 0L`.
-#' @templateVar default `46340L`
-#' @templateVar default_basis the dense-distance-matrix feasibility ceiling
-#'   (`floor(sqrt(.Machine$integer.max))`) the `points` path already crosses
 #' @param maxCandidates Integer: when the number of candidate points \eqn{N}
 #'   exceeds `maxCandidates`, the solver runs on a coreset of `maxCandidates`
 #'   chosen by  [FarFirst()].
 #'   `maxCandidates = 0` (or `Inf`) disables thinning.
+#' @param seed Optional integer specifying the index of an element with which to
+#' seed the warm-start search.
+#' @param N Integer: the total number of elements. Required only if `d` is a
+#'  function.
 #' @templateVar progress_shows status messages are shown
 #' @template progress
 #'
