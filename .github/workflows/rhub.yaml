@@ -90,12 +90,20 @@ jobs:
       - uses: quarto-dev/quarto-actions/setup@v2
       - name: Ensure Quarto system availability
         run: |
-          # Create an explicit execution wrapper in /usr/bin/quarto
-          cat << 'EOF' > /usr/bin/quarto
+          # Find where quarto-actions actually installed the binary
+          REAL_QUARTO=$(command -v quarto || find / -name quarto -type f -executable 2>/dev/null | head -n 1)
+
+          if [ -z "$REAL_QUARTO" ]; then
+            echo "Error: Quarto binary not found."
+            exit 1
+          fi
+
+          QUARTO_DIR=$(dirname "$REAL_QUARTO")
+
+          # If quarto isn't in /usr/bin/quarto, create the non-interactive wrapper there
+          if [ "$REAL_QUARTO" != "/usr/bin/quarto" ]; then
+            cat << EOF > /usr/bin/quarto
           #!/bin/sh
-          export NONINTERACTIVE=1
-          export QUARTO_INTERACTIVE=0
-          export CI=true
           TARGET="/usr/local/bin/quarto"
           if [ ! -f "$TARGET" ]; then
             TARGET=$(which quarto 2>/dev/null)
