@@ -639,7 +639,7 @@ List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
         vars.push_back(v);
       }
     }
-    std::stable_sort(vars.begin(), vars.end(),
+    std::sort(vars.begin(), vars.end(),
                      [&](int a, int b) { return dg[a] > dg[b]; });
     const int nv0 = static_cast<int>(vars.size());
     for (int t = 0; t < nv0; ++t) {
