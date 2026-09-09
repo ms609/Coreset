@@ -254,9 +254,9 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L) {
   list(verdict = res[["status"]], witness = integer(0))
 }
 
-#' Exact discrete k-centre optimum on small instances
+#' Exact discrete _k_-centre optimum
 #'
-#' `ExactKCentre()` finds an optimal solution to the discrete \emph{k}-centre
+#' `ExactKCentre()` finds an optimal solution to the discrete _k_-centre
 #' problem.
 #'
 #' The optimum covering radius is the smallest threshold `r`, over the achieved
@@ -265,12 +265,12 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L) {
 #' Each probe asks whether `k` centres cover every point within a candidate
 #' radius. This is decided combinatorially via unit propagation and dominance
 #' reduction, then an exhaustive component-wise search.
-#' The search is warm-started from the [KCentre()] (CDSh) radius,
-#' then bisects downward to the smallest feasible radius.
+#' The search is warm-started from the [KCentre()] radius, then bisects
+#' downwards.
 #'
 #' @inheritParams KCentre
 #' @param maxSeconds Numeric specifying wall-clock budget, in seconds, for
-#' the whole search.
+#' the search.
 #' If the time expires before the optimum is proven, the smallest radius proven
 #' feasible is returned, with the attribute `proven = FALSE`.
 #' @templateVar progress_shows a progress indicator is shown

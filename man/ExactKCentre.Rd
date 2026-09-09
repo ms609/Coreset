@@ -3,7 +3,7 @@
 \name{ExactKCentre}
 \alias{ExactKCentre}
 \alias{ExactKCenter}
-\title{Exact discrete k-centre optimum on small instances}
+\title{Exact discrete \emph{k}-centre optimum}
 \usage{
 ExactKCentre(k, d, maxSeconds = 60)
 
@@ -16,7 +16,7 @@ from 1 to \code{nrow(d)}.}
 \item{d}{\code{dist} object or a square symmetric numeric distance matrix.}
 
 \item{maxSeconds}{Numeric specifying wall-clock budget, in seconds, for
-the whole search.
+the search.
 If the time expires before the optimum is proven, the smallest radius proven
 feasible is returned, with the attribute \code{proven = FALSE}.}
 }
@@ -43,8 +43,8 @@ distinct distances, for which \code{k} centres can cover every point within \cod
 Each probe asks whether \code{k} centres cover every point within a candidate
 radius. This is decided combinatorially via unit propagation and dominance
 reduction, then an exhaustive component-wise search.
-The search is warm-started from the \code{\link[=KCentre]{KCentre()}} (CDSh) radius,
-then bisects downward to the smallest feasible radius.
+The search is warm-started from the \code{\link[=KCentre]{KCentre()}} radius, then bisects
+downwards.
 }
 \section{Progress bar}{
 
