@@ -69,33 +69,30 @@ DropAdd(
 ## Value
 
 `DropAdd()` returns an integer vector of length `k` containing the
-1-based selected indices **sorted ascending** (unlike
-[`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md),
-which returns farthest-first order), with attributes:
+selected indices, sorted ascending, with attributes:
 
 - score:
 
-  numeric(1), achieved MaxMin objective \\\min\_{i \ne j \in S}
-  d\_{ij}\\.
+  numeric specifying the achieved MaxMin objective \\\min\_{i \ne j \in
+  S} d\_{ij}\\.
 
 - secondary:
 
-  numeric(1), achieved sum of pairwise distances over \\S\\
-  (upper-triangle sum).
+  numeric specifying the achieved (upper triangle) sum of pairwise
+  distances over \\S\\.
 
 - seconds:
 
-  numeric(1), wall-clock seconds spent.
+  numeric specifying wall-clock seconds spent.
 
 - iters:
 
-  integer(1), main-loop iterations executed (excluding the construction
-  phase).
+  integer specifying main-loop iterations executed, excluding the
+  construction phase.
 
 The vector has class `"MaxMinSelection"` and prints as a one-line
 summary (see
-[`print.MaxMinSelection()`](https://ms609.github.io/Coreset/reference/print.Coreset.md));
-it is otherwise an ordinary integer vector.
+[`print.MaxMinSelection()`](https://ms609.github.io/Coreset/reference/print.Coreset.md)).
 
 ## Progress bar
 
@@ -113,14 +110,14 @@ To parallelize computation when OpenMP is available, set the
 ## Distance function
 
 When `d` is a function, `d(i)` must return the distances from element
-`i` to every element (length `N`, with the self-distance ignored) or to
-every *other* element (length `N - 1`, in order). `N` is required, and
-memory is \\O(N)\\. This suits metrics where no stored matrix or
+`i` to every element (length `N`, with the self-distance ignored), or to
+every element except `i` (length `N - 1`, in order). `N` is required,
+and memory is \\O(N)\\. This suits metrics where no stored matrix or
 coordinate embedding is available.
 
-It is likely that `d` will be called many times; unless `d` implements
-caching, specifying a distance matrix is likely to require less
-calculation than the multiple calls to `d`, where memory permits.
+Because `d` is typically called many times; specifying a distance matrix
+(where memory permits) is likely to require less calculation than
+multiple calls to `d`, unless `d` implements efficient caching.
 
 ## References
 

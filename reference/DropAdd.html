@@ -126,26 +126,25 @@ function.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p><code>DropAdd()</code> returns an integer vector of length <code>k</code> containing the 1-based selected
-indices <strong>sorted ascending</strong> (unlike <code><a href="FarFirst.html">FarFirst()</a></code>, which returns
-farthest-first order), with attributes:</p><dl><dt>score</dt>
-<dd><p>numeric(1), achieved MaxMin objective
+    <p><code>DropAdd()</code> returns an integer vector of length <code>k</code> containing
+the selected indices, sorted ascending, with attributes:</p><dl><dt>score</dt>
+<dd><p>numeric specifying the achieved MaxMin objective
 \(\min_{i \ne j \in S} d_{ij}\).</p></dd>
 
 <dt>secondary</dt>
-<dd><p>numeric(1), achieved sum of pairwise distances over
-\(S\) (upper-triangle sum).</p></dd>
+<dd><p>numeric specifying the achieved (upper triangle) sum of
+pairwise distances over \(S\).</p></dd>
 
 <dt>seconds</dt>
-<dd><p>numeric(1), wall-clock seconds spent.</p></dd>
+<dd><p>numeric specifying wall-clock seconds spent.</p></dd>
 
 <dt>iters</dt>
-<dd><p>integer(1), main-loop iterations executed (excluding the
-construction phase).</p></dd>
+<dd><p>integer specifying main-loop iterations executed, excluding
+the construction phase.</p></dd>
 
 
 </dl><p>The vector has class <code>"MaxMinSelection"</code> and prints as a one-line summary
-(see <code><a href="print.Coreset.html">print.MaxMinSelection()</a></code>); it is otherwise an ordinary integer vector.</p>
+(see <code><a href="print.Coreset.html">print.MaxMinSelection()</a></code>).</p>
     </div>
     <div class="section level2">
     <h2 id="progress-bar">Progress bar<a class="anchor" aria-label="anchor" href="#progress-bar"></a></h2>
@@ -168,13 +167,13 @@ option:</p>
 
 
 <p>When <code>d</code> is a function, <code>d(i)</code> must return the distances from element <code>i</code>
-to every element (length <code>N</code>, with the self-distance ignored)
-or to every <em>other</em> element (length <code>N - 1</code>, in order).
+to every element (length <code>N</code>, with the self-distance ignored),
+or to every element except <code>i</code> (length <code>N - 1</code>, in order).
 <code>N</code> is required, and memory is \(O(N)\).
 This suits metrics where no stored matrix or coordinate embedding is available.</p>
-<p>It is likely that <code>d</code> will be called many times; unless <code>d</code> implements
-caching, specifying a distance matrix is likely to require less calculation
-than the multiple calls to <code>d</code>, where memory permits.</p>
+<p>Because <code>d</code> is typically called many times; specifying a distance matrix
+(where memory permits) is likely to require less calculation than multiple
+calls to <code>d</code>, unless <code>d</code> implements efficient caching.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
