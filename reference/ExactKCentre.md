@@ -68,14 +68,12 @@ The optimum covering radius is the smallest threshold `r`, over the
 achieved distinct distances, for which `k` centres can cover every point
 within `r`.
 
-Each probe solves a minimum-cardinality *set-cover* integer program with
-the `highs` MILP backend, the covering constraints held as a sparse
-matrix – the covering dual of
-[`ExactMaxMin()`](https://ms609.github.io/Coreset/reference/ExactMaxMin.md)'s
-node-packing program. The search is warm-started from the
+Each probe asks whether `k` centres cover every point within a candidate
+radius. This is decided combinatorially via unit propagation and
+dominance reduction, then an exhaustive component-wise search. The
+search is warm-started from the
 [`KCentre()`](https://ms609.github.io/Coreset/reference/KCentre.md)
-(CDSh) radius, a proven feasible upper bound that caps the binary
-search, then bisects downward to the smallest feasible radius.
+(CDSh) radius, then bisects downward to the smallest feasible radius.
 
 ## Progress bar
 
@@ -97,14 +95,9 @@ for the dual MMDP optimum.
 ## Examples
 
 ``` r
-# \donttest{
-if (requireNamespace("highs", quietly = TRUE) &&
-    requireNamespace("Matrix", quietly = TRUE)) {
-  set.seed(1)
-  pts <- matrix(rnorm(40), ncol = 2)
-  d <- dist(pts)
-  ExactKCentre(3L, d)
-}
-#> 3 centres (3 11 15) by exact MILP (highs), proven optimal, covering radius = 1.385
-# }
+set.seed(1)
+pts <- matrix(rnorm(40), ncol = 2)
+d <- dist(pts)
+ExactKCentre(3L, d)
+#> 3 centres (3 11 15) by exact cover search, proven optimal, covering radius = 1.385
 ```

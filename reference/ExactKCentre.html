@@ -104,12 +104,11 @@ not a scalable method.</p>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The optimum covering radius is the smallest threshold <code>r</code>, over the achieved
 distinct distances, for which <code>k</code> centres can cover every point within <code>r</code>.</p>
-<p>Each probe solves a minimum-cardinality <em>set-cover</em> integer program with
-the <code>highs</code> MILP backend, the covering constraints held as a sparse matrix –
-the covering dual of <code><a href="ExactMaxMin.html">ExactMaxMin()</a></code>'s node-packing program. The search is
-warm-started from the <code><a href="KCentre.html">KCentre()</a></code> (CDSh) radius, a proven feasible upper bound
-that caps the binary search, then bisects downward to the smallest feasible
-radius.</p>
+<p>Each probe asks whether <code>k</code> centres cover every point within a candidate
+radius. This is decided combinatorially via unit propagation and dominance
+reduction, then an exhaustive component-wise search.
+The search is warm-started from the <code><a href="KCentre.html">KCentre()</a></code> (CDSh) radius,
+then bisects downward to the smallest feasible radius.</p>
     </div>
     <div class="section level2">
     <h2 id="progress-bar">Progress bar<a class="anchor" aria-label="anchor" href="#progress-bar"></a></h2>
@@ -130,16 +129,11 @@ the dual MMDP optimum.</p></div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
-<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"highs"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">&amp;&amp;</span></span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"Matrix"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="va">pts</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">40</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="va">d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/dist.html" class="external-link">dist</a></span><span class="op">(</span><span class="va">pts</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="fu">ExactKCentre</span><span class="op">(</span><span class="fl">3L</span>, <span class="va">d</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3 centres (3 11 15) by exact MILP (highs), proven optimal, covering radius = 1.385</span>
-<span class="r-in"><span><span class="co"># }</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">pts</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">40</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/dist.html" class="external-link">dist</a></span><span class="op">(</span><span class="va">pts</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">ExactKCentre</span><span class="op">(</span><span class="fl">3L</span>, <span class="va">d</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 centres (3 11 15) by exact cover search, proven optimal, covering radius = 1.385</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

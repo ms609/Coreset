@@ -46,7 +46,7 @@ element to its nearest selected element ('centre').
 
 - [`ExactKCentre()`](https://ms609.github.io/Coreset/reference/ExactKCentre.md):
 
-  Exact minimum-cover optimum (needs highs).
+  Exact minimum-cover optimum.
 
 ## Scoring
 

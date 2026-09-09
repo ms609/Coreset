@@ -508,7 +508,7 @@ and using again the **highs** solver.
 
 kc <- ExactKCentre(4L, eurodist)
 kc
-#> 4 centres (6 7 14 19) by exact MILP (highs), proven optimal, covering radius = 1011
+#> 4 centres (6 7 14 19) by exact cover search, proven optimal, covering radius = 1011
 attr(kc, "proven")      # TRUE  ⟹  radius is the global covering optimum
 #> [1] TRUE
 ```
@@ -612,7 +612,7 @@ For **covering** (minimise the radius; no point far from a centre):
 |----|----|
 | Near-optimal covering, fast and deterministic | [`KCentre()`](https://ms609.github.io/Coreset/reference/KCentre.md) (CDSh) |
 | Quick 2-approximation baseline | `FarFirst(strategy = "peripheral")` |
-| Proven optimum, small N, **highs** installed | [`ExactKCentre()`](https://ms609.github.io/Coreset/reference/ExactKCentre.md) |
+| Proven optimum, small N | [`ExactKCentre()`](https://ms609.github.io/Coreset/reference/ExactKCentre.md) |
 | Score a centre set’s covering radius (matrix-free at large N) | `KCentreRadius(points = ...)` |
 
 For **maximum-entropy (maxdet) selection** (density-blind volume

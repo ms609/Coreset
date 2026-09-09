@@ -52,7 +52,7 @@ element is as small as possible.
 | Function | Method | Use |
 |----|----|----|
 | [`KCentre()`](https://ms609.github.io/Coreset/reference/KCentre.md) | Critical Dominating Set heuristic | ~1–3.5% of optimum at \\O(N^2 \log N)\\, typically far tighter than [`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md) |
-| [`ExactKCentre()`](https://ms609.github.io/Coreset/reference/ExactKCentre.md) | Min-cover integer program | Proven optimum, small `k` (needs `highs`) |
+| [`ExactKCentre()`](https://ms609.github.io/Coreset/reference/ExactKCentre.md) | Exhaustive covering search | Proven optimum, small `k` |
 
 ### Maximum-entropy (maxdet) selection
 
