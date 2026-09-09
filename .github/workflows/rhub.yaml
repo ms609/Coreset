@@ -62,10 +62,10 @@ jobs:
         with:
           token: ${{ secrets.RHUB_TOKEN }}
           job-config: ${{ matrix.config.job-config }}
-      - name: Get wget for vnu
+      - name: Install quarto dependencies
         run: |
           apt-get update
-          apt-get install -y wget curl sudo
+          apt-get install -y wget sudo
       - uses: dcarbone/install-jq-action@v4.0.1
       - uses: quarto-dev/quarto-actions/setup@v2
       - name: Pre-install package for Quarto vignette subprocess
