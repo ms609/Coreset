@@ -1,12 +1,10 @@
 # Maximum-entropy (maxdet) subset selection
 
-`MaxEntropy()` selects the `k`-subset of points that maximises the
-log-determinant of its kernel block, \\\log\det K_S\\ – the spanned
-volume of the selection, the maximum-entropy sampling criterion (Shewry
+`MaxEntropy()` selects the `k` points that maximise the log-determinant
+of their kernel block, \\\log\det K_S\\. This corresponds to the volume
+spanned by the selection, the maximum-entropy sampling criterion (Shewry
 and Wynn 1987) and the maximum-a-posteriori mode of a determinantal
-point process (Kulesza and Taskar 2012) . A redundant point lies in the
-span of those already chosen, adds zero volume, and is never taken, so
-the selection is exactly density-blind.
+point process (Kulesza and Taskar 2012) .
 
 ## Usage
 
@@ -25,32 +23,33 @@ MaxEntropy(
 
 - k:
 
-  Integer target selection size, \\1 \le k \le n\\.
+  Integer specifying target selection size, \\1 \le k \le n\\.
 
 - d:
 
-  A `dist` object or square numeric distance matrix over the `n` points.
+  `dist` object or square numeric distance matrix over the `n` points.
 
 - sigma:
 
-  Optional kernel bandwidth; defaults to the median positive distance.
+  Optional numperic specifying kernel bandwidth; defaults to the median
+  positive distance.
 
 - repair:
 
-  Positive Semi-Definite repair method for the kernel: `"clip"`
-  (nearest), `"shift"` (diagonal loading) or `"truncate"` (low-rank
-  embedding).
+  Character specifying positive Semi-Definite repair method for the
+  kernel: `"clip"` (nearest), `"shift"` (diagonal loading) or
+  `"truncate"` (low-rank embedding).
 
 - exact:
 
-  Logical, or `NA` (the default) to choose automatically: use the exact
-  enumeration when `choose(n, k) <= maxCombos`, otherwise the greedy.
-  `TRUE` forces enumeration (error if it exceeds `maxCombos`); `FALSE`
-  forces the greedy.
+  Logical: `TRUE` uses explicit enumeration, failing with an error if
+  `maxCombos` is exceeded; `FALSE` uses the greedy approximation. `NA`
+  uses exact enumeration when `choose(n, k) <= maxCombos`, greedy
+  otherwise.
 
 - maxCombos:
 
-  Numeric ceiling on `choose(n, k)` for exact enumeration.
+  Numeric specifying ceiling on `choose(n, k)` for exact enumeration.
 
 ## Value
 
@@ -59,9 +58,9 @@ ascending) with class `"MaxEntropySelection"`, carrying attributes:
 
 - logDet, score:
 
-  The retained \\\log\det K_S\\ of the selection; `-Inf` for a
-  degenerate selection (one forced to repeat near-identical points
-  because `k` exceeds the number of distinct points, which also warns).
+  The retained \\\log\det K_S\\ of the selection. `-Inf` is returned for
+  a degenerate selection where `k` exceeds the number of distinct
+  points.
 
 - negMass:
 
@@ -80,16 +79,11 @@ ascending) with class `"MaxEntropySelection"`, carrying attributes:
 ## Details
 
 A radial-basis kernel \\K\_{ij} = \exp(-d\_{ij}^2 / 2\sigma^2)\\ is
-built from the supplied distances (`sigma` defaulting to the median
-positive distance) and repaired to a positive-semidefinite matrix,
-because a general distance is not of negative type and \\\log\det\\
-requires it. The exact argmax is NP-hard (Kulesza and Taskar 2012) , so
-the selection is built greedily by pivoted Cholesky – at each step
-adding the point of largest residual conditional variance – with exact
-enumeration substituted where \\\binom{n}{k}\\ does not exceed
-`maxCombos`. The greedy first pivot is tied on a unit-diagonal kernel
-and is broken deterministically by the most peripheral point (least
-total similarity), so no random seed is used.
+built from the supplied distances and repaired to a
+positive-semidefinite matrix. The exact argmax is NP-hard (Kulesza and
+Taskar 2012) . A greedy approximation is built by pivoted Cholesky,
+adding at each step the point of largest residual conditional variance.
+Ties are broken by selecting the more peripheral point.
 
 ## References
 
