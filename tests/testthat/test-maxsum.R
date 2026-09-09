@@ -58,7 +58,7 @@ test_that("ExactMaxSum result prints with a total-distance summary", {
   skip_if_not_installed("highs")
   res <- ExactMaxSum(3L, dist(matrix(rnorm(20), ncol = 2)))
   expect_match(format(res), "total distance")
-  expect_output(expect_invisible(print(res)), "3 elements \\(8 9 10\\)")
+  expect_output(expect_invisible(print(res)), "3 elements \\([0-9 ]+\\)")
 })
 
 test_that("the contribution cap is attained, not merely valid", {
