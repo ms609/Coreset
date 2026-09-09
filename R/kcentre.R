@@ -298,7 +298,6 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L) {
 #'
 #' @seealso [KCentre()] for the fast near-optimal heuristic; [ExactMaxMin()] for
 #'   the dual MMDP optimum.
-#' @references \insertAllCited{}
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(40), ncol = 2)

@@ -67,9 +67,6 @@ pts <- matrix(rnorm(40), ncol = 2)
 d <- dist(pts)
 ExactKCentre(3L, d)
 }
-\references{
-\insertAllCited{}
-}
 \seealso{
 \code{\link[=KCentre]{KCentre()}} for the fast near-optimal heuristic; \code{\link[=ExactMaxMin]{ExactMaxMin()}} for
 the dual MMDP optimum.
