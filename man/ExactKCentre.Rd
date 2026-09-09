@@ -31,15 +31,6 @@ It has class \code{c("KCentreExact", "KCentreSelection")} and attributes:
 \item{time_s}{Wall-clock seconds elapsed.}
 \item{N, k}{Instance size and centre budget.}
 }
-It prints as a one-line summary and indexes a matrix or data frame directly.
-The \code{"KCentreSelection"} superclass means \code{\link[=KCentreRadius]{KCentreRadius()}} and any generic
-written for that class work here too.
-
-The covering optimum may be attained by fewer than \code{k} centres (extra centres
-never help once coverage is achieved); the result then has length \verb{< k} and the
-reported \code{radius} is still the proven \emph{k}-centre optimum. The problem is
-NP-hard, so this is an external ground-truth reference for small instances,
-not a scalable method.
 }
 \description{
 \code{ExactKCentre()} finds an optimal solution to the discrete \emph{k}-centre

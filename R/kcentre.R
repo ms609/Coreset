@@ -286,15 +286,6 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L) {
 #'     \item{time_s}{Wall-clock seconds elapsed.}
 #'     \item{N, k}{Instance size and centre budget.}
 #'   }
-#'   It prints as a one-line summary and indexes a matrix or data frame directly.
-#'   The `"KCentreSelection"` superclass means [KCentreRadius()] and any generic
-#'   written for that class work here too.
-#'
-#' The covering optimum may be attained by fewer than `k` centres (extra centres
-#' never help once coverage is achieved); the result then has length `< k` and the
-#' reported `radius` is still the proven \emph{k}-centre optimum. The problem is
-#' NP-hard, so this is an external ground-truth reference for small instances,
-#' not a scalable method.
 #'
 #' @seealso [KCentre()] for the fast near-optimal heuristic; [ExactMaxMin()] for
 #'   the dual MMDP optimum.
