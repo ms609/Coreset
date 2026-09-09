@@ -74,10 +74,10 @@ jobs:
             . /etc/os-release
             case "$ID" in
               ubuntu|debian)
-                apt-get update -qq && apt-get install -y -qq wget tar gzip libglib2.0-0
+                apt-get update -qq && apt-get install -y -qq wget curl tar gzip libc6
                 ;;
               fedora|rhel|centos|rocky|almalinux)
-                dnf install -y wget tar || yum install -y wget tar gzip libstdc++
+                dnf install -y wget curl tar gzip glibc glibc-common libstdc++ || yum install -y wget curl tar gzip glibc libstdc++
 
                 cat << 'EOF' > /usr/local/bin/apt
           #!/bin/sh
@@ -116,14 +116,30 @@ jobs:
           fi
       - uses: dcarbone/install-jq-action@v4.0.1
       - uses: quarto-dev/quarto-actions/setup@v2
-      - name: Symlink Quarto to system PATH
+      - name: Ensure Quarto system availability
         run: |
-          QUARTO_BIN=$(which quarto || echo "/usr/local/bin/quarto")
-          if [ -f "$QUARTO_BIN" ]; then
-            ln -sf "$QUARTO_BIN" /usr/bin/quarto
+          # Find where quarto was placed by the action
+          QUARTO_REAL=$(which quarto 2>/dev/null || echo "/usr/local/bin/quarto")
+
+          # Print diagnostic info to GitHub log
+          echo "Quarto located at: $QUARTO_REAL"
+          ls -la "$QUARTO_REAL" || true
+
+          # Create an explicit execution wrapper in /usr/bin/quarto
+          # This forces subprocesses in R CMD check to resolve the real binary
+          cat << 'EOF' > /usr/bin/quarto
+          #!/bin/sh
+          TARGET="/usr/local/bin/quarto"
+          if [ ! -f "$TARGET" ]; then
+            TARGET=$(which quarto 2>/dev/null)
           fi
-          # Also set environment variable for R sub-processes
-          echo "QUARTO_PATH=$QUARTO_BIN" >> $GITHUB_ENV
+          exec "$TARGET" "$@"
+          EOF
+          chmod +x /usr/bin/quarto
+
+          # Set environment variables for R's processx / find_quarto()
+          echo "QUARTO_PATH=/usr/bin/quarto" >> $GITHUB_ENV
+          echo "QUARTO_BIN_PATH=/usr/local/bin" >> $GITHUB_ENV
       - name: Pre-install package for Quarto vignette subprocess
         run: R CMD INSTALL .
         shell: bash
