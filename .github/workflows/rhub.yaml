@@ -8,8 +8,8 @@
 
 name: R-hub
 run-name: >-
-  ${{ github.event.inputs.name }} |
-  platforms: ${{ github.event.inputs.config }}
+  ${{ github.event.inputs.name }}
+  | ${{ github.event.inputs.config }}
   | ${{ format('Triggered by @{0}', github.triggering_actor) }}
 
 on:
@@ -64,8 +64,30 @@ jobs:
           job-config: ${{ matrix.config.job-config }}
       - name: Install quarto dependencies
         run: |
-          apt-get update
-          apt-get install -y wget sudo
+          if [ -f /etc/os-release ]; then
+            . /etc/os-release
+            case "$ID" in
+              ubuntu|debian)
+                apt-get update && apt-get install -y wget sudo
+                ;;
+              fedora|rhel|centos|rocky|almalinux)
+                dnf install -y wget sudo || yum install -y wget sudo
+                ;;
+              arch)
+                pacman -Sy --noconfirm wget sudo
+                ;;
+              alpine)
+                apk add --no-cache wget sudo
+                ;;
+              *)
+                echo "Unsupported OS ID: $ID"
+                exit 1
+                ;;
+            esac
+          else
+            echo "Cannot detect OS distribution (/etc/os-release missing)."
+            exit 1
+          fi
       - uses: dcarbone/install-jq-action@v4.0.1
       - uses: quarto-dev/quarto-actions/setup@v2
       - name: Pre-install package for Quarto vignette subprocess
