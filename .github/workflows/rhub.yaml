@@ -80,8 +80,8 @@ jobs:
             echo "is_fedora=false" >> $GITHUB_OUTPUT
           fi
 
-      - if: ${{ steps.os-check.outputs.is_fedora != 'true' }}
-        uses: dcarbone/install-jq-action@v4.0.1
+      - uses: dcarbone/install-jq-action@v4.0.1
+
       - if: ${{ steps.os-check.outputs.is_fedora != 'true' }}
         uses: quarto-dev/quarto-actions/setup@v2
 
