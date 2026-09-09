@@ -117,6 +117,14 @@ jobs:
           fi
       - uses: dcarbone/install-jq-action@v4.0.1
       - uses: quarto-dev/quarto-actions/setup@v2
+      - name: Symlink Quarto to system PATH
+        run: |
+          QUARTO_BIN=$(which quarto || echo "/usr/local/bin/quarto")
+          if [ -f "$QUARTO_BIN" ]; then
+            ln -sf "$QUARTO_BIN" /usr/bin/quarto
+          fi
+          # Also set environment variable for R sub-processes
+          echo "QUARTO_PATH=$QUARTO_BIN" >> $GITHUB_ENV
       - name: Pre-install package for Quarto vignette subprocess
         run: R CMD INSTALL .
         shell: bash
