@@ -50,7 +50,7 @@ a warning is emitted) unless \code{maxCandidates = 0} is passed.}
 indices of the selected points, with attributes:
 \describe{
 \item{score}{Achieved MaxMin objective \eqn{T_k}.}
-\item{time_s}{Wall-clock seconds spent.}
+\item{seconds}{Wall-clock seconds spent.}
 \item{iters}{Number of GRASP refinement iterations executed.}
 \item{pr_calls}{Number of path-relinking pair-applications run.}
 }

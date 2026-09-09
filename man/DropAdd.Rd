@@ -63,7 +63,7 @@ farthest-first order), with attributes:
 \eqn{\min_{i \ne j \in S} d_{ij}}.}
 \item{secondary}{numeric(1), achieved sum of pairwise distances over
 \eqn{S} (upper-triangle sum).}
-\item{time_s}{numeric(1), wall-clock seconds spent.}
+\item{seconds}{numeric(1), wall-clock seconds spent.}
 \item{iters}{integer(1), main-loop iterations executed (excluding the
 construction phase).}
 }

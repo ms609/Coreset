@@ -28,7 +28,7 @@ It has class \code{c("KCentreExact", "KCentreSelection")} and attributes:
 \item{radius}{The covering radius achieved; the proven optimum when
 \code{proven} is \code{TRUE}, otherwise an upper bound.}
 \item{proven}{Logical: \code{TRUE} if optimality is certified.}
-\item{time_s}{Wall-clock seconds elapsed.}
+\item{seconds}{Wall-clock seconds elapsed.}
 \item{N, k}{Instance size and centre budget.}
 }
 }

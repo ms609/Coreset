@@ -25,7 +25,7 @@ ascending) with class \code{"MaxSumSelection"}, carrying attributes:
 \code{proven} is \code{TRUE} this is the optimum; otherwise a lower bound.}
 \item{proven}{Logical: \code{TRUE} if optimality was certified within the
 budget.}
-\item{time_s, N, k}{Wall-clock seconds, instance size, target size.}
+\item{seconds, N, k}{Wall-clock seconds, instance size, target size.}
 }
 }
 \description{

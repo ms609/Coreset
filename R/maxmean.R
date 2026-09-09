@@ -37,9 +37,9 @@
 #' reached.
 #'
 #' The reinforcement-learning and tabu hyperparameters are fixed at the tuned
-#' values reported by \insertCite{Dieudonne2020}{Coreset} (greedy factor
+#' values reported by \insertCite{Dieudonne2020;textual}{Coreset}: greedy factor
 #' \eqn{\epsilon = 0.7}, learning rate \eqn{\alpha = 0.5}, discount
-#' \eqn{\gamma = 0.5}, maximum tabu tenure \eqn{120}, search depth 50&nbsp;000).
+#' \eqn{\gamma = 0.5}, maximum tabu tenure 120, search depth 50&nbsp;000.
 #'
 #' @param d A `dist` object or square numeric matrix of pairwise distances;
 #'   values may be negative, and an asymmetric matrix is symmetrized to

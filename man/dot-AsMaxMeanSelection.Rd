@@ -7,7 +7,7 @@
 .AsMaxMeanSelection(x)
 }
 \arguments{
-\item{x}{Integer index vector carrying \code{score}, \code{size}, \code{time_s}, \code{iters}.}
+\item{x}{Integer index vector carrying \code{score}, \code{size}, \code{seconds}, \code{iters}.}
 }
 \value{
 \code{.AsMaxMeanSelection()} returns \code{x} with class \code{"MaxMeanSelection"},
