@@ -8,7 +8,7 @@ bibentry(
   author = mrs,
   note = vers,
   year = 2026,
-  url = "https://constree.github.io/",
+  url = "https://ms609.github.io/Coreset/",
   doi = "10.32614/CRAN.package.Coreset",
   organization = "Comprehensive R Archive Network",
   address = "Vienna",

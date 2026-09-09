@@ -26,7 +26,8 @@ seed is computed from coordinates in \code{O(N)} memory. Required for the
 then the point furthest from that (a diameter-endpoint approximation).
 \eqn{O(N)}.}
 \item{\code{"anti_centroid"}}{The point farthest from the coordinate mean
-(\eqn{\argmax ||x - x_bar||}). \eqn{O(N * dim)}. Requires \code{points}.}
+(\eqn{\arg\max \|x - \bar{x}\|}{argmax ||x - x_bar||}).
+\eqn{O(N * dim)}. Requires \code{points}.}
 \item{\code{"random_furthest"}}{The point furthest from a random pivot.
 \eqn{O(N)}.}
 \item{\code{"diameter"}}{A row endpoint of the diameter pair (the maximum

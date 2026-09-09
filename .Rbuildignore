@@ -35,3 +35,4 @@ memcheck
 ^\.claude$
 ^\.agent.*$
 ^Meta$
+^cran-comments\.md$

@@ -236,11 +236,8 @@
 #' Pass the name of one or more seeding strategies described in [`PickPoint()`]
 #' to run each strategy and return the best solution.
 #' @param nSeeds Integer: number of distinct seeds to draw under the (default)
-#' `"random_furthest"` strategy. Three starts captures most of the gain from
-#' restarting — the improvement curve bends early (knee at n ≈ 3–4 across
-#' benchmarks) and additional restarts add little. For higher-quality
-#' solutions, prefer [DropAdd()]: tabu search escapes the farthest-first
-#' construction family where restarts plateau.
+#' `"random_furthest"` strategy. Beyond ~3, [DropAdd()] will tend to return
+#' higher quality results faster.
 #' @return `FarFirst()` returns an integer vector with class `MaxMinSelection`,
 #' listing the selected indices in the order they were selected.
 #' Attributes report:

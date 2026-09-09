@@ -15,9 +15,10 @@ from 1 to \code{nrow(d)}.}
 
 \item{d}{\code{dist} object or a square symmetric numeric distance matrix.}
 
-\item{maxSeconds}{Wall-clock budget in seconds for the whole search.
-If it expires before the optimum is proven, the smallest radius proven
-feasible so far is returned, with the attribute \code{proven = FALSE}.}
+\item{maxSeconds}{Numeric specifying wall-clock budget, in seconds, for
+the whole search.
+If the time expires before the optimum is proven, the smallest radius proven
+feasible is returned, with the attribute \code{proven = FALSE}.}
 }
 \value{
 \code{ExactKCentre()} returns an integer vector of length \eqn{\le k}
