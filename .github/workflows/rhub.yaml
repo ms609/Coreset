@@ -74,38 +74,13 @@ jobs:
             . /etc/os-release
             case "$ID" in
               ubuntu|debian)
-                apt-get update -qq && apt-get install -y -qq wget curl tar gzip libc6
+                apt-get update -qq && apt-get install -y -qq wget tar gzip libc6
                 ;;
               fedora|rhel|centos|rocky|almalinux)
-                dnf install -y wget curl tar gzip glibc glibc-common libstdc++ || yum install -y wget curl tar gzip glibc libstdc++
+                dnf install -y wget curl tar gzip glibc glibc-common libstdc++ || yum install -y wget tar gzip glibc libstdc++
 
-                cat << 'EOF' > /usr/local/bin/apt
-          #!/bin/sh
-          cmd="$1"
-          shift
-          case "$cmd" in
-            update)
-              exit 0
-              ;;
-            install)
-              pkgs=""
-              for arg in "$@"; do
-                case "$arg" in
-                  -*) ;;
-                  *) pkgs="$pkgs $arg" ;;
-                esac
-              done
-              if command -v dnf >/dev/null 2>&1; then
-                exec dnf install -y $pkgs
-              else
-                exec yum install -y $pkgs
-              fi
-              ;;
-            *)
-              exit 0
-              ;;
-          esac
-          EOF
+                # Apt shim for Fedora
+                printf '#!/bin/sh\nif [ "$1" = "install" ]; then shift; exec dnf install -y "$@"; fi\nexit 0\n' > /usr/local/bin/apt
                 chmod +x /usr/local/bin/apt
                 cp /usr/local/bin/apt /usr/local/bin/apt-get
                 ;;
