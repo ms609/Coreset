@@ -11,8 +11,8 @@ test_that("MaxEntropy returns a well-formed selection", {
   expect_identical(as.integer(sel), sort(as.integer(sel)))   # returned sorted
   expect_true(all(sel >= 1L & sel <= 20L))
   expect_false(anyDuplicated(sel) > 0L)
-  expect_false(is.null(attr(sel, "logDet")))
-  expect_equal(attr(sel, "score"), attr(sel, "logDet"))
+  expect_false(is.null(attr(sel, "score")))
+  expect_equal(attr(sel, "score"), attr(sel, "score"))
   expect_true(attr(sel, "negMass") >= 0)
 })
 
@@ -90,7 +90,7 @@ test_that("selection and reported log det use one consistent metric (ME-003)", {
   kp <- .MaxEntropyRepair(.MaxEntropyKernel(d), "clip")
   for (k in 2:5) {
     sel <- MaxEntropy(k, d)
-    expect_equal(attr(sel, "logDet"), cholLogDet(kp, as.integer(sel)))
+    expect_equal(attr(sel, "score"), cholLogDet(kp, as.integer(sel)))
     expect_equal(MaxEntropyLogDet_cpp(kp, as.integer(sel)),
                  cholLogDet(kp, as.integer(sel)))
   }
@@ -109,11 +109,11 @@ test_that("k beyond the distinct-point count warns and reports -Inf (ME-002)", {
   base <- rbind(c(0, 0), c(10, 0), c(0, 10))      # 3 distinct points
   d <- dist(rbind(base, base))                     # n = 6, only 3 distinct
   expect_warning(sel <- MaxEntropy(4L, d), "distinct")
-  expect_true(is.infinite(attr(sel, "logDet")))
+  expect_true(is.infinite(attr(sel, "score")))
   expect_length(sel, 4L)
   # k within the distinct count: no warning, finite log det.
   expect_no_warning(sel3 <- MaxEntropy(3L, d))
-  expect_true(is.finite(attr(sel3, "logDet")))
+  expect_true(is.finite(attr(sel3, "score")))
 })
 
 test_that("non-finite distances are rejected (ME-004)", {

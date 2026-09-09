@@ -501,7 +501,7 @@ distance is not guaranteed to be of negative type.
 #| label: maxentropy
 mePick <- MaxEntropy(4L, eurodist)
 labels(eurodist)[mePick]
-attr(mePick, "logDet")     # the achieved log-determinant
+attr(mePick, "score")     # the achieved log-determinant
 attr(mePick, "exact")      # TRUE if certified by exact enumeration
 ```
 
