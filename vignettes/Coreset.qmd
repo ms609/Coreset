@@ -294,9 +294,12 @@ for (nm in names(methods)) {
          cex = 1.6)
 }
 
-legend("topleft",
-       legend = paste0(names(methods), "  (T\U2096 = ", round(scores, 3), ")"),
-       pch = pchs, col = cols, pt.bg = cols, pt.cex = 1.4, bty = "n")
+legend_labels <- lapply(seq_along(methods), function(i) {
+  bquote(.(names(methods)[i]) ~ (T[k] == .(sprintf("%.3f", scores[i]))))
+})
+
+legend("topleft", legend = as.expression(legend_labels), pch = pchs, col = cols,
+       pt.bg = cols, pt.cex = 1.4, bty = "n")
 ```
 
 
