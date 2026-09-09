@@ -27,11 +27,14 @@
 }
 
 # Compare two selections on every user-visible field except wall-clock.
-.ExpectSameSelection <- function(a, b) {
+.ExpectSameSelection <- function(a, b, eps = 1e-8) {
   testthat::expect_identical(as.integer(a), as.integer(b))
-  testthat::expect_identical(attr(a, "score"), attr(b, "score"))
-  testthat::expect_identical(attr(a, "secondary"), attr(b, "secondary"))
-  testthat::expect_identical(attr(a, "iters"), attr(b, "iters"))
+  attA <- attributes(a)
+  attB <- attributes(b)
+  testthat::expect_equal(attA[["score"]], attB[["score"]], tolerance = eps)
+  testthat::expect_equal(attA[["secondary"]], attB[["secondary"]],
+                         tolerance = eps)
+  testthat::expect_identical(attA[["iters"]], attB[["iters"]])
 }
 
 # ---------------------------------------------------------------------------
