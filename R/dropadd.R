@@ -406,8 +406,8 @@
 #' @templateVar default_basis the dense-distance-matrix feasibility ceiling
 #'   (`floor(sqrt(.Machine$integer.max))`) the `points` path already crosses
 #' @param maxCandidates Integer: when the number of candidate points \eqn{N}
-#'   exceeds `maxCandidates`, the solver runs on a `maxCandidates`-point
-#'   coreset chosen by  [FarFirst()].
+#'   exceeds `maxCandidates`, the solver runs on a coreset of `maxCandidates`
+#'   chosen by  [FarFirst()].
 #'   `maxCandidates = 0` (or `Inf`) disables thinning.
 #' @templateVar progress_shows status messages are shown
 #' @template progress

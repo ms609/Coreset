@@ -20,22 +20,21 @@ Grasp(
 \item{d}{Either a \code{dist} object or a square symmetric numeric matrix.}
 
 \item{plateau}{Integer; stop after this many consecutive GRASP
-iterations without an improvement to the best elite objective. The
-primary, deterministic stopping criterion.}
+iterations have not improved the best elite objective.}
 
 \item{eliteSize}{Size of the elite set |ES|.}
 
-\item{alpha}{Construction greediness in \verb{[0, 1]}. Each step draws the next
-point at random from a shortlist of the strongest candidates -- those
-whose gain lies within a fraction \code{alpha} of the best-to-worst spread.
-\code{alpha = 1} is pure greedy (best only); \code{alpha = 0} is uniform random
-among candidates.}
+\item{alpha}{Numeric in \verb{[0, 1]} specifying construction greediness.
+Each step draws the next point at random from a shortlist of the strongest
+candidates whose gain lies within a fraction \code{alpha} of the best-to-worst
+spread.
+\code{alpha = 1} is pure greedy; \code{alpha = 0} is uniform random among candidates.}
 
 \item{maxSeconds}{Numeric specifying wall-clock ceiling, in seconds.}
 
 \item{maxCandidates}{Integer: when the number of candidate points \eqn{N}
-exceeds \code{maxCandidates}, the solver runs on a \code{maxCandidates}-point
-coreset chosen by  \code{\link[=FarFirst]{FarFirst()}}.
+exceeds \code{maxCandidates}, the solver runs on a coreset of \code{maxCandidates}
+chosen by  \code{\link[=FarFirst]{FarFirst()}}.
 \code{maxCandidates = 0} (or \code{Inf}) disables thinning.}
 }
 \value{

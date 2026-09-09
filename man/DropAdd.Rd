@@ -35,8 +35,8 @@ Avoids creating an \eqn{N \times N} distance matrix, enabling use at
 \eqn{N \ge 46340}).}
 
 \item{maxCandidates}{Integer: when the number of candidate points \eqn{N}
-exceeds \code{maxCandidates}, the solver runs on a \code{maxCandidates}-point
-coreset chosen by  \code{\link[=FarFirst]{FarFirst()}}.
+exceeds \code{maxCandidates}, the solver runs on a coreset of \code{maxCandidates}
+chosen by  \code{\link[=FarFirst]{FarFirst()}}.
 \code{maxCandidates = 0} (or \code{Inf}) disables thinning.}
 
 \item{seed}{Optional integer: a 1-based start index that overrides the

@@ -289,14 +289,13 @@
 #' @param k Integer subset size, `2 <= k <= nrow(d)`.
 #' @param d Either a `dist` object or a square symmetric numeric matrix.
 #' @param plateau Integer; stop after this many consecutive GRASP
-#'   iterations without an improvement to the best elite objective. The
-#'   primary, deterministic stopping criterion.
+#'   iterations have not improved the best elite objective.
 #' @param eliteSize Size of the elite set |ES|.
-#' @param alpha Construction greediness in `[0, 1]`. Each step draws the next
-#'   point at random from a shortlist of the strongest candidates -- those
-#'   whose gain lies within a fraction `alpha` of the best-to-worst spread.
-#'   `alpha = 1` is pure greedy (best only); `alpha = 0` is uniform random
-#'   among candidates.
+#' @param alpha Numeric in `[0, 1]` specifying construction greediness.
+#'   Each step draws the next point at random from a shortlist of the strongest
+#'   candidates whose gain lies within a fraction `alpha` of the best-to-worst
+#'   spread.
+#'   `alpha = 1` is pure greedy; `alpha = 0` is uniform random among candidates.
 #' @param maxSeconds Numeric specifying wall-clock ceiling, in seconds.
 #' @templateVar default `2000L`
 #' @templateVar default_basis conservative because `Grasp()` is matrix-only, so
