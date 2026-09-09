@@ -115,7 +115,7 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 
 # ----- CDSh heuristic -------------------------------------------------------
 
-#' Near-optimal discrete k-centre solver
+#' Discrete _k_-centre solver
 #'
 #' `KCentre()` selects \eqn{k} elements (centres) so as to minimize the largest
 #' distance from any point to its nearest centre (the covering radius),
@@ -123,9 +123,8 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' \insertCite{GarciaDiaz2017,GarciaDiaz2019}{Coreset}.
 #'
 #' On the benchmark instances of \insertCite{GarciaDiaz2019;textual}{Coreset},
-#' the \acronym{CDS} heuristic reaches roughly 1-3.5%
-#' of the optimum at \eqn{O(N^2 \log N)}, far tighter than [FarFirst()]
-#' (typically tens of per cent above optimum).
+#' the \acronym{CDS} heuristic reaches roughly 1&ndash;3.5%
+#' of the optimum at \eqn{O(N^2 \log N)}, far tighter than [FarFirst()].
 #'
 #' Despite this good performance in practice, the \acronym{CDSh} is a
 #' 3-approximation.
@@ -140,8 +139,8 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' @param d `dist` object or a square symmetric numeric distance matrix.
 #' @param nstart Integer specifying how many deterministic peripheral seeds to
 #'  try.
-#' @param effort Integer: if `> 0`, run a parallel `FarFirst()` search
-#'  with `effort` random seeds, returning the best of all results.
+#' @param effort Integer: if `> 0`, run `effort` parallel `FarFirst()` searches,
+#' each seeded on a distinct starting point, and return the best result found.
 #'
 #' @return `KCentre()` returns an integer vector of length \eqn{\le k} specifying
 #' the chosen centres in ascending order.
