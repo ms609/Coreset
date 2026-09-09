@@ -264,12 +264,10 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L) {
 #' distinct distances, for which `k` centres can cover every point within `r`.
 #'
 #' Each probe asks whether `k` centres cover every point within a candidate
-#' radius -- a minimum-dominating-set question on the threshold graph, and the
-#' covering dual of [ExactMaxMin()]'s node-packing probe. It is decided
-#' combinatorially: unit propagation and dominance reduction, then an
-#' exhaustive component-wise search. The search is warm-started from the [KCentre()] (CDSh) radius, a proven feasible upper bound
-#' that caps the binary search, then bisects downward to the smallest feasible
-#' radius.
+#' radius. This is decided combinatorially via unit propagation and dominance
+#' reduction, then an exhaustive component-wise search.
+#' The search is warm-started from the [KCentre()] (CDSh) radius,
+#' then bisects downward to the smallest feasible radius.
 #'
 #' @inheritParams KCentre
 #' @param maxSeconds Wall-clock budget in seconds for the whole search.
