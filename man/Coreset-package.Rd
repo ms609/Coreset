@@ -38,7 +38,7 @@ The discrete \emph{k}-centre problem minimises the largest distance from any
 element to its nearest selected element ('centre').
 \describe{
 \item{\code{\link[=KCentre]{KCentre()}}}{CDSh covering heuristic.}
-\item{\code{\link[=ExactKCentre]{ExactKCentre()}}}{Exact minimum-cover optimum (needs \pkg{highs}).}
+\item{\code{\link[=ExactKCentre]{ExactKCentre()}}}{Exact minimum-cover optimum.}
 }
 }
 

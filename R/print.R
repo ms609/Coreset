@@ -319,9 +319,9 @@ format.KCentreExact <- function(x, ...) {
   idx <- as.integer(x)
   nc <- length(idx)
   status <- if (isTRUE(attr(x, "proven"))) {
-    sprintf("exact MILP (%s), proven optimal", attr(x, "solver"))
+    sprintf("exact %s, proven optimal", attr(x, "solver"))
   } else {
-    sprintf("exact MILP (%s), unproven incumbent", attr(x, "solver"))
+    sprintf("exact %s, unproven incumbent", attr(x, "solver"))
   }
   rel <- if (isTRUE(attr(x, "proven"))) "=" else "<="
   sprintf("%d centre%s (%s) by %s, covering radius %s %s",
