@@ -695,11 +695,16 @@ List Grasp_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter,
     ESz[b] = objective_of(d, n, xp);
     ES[b]  = xp;
   }
+  // Stable descending sort by objective (ties keep construction order), to
+  // match R's order(ESz, decreasing = TRUE) under the radix (stable) method.
   {
     std::vector<int> ord(elite_size);
     for (int i = 0; i < elite_size; ++i) ord[i] = i;
     std::sort(ord.begin(), ord.end(),
-                     [&](int a, int b) { return ESz[a] > ESz[b]; });
+              [&](const int& a, const int& b) {
+                if (ESz[a] != ESz[b]) return ESz[a] > ESz[b];
+                return a < b;
+              });
     std::vector<std::vector<int>> ES2(elite_size);
     std::vector<double> ESz2(elite_size);
     for (int i = 0; i < elite_size; ++i) {

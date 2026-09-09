@@ -640,7 +640,10 @@ List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
       }
     }
     std::sort(vars.begin(), vars.end(),
-                     [&](int a, int b) { return dg[a] > dg[b]; });
+              [&](const int& a, const int& b) {
+                if (dg[a] != dg[b]) return dg[a] > dg[b];
+                return a < b;
+                });
     const int nv0 = static_cast<int>(vars.size());
     for (int t = 0; t < nv0; ++t) {
       loc[vars[t]] = t;
