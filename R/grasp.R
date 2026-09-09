@@ -285,6 +285,7 @@
 #' This method will fail if the complete \eqn{N \times N} distance matrix is
 #' too large to fit into memory.
 #'
+#' @inheritParams DropAdd
 #' @param k Integer subset size, `2 <= k <= nrow(d)`.
 #' @param d Either a `dist` object or a square symmetric numeric matrix.
 #' @param plateau Integer; stop after this many consecutive GRASP
@@ -301,7 +302,6 @@
 #' @templateVar default_basis conservative because `Grasp()` is matrix-only, so
 #'   the coreset subproblem is a dense \eqn{m \times m} matrix
 #'   (\eqn{2000 \times 2000 \approx} 32 MB)
-#' @template maxCandidates
 #' @return `Grasp()` returns an integer vector of length `k` specifying the
 #' indices of the selected points, with attributes:
 #'   \describe{

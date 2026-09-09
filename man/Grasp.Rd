@@ -33,17 +33,10 @@ among candidates.}
 
 \item{maxSeconds}{Numeric specifying wall-clock ceiling, in seconds.}
 
-\item{maxCandidates}{Integer: a composable-coreset tractability cap. When the
-number of candidate points \code{N} exceeds \code{maxCandidates}, \code{\link[=FarFirst]{FarFirst()}} thins
-the candidates to a \code{maxCandidates}-point coreset (with the deterministic,
-RNG-free \code{"peripheral"} seed, so no random stream is perturbed), the solver
-runs on the coreset, and the chosen indices are mapped back to the original
-numbering. This lets the solver produce a solution at scales where it would
-otherwise be intractable. \code{maxCandidates = 0} (or \code{Inf}) disables thinning
-and runs on the full problem; a cap at or above \code{N} is a no-op. A cap below
-\code{k} is an error. The default is \code{2000L}, conservative because \code{Grasp()} is matrix-only, so
-Thinning is \strong{on by default}: an input larger than the cap is thinned (and
-a warning is emitted) unless \code{maxCandidates = 0} is passed.}
+\item{maxCandidates}{Integer: when the number of candidate points \eqn{N}
+exceeds \code{maxCandidates}, the solver runs on a \code{maxCandidates}-point
+coreset chosen by  \code{\link[=FarFirst]{FarFirst()}}.
+\code{maxCandidates = 0} (or \code{Inf}) disables thinning.}
 }
 \value{
 \code{Grasp()} returns an integer vector of length \code{k} specifying the
