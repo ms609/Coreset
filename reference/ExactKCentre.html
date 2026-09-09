@@ -92,15 +92,7 @@ It has class <code>c("KCentreExact", "KCentreSelection")</code> and attributes:<
 <dd><p>Instance size and centre budget.</p></dd>
 
 
-</dl><p>It prints as a one-line summary and indexes a matrix or data frame directly.
-The <code>"KCentreSelection"</code> superclass means <code><a href="KCentreRadius.html">KCentreRadius()</a></code> and any generic
-written for that class work here too.</p>
-<p>The covering optimum may be attained by fewer than <code>k</code> centres (extra centres
-never help once coverage is achieved); the result then has length <code>&lt; k</code> and the
-reported <code>radius</code> is still the proven <em>k</em>-centre optimum. The problem is
-NP-hard, so this is an external ground-truth reference for small instances,
-not a scalable method.</p>
-    </div>
+</dl></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The optimum covering radius is the smallest threshold <code>r</code>, over the achieved
@@ -117,10 +109,6 @@ then bisects downward to the smallest feasible radius.</p>
 
 <p>In interactive sessions, a progress indicator is shown.
 To toggle, set <code>options("Coreset.progress" = FALSE)</code> (or <code>TRUE</code>).</p>
-    </div>
-    <div class="section level2">
-    <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
-    <p>There are no references for Rd macro <code>\insertAllCites</code> on this help page.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

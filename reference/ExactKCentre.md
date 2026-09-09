@@ -52,17 +52,6 @@ the chosen centres in ascending order. It has class
 
   Instance size and centre budget.
 
-It prints as a one-line summary and indexes a matrix or data frame
-directly. The `"KCentreSelection"` superclass means
-[`KCentreRadius()`](https://ms609.github.io/Coreset/reference/KCentreRadius.md)
-and any generic written for that class work here too.
-
-The covering optimum may be attained by fewer than `k` centres (extra
-centres never help once coverage is achieved); the result then has
-length `< k` and the reported `radius` is still the proven *k*-centre
-optimum. The problem is NP-hard, so this is an external ground-truth
-reference for small instances, not a scalable method.
-
 ## Details
 
 The optimum covering radius is the smallest threshold `r`, over the
@@ -80,11 +69,6 @@ search is warm-started from the
 
 In interactive sessions, a progress indicator is shown. To toggle, set
 `options("Coreset.progress" = FALSE)` (or `TRUE`).
-
-## References
-
-There are no references for Rd macro `\insertAllCites` on this help
-page.
 
 ## See also
 
