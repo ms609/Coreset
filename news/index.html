@@ -41,7 +41,7 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.0.0.9000" id="coreset-0009000-development">Coreset 0.0.0.9000 (development)<a class="anchor" aria-label="anchor" href="#coreset-0009000-development"></a></h2>
-<p>First release. <code>Coreset</code> selects a representative subset of a fixed candidate set under an arbitrary distance, solving four discrete location objectives on a distance matrix, a coordinate matrix, or an on-demand distance-column oracle (for spaces with no coordinate embedding).</p>
+<p><code>Coreset</code> selects a representative subset of a fixed candidate set under an arbitrary distance, solving four discrete location objectives on a distance matrix, a coordinate matrix, or an on-demand distance-column oracle.</p>
 <div class="section level3">
 <h3 id="max-min-diversity-mmdp--discrete-p-dispersion-0-0-0-9000">Max-Min diversity (MMDP / discrete <em>p</em>-dispersion)<a class="anchor" aria-label="anchor" href="#max-min-diversity-mmdp--discrete-p-dispersion-0-0-0-9000"></a></h3>
 <p>Maximises the minimum pairwise distance within a subset of size <code>k</code>.</p>
@@ -65,12 +65,12 @@
 <ul><li>
 <code><a href="../reference/KCentre.html">KCentre()</a></code>: the CDSh covering heuristic (Garcia-Diaz et al. 2017, 2019).</li>
 <li>
-<code><a href="../reference/ExactKCentre.html">ExactKCentre()</a></code>: exact minimum-cover optimum (needs <code>highs</code>).</li>
+<code><a href="../reference/ExactKCentre.html">ExactKCentre()</a></code>: exact minimum-cover optimum.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="max-sum-diversity-and-maximum-entropy-0-0-0-9000">Max-Sum diversity and maximum entropy<a class="anchor" aria-label="anchor" href="#max-sum-diversity-and-maximum-entropy-0-0-0-9000"></a></h3>
 <ul><li>
-<code><a href="../reference/ExactMaxSum.html">ExactMaxSum()</a></code>: exact solver for the Max-Sum Diversity Problem.</li>
+<code><a href="../reference/ExactMaxSum.html">ExactMaxSum()</a></code>: exact solver for the Max-Sum Diversity Problem (requires ‘highs’).</li>
 <li>
 <code><a href="../reference/MaxEntropy.html">MaxEntropy()</a></code>: maximum-entropy (maxdet) selection — the mode of a determinantal point process — by greedy pivoted-Cholesky selection, and by exact enumeration for small instances.</li>
 </ul></div>

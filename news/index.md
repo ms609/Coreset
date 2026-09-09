@@ -2,11 +2,10 @@
 
 ## Coreset 0.0.0.9000 (development)
 
-First release. `Coreset` selects a representative subset of a fixed
-candidate set under an arbitrary distance, solving four discrete
-location objectives on a distance matrix, a coordinate matrix, or an
-on-demand distance-column oracle (for spaces with no coordinate
-embedding).
+`Coreset` selects a representative subset of a fixed candidate set under
+an arbitrary distance, solving four discrete location objectives on a
+distance matrix, a coordinate matrix, or an on-demand distance-column
+oracle.
 
 ### Max-Min diversity (MMDP / discrete *p*-dispersion)
 
@@ -42,12 +41,12 @@ centre.
 - [`KCentre()`](https://ms609.github.io/Coreset/reference/KCentre.md):
   the CDSh covering heuristic (Garcia-Diaz et al. 2017, 2019).
 - [`ExactKCentre()`](https://ms609.github.io/Coreset/reference/ExactKCentre.md):
-  exact minimum-cover optimum (needs `highs`).
+  exact minimum-cover optimum.
 
 ### Max-Sum diversity and maximum entropy
 
 - [`ExactMaxSum()`](https://ms609.github.io/Coreset/reference/ExactMaxSum.md):
-  exact solver for the Max-Sum Diversity Problem.
+  exact solver for the Max-Sum Diversity Problem (requires ‘highs’).
 - [`MaxEntropy()`](https://ms609.github.io/Coreset/reference/MaxEntropy.md):
   maximum-entropy (maxdet) selection — the mode of a determinantal point
   process — by greedy pivoted-Cholesky selection, and by exact
