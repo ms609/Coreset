@@ -45,6 +45,9 @@ Other reporting functions:
 
 ``` r
 set.seed(1)
-ExactMaxSum(3L, dist(matrix(rnorm(20), ncol = 2)))
+# Package 'highs' is required for ExactMaxSum()
+if (requireNamespace("highs", quietly = TRUE)) {
+  ExactMaxSum(3L, dist(matrix(rnorm(20), ncol = 2)))
+}
 #> 3 elements (1 3 4) by exact MILP, proven optimal, total distance = 9.388
 ```
