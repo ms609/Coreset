@@ -10,38 +10,39 @@ MaxEntropy(
   sigma = NULL,
   repair = c("clip", "shift", "truncate"),
   exact = NA,
-  maxCombos = 3e+05
+  maxCombos = 300000L
 )
 }
 \arguments{
 \item{k}{Integer specifying target selection size, \eqn{1 \le k \le n}.}
 
-\item{d}{\code{dist} object or square numeric distance matrix over the \code{n}
+\item{d}{\code{dist} object or square numeric distance matrix over the \eqn{n}
 points.}
 
-\item{sigma}{Optional numperic specifying kernel bandwidth;
+\item{sigma}{Optional numeric specifying kernel bandwidth;
 defaults to the median positive distance.}
 
-\item{repair}{Character specifying positive Semi-Definite repair method for
-the kernel: \code{"clip"} (nearest), \code{"shift"} (diagonal loading) or
-\code{"truncate"} (low-rank embedding).}
+\item{repair}{Character selecting a positive semi-definite repair method:
+\code{"clip"} (nearest), \code{"shift"} (diagonal loading) or \code{"truncate"} (low-rank
+embedding).}
 
 \item{exact}{Logical: \code{TRUE} uses explicit enumeration, failing with an error
 if \code{maxCombos} is exceeded; \code{FALSE} uses the greedy approximation.
 \code{NA} uses exact enumeration when \code{choose(n, k) <= maxCombos},
 greedy otherwise.}
 
-\item{maxCombos}{Numeric specifying ceiling on \code{choose(n, k)} for exact
+\item{maxCombos}{Integer specifying ceiling on \code{choose(n, k)} for exact
 enumeration.}
 }
 \value{
 \code{MaxEntropy()} returns an integer vector of length \code{k} (sorted
 ascending) with class \code{"MaxEntropySelection"}, carrying attributes:
 \describe{
-\item{logDet, score}{The retained \eqn{\log\det K_S} of the selection.
+\item{score}{The retained \eqn{\log\det K_S} of the selection.
 \code{-Inf} is returned for a degenerate selection where \code{k} exceeds the
 number of distinct points.}
-\item{negMass}{Fraction of spectral mass removed by the Positive Semi-Definite repair.}
+\item{negMass}{Fraction of spectral mass removed by the positive
+semi-definite repair.}
 \item{sigma, repair, exact}{The bandwidth, repair, and whether the
 optimum was certified by enumeration.}
 \item{seed, N, k}{The peripheral seed index, instance size, target size.}
@@ -49,10 +50,11 @@ optimum was certified by enumeration.}
 }
 \description{
 \code{MaxEntropy()} selects the \code{k} points that maximise the log-determinant of
-their kernel block, \eqn{\log\det K_S}. This corresponds to the volume
-spanned by the selection, the maximum-entropy sampling criterion
-\insertCite{Shewry1987}{Coreset} and the maximum-a-posteriori mode of a
-determinantal point process \insertCite{Kulesza2012}{Coreset}.
+their kernel block, \eqn{\log\det K_S}. This is equivalent to finding the set
+of \code{k} points that span the largest volume, which corresponds to
+the maximum-entropy sampling criterion\insertCite{Shewry1987}{Coreset} and
+the maximum-a-posteriori mode of a determinantal point process
+\insertCite{Kulesza2012}{Coreset}.
 }
 \details{
 A radial-basis kernel \eqn{K_{ij} = \exp(-d_{ij}^2 / 2\sigma^2)} is built from

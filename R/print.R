@@ -434,7 +434,7 @@ format.MaxEntropySelection <- function(x, ...) {
   }
   sprintf("%d element%s (%s) by %s, log det = %s (repair removed %s of mass)",
           nc, if (nc == 1L) "" else "s", .FormatIndexList(idx), how,
-          format(signif(attr(x, "logDet"), 4L)),
+          format(signif(attr(x, "score"), 4L)),
           format(signif(attr(x, "negMass"), 3L)))
 }
 
