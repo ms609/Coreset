@@ -65,8 +65,7 @@ jobs:
       - name: Quarto installation - provide dummy `sudo`
         run: |
           if ! command -v sudo >/dev/null 2>&1; then
-            echo '#!/bin/sh' > /usr/local/bin/sudo
-            echo 'exec "$@"' >> /usr/local/bin/sudo
+            echo '#!/bin/sh\nexec "$@"' >> /usr/local/bin/sudo
             chmod +x /usr/local/bin/sudo
           fi
       - name: Quarto installation - Install dependencies
@@ -75,10 +74,10 @@ jobs:
             . /etc/os-release
             case "$ID" in
               ubuntu|debian)
-                apt-get update -qq && apt-get install -y -qq wget curl
+                apt-get update -qq && apt-get install -y -qq wget tar gzip libglib2.0-0
                 ;;
               fedora|rhel|centos|rocky|almalinux)
-                dnf install -y wget curl tar || yum install -y wget curl tar
+                dnf install -y wget tar || yum install -y wget tar gzip libstdc++
 
                 cat << 'EOF' > /usr/local/bin/apt
           #!/bin/sh
