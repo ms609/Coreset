@@ -68,7 +68,7 @@ ascending) with class `"MaxMinSelection"`, carrying attributes:
   Logical: `TRUE` if the search certified optimality within the budget,
   `FALSE` if it returned an unproven incumbent.
 
-- time_s:
+- seconds:
 
   Wall-clock seconds elapsed.
 

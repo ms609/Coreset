@@ -96,13 +96,11 @@ starts from a random solution.</p></dd>
 <dt>size</dt>
 <dd><p>integer, number of selected elements \(|S|\).</p></dd>
 
-<dt>time_s</dt>
+<dt>seconds</dt>
 <dd><p>numeric, wall-clock seconds spent.</p></dd>
 
 <dt>iters</dt>
-<dd><p>numeric, total tabu-search iterations across restarts.
-Stored as a double, not an integer, because a long run can exceed the
-32-bit integer range.</p></dd>
+<dd><p>numeric, total tabu-search iterations across restarts.</p></dd>
 
 
 </dl><p>The vector has class <code>"MaxMeanSelection"</code> and prints as a one-line summary
@@ -120,10 +118,10 @@ tabu search using one-flip moves (adding or removing one element per step).
 Restarts continue until either the <code>maxSeconds</code> or <code>maxIter</code> budget is
 reached.</p>
 <p>The reinforcement-learning and tabu hyperparameters are fixed at the tuned
-values reported by (Nijimbere et al. 2020)
- (greedy factor
+values reported by Nijimbere et al. (2020)
+: greedy factor
 \(\epsilon = 0.7\), learning rate \(\alpha = 0.5\), discount
-\(\gamma = 0.5\), maximum tabu tenure \(120\), search depth 50 000).</p>
+\(\gamma = 0.5\), maximum tabu tenure 120, search depth 50 000.</p>
     </div>
     <div class="section level2">
     <h2 id="progress-bar">Progress bar<a class="anchor" aria-label="anchor" href="#progress-bar"></a></h2>

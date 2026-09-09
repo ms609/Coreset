@@ -15,7 +15,7 @@ unchanged.
 
 - x:
 
-  Integer index vector carrying `score`, `size`, `time_s`, `iters`.
+  Integer index vector carrying `score`, `size`, `seconds`, `iters`.
 
 ## Value
 

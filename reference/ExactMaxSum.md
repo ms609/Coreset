@@ -49,7 +49,7 @@ ascending) with class `"MaxSumSelection"`, carrying attributes:
 
   Logical: `TRUE` if optimality was certified within the budget.
 
-- time_s, N, k:
+- seconds, N, k:
 
   Wall-clock seconds, instance size, target size.
 

@@ -47,15 +47,13 @@ MaxMean(d, maxSeconds = 0.1, maxIter = 1000, useRL = TRUE)
 
   integer, number of selected elements \\\|S\|\\.
 
-- time_s:
+- seconds:
 
   numeric, wall-clock seconds spent.
 
 - iters:
 
-  numeric, total tabu-search iterations across restarts. Stored as a
-  double, not an integer, because a long run can exceed the 32-bit
-  integer range.
+  numeric, total tabu-search iterations across restarts.
 
 The vector has class `"MaxMeanSelection"` and prints as a one-line
 summary (see
@@ -73,9 +71,9 @@ or removing one element per step). Restarts continue until either the
 `maxSeconds` or `maxIter` budget is reached.
 
 The reinforcement-learning and tabu hyperparameters are fixed at the
-tuned values reported by (Nijimbere et al. 2020) (greedy factor
+tuned values reported by Nijimbere et al. (2020) : greedy factor
 \\\epsilon = 0.7\\, learning rate \\\alpha = 0.5\\, discount \\\gamma =
-0.5\\, maximum tabu tenure \\120\\, search depth 50 000).
+0.5\\, maximum tabu tenure 120, search depth 50 000.
 
 ## Progress bar
 

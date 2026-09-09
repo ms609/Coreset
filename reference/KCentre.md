@@ -1,4 +1,4 @@
-# Near-optimal discrete k-centre solver
+# Discrete *k*-centre solver
 
 `KCentre()` selects \\k\\ elements (centres) so as to minimize the
 largest distance from any point to its nearest centre (the covering
@@ -30,9 +30,10 @@ KCenter(k, d, nstart = 1L, effort = 1L)
 
 - effort:
 
-  Integer: if `> 0`, run a parallel
+  Integer: if `> 0`, run `effort` parallel
   [`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md)
-  search with `effort` random seeds, returning the best of all results.
+  searches, each seeded on a distinct starting point, and return the
+  best result found.
 
 ## Value
 
@@ -44,10 +45,9 @@ attached as attribute `radius`. The vector has class
 ## Details
 
 On the benchmark instances of García-Díaz et al. (2019) , the CDS
-heuristic reaches roughly 1-3.5% of the optimum at \\O(N^2 \log N)\\,
+heuristic reaches roughly 1–3.5% of the optimum at \\O(N^2 \log N)\\,
 far tighter than
-[`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md)
-(typically tens of per cent above optimum).
+[`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md).
 
 Despite this good performance in practice, the CDSh is a
 3-approximation. To guard against occasional cases where a better

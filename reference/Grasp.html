@@ -104,17 +104,10 @@ among candidates.</p></dd>
 
 
 <dt id="arg-maxcandidates">maxCandidates<a class="anchor" aria-label="anchor" href="#arg-maxcandidates"></a></dt>
-<dd><p>Integer: a composable-coreset tractability cap. When the
-number of candidate points <code>N</code> exceeds <code>maxCandidates</code>, <code><a href="FarFirst.html">FarFirst()</a></code> thins
-the candidates to a <code>maxCandidates</code>-point coreset (with the deterministic,
-RNG-free <code>"peripheral"</code> seed, so no random stream is perturbed), the solver
-runs on the coreset, and the chosen indices are mapped back to the original
-numbering. This lets the solver produce a solution at scales where it would
-otherwise be intractable. <code>maxCandidates = 0</code> (or <code>Inf</code>) disables thinning
-and runs on the full problem; a cap at or above <code>N</code> is a no-op. A cap below
-<code>k</code> is an error. The default is <code>2000L</code>, conservative because <code>Grasp()</code> is matrix-only, so
-Thinning is <strong>on by default</strong>: an input larger than the cap is thinned (and
-a warning is emitted) unless <code>maxCandidates = 0</code> is passed.</p></dd>
+<dd><p>Integer: when the number of candidate points \(N\)
+exceeds <code>maxCandidates</code>, the solver runs on a <code>maxCandidates</code>-point
+coreset chosen by  <code><a href="FarFirst.html">FarFirst()</a></code>.
+<code>maxCandidates = 0</code> (or <code>Inf</code>) disables thinning.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -123,7 +116,7 @@ a warning is emitted) unless <code>maxCandidates = 0</code> is passed.</p></dd>
 indices of the selected points, with attributes:</p><dl><dt>score</dt>
 <dd><p>Achieved MaxMin objective \(T_k\).</p></dd>
 
-<dt>time_s</dt>
+<dt>seconds</dt>
 <dd><p>Wall-clock seconds spent.</p></dd>
 
 <dt>iters</dt>

@@ -32,7 +32,9 @@ Farthest-first (Gonzalez) selection and its seeding strategies.
 
 - [`KCentre()`](https://ms609.github.io/Coreset/reference/KCentre.md)
   [`KCenter()`](https://ms609.github.io/Coreset/reference/KCentre.md) :
-  Near-optimal discrete k-centre solver
+
+  Discrete *k*-centre solver
+
 - [`ExactKCentre()`](https://ms609.github.io/Coreset/reference/ExactKCentre.md)
   [`ExactKCenter()`](https://ms609.github.io/Coreset/reference/ExactKCentre.md)
   : Exact discrete k-centre optimum on small instances

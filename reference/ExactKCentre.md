@@ -44,7 +44,7 @@ the chosen centres in ascending order. It has class
 
   Logical: `TRUE` if optimality is certified.
 
-- time_s:
+- seconds:
 
   Wall-clock seconds elapsed.
 
