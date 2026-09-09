@@ -83,8 +83,7 @@ often attains high-quality selections.</p>
 
 <dt id="arg-plateau">plateau<a class="anchor" aria-label="anchor" href="#arg-plateau"></a></dt>
 <dd><p>Integer; stop after this many consecutive GRASP
-iterations without an improvement to the best elite objective. The
-primary, deterministic stopping criterion.</p></dd>
+iterations have not improved the best elite objective.</p></dd>
 
 
 <dt id="arg-elitesize">eliteSize<a class="anchor" aria-label="anchor" href="#arg-elitesize"></a></dt>
@@ -92,11 +91,11 @@ primary, deterministic stopping criterion.</p></dd>
 
 
 <dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>
-<dd><p>Construction greediness in <code>[0, 1]</code>. Each step draws the next
-point at random from a shortlist of the strongest candidates – those
-whose gain lies within a fraction <code>alpha</code> of the best-to-worst spread.
-<code>alpha = 1</code> is pure greedy (best only); <code>alpha = 0</code> is uniform random
-among candidates.</p></dd>
+<dd><p>Numeric in <code>[0, 1]</code> specifying construction greediness.
+Each step draws the next point at random from a shortlist of the strongest
+candidates whose gain lies within a fraction <code>alpha</code> of the best-to-worst
+spread.
+<code>alpha = 1</code> is pure greedy; <code>alpha = 0</code> is uniform random among candidates.</p></dd>
 
 
 <dt id="arg-maxseconds">maxSeconds<a class="anchor" aria-label="anchor" href="#arg-maxseconds"></a></dt>
@@ -105,8 +104,8 @@ among candidates.</p></dd>
 
 <dt id="arg-maxcandidates">maxCandidates<a class="anchor" aria-label="anchor" href="#arg-maxcandidates"></a></dt>
 <dd><p>Integer: when the number of candidate points \(N\)
-exceeds <code>maxCandidates</code>, the solver runs on a <code>maxCandidates</code>-point
-coreset chosen by  <code><a href="FarFirst.html">FarFirst()</a></code>.
+exceeds <code>maxCandidates</code>, the solver runs on a coreset of <code>maxCandidates</code>
+chosen by  <code><a href="FarFirst.html">FarFirst()</a></code>.
 <code>maxCandidates = 0</code> (or <code>Inf</code>) disables thinning.</p></dd>
 
 </dl></div>

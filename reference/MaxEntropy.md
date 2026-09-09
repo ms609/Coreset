@@ -3,9 +3,9 @@
 `MaxEntropy()` selects the `k` points that maximise the log-determinant
 of their kernel block, \\\log\det K_S\\. This is equivalent to finding
 the set of `k` points that span the largest volume, which corresponds to
-the maximum-entropy sampling criterion(Shewry and Wynn 1987) and the
-maximum-a-posteriori mode of a determinantal point process (Kulesza and
-Taskar 2012) .
+the maximum-entropy sampling criterion (Shewry and Wynn 1987) and the
+maximum-*a-posteriori* mode of a determinantal point process (Kulesza
+and Taskar 2012) .
 
 ## Usage
 

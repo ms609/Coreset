@@ -50,7 +50,7 @@ DropAdd(
 - maxCandidates:
 
   Integer: when the number of candidate points \\N\\ exceeds
-  `maxCandidates`, the solver runs on a `maxCandidates`-point coreset
+  `maxCandidates`, the solver runs on a coreset of `maxCandidates`
   chosen by
   [`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md).
   `maxCandidates = 0` (or `Inf`) disables thinning.

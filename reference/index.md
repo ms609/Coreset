@@ -37,7 +37,9 @@ Farthest-first (Gonzalez) selection and its seeding strategies.
 
 - [`ExactKCentre()`](https://ms609.github.io/Coreset/reference/ExactKCentre.md)
   [`ExactKCenter()`](https://ms609.github.io/Coreset/reference/ExactKCentre.md)
-  : Exact discrete k-centre optimum on small instances
+  :
+
+  Exact discrete *k*-centre optimum
 
 ## Maximum-entropy (maxdet) selection
 

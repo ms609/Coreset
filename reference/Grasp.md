@@ -31,9 +31,8 @@ Grasp(
 
 - plateau:
 
-  Integer; stop after this many consecutive GRASP iterations without an
-  improvement to the best elite objective. The primary, deterministic
-  stopping criterion.
+  Integer; stop after this many consecutive GRASP iterations have not
+  improved the best elite objective.
 
 - eliteSize:
 
@@ -41,11 +40,11 @@ Grasp(
 
 - alpha:
 
-  Construction greediness in `[0, 1]`. Each step draws the next point at
-  random from a shortlist of the strongest candidates – those whose gain
-  lies within a fraction `alpha` of the best-to-worst spread.
-  `alpha = 1` is pure greedy (best only); `alpha = 0` is uniform random
-  among candidates.
+  Numeric in `[0, 1]` specifying construction greediness. Each step
+  draws the next point at random from a shortlist of the strongest
+  candidates whose gain lies within a fraction `alpha` of the
+  best-to-worst spread. `alpha = 1` is pure greedy; `alpha = 0` is
+  uniform random among candidates.
 
 - maxSeconds:
 
@@ -54,7 +53,7 @@ Grasp(
 - maxCandidates:
 
   Integer: when the number of candidate points \\N\\ exceeds
-  `maxCandidates`, the solver runs on a `maxCandidates`-point coreset
+  `maxCandidates`, the solver runs on a coreset of `maxCandidates`
   chosen by
   [`FarFirst()`](https://ms609.github.io/Coreset/reference/FarFirst.md).
   `maxCandidates = 0` (or `Inf`) disables thinning.

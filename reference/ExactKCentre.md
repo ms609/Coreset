@@ -1,4 +1,4 @@
-# Exact discrete k-centre optimum on small instances
+# Exact discrete *k*-centre optimum
 
 `ExactKCentre()` finds an optimal solution to the discrete *k*-centre
 problem.
@@ -24,10 +24,9 @@ ExactKCenter(k, d, maxSeconds = 60)
 
 - maxSeconds:
 
-  Numeric specifying wall-clock budget, in seconds, for the whole
-  search. If the time expires before the optimum is proven, the smallest
-  radius proven feasible is returned, with the attribute
-  `proven = FALSE`.
+  Numeric specifying wall-clock budget, in seconds, for the search. If
+  the time expires before the optimum is proven, the smallest radius
+  proven feasible is returned, with the attribute `proven = FALSE`.
 
 ## Value
 
@@ -63,7 +62,7 @@ radius. This is decided combinatorially via unit propagation and
 dominance reduction, then an exhaustive component-wise search. The
 search is warm-started from the
 [`KCentre()`](https://ms609.github.io/Coreset/reference/KCentre.md)
-(CDSh) radius, then bisects downward to the smallest feasible radius.
+radius, then bisects downwards.
 
 ## Progress bar
 
