@@ -8,8 +8,9 @@
 
 name: R-hub
 run-name: >-
-  ${{ format('Manual run by @{0}', github.triggering_actor) }}:
-  ${{ github.event.inputs.name }} on ${{ github.event.inputs.config }}
+  ${{ github.event.inputs.name || _ }} |
+  platforms: ${{ github.event.inputs.config }}
+  | ${{ format('Triggered by @{0}', github.triggering_actor) }}
 
 on:
   workflow_dispatch:
@@ -64,11 +65,9 @@ jobs:
       - name: Get wget for vnu
         run: |
           apt-get update
-          apt-get install -y wget curl
+          apt-get install -y wget curl sudo
       - uses: dcarbone/install-jq-action@v4.0.1
       - uses: quarto-dev/quarto-actions/setup@v2
-        with:
-          no-sudo: true
       - name: Pre-install package for Quarto vignette subprocess
         run: R CMD INSTALL .
         shell: bash
