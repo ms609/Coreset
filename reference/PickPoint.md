@@ -39,8 +39,8 @@ PickPoint(
 
   `"anti_centroid"`
 
-  :   The point farthest from the coordinate mean (\\\argmax \|\|x -
-      x_bar\|\|\\). \\O(N \* dim)\\. Requires `points`.
+  :   The point farthest from the coordinate mean (\\\arg\max \\x -
+      \bar{x}\\\\). \\O(N \* dim)\\. Requires `points`.
 
   `"random_furthest"`
 

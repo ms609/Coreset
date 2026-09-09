@@ -24,9 +24,10 @@ ExactKCenter(k, d, maxSeconds = 60)
 
 - maxSeconds:
 
-  Wall-clock budget in seconds for the whole search. If it expires
-  before the optimum is proven, the smallest radius proven feasible so
-  far is returned, with the attribute `proven = FALSE`.
+  Numeric specifying wall-clock budget, in seconds, for the whole
+  search. If the time expires before the optimum is proven, the smallest
+  radius proven feasible is returned, with the attribute
+  `proven = FALSE`.
 
 ## Value
 

@@ -102,11 +102,8 @@ to run each strategy and return the best solution.</p></dd>
 
 <dt id="arg-nseeds">nSeeds<a class="anchor" aria-label="anchor" href="#arg-nseeds"></a></dt>
 <dd><p>Integer: number of distinct seeds to draw under the (default)
-<code>"random_furthest"</code> strategy. Three starts captures most of the gain from
-restarting — the improvement curve bends early (knee at n ≈ 3–4 across
-benchmarks) and additional restarts add little. For higher-quality
-solutions, prefer <code><a href="DropAdd.html">DropAdd()</a></code>: tabu search escapes the farthest-first
-construction family where restarts plateau.</p></dd>
+<code>"random_furthest"</code> strategy. Beyond ~3, <code><a href="DropAdd.html">DropAdd()</a></code> will tend to return
+higher quality results faster.</p></dd>
 
 </dl></div>
     <div class="section level2">

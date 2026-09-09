@@ -54,13 +54,9 @@ FarFirst(
 - nSeeds:
 
   Integer: number of distinct seeds to draw under the (default)
-  `"random_furthest"` strategy. Three starts captures most of the gain
-  from restarting — the improvement curve bends early (knee at n ≈ 3–4
-  across benchmarks) and additional restarts add little. For
-  higher-quality solutions, prefer
-  [`DropAdd()`](https://ms609.github.io/Coreset/reference/DropAdd.md):
-  tabu search escapes the farthest-first construction family where
-  restarts plateau.
+  `"random_furthest"` strategy. Beyond ~3,
+  [`DropAdd()`](https://ms609.github.io/Coreset/reference/DropAdd.md)
+  will tend to return higher quality results faster.
 
 ## Value
 

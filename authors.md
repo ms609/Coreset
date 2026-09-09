@@ -11,14 +11,17 @@
 Source:
 [`inst/CITATION`](https://github.com/ms609/Coreset/blob/main/inst/CITATION)
 
-Martin R. Smith (2026). Coreset: Discrete Diversity, Dispersion, and
-Coverage Subset Selection. R package version 0.0.0.9000.
-https://github.com/ms609/Coreset
+Smith (2026). Coreset: discrete diversity, dispersion, and coverage
+subset selection. Comprehensive R Archive Network, Vienna. doi:
+10.32614/CRAN.package.Coreset
 
-    @Manual{,
+    @Manual{Smith2026,
       title = {{Coreset}: Discrete Diversity, Dispersion, and Coverage Subset Selection},
       author = {Martin R. Smith},
-      year = {2026},
       note = {R package version 0.0.0.9000},
-      url = {https://github.com/ms609/Coreset},
+      year = {2026},
+      url = {https://ms609.github.io/Coreset/},
+      doi = {10.32614/CRAN.package.Coreset},
+      organization = {Comprehensive R Archive Network},
+      address = {Vienna},
     }
