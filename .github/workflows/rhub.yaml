@@ -118,15 +118,7 @@ jobs:
       - uses: quarto-dev/quarto-actions/setup@v2
       - name: Ensure Quarto system availability
         run: |
-          # Find where quarto was placed by the action
-          QUARTO_REAL=$(which quarto 2>/dev/null || echo "/usr/local/bin/quarto")
-
-          # Print diagnostic info to GitHub log
-          echo "Quarto located at: $QUARTO_REAL"
-          ls -la "$QUARTO_REAL" || true
-
           # Create an explicit execution wrapper in /usr/bin/quarto
-          # This forces subprocesses in R CMD check to resolve the real binary
           cat << 'EOF' > /usr/bin/quarto
           #!/bin/sh
           TARGET="/usr/local/bin/quarto"
