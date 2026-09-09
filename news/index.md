@@ -1,6 +1,6 @@
 # Changelog
 
-## Coreset 0.0.0.9000 (development)
+## Coreset 1.0.0 (2026-09-09)
 
 `Coreset` selects a representative subset of a fixed candidate set under
 an arbitrary distance, solving four discrete location objectives on a

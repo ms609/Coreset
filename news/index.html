@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">Coreset</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Unreleased version">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,10 +40,10 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.0.0.9000" id="coreset-0009000-development">Coreset 0.0.0.9000 (development)<a class="anchor" aria-label="anchor" href="#coreset-0009000-development"></a></h2>
+<h2 class="pkg-version" data-toc-text="1.0.0" id="coreset-100-2026-09-09">Coreset 1.0.0 (2026-09-09)<a class="anchor" aria-label="anchor" href="#coreset-100-2026-09-09"></a></h2>
 <p><code>Coreset</code> selects a representative subset of a fixed candidate set under an arbitrary distance, solving four discrete location objectives on a distance matrix, a coordinate matrix, or an on-demand distance-column oracle.</p>
 <div class="section level3">
-<h3 id="max-min-diversity-mmdp--discrete-p-dispersion-0-0-0-9000">Max-Min diversity (MMDP / discrete <em>p</em>-dispersion)<a class="anchor" aria-label="anchor" href="#max-min-diversity-mmdp--discrete-p-dispersion-0-0-0-9000"></a></h3>
+<h3 id="max-min-diversity-mmdp--discrete-p-dispersion-1-0-0">Max-Min diversity (MMDP / discrete <em>p</em>-dispersion)<a class="anchor" aria-label="anchor" href="#max-min-diversity-mmdp--discrete-p-dispersion-1-0-0"></a></h3>
 <p>Maximises the minimum pairwise distance within a subset of size <code>k</code>.</p>
 <ul><li>
 <code><a href="../reference/FarFirst.html">FarFirst()</a></code>: greedy farthest-first selection (Gonzalez 1985), with a choice of peripheral seeding strategies, distinct-seed random restarts (<code>nSeeds</code>), and a robust ensemble default.</li>
@@ -55,12 +55,12 @@
 <code><a href="../reference/ExactMaxMin.html">ExactMaxMin()</a></code>: exact node-packing optimum (Sayyady &amp; Fathi 2016), decided by clique search.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="max-mean-dispersion-0-0-0-9000">Max-Mean dispersion<a class="anchor" aria-label="anchor" href="#max-mean-dispersion-0-0-0-9000"></a></h3>
+<h3 id="max-mean-dispersion-1-0-0">Max-Mean dispersion<a class="anchor" aria-label="anchor" href="#max-mean-dispersion-1-0-0"></a></h3>
 <ul><li>
 <code><a href="../reference/MaxMean.html">MaxMean()</a></code>: reinforcement-learning-guided tabu search (Nijimbere et al. 2020), selecting a subset of unrestricted size that maximises the mean pairwise distance.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="discrete-k-centre-0-0-0-9000">Discrete <em>k</em>-centre<a class="anchor" aria-label="anchor" href="#discrete-k-centre-0-0-0-9000"></a></h3>
+<h3 id="discrete-k-centre-1-0-0">Discrete <em>k</em>-centre<a class="anchor" aria-label="anchor" href="#discrete-k-centre-1-0-0"></a></h3>
 <p>Minimises the largest distance from any element to its nearest selected centre.</p>
 <ul><li>
 <code><a href="../reference/KCentre.html">KCentre()</a></code>: the CDSh covering heuristic (Garcia-Diaz et al. 2017, 2019).</li>
@@ -68,14 +68,14 @@
 <code><a href="../reference/ExactKCentre.html">ExactKCentre()</a></code>: exact minimum-cover optimum.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="max-sum-diversity-and-maximum-entropy-0-0-0-9000">Max-Sum diversity and maximum entropy<a class="anchor" aria-label="anchor" href="#max-sum-diversity-and-maximum-entropy-0-0-0-9000"></a></h3>
+<h3 id="max-sum-diversity-and-maximum-entropy-1-0-0">Max-Sum diversity and maximum entropy<a class="anchor" aria-label="anchor" href="#max-sum-diversity-and-maximum-entropy-1-0-0"></a></h3>
 <ul><li>
 <code><a href="../reference/ExactMaxSum.html">ExactMaxSum()</a></code>: exact solver for the Max-Sum Diversity Problem (requires ‘highs’).</li>
 <li>
 <code><a href="../reference/MaxEntropy.html">MaxEntropy()</a></code>: maximum-entropy (maxdet) selection — the mode of a determinantal point process — by greedy pivoted-Cholesky selection, and by exact enumeration for small instances.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="scoring-and-utilities-0-0-0-9000">Scoring and utilities<a class="anchor" aria-label="anchor" href="#scoring-and-utilities-0-0-0-9000"></a></h3>
+<h3 id="scoring-and-utilities-1-0-0">Scoring and utilities<a class="anchor" aria-label="anchor" href="#scoring-and-utilities-1-0-0"></a></h3>
 <ul><li>
 <code><a href="../reference/MinDist.html">MinDist()</a></code>, <code><a href="../reference/MeanDist.html">MeanDist()</a></code> and <code><a href="../reference/KCentreRadius.html">KCentreRadius()</a></code> score an arbitrary selection under the max-min, max-mean and <em>k</em>-centre objectives respectively.</li>
 <li>

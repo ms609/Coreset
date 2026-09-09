@@ -18,7 +18,7 @@ subset selection. Comprehensive R Archive Network, Vienna. doi:
     @Manual{Smith2026,
       title = {{Coreset}: Discrete Diversity, Dispersion, and Coverage Subset Selection},
       author = {Martin R. Smith},
-      note = {R package version 0.0.0.9000},
+      note = {R package version 1.0.0},
       year = {2026},
       url = {https://ms609.github.io/Coreset/},
       doi = {10.32614/CRAN.package.Coreset},
