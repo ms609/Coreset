@@ -1,18 +1,14 @@
 # Exact Maximum Diversity Problem (max-sum) solution
 
 `ExactMaxSum()` finds the optimal solution to the Max-Sum Diversity
-Problem (the "maximum diversity problem"): select the `k`-subset of
-points maximising the **total** pairwise distance it contains. It is the
-max-sum counterpart of
-[`ExactMaxMin()`](https://ms609.github.io/Coreset/reference/ExactMaxMin.md)
-(which maximises the *minimum* pairwise distance), solved by per-node
-integer-program linearisation (Kuo et al. 1993) . As the problem is
-NP-hard it is feasible only for small sets.
+Problem (the "maximum diversity problem"): it selects the `k` points
+that maximizes the total pairwise distance between points. As the
+problem is NP-hard it is feasible only for small sets.
 
 ## Usage
 
 ``` r
-ExactMaxSum(k, d, maxSeconds = 60, warmStart = NULL)
+ExactMaxSum(k, d, maxSeconds = 30, warmStart = NULL)
 ```
 
 ## Arguments
@@ -37,8 +33,8 @@ ExactMaxSum(k, d, maxSeconds = 60, warmStart = NULL)
 
 ## Value
 
-`ExactMaxSum()` returns an integer vector of length `k` (sorted
-ascending) with class `"MaxSumSelection"`, carrying attributes:
+`ExactMaxSum()` returns an integer vector of length `k`, sorted
+ascending, with class `"MaxSumSelection"`, carrying attributes:
 
 - score:
 
@@ -47,18 +43,17 @@ ascending) with class `"MaxSumSelection"`, carrying attributes:
 
 - proven:
 
-  Logical: `TRUE` if optimality was certified within the budget.
+  Logical: `TRUE` if optimality was certified.
 
 - seconds, N, k:
 
-  Wall-clock seconds, instance size, target size.
+  Wall-clock seconds elapsed; instance size; target size.
 
 ## Details
 
-The optimum is floored by a multi-start 1-swap local search, which warms
-the lower bound and is returned when the MILP cannot prove optimality
-within `maxSeconds` – so the result is always at least a strong
-heuristic incumbent.
+The solver uses per-node integer-program linearisation (Kuo et al. 1993)
+, starting from a multi-start 1-swap local search, whose result is
+returned when optimality cannot be proven within `maxSeconds`.
 
 ## References
 
