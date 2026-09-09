@@ -351,9 +351,8 @@ print.KCentreExact <- function(x, ...) {
     # Return:
     x
   } else {
-    class(x) <- "MaxMeanSelection"
     # Return:
-    x
+    `class<-`(x, "MaxMeanSelection")
   }
 }
 
