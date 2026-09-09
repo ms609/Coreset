@@ -63,6 +63,8 @@ jobs:
           token: ${{ secrets.RHUB_TOKEN }}
           job-config: ${{ matrix.config.job-config }}
 
+      - uses: dcarbone/install-jq-action@v4.0.1
+
       - name: Detect OS distribution
         id: os-check
         run: |
@@ -80,13 +82,7 @@ jobs:
             echo "is_fedora=false" >> $GITHUB_OUTPUT
           fi
 
-      - uses: dcarbone/install-jq-action@v4.0.1
-
-      - name: Fetch Fedora dependencies needed by Quarto dynamic binary
-        if: ${{ steps.os-check.outputs.is_fedora != 'true' }}
-        run: |
-          dnf install -y wget glibc glibc-common libstdc++ tar || yum install -y wget glibc libstdc++ tar
-
+      # UBUNTU
       - name: Fetch Ubuntu dependencies needed by Quarto dynamic binary
         if: ${{ steps.os-check.outputs.is_fedora != 'true' }}
         run: |
@@ -94,6 +90,12 @@ jobs:
 
       - if: ${{ steps.os-check.outputs.is_fedora != 'true' }}
         uses: quarto-dev/quarto-actions/setup@v2
+
+      # FEDORA
+      - name: Fetch Fedora dependencies needed by Quarto dynamic binary
+        if: ${{ steps.os-check.outputs.is_fedora == 'true' }}
+        run: |
+          dnf install -y wget glibc glibc-common libstdc++ tar || yum install -y wget glibc libstdc++ tar
 
       - name: Install Quarto CLI via Tarball (Fedora)
         if: ${{ steps.os-check.outputs.is_fedora == 'true' }}
