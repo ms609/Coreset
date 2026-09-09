@@ -78,38 +78,35 @@ jobs:
                 apt-get update -qq && apt-get install -y -qq wget curl
                 ;;
               fedora|rhel|centos|rocky|almalinux)
-                # Install essential tools via native manager
-                dnf install -y wget curl tar libxkbcommon || yum install -y wget curl tar libxkbcommon
+                dnf install -y wget curl tar || yum install -y wget curl tar
 
-                # Create 'apt' and 'apt-get' shims that translate calls to dnf/yum
                 cat << 'EOF' > /usr/local/bin/apt
-#!/bin/sh
-cmd="$1"
-shift
-case "$cmd" in
-  update)
-    exit 0
-    ;;
-  install)
-    # Strip apt flags like -y, -qq and forward package requests to dnf/yum
-    pkgs=""
-    for arg in "$@"; do
-      case "$arg" in
-        -*) ;; # skip flags
-        *) pkgs="$pkgs $arg" ;;
-      esac
-    done
-    if command -v dnf >/dev/null 2>&1; then
-      exec dnf install -y $pkgs
-    else
-      exec yum install -y $pkgs
-    fi
-    ;;
-  *)
-    exit 0
-    ;;
-esac
-EOF
+          #!/bin/sh
+          cmd="$1"
+          shift
+          case "$cmd" in
+            update)
+              exit 0
+              ;;
+            install)
+              pkgs=""
+              for arg in "$@"; do
+                case "$arg" in
+                  -*) ;;
+                  *) pkgs="$pkgs $arg" ;;
+                esac
+              done
+              if command -v dnf >/dev/null 2>&1; then
+                exec dnf install -y $pkgs
+              else
+                exec yum install -y $pkgs
+              fi
+              ;;
+            *)
+              exit 0
+              ;;
+          esac
+          EOF
                 chmod +x /usr/local/bin/apt
                 cp /usr/local/bin/apt /usr/local/bin/apt-get
                 ;;
