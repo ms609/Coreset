@@ -48,20 +48,19 @@ construction's default warm-start seed.
 function.}
 }
 \value{
-\code{DropAdd()} returns an integer vector of length \code{k} containing the 1-based selected
-indices \strong{sorted ascending} (unlike \code{\link[=FarFirst]{FarFirst()}}, which returns
-farthest-first order), with attributes:
+\code{DropAdd()} returns an integer vector of length \code{k} containing
+the selected indices, sorted ascending, with attributes:
 \describe{
-\item{score}{numeric(1), achieved MaxMin objective
+\item{score}{numeric specifying the achieved MaxMin objective
 \eqn{\min_{i \ne j \in S} d_{ij}}.}
-\item{secondary}{numeric(1), achieved sum of pairwise distances over
-\eqn{S} (upper-triangle sum).}
-\item{seconds}{numeric(1), wall-clock seconds spent.}
-\item{iters}{integer(1), main-loop iterations executed (excluding the
-construction phase).}
+\item{secondary}{numeric specifying the achieved (upper triangle) sum of
+pairwise distances over \eqn{S}.}
+\item{seconds}{numeric specifying wall-clock seconds spent.}
+\item{iters}{integer specifying main-loop iterations executed, excluding
+the construction phase.}
 }
 The vector has class \code{"MaxMinSelection"} and prints as a one-line summary
-(see \code{\link[=print.MaxMinSelection]{print.MaxMinSelection()}}); it is otherwise an ordinary integer vector.
+(see \code{\link[=print.MaxMinSelection]{print.MaxMinSelection()}}).
 }
 \description{
 \code{DropAdd()} selects a maximally-dispersed subset of \code{k} points using the
@@ -89,14 +88,14 @@ options(mc.cores = parallel::detectCores())  # or all available cores
 \section{Distance function}{
 
 When \code{d} is a function, \code{d(i)} must return the distances from element \code{i}
-to every element (length \code{N}, with the self-distance ignored)
-or to every \emph{other} element (length \code{N - 1}, in order).
+to every element (length \code{N}, with the self-distance ignored),
+or to every element except \code{i} (length \code{N - 1}, in order).
 \code{N} is required, and memory is \eqn{O(N)}.
 This suits metrics where no stored matrix or coordinate embedding is available.
 
-It is likely that \code{d} will be called many times; unless \code{d} implements
-caching, specifying a distance matrix is likely to require less calculation
-than the multiple calls to \code{d}, where memory permits.
+Because \code{d} is typically called many times; specifying a distance matrix
+(where memory permits) is likely to require less calculation than multiple
+calls to \code{d}, unless \code{d} implements efficient caching.
 }
 
 \examples{

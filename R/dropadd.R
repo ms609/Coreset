@@ -412,20 +412,19 @@
 #' @templateVar progress_shows status messages are shown
 #' @template progress
 #'
-#' @return `DropAdd()` returns an integer vector of length \code{k} containing the 1-based selected
-#'   indices **sorted ascending** (unlike [FarFirst()], which returns
-#'   farthest-first order), with attributes:
+#' @return `DropAdd()` returns an integer vector of length \code{k} containing
+#'  the selected indices, sorted ascending, with attributes:
 #'   \describe{
-#'     \item{score}{numeric(1), achieved MaxMin objective
+#'     \item{score}{numeric specifying the achieved MaxMin objective
 #'       \eqn{\min_{i \ne j \in S} d_{ij}}.}
-#'     \item{secondary}{numeric(1), achieved sum of pairwise distances over
-#'       \eqn{S} (upper-triangle sum).}
-#'     \item{seconds}{numeric(1), wall-clock seconds spent.}
-#'     \item{iters}{integer(1), main-loop iterations executed (excluding the
-#'       construction phase).}
+#'     \item{secondary}{numeric specifying the achieved (upper triangle) sum of
+#'     pairwise distances over \eqn{S}.}
+#'     \item{seconds}{numeric specifying wall-clock seconds spent.}
+#'     \item{iters}{integer specifying main-loop iterations executed, excluding
+#'       the construction phase.}
 #'   }
 #'   The vector has class `"MaxMinSelection"` and prints as a one-line summary
-#'   (see [print.MaxMinSelection()]); it is otherwise an ordinary integer vector.
+#'   (see [print.MaxMinSelection()]).
 #'
 #' @section Parallelism:
 #' To parallelize computation when OpenMP is available, set the `"mc.cores"`
@@ -437,14 +436,14 @@
 #'
 #' @section Distance function:
 #' When `d` is a function, `d(i)` must return the distances from element `i`
-#' to every element (length `N`, with the self-distance ignored)
-#' or to every *other* element (length `N - 1`, in order).
+#' to every element (length `N`, with the self-distance ignored),
+#' or to every element except `i` (length `N - 1`, in order).
 #' `N` is required, and memory is \eqn{O(N)}.
 #' This suits metrics where no stored matrix or coordinate embedding is available.
 #'
-#' It is likely that `d` will be called many times; unless `d` implements
-#' caching, specifying a distance matrix is likely to require less calculation
-#' than the multiple calls to `d`, where memory permits.
+#' Because `d` is typically called many times; specifying a distance matrix
+#' (where memory permits) is likely to require less calculation than multiple
+#' calls to `d`, unless `d` implements efficient caching.
 #'
 #' @references \insertAllCited{}
 #'
