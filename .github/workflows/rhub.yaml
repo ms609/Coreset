@@ -62,31 +62,36 @@ jobs:
         with:
           token: ${{ secrets.RHUB_TOKEN }}
           job-config: ${{ matrix.config.job-config }}
-      - name: Install quarto dependencies
+      - name: Quarto installation: provide dummy 'sudo'
+        run: |
+          if ! command -v sudo >/dev/null 2>&1; then
+            echo '#!/bin/sh' > /usr/local/bin/sudo
+            echo 'exec "$@"' >> /usr/local/bin/sudo
+            chmod +x /usr/local/bin/sudo
+          fi
+      - name: Quarto installation: Install dependencies
         run: |
           if [ -f /etc/os-release ]; then
             . /etc/os-release
             case "$ID" in
               ubuntu|debian)
-                apt-get update && apt-get install -y wget sudo
+                apt-get update -qq && apt-get install -y -qq wget
                 ;;
-              fedora|rhel|centos|rocky|almalinux)
-                dnf install -y wget sudo || yum install -y wget sudo
+              fedora)
+                dnf install -y wget curl || yum install -y wget
                 ;;
-              arch)
-                pacman -Sy --noconfirm wget sudo
+              rhel|centos|rocky|almalinux)
+                yum install -y wget
                 ;;
               alpine)
-                apk add --no-cache wget sudo
+                apk add --no-cache wget
                 ;;
               *)
-                echo "Unsupported OS ID: $ID"
-                exit 1
+                echo "Unknown ID: $ID, attempting dnf/apt fallback..."
+                command -v dnf >/dev/null 2>&1 && dnf install -y wget || true
+                command -v apt-get >/dev/null 2>&1 && apt-get update -qq && apt-get install -y -qq wget || true
                 ;;
             esac
-          else
-            echo "Cannot detect OS distribution (/etc/os-release missing)."
-            exit 1
           fi
       - uses: dcarbone/install-jq-action@v4.0.1
       - uses: quarto-dev/quarto-actions/setup@v2
