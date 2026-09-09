@@ -21,17 +21,18 @@ to the heuristic warm-start pool.}
 \code{ExactMaxSum()} returns an integer vector of length \code{k}, sorted
 ascending, with class \code{"MaxSumSelection"}, carrying attributes:
 \describe{
-\item{score}{Achieved total pairwise distance within the selection. When
-\code{proven} is \code{TRUE} this is the optimum; otherwise a lower bound.}
+\item{score}{Numeric specifying the achieved total pairwise distance
+within the selection. When \code{proven} is \code{TRUE} this is the optimum;
+otherwise a lower bound.}
 \item{proven}{Logical: \code{TRUE} if optimality was certified.}
-\item{seconds, N, k}{Wall-clock seconds elapsed; instance size;
-target size.}
+\item{seconds, N, k}{Numerics reporting the wall-clock seconds elapsed;
+instance size; and target size.}
 }
 }
 \description{
 \code{ExactMaxSum()} finds the optimal solution to the Max-Sum Diversity Problem
 (the "maximum diversity problem"): it selects the \code{k} points that maximizes
-the total pairwise distance between points. As the problem is NP-hard it is
+the total pairwise distance between points. As the problem is NP-hard, it is
 feasible only for small sets.
 }
 \details{
