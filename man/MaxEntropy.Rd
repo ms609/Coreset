@@ -14,33 +14,33 @@ MaxEntropy(
 )
 }
 \arguments{
-\item{k}{Integer target selection size, \eqn{1 \le k \le n}.}
+\item{k}{Integer specifying target selection size, \eqn{1 \le k \le n}.}
 
-\item{d}{A \code{dist} object or square numeric distance matrix over the \code{n}
+\item{d}{\code{dist} object or square numeric distance matrix over the \code{n}
 points.}
 
-\item{sigma}{Optional kernel bandwidth; defaults to the median positive
-distance.}
+\item{sigma}{Optional numperic specifying kernel bandwidth;
+defaults to the median positive distance.}
 
-\item{repair}{Positive Semi-Definite repair method for the kernel:
-\code{"clip"} (nearest), \code{"shift"} (diagonal loading) or
+\item{repair}{Character specifying positive Semi-Definite repair method for
+the kernel: \code{"clip"} (nearest), \code{"shift"} (diagonal loading) or
 \code{"truncate"} (low-rank embedding).}
 
-\item{exact}{Logical, or \code{NA} (the default) to choose automatically: use the
-exact enumeration when \code{choose(n, k) <= maxCombos}, otherwise the greedy.
-\code{TRUE} forces enumeration (error if it exceeds \code{maxCombos}); \code{FALSE} forces
-the greedy.}
+\item{exact}{Logical: \code{TRUE} uses explicit enumeration, failing with an error
+if \code{maxCombos} is exceeded; \code{FALSE} uses the greedy approximation.
+\code{NA} uses exact enumeration when \code{choose(n, k) <= maxCombos},
+greedy otherwise.}
 
-\item{maxCombos}{Numeric ceiling on \code{choose(n, k)} for exact enumeration.}
+\item{maxCombos}{Numeric specifying ceiling on \code{choose(n, k)} for exact
+enumeration.}
 }
 \value{
 \code{MaxEntropy()} returns an integer vector of length \code{k} (sorted
 ascending) with class \code{"MaxEntropySelection"}, carrying attributes:
 \describe{
-\item{logDet, score}{The retained \eqn{\log\det K_S} of the selection;
-\code{-Inf} for a degenerate selection (one forced to repeat near-identical
-points because \code{k} exceeds the number of distinct points, which also
-warns).}
+\item{logDet, score}{The retained \eqn{\log\det K_S} of the selection.
+\code{-Inf} is returned for a degenerate selection where \code{k} exceeds the
+number of distinct points.}
 \item{negMass}{Fraction of spectral mass removed by the Positive Semi-Definite repair.}
 \item{sigma, repair, exact}{The bandwidth, repair, and whether the
 optimum was certified by enumeration.}
@@ -48,25 +48,19 @@ optimum was certified by enumeration.}
 }
 }
 \description{
-\code{MaxEntropy()} selects the \code{k}-subset of points that maximises the
-log-determinant of its kernel block, \eqn{\log\det K_S} -- the spanned volume
-of the selection, the maximum-entropy sampling criterion
+\code{MaxEntropy()} selects the \code{k} points that maximise the log-determinant of
+their kernel block, \eqn{\log\det K_S}. This corresponds to the volume
+spanned by the selection, the maximum-entropy sampling criterion
 \insertCite{Shewry1987}{Coreset} and the maximum-a-posteriori mode of a
-determinantal point process \insertCite{Kulesza2012}{Coreset}. A redundant
-point lies in the span of those already chosen, adds zero volume, and is
-never taken, so the selection is exactly density-blind.
+determinantal point process \insertCite{Kulesza2012}{Coreset}.
 }
 \details{
 A radial-basis kernel \eqn{K_{ij} = \exp(-d_{ij}^2 / 2\sigma^2)} is built from
-the supplied distances (\code{sigma} defaulting to the median positive distance)
-and repaired to a positive-semidefinite matrix, because a general distance is
-not of negative type and \eqn{\log\det} requires it. The exact argmax is
-NP-hard \insertCite{Kulesza2012}{Coreset}, so the selection is built greedily
-by pivoted Cholesky -- at each step adding the point of largest residual
-conditional variance -- with exact enumeration substituted where
-\eqn{\binom{n}{k}} does not exceed \code{maxCombos}. The greedy first pivot is tied
-on a unit-diagonal kernel and is broken deterministically by the most
-peripheral point (least total similarity), so no random seed is used.
+the supplied distances and repaired to a positive-semidefinite matrix.
+The exact argmax is NP-hard \insertCite{Kulesza2012}{Coreset}.
+A greedy approximation is built by pivoted Cholesky, adding at each step
+the point of largest residual conditional variance.
+Ties are broken by selecting the more peripheral point.
 }
 \examples{
 set.seed(1)
