@@ -61,6 +61,7 @@ jobs:
         with:
           token: ${{ secrets.RHUB_TOKEN }}
           job-config: ${{ matrix.config.job-config }}
+      - uses: dsergiu/setup-jq@v0.3.0
       - uses: quarto-dev/quarto-actions/setup@v2
       - name: Pre-install package for Quarto vignette subprocess
         run: R CMD INSTALL .
