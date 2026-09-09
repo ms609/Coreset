@@ -558,7 +558,7 @@ is not guaranteed to be of negative type.
 mePick <- MaxEntropy(4L, eurodist)
 labels(eurodist)[mePick]
 #> [1] "Athens"    "Geneva"    "Lisbon"    "Stockholm"
-attr(mePick, "logDet")     # the achieved log-determinant
+attr(mePick, "score")     # the achieved log-determinant
 #> [1] 0.02885061
 attr(mePick, "exact")      # TRUE if certified by exact enumeration
 #> [1] TRUE

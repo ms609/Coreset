@@ -1,10 +1,11 @@
 # Maximum-entropy (maxdet) subset selection
 
 `MaxEntropy()` selects the `k` points that maximise the log-determinant
-of their kernel block, \\\log\det K_S\\. This corresponds to the volume
-spanned by the selection, the maximum-entropy sampling criterion (Shewry
-and Wynn 1987) and the maximum-a-posteriori mode of a determinantal
-point process (Kulesza and Taskar 2012) .
+of their kernel block, \\\log\det K_S\\. This is equivalent to finding
+the set of `k` points that span the largest volume, which corresponds to
+the maximum-entropy sampling criterion(Shewry and Wynn 1987) and the
+maximum-a-posteriori mode of a determinantal point process (Kulesza and
+Taskar 2012) .
 
 ## Usage
 
@@ -15,7 +16,7 @@ MaxEntropy(
   sigma = NULL,
   repair = c("clip", "shift", "truncate"),
   exact = NA,
-  maxCombos = 3e+05
+  maxCombos = 300000L
 )
 ```
 
@@ -27,18 +28,18 @@ MaxEntropy(
 
 - d:
 
-  `dist` object or square numeric distance matrix over the `n` points.
+  `dist` object or square numeric distance matrix over the \\n\\ points.
 
 - sigma:
 
-  Optional numperic specifying kernel bandwidth; defaults to the median
+  Optional numeric specifying kernel bandwidth; defaults to the median
   positive distance.
 
 - repair:
 
-  Character specifying positive Semi-Definite repair method for the
-  kernel: `"clip"` (nearest), `"shift"` (diagonal loading) or
-  `"truncate"` (low-rank embedding).
+  Character selecting a positive semi-definite repair method: `"clip"`
+  (nearest), `"shift"` (diagonal loading) or `"truncate"` (low-rank
+  embedding).
 
 - exact:
 
@@ -49,14 +50,14 @@ MaxEntropy(
 
 - maxCombos:
 
-  Numeric specifying ceiling on `choose(n, k)` for exact enumeration.
+  Integer specifying ceiling on `choose(n, k)` for exact enumeration.
 
 ## Value
 
 `MaxEntropy()` returns an integer vector of length `k` (sorted
 ascending) with class `"MaxEntropySelection"`, carrying attributes:
 
-- logDet, score:
+- score:
 
   The retained \\\log\det K_S\\ of the selection. `-Inf` is returned for
   a degenerate selection where `k` exceeds the number of distinct
@@ -64,7 +65,7 @@ ascending) with class `"MaxEntropySelection"`, carrying attributes:
 
 - negMass:
 
-  Fraction of spectral mass removed by the Positive Semi-Definite
+  Fraction of spectral mass removed by the positive semi-definite
   repair.
 
 - sigma, repair, exact:
