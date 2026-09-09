@@ -136,7 +136,7 @@
 #'       `proven` is `TRUE` this is the optimum; otherwise a lower bound.}
 #'     \item{proven}{Logical: `TRUE` if optimality was certified within the
 #'       budget.}
-#'     \item{time_s, N, k}{Wall-clock seconds, instance size, target size.}
+#'     \item{seconds, N, k}{Wall-clock seconds, instance size, target size.}
 #'   }
 #' @references \insertAllCited{}
 #' @examples
@@ -207,7 +207,7 @@ ExactMaxSum <- function(k, d, maxSeconds = 60, warmStart = NULL) {
   }
 
   # Return:
-  structure(idx, score = score, proven = proven, time_s = Elapsed(),
+  structure(idx, score = score, proven = proven, seconds = Elapsed(),
             N = n, k = as.integer(k), producer = "ExactMaxSum",
             class = "MaxSumSelection")
 }

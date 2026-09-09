@@ -163,7 +163,7 @@ test_that("ExactMaxMin returns the documented fields", {
   expect_type(attr(res, "proven"), "logical")
   expect_identical(attr(res, "N"), 10L)
   expect_identical(attr(res, "k"), 3L)
-  expect_type(attr(res, "time_s"), "double")
+  expect_type(attr(res, "seconds"), "double")
 })
 
 test_that("ExactMaxMin rejects an asymmetric matrix loudly", {

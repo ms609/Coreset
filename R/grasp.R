@@ -306,7 +306,7 @@
 #' indices of the selected points, with attributes:
 #'   \describe{
 #'     \item{score}{Achieved MaxMin objective \eqn{T_k}.}
-#'     \item{time_s}{Wall-clock seconds spent.}
+#'     \item{seconds}{Wall-clock seconds spent.}
 #'     \item{iters}{Number of GRASP refinement iterations executed.}
 #'     \item{pr_calls}{Number of path-relinking pair-applications run.}
 #'   }
@@ -403,7 +403,7 @@ Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
     cli::cli_progress_done(id = pb)
     itersMsg <- as.integer(out$iters)
     tkMsg    <- as.numeric(out$objective)
-    timeMsg  <- as.numeric(out$time_s)
+    timeMsg  <- as.numeric(out$seconds)
     cli::cli_alert_success(
       "Grasp: {itersMsg} iters, T_k = {signif(tkMsg, 4)}, {round(timeMsg, 1)}s"
     )
@@ -413,7 +413,7 @@ Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
   .AsMaxMinSelection(structure(
     sort(as.integer(out$indices)),
     score    = as.numeric(out$objective),
-    time_s   = as.numeric(out$time_s),
+    seconds   = as.numeric(out$seconds),
     iters    = as.integer(out$iters),
     pr_calls = as.integer(out$pr_calls)
   ), "Grasp")
@@ -533,7 +533,7 @@ Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
   .AsMaxMinSelection(structure(
     sort(as.integer(bestSel)),
     score    = bestZ,
-    time_s   = proc.time()[[3L]] - t0,
+    seconds   = proc.time()[[3L]] - t0,
     iters    = iters,
     pr_calls = prCalls
   ), "Grasp")

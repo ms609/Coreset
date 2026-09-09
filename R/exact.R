@@ -185,7 +185,7 @@
 #'       a lower bound.}
 #'     \item{proven}{Logical: `TRUE` if the search certified optimality within
 #'       the budget, `FALSE` if it returned an unproven incumbent.}
-#'     \item{time_s}{Wall-clock seconds elapsed.}
+#'     \item{seconds}{Wall-clock seconds elapsed.}
 #'     \item{N, k}{Instance size and target subset size.}
 #'   }
 #'   Prints as a terse summary via [print.MaxMinSelection()].
@@ -260,7 +260,7 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
         idx,
         score  = obj,
         proven = proven,
-        time_s = Elapsed(),
+        seconds = Elapsed(),
         N      = n,
         k      = as.integer(k)
       ),

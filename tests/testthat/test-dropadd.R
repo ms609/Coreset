@@ -44,7 +44,7 @@ test_that("DropAdd smoke: 20 pts in 5-D, k=5", {
   expect_true(all(res %in% seq_len(20L)))
   expect_gt(attr(res, "score"), 0)
   expect_gte(attr(res, "iters"), 5L)
-  expect_true(attr(res, "time_s") >= 0)
+  expect_true(attr(res, "seconds") >= 0)
 })
 
 # ---------------------------------------------------------------------------
@@ -155,7 +155,7 @@ test_that("DropAdd respects maxSeconds within reasonable slack", {
   # Disable stagnation so the wall-clock ceiling is the binding criterion.
   res <- DropAdd(20L, dmat, maxSeconds = 0.05, plateau = 100000000L)
   elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
-  expect_lte(attr(res, "time_s"), 1.5)
+  expect_lte(attr(res, "seconds"), 1.5)
   expect_lte(elapsed, 2.0)
   expect_length(res, 20L)
 })
@@ -174,7 +174,7 @@ test_that("DropAdd is deterministic and validates inputs", {
   r1 <- DropAdd(4L, dmat, plateau = 100L)
   set.seed(999)
   r2 <- DropAdd(4L, dmat, plateau = 100L)
-  attr(r1, "time_s") <- attr(r2, "time_s") <- NULL
+  attr(r1, "seconds") <- attr(r2, "seconds") <- NULL
   expect_identical(r1, r2, label = "DropAdd is RNG-independent: different seeds give identical result")
 
   # k validation
@@ -221,7 +221,7 @@ test_that("DropAdd time budget halts when both other criteria are disabled", {
     DropAdd(5L, dmat, plateau = .Machine$integer.max, maxSeconds = 0.001),
     limit = 5)
   expect_gte(attr(res, "iters"), 1L)    # at least one iteration ran
-  expect_lte(attr(res, "time_s"), 0.5)
+  expect_lte(attr(res, "seconds"), 0.5)
 })
 
 # ---------------------------------------------------------------------------
@@ -347,14 +347,14 @@ test_that("DropAdd seed= reproduces the default seed and honours an override", {
   mr <- Coreset:::.PickPoint(dmat, "peripheral")
   a  <- DropAdd(6L, dmat, plateau = 200L)
   b  <- DropAdd(6L, dmat, plateau = 200L, seed = mr)
-  attr(a, "time_s") <- attr(b, "time_s") <- NULL
+  attr(a, "seconds") <- attr(b, "seconds") <- NULL
   expect_identical(a, b)
 
   # Points path: the default seed IS the centroid-peripheral point; same check.
   cp <- which.max(rowSums(sweep(pts, 2, colMeans(pts))^2))
   ap <- DropAdd(6L, points = pts, plateau = 200L)
   bp <- DropAdd(6L, points = pts, plateau = 200L, seed = cp)
-  attr(ap, "time_s") <- attr(bp, "time_s") <- NULL
+  attr(ap, "seconds") <- attr(bp, "seconds") <- NULL
   expect_identical(ap, bp)
 
   # A different valid seed is honoured: a valid selection whose reported score
@@ -444,9 +444,9 @@ test_that("DropAdd points results are invariant to mc.cores (round 10)", {
   s1 <- DropAdd(10L, points = pts, plateau = 60L, maxCandidates = 0L)
   options(mc.cores = 2L)
   s2 <- DropAdd(10L, points = pts, plateau = 60L, maxCandidates = 0L)
-  # time_s is wall-clock and legitimately differs; everything else must not.
+  # seconds is wall-clock and legitimately differs; everything else must not.
   StripTime <- function(x) {
-    attr(x, "time_s") <- NULL
+    attr(x, "seconds") <- NULL
     x
   }
   expect_identical(StripTime(s1), StripTime(s2))

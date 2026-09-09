@@ -818,7 +818,7 @@ List Grasp_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter,
   return List::create(
     _["indices"]   = indices,
     _["objective"] = best_z,
-    _["time_s"]    = elapsed(),
+    _["seconds"]    = elapsed(),
     _["iters"]     = iters,
     _["pr_calls"]  = pr_calls
   );

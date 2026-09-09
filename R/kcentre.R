@@ -282,7 +282,7 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L) {
 #'     \item{radius}{The covering radius achieved; the proven optimum when
 #'       `proven` is `TRUE`, otherwise an upper bound.}
 #'     \item{proven}{Logical: `TRUE` if optimality is certified.}
-#'     \item{time_s}{Wall-clock seconds elapsed.}
+#'     \item{seconds}{Wall-clock seconds elapsed.}
 #'     \item{N, k}{Instance size and centre budget.}
 #'   }
 #'
@@ -319,7 +319,7 @@ ExactKCentre <- function(k, d, maxSeconds = 60) {
       indices,
       radius    = KCentreRadius(d, indices),
       proven    = proven,
-      time_s    = Elapsed(),
+      seconds    = Elapsed(),
       solver    = "cover search",
       N         = n,
       k         = as.integer(k),

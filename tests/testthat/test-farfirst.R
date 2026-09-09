@@ -588,7 +588,7 @@ test_that("a repaired matrix gives the same selection at either subset size", {
   for (k in c(3L, 60L)) {
     expect_warning(sel <- DropAdd(k, near, plateau = 50L), "only to rounding")
     ref <- DropAdd(k, repaired, plateau = 50L)
-    attr(sel, "time_s") <- attr(ref, "time_s") <- NULL   # wall-clock
+    attr(sel, "seconds") <- attr(ref, "seconds") <- NULL   # wall-clock
     expect_identical(sel, ref)
   }
 })

@@ -255,7 +255,7 @@ test_that("the oracle path reports a score its indices really achieve", {
   expect_identical(attr(res, "score"), min(sub))
   expect_equal(attr(res, "secondary"), sum(dmat[res, res][lower.tri(sub)]))
   expect_s3_class(res, "MaxMinSelection")
-  expect_true(attr(res, "time_s") >= 0)
+  expect_true(attr(res, "seconds") >= 0)
 })
 
 # ---------------------------------------------------------------------------

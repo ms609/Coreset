@@ -59,10 +59,8 @@
 #'     \item{score}{numeric, achieved objective
 #'       \eqn{\sum_{i<j \in S} d_{ij} / |S|}.}
 #'     \item{size}{integer, number of selected elements \eqn{|S|}.}
-#'     \item{time_s}{numeric, wall-clock seconds spent.}
-#'     \item{iters}{numeric, total tabu-search iterations across restarts.
-#'       Stored as a double, not an integer, because a long run can exceed the
-#'       32-bit integer range.}
+#'     \item{seconds}{numeric, wall-clock seconds spent.}
+#'     \item{iters}{numeric, total tabu-search iterations across restarts.}
 #'   }
 #'   The vector has class `"MaxMeanSelection"` and prints as a one-line summary
 #'   (see [print.MaxMeanSelection()]); it is otherwise an ordinary integer
@@ -149,7 +147,7 @@ MaxMean <- function(d, maxSeconds = 0.1, maxIter = 1000, useRL = TRUE) {
     sort(as.integer(out$indices)),
     score  = as.numeric(out$objective),
     size   = length(out$indices),
-    time_s = timeS,
+    seconds = timeS,
     iters  = as.numeric(out$iters)
   ))
 }

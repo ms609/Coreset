@@ -417,7 +417,7 @@
 #'       \eqn{\min_{i \ne j \in S} d_{ij}}.}
 #'     \item{secondary}{numeric(1), achieved sum of pairwise distances over
 #'       \eqn{S} (upper-triangle sum).}
-#'     \item{time_s}{numeric(1), wall-clock seconds spent.}
+#'     \item{seconds}{numeric(1), wall-clock seconds spent.}
 #'     \item{iters}{integer(1), main-loop iterations executed (excluding the
 #'       construction phase).}
 #'   }
@@ -577,7 +577,7 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
       sort(as.integer(out$indices)),
       score     = as.numeric(out$objective),
       secondary = as.numeric(out$secondary),
-      time_s    = timeS,
+      seconds    = timeS,
       iters     = as.integer(out$iters)
     ), "DropAdd"))
   }
@@ -605,7 +605,7 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
       sort(as.integer(out$indices)),
       score     = as.numeric(out$objective),
       secondary = as.numeric(out$secondary),
-      time_s    = timeS,
+      seconds    = timeS,
       iters     = as.integer(out$iters)
     ), "DropAdd"))
   }
@@ -639,7 +639,7 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
     sort(as.integer(out$indices)),
     score     = as.numeric(out$objective),
     secondary = as.numeric(out$secondary),
-    time_s    = timeS,
+    seconds    = timeS,
     iters     = as.integer(out$iters)
   ), "DropAdd")
 }

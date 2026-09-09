@@ -288,12 +288,12 @@ test_that("KCentreSelection format and print summarise the selection", {
 test_that("KCentreExact format and print cover proven and unproven states", {
   proven <- structure(
     c(2L, 5L),
-    radius = 0.5, proven = TRUE, time_s = 0.1,
+    radius = 0.5, proven = TRUE, seconds = 0.1,
     solver = "cover search", n = 10L, k = 2L,
     class = c("KCentreExact", "KCentreSelection"))
   unproven <- structure(
     3L,
-    radius = 1.2, proven = FALSE, time_s = 0.1,
+    radius = 1.2, proven = FALSE, seconds = 0.1,
     solver = "cover search", n = 10L, k = 1L,
     class = c("KCentreExact", "KCentreSelection"))
   expect_match(format(proven), "proven optimal, covering radius = ")

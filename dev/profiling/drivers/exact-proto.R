@@ -81,7 +81,7 @@ Exact_v2 <- function(d, m, maxSeconds = 600, feasibility = TRUE, sparse = TRUE) 
   }
   idx <- sort(bestW[seq_len(m)]); sub <- d[idx, idx]; diag(sub) <- Inf
   list(indices = idx, objective = min(sub), proven = !inconcl,
-       time_s = Elapsed(), n = n, m = as.integer(m))
+       seconds = Elapsed(), n = n, m = as.integer(m))
 }
 
 # ---- compare on the two smallest target cases ------------------------------

@@ -81,7 +81,7 @@ test_that("MaxMean returns MaxMeanSelection with documented attributes", {
   expect_true(is.integer(result))
   expect_gte(length(result), 2L)
   expect_true(is.numeric(attr(result, "score")))
-  expect_true(is.numeric(attr(result, "time_s")))
+  expect_true(is.numeric(attr(result, "seconds")))
   expect_type(attr(result, "iters"), "double")   # double, not int (can exceed 2^31)
   expect_identical(attr(result, "size"), length(result))
 })

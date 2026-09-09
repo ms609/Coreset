@@ -219,12 +219,12 @@ summary.MaxMinSelection <- function(object, ...) {
     DropAdd  = {
       .SummaryField("sum of pairwise distances", .SummaryNum(attr(object, "secondary")), 26L)
       .SummaryField("iterations", attr(object, "iters"), 26L)
-      .SummaryField("time", paste(.SummaryNum(attr(object, "time_s")), "s"), 26L)
+      .SummaryField("time", paste(.SummaryNum(attr(object, "seconds")), "s"), 26L)
     },
     Grasp = {
       .SummaryField("refinement iterations", attr(object, "iters"), 26L)
       .SummaryField("path-relinking calls", attr(object, "pr_calls"), 26L)
-      .SummaryField("time", paste(.SummaryNum(attr(object, "time_s")), "s"), 26L)
+      .SummaryField("time", paste(.SummaryNum(attr(object, "seconds")), "s"), 26L)
     },
     ExactMaxMin = {
       status <- if (isTRUE(attr(object, "proven"))) "proven optimal"
@@ -234,7 +234,7 @@ summary.MaxMinSelection <- function(object, ...) {
       .SummaryField("objective", sprintf("%s (%s)",
                                          .SummaryNum(attr(object, "score")), status), 12L)
       .SummaryField("solver", attr(object, "solver"), 12L)
-      .SummaryField("time", paste(.SummaryNum(attr(object, "time_s")), "s"), 12L)
+      .SummaryField("time", paste(.SummaryNum(attr(object, "seconds")), "s"), 12L)
     }
   )
   # Return:
@@ -342,7 +342,7 @@ print.KCentreExact <- function(x, ...) {
 #'
 #' Parallel to [.AsMaxMinSelection()] for the fixed-cardinality solvers.
 #' An empty selection is returned unchanged.
-#' @param x Integer index vector carrying `score`, `size`, `time_s`, `iters`.
+#' @param x Integer index vector carrying `score`, `size`, `seconds`, `iters`.
 #' @return `.AsMaxMeanSelection()` returns `x` with class `"MaxMeanSelection"`,
 #'   or `x` unchanged if it is empty.
 #' @keywords internal
@@ -400,7 +400,7 @@ summary.MaxMeanSelection <- function(object, ...) {
   .SummaryField("size",       attr(object, "size"),  12L)
   .SummaryField("objective",  .SummaryNum(attr(object, "score")), 12L)
   .SummaryField("iterations", attr(object, "iters"), 12L)
-  .SummaryField("time",  paste(.SummaryNum(attr(object, "time_s")), "s"), 12L)
+  .SummaryField("time",  paste(.SummaryNum(attr(object, "seconds")), "s"), 12L)
   invisible(object)
 }
 

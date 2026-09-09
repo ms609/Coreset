@@ -16,11 +16,11 @@ for (cs in cs14) {
     r <- Coreset::ExactMaxMin(d, k, maxSeconds = 600)
     rows[[length(rows)+1L]] <- data.frame(case = cs, n = nrow(d), k = k,
       objective = r$objective, proven = r$proven,
-      time_s = proc.time()[[3L]] - t, stringsAsFactors = FALSE)
+      seconds = proc.time()[[3L]] - t, stringsAsFactors = FALSE)
     cat(sprintf("OLD %-16s k=%2d  obj=%.6f  %.2fs\n", cs, k, r$objective,
-                rows[[length(rows)]]$time_s))
+                rows[[length(rows)]]$seconds))
   }
 }
 old <- do.call(rbind, rows)
 saveRDS(old, "dev/profiling/oldopt.rds")
-cat(sprintf("\nsaved %d rows; total OLD solve time %.1fs\n", nrow(old), sum(old$time_s)))
+cat(sprintf("\nsaved %d rows; total OLD solve time %.1fs\n", nrow(old), sum(old$seconds)))
