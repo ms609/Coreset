@@ -62,14 +62,14 @@ jobs:
         with:
           token: ${{ secrets.RHUB_TOKEN }}
           job-config: ${{ matrix.config.job-config }}
-      - name: Quarto installation: provide dummy 'sudo'
+      - name: Quarto installation - provide dummy `sudo`
         run: |
           if ! command -v sudo >/dev/null 2>&1; then
             echo '#!/bin/sh' > /usr/local/bin/sudo
             echo 'exec "$@"' >> /usr/local/bin/sudo
             chmod +x /usr/local/bin/sudo
           fi
-      - name: Quarto installation: Install dependencies
+      - name: Quarto installation - Install dependencies
         run: |
           if [ -f /etc/os-release ]; then
             . /etc/os-release
