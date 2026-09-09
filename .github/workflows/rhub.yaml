@@ -82,15 +82,19 @@ jobs:
 
       - uses: dcarbone/install-jq-action@v4.0.1
 
+      - name: Fetch dependencies needed by Quarto dynamic binary
+        if: ${{ steps.os-check.outputs.is_fedora != 'true' }}
+        run: |
+          dnf install -y wget glibc glibc-common libstdc++ tar || yum install -y wget glibc libstdc++ tar
+
+
+
       - if: ${{ steps.os-check.outputs.is_fedora != 'true' }}
         uses: quarto-dev/quarto-actions/setup@v2
 
       - name: Install Quarto CLI via Tarball (Fedora)
         if: ${{ steps.os-check.outputs.is_fedora == 'true' }}
         run: |
-          # Fetch glibc dependencies needed by Quarto dynamic binary
-          dnf install -y wget glibc glibc-common libstdc++ tar || yum install -y wget glibc libstdc++ tar
-
           QUARTO_URL=$(curl -s https://api.github.com/repos/quarto-dev/quarto-cli/releases/latest | jq -r '.assets[] | select(.name | endswith("linux-amd64.tar.gz")) | .browser_download_url')
 
           if [ -z "$QUARTO_URL" ] || [ "$QUARTO_URL" = "null" ]; then
