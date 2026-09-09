@@ -117,26 +117,24 @@
 #' Exact Maximum Diversity Problem (max-sum) solution
 #'
 #' `ExactMaxSum()` finds the optimal solution to the Max-Sum Diversity Problem
-#' (the "maximum diversity problem"): select the `k`-subset of points
-#' maximising the **total** pairwise distance it contains. It is the max-sum
-#' counterpart of [ExactMaxMin()] (which maximises the *minimum* pairwise
-#' distance), solved by per-node integer-program linearisation
-#' \insertCite{Kuo1993}{Coreset}. As the problem is NP-hard it is feasible only
-#' for small sets.
+#' (the "maximum diversity problem"): it selects the `k` points that maximizes
+#' the total pairwise distance between points. As the problem is NP-hard it is
+#' feasible only for small sets.
 #'
-#' The optimum is floored by a multi-start 1-swap local search, which warms the
-#' lower bound and is returned when the MILP cannot prove optimality within
-#' `maxSeconds` -- so the result is always at least a strong heuristic incumbent.
+#' The solver uses per-node integer-program linearisation
+#' \insertCite{Kuo1993}{Coreset}, starting from a multi-start 1-swap local
+#' search, whose result is returned when optimality cannot be proven within
+#' `maxSeconds`.
 #'
 #' @inheritParams ExactMaxMin
-#' @return `ExactMaxSum()` returns an integer vector of length `k` (sorted
-#'   ascending) with class `"MaxSumSelection"`, carrying attributes:
+#' @return `ExactMaxSum()` returns an integer vector of length `k`, sorted
+#'   ascending, with class `"MaxSumSelection"`, carrying attributes:
 #'   \describe{
 #'     \item{score}{Achieved total pairwise distance within the selection. When
 #'       `proven` is `TRUE` this is the optimum; otherwise a lower bound.}
-#'     \item{proven}{Logical: `TRUE` if optimality was certified within the
-#'       budget.}
-#'     \item{seconds, N, k}{Wall-clock seconds, instance size, target size.}
+#'     \item{proven}{Logical: `TRUE` if optimality was certified.}
+#'     \item{seconds, N, k}{Wall-clock seconds elapsed; instance size;
+#'       target size.}
 #'   }
 #' @references \insertAllCited{}
 #' @examples
@@ -144,7 +142,7 @@
 #' pts <- matrix(rnorm(20), ncol = 2)
 #' ExactMaxSum(3L, dist(pts))
 #' @export
-ExactMaxSum <- function(k, d, maxSeconds = 60, warmStart = NULL) {
+ExactMaxSum <- function(k, d, maxSeconds = 30, warmStart = NULL) {
   t0 <- proc.time()[[3L]]
   if (!requireNamespace("highs", quietly = TRUE)) { # nocov start
     stop("The `highs` package is required for ExactMaxSum(). ",
