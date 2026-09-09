@@ -69,9 +69,17 @@ amount of information about the original set: a minimally redundant pick.
 
 ## Installation
 
+Install from CRAN (anticipated Oct 2026) with:
+
 ```r
-# install.packages("remotes")
-remotes::install_github("ms609/Coreset")
+install.packages("Coreset")
+```
+
+Install the development version from GitHub:
+
+```r
+if (!require("pak")) install.packages("pak")
+pak::pkg_install("ms609/Coreset")
 ```
 
 ## Related problems

@@ -33,4 +33,5 @@ memcheck
 ^dev$
 ^\.positai$
 ^\.claude$
+^\.agent.*$
 ^Meta$
