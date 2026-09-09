@@ -31,6 +31,7 @@
 #include <limits>
 #include <chrono>
 #include <utility>
+#include <tuple>
 using namespace Rcpp;
 
 // Phase-B batch size: fixed, algorithm-defining (see header note). Sized for
@@ -702,8 +703,7 @@ List Grasp_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter,
     for (int i = 0; i < elite_size; ++i) ord[i] = i;
     std::sort(ord.begin(), ord.end(),
               [&](const int& a, const int& b) {
-                if (ESz[a] != ESz[b]) return ESz[a] > ESz[b];
-                return a < b;
+                return std::tie(ESz[a], b) > std::tie(ESz[b], a);
               });
     std::vector<std::vector<int>> ES2(elite_size);
     std::vector<double> ESz2(elite_size);

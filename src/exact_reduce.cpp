@@ -43,6 +43,7 @@
 #include <cstdint>
 #include <chrono>
 #include <memory>
+#include <tuple>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -641,9 +642,8 @@ List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
     }
     std::sort(vars.begin(), vars.end(),
               [&](const int& a, const int& b) {
-                if (dg[a] != dg[b]) return dg[a] > dg[b];
-                return a < b;
-                });
+                return std::tie(dg[a], b) > std::tie(dg[b], a);
+              });
     const int nv0 = static_cast<int>(vars.size());
     for (int t = 0; t < nv0; ++t) {
       loc[vars[t]] = t;
