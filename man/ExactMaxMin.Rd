@@ -9,7 +9,7 @@ ExactMaxMin(
   d,
   maxSeconds = 60,
   warmStart = NULL,
-  nStart = 8L,
+  nStart = 1L,
   graspPlateau = 50L,
   dropPlateau = 512L
 )
@@ -53,8 +53,8 @@ Prints as a terse summary via \code{\link[=print.MaxMinSelection]{print.MaxMinSe
 sets).
 }
 \details{
-The search is warm-started from a heuristic lower bound (the best of several
-\code{\link[=Grasp]{Grasp()}} restarts and a \code{\link[=DropAdd]{DropAdd()}} pass), then gallops upward from that
+The search is warm-started from a heuristic lower bound (the best of
+\code{nStart} \code{\link[=Grasp]{Grasp()}} restarts and a \code{\link[=DropAdd]{DropAdd()}} pass), then gallops upward from that
 bound to the first infeasible threshold and bisects the resulting bracket.
 
 To parallelize computation when OpenMP is available, set the \code{"mc.cores"}
