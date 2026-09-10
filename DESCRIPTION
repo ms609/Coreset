@@ -1,6 +1,6 @@
 Package: Coreset
 Title: Discrete Diversity, Dispersion, and Coverage Subset Selection
-Version: 0.0.0.9000
+Version: 1.0.0
 Authors@R:
   person("Martin R.", "Smith",
          email = "martin.smith@durham.ac.uk",
@@ -59,7 +59,7 @@ Config/Needs/memcheck: testthat, pkgdown
 Config/Needs/metadata: codemeta
 Config/Needs/revdeps: revdepcheck
 Config/Needs/website: pkgdown
-Config/roxygen2/version: 8.0.0
+Config/roxygen2/version: 8.1.0
 Config/testthat/edition: 3
 Config/testthat/parallel: false
 ByteCompile: true

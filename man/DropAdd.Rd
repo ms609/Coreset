@@ -19,7 +19,7 @@ DropAdd(
 \item{k}{Integer: subset size, \eqn{2 \le k \le N}.}
 
 \item{d}{A \code{dist} object, a square symmetric numeric matrix, or a
-distance-column function (see §\emph{Distance-column function}).}
+distance-column function (see below).}
 
 \item{plateau}{Integer: stop after this many consecutive drop-add
 iterations do not improve the score.}
@@ -34,41 +34,31 @@ Ignored if \code{d} specified.
 Avoids creating an \eqn{N \times N} distance matrix, enabling use at
 \eqn{N \ge 46340}).}
 
-\item{maxCandidates}{Integer: a composable-coreset tractability cap. When the
-number of candidate points \code{N} exceeds \code{maxCandidates}, \code{\link[=FarFirst]{FarFirst()}} thins
-the candidates to a \code{maxCandidates}-point coreset (with the deterministic,
-RNG-free \code{"peripheral"} seed, so no random stream is perturbed), the solver
-runs on the coreset, and the chosen indices are mapped back to the original
-numbering. This lets the solver produce a solution at scales where it would
-otherwise be intractable. \code{maxCandidates = 0} (or \code{Inf}) disables thinning
-and runs on the full problem; a cap at or above \code{N} is a no-op. A cap below
-\code{k} is an error. The default is \code{46340L}, the dense-distance-matrix feasibility ceiling
-Thinning is \strong{on by default}: an input larger than the cap is thinned (and
-a warning is emitted) unless \code{maxCandidates = 0} is passed.}
+\item{maxCandidates}{Integer: when the number of candidate points \eqn{N}
+exceeds \code{maxCandidates}, the solver runs on a coreset of \code{maxCandidates}
+chosen by  \code{\link[=FarFirst]{FarFirst()}}.
+\code{maxCandidates = 0} (or \code{Inf}) disables thinning.}
 
-\item{seed}{Optional integer: a 1-based start index that overrides the
-construction's default warm-start seed.
-\code{NULL} (default) keeps the method's own seed. Not supported when
-\code{maxCandidates = 0L}.}
+\item{seed}{Optional integer specifying the index of an element with which to
+seed the warm-start search.}
 
 \item{N}{Integer: the total number of elements. Required only if \code{d} is a
 function.}
 }
 \value{
-\code{DropAdd()} returns an integer vector of length \code{k} containing the 1-based selected
-indices \strong{sorted ascending} (unlike \code{\link[=FarFirst]{FarFirst()}}, which returns
-farthest-first order), with attributes:
+\code{DropAdd()} returns an integer vector of length \code{k} containing
+the selected indices, sorted ascending, with attributes:
 \describe{
-\item{score}{numeric(1), achieved MaxMin objective
+\item{score}{numeric specifying the achieved MaxMin objective
 \eqn{\min_{i \ne j \in S} d_{ij}}.}
-\item{secondary}{numeric(1), achieved sum of pairwise distances over
-\eqn{S} (upper-triangle sum).}
-\item{time_s}{numeric(1), wall-clock seconds spent.}
-\item{iters}{integer(1), main-loop iterations executed (excluding the
-construction phase).}
+\item{secondary}{numeric specifying the achieved (upper triangle) sum of
+pairwise distances over \eqn{S}.}
+\item{seconds}{numeric specifying wall-clock seconds spent.}
+\item{iters}{integer specifying main-loop iterations executed, excluding
+the construction phase.}
 }
 The vector has class \code{"MaxMinSelection"} and prints as a one-line summary
-(see \code{\link[=print.MaxMinSelection]{print.MaxMinSelection()}}); it is otherwise an ordinary integer vector.
+(see \code{\link[=print.MaxMinSelection]{print.MaxMinSelection()}}).
 }
 \description{
 \code{DropAdd()} selects a maximally-dispersed subset of \code{k} points using the
@@ -96,14 +86,14 @@ options(mc.cores = parallel::detectCores())  # or all available cores
 \section{Distance function}{
 
 When \code{d} is a function, \code{d(i)} must return the distances from element \code{i}
-to every element (length \code{N}, with the self-distance ignored)
-or to every \emph{other} element (length \code{N - 1}, in order).
+to every element (length \code{N}, with the self-distance ignored),
+or to every element except \code{i} (length \code{N - 1}, in order).
 \code{N} is required, and memory is \eqn{O(N)}.
 This suits metrics where no stored matrix or coordinate embedding is available.
 
-It is likely that \code{d} will be called many times; unless \code{d} implements
-caching, specifying a distance matrix is likely to require less calculation
-than the multiple calls to \code{d}, where memory permits.
+Because \code{d} is typically called many times; specifying a distance matrix
+(where memory permits) is likely to require less calculation than multiple
+calls to \code{d}, unless \code{d} implements efficient caching.
 }
 
 \examples{

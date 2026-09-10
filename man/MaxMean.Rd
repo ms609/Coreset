@@ -27,10 +27,8 @@ starts from a random solution.}
 \item{score}{numeric, achieved objective
 \eqn{\sum_{i<j \in S} d_{ij} / |S|}.}
 \item{size}{integer, number of selected elements \eqn{|S|}.}
-\item{time_s}{numeric, wall-clock seconds spent.}
-\item{iters}{numeric, total tabu-search iterations across restarts.
-Stored as a double, not an integer, because a long run can exceed the
-32-bit integer range.}
+\item{seconds}{numeric, wall-clock seconds spent.}
+\item{iters}{numeric, total tabu-search iterations across restarts.}
 }
 The vector has class \code{"MaxMeanSelection"} and prints as a one-line summary
 (see \code{\link[=print.MaxMeanSelection]{print.MaxMeanSelection()}}); it is otherwise an ordinary integer
@@ -53,9 +51,9 @@ Restarts continue until either the \code{maxSeconds} or \code{maxIter} budget is
 reached.
 
 The reinforcement-learning and tabu hyperparameters are fixed at the tuned
-values reported by \insertCite{Dieudonne2020}{Coreset} (greedy factor
+values reported by \insertCite{Dieudonne2020;textual}{Coreset}: greedy factor
 \eqn{\epsilon = 0.7}, learning rate \eqn{\alpha = 0.5}, discount
-\eqn{\gamma = 0.5}, maximum tabu tenure \eqn{120}, search depth 50 000).
+\eqn{\gamma = 0.5}, maximum tabu tenure 120, search depth 50 000.
 }
 \section{Progress bar}{
 

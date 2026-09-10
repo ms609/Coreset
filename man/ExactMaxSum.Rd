@@ -4,7 +4,7 @@
 \alias{ExactMaxSum}
 \title{Exact Maximum Diversity Problem (max-sum) solution}
 \usage{
-ExactMaxSum(k, d, maxSeconds = 60, warmStart = NULL)
+ExactMaxSum(k, d, maxSeconds = 30, warmStart = NULL)
 }
 \arguments{
 \item{k}{Integer: target subset size, between 2 and \code{nrow(d)}.}
@@ -18,34 +18,36 @@ elapsed, returning largest threshold proven feasible.}
 to the heuristic warm-start pool.}
 }
 \value{
-\code{ExactMaxSum()} returns an integer vector of length \code{k} (sorted
-ascending) with class \code{"MaxSumSelection"}, carrying attributes:
+\code{ExactMaxSum()} returns an integer vector of length \code{k}, sorted
+ascending, with class \code{"MaxSumSelection"}, carrying attributes:
 \describe{
-\item{score}{Achieved total pairwise distance within the selection. When
-\code{proven} is \code{TRUE} this is the optimum; otherwise a lower bound.}
-\item{proven}{Logical: \code{TRUE} if optimality was certified within the
-budget.}
-\item{time_s, N, k}{Wall-clock seconds, instance size, target size.}
+\item{score}{Numeric specifying the achieved total pairwise distance
+within the selection. When \code{proven} is \code{TRUE} this is the optimum;
+otherwise a lower bound.}
+\item{proven}{Logical: \code{TRUE} if optimality was certified.}
+\item{seconds, N, k}{Numerics reporting the wall-clock seconds elapsed;
+instance size; and target size.}
 }
 }
 \description{
 \code{ExactMaxSum()} finds the optimal solution to the Max-Sum Diversity Problem
-(the "maximum diversity problem"): select the \code{k}-subset of points
-maximising the \strong{total} pairwise distance it contains. It is the max-sum
-counterpart of \code{\link[=ExactMaxMin]{ExactMaxMin()}} (which maximises the \emph{minimum} pairwise
-distance), solved by per-node integer-program linearisation
-\insertCite{Kuo1993}{Coreset}. As the problem is NP-hard it is feasible only
-for small sets.
+(the "maximum diversity problem"): it selects the \code{k} points that maximizes
+the total pairwise distance between points. As the problem is NP-hard, it is
+feasible only for small sets.
 }
 \details{
-The optimum is floored by a multi-start 1-swap local search, which warms the
-lower bound and is returned when the MILP cannot prove optimality within
-\code{maxSeconds} -- so the result is always at least a strong heuristic incumbent.
+The solver uses per-node integer-program linearisation
+\insertCite{Kuo1993}{Coreset}, starting from a multi-start 1-swap local
+search, whose result is returned when optimality cannot be proven within
+\code{maxSeconds}.
 }
 \examples{
 set.seed(1)
 pts <- matrix(rnorm(20), ncol = 2)
-ExactMaxSum(3L, dist(pts))
+# Package 'highs' is required for ExactMaxSum
+if (requireNamespace("highs", quietly = TRUE)) {
+  ExactMaxSum(3L, dist(pts))
+}
 }
 \references{
 \insertAllCited{}

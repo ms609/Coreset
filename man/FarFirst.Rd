@@ -36,11 +36,8 @@ Pass the name of one or more seeding strategies described in \code{\link[=PickPo
 to run each strategy and return the best solution.}
 
 \item{nSeeds}{Integer: number of distinct seeds to draw under the (default)
-\code{"random_furthest"} strategy. Three starts captures most of the gain from
-restarting — the improvement curve bends early (knee at n ≈ 3–4 across
-benchmarks) and additional restarts add little. For higher-quality
-solutions, prefer \code{\link[=DropAdd]{DropAdd()}}: tabu search escapes the farthest-first
-construction family where restarts plateau.}
+\code{"random_furthest"} strategy. Beyond ~3, \code{\link[=DropAdd]{DropAdd()}} will tend to return
+higher quality results faster.}
 }
 \value{
 \code{FarFirst()} returns an integer vector with class \code{MaxMinSelection},

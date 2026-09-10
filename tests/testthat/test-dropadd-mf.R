@@ -102,7 +102,7 @@ test_that("DropAdd points path respects maxSeconds within reasonable slack", {
   res <- DropAdd(20L, maxSeconds = 0.05, plateau = 100000000L,
                  points = pts)
   elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
-  expect_lte(attr(res, "time_s"), 5)
+  expect_lte(attr(res, "seconds"), 5)
   expect_lte(elapsed, 5.5)
   expect_length(res, 20L)
   expect_gte(attr(res, "iters"), 1L)
@@ -148,7 +148,7 @@ test_that("DropAdd points path: deterministic and input validation", {
   # RNG-free: repeated calls are identical (the no-op `seed` arg was removed).
   r1 <- DropAdd(4L, plateau = 100L, points = pts)
   r2 <- DropAdd(4L, plateau = 100L, points = pts)
-  attr(r1, "time_s") <- attr(r2, "time_s") <- NULL
+  attr(r1, "seconds") <- attr(r2, "seconds") <- NULL
   expect_identical(r1, r2)
 
   # k validation
@@ -292,7 +292,7 @@ test_that("DropAdd points path C++: chunk merge is invariant on a tied lattice",
   old <- options(mc.cores = NULL)
   on.exit(options(old), add = TRUE)
   StripTime <- function(x) {
-    attr(x, "time_s") <- NULL
+    attr(x, "seconds") <- NULL
     x
   }
   for (k in c(8L, 20L)) {

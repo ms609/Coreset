@@ -26,7 +26,7 @@ selects $k$ elements such that the minimum distance between any pair of selected
 |---|---|---|
 | `DropAdd()` | DropAdd tabu search | ~99%-optimal heuristic |
 | `Grasp()` |  GRASP with path-relinking metaheuristic | Slower but powerful heuristic |
-| `ExactMaxMin()` | Node-packing integer program | Proven optimum, small `k` |
+| `ExactMaxMin()` | Node-packing integer program | Proven optimum, small $k$ |
 
 ### Max-sum dispersion (maximum diversity)
 
@@ -35,7 +35,7 @@ distance between all pairs of selected elements is as large as possible.
 
 | Function | Method | Use |
 |---|---|---|
-| `ExactMaxSum()` | Per-node MILP linearisation, floored by multi-start local search | Proven optimum for total pairwise distance, small `k` (needs `highs`) |
+| `ExactMaxSum()` | Per-node MILP linearisation, floored by multi-start local search | Proven optimum for total pairwise distance, small $k$ (needs `highs`) |
 
 ### Max-mean dispersion
 
@@ -55,7 +55,7 @@ as possible.
 | Function | Method | Use |
 |---|---|---|
 | `KCentre()` | Critical Dominating Set heuristic | ~1–3.5% of optimum at $O(N^2 \log N)$, typically far tighter than `FarFirst()` |
-| `ExactKCentre()` | Min-cover integer program | Proven optimum, small `k` (needs `highs`) |
+| `ExactKCentre()` | Exhaustive covering search | Proven optimum, small $k$ |
 
 ### Maximum-entropy (maxdet) selection
 
@@ -69,9 +69,17 @@ amount of information about the original set: a minimally redundant pick.
 
 ## Installation
 
+Install from CRAN (anticipated Oct 2026) with:
+
 ```r
-# install.packages("remotes")
-remotes::install_github("ms609/Coreset")
+install.packages("Coreset")
+```
+
+Install the development version from GitHub:
+
+```r
+if (!require("pak")) install.packages("pak")
+pak::pkg_install("ms609/Coreset")
 ```
 
 ## Related problems

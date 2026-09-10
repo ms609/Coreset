@@ -45,8 +45,8 @@ test_that("Grasp_cpp == .Grasp_R across seeds and parameters", {
                    alpha = al)
 
     info <- sprintf("seed=%d mni=%d es=%d alpha=%g", s, mni, es, al)
-    # Drop the wall-clock `time_s` attribute: it is never expected to match.
-    attr(ker, "time_s") <- attr(ref, "time_s") <- NULL
+    # Drop the wall-clock `seconds` attribute: it is never expected to match.
+    attr(ker, "seconds") <- attr(ref, "seconds") <- NULL
     expect_identical(ker, ref, info = info)
     expect_equal(attr(ker, "score"), attr(ref, "score"), tolerance = 1e-14,
                  info = info)
@@ -62,7 +62,7 @@ test_that("Grasp is reproducible from a seed (machine-independent)", {
   set.seed(17); b <- Grasp(d = d30, k = 6L, plateau = 30L, eliteSize = 5L)
   # set.seed() before each call => identical selection and objective; only
   # wall-clock differs.
-  attr(a, "time_s") <- attr(b, "time_s") <- NULL
+  attr(a, "seconds") <- attr(b, "seconds") <- NULL
   expect_identical(a, b)
 })
 
@@ -153,7 +153,7 @@ test_that("Grasp survives alpha = 1 (empty-RCL fallback) and matches the R refer
                              alpha = 1)
     set.seed(s)
     ker <- Grasp(d = d30m, k = 5L, plateau = 15L, eliteSize = 4L, alpha = 1)
-    attr(ker, "time_s") <- attr(ref, "time_s") <- NULL
+    attr(ker, "seconds") <- attr(ref, "seconds") <- NULL
     expect_identical(ker, ref, info = paste("seed", s))
   }
 })
@@ -361,7 +361,7 @@ test_that("grasp_local_search non-witness critical branch covered (grasp.cpp:193
   ref <- Coreset:::.Grasp_R(4L, dSq5, plateau = 10L, eliteSize = 4L)
   set.seed(1)
   ker <- Grasp(d = dSq5, k = 4L, plateau = 10L, eliteSize = 4L)
-  attr(ker, "time_s") <- attr(ref, "time_s") <- NULL
+  attr(ker, "seconds") <- attr(ref, "seconds") <- NULL
   expect_identical(ker, ref)
 })
 
@@ -386,7 +386,7 @@ test_that(".Grasp_R time budget halts execution (grasp.R line 397)", {
                       eliteSize = 4L, maxSeconds = 0.001),
     limit = 5)
   # Need 2s to pass on memcheck runs
-  expect_lte(attr(res, "time_s"), 2)
+  expect_lte(attr(res, "seconds"), 2)
 })
 
 test_that("Grasp_cpp == .Grasp_R on a tie-rich lattice", {
@@ -400,7 +400,7 @@ test_that("Grasp_cpp == .Grasp_R on a tie-rich lattice", {
       set.seed(s)
       ker <- Grasp(d = dl, k = 6L, plateau = 15L, eliteSize = 4L,
                    alpha = al)
-      attr(ker, "time_s") <- attr(ref, "time_s") <- NULL
+      attr(ker, "seconds") <- attr(ref, "seconds") <- NULL
       expect_identical(ker, ref, info = sprintf("seed=%d alpha=%g", s, al))
     }
   }
@@ -414,6 +414,6 @@ test_that("Grasp results are invariant to mc.cores", {
   options(mc.cores = 2L)
   set.seed(99)
   threaded <- Grasp(d = d30m, k = 6L, plateau = 30L, eliteSize = 4L)
-  attr(serial, "time_s") <- attr(threaded, "time_s") <- NULL
+  attr(serial, "seconds") <- attr(threaded, "seconds") <- NULL
   expect_identical(threaded, serial)
 })

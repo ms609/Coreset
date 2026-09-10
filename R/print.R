@@ -219,12 +219,12 @@ summary.MaxMinSelection <- function(object, ...) {
     DropAdd  = {
       .SummaryField("sum of pairwise distances", .SummaryNum(attr(object, "secondary")), 26L)
       .SummaryField("iterations", attr(object, "iters"), 26L)
-      .SummaryField("time", paste(.SummaryNum(attr(object, "time_s")), "s"), 26L)
+      .SummaryField("time", paste(.SummaryNum(attr(object, "seconds")), "s"), 26L)
     },
     Grasp = {
       .SummaryField("refinement iterations", attr(object, "iters"), 26L)
       .SummaryField("path-relinking calls", attr(object, "pr_calls"), 26L)
-      .SummaryField("time", paste(.SummaryNum(attr(object, "time_s")), "s"), 26L)
+      .SummaryField("time", paste(.SummaryNum(attr(object, "seconds")), "s"), 26L)
     },
     ExactMaxMin = {
       status <- if (isTRUE(attr(object, "proven"))) "proven optimal"
@@ -234,7 +234,7 @@ summary.MaxMinSelection <- function(object, ...) {
       .SummaryField("objective", sprintf("%s (%s)",
                                          .SummaryNum(attr(object, "score")), status), 12L)
       .SummaryField("solver", attr(object, "solver"), 12L)
-      .SummaryField("time", paste(.SummaryNum(attr(object, "time_s")), "s"), 12L)
+      .SummaryField("time", paste(.SummaryNum(attr(object, "seconds")), "s"), 12L)
     }
   )
   # Return:
@@ -290,7 +290,10 @@ print.KCentreSelection <- function(x, ...) {
 #' @family reporting functions
 #' @examples
 #' set.seed(1)
-#' ExactMaxSum(3L, dist(matrix(rnorm(20), ncol = 2)))
+#' # Package 'highs' is required for ExactMaxSum()
+#' if (requireNamespace("highs", quietly = TRUE)) {
+#'   ExactMaxSum(3L, dist(matrix(rnorm(20), ncol = 2)))
+#' }
 #' @export
 format.MaxSumSelection <- function(x, ...) {
   idx <- as.integer(x)
@@ -319,9 +322,9 @@ format.KCentreExact <- function(x, ...) {
   idx <- as.integer(x)
   nc <- length(idx)
   status <- if (isTRUE(attr(x, "proven"))) {
-    sprintf("exact MILP (%s), proven optimal", attr(x, "solver"))
+    sprintf("exact %s, proven optimal", attr(x, "solver"))
   } else {
-    sprintf("exact MILP (%s), unproven incumbent", attr(x, "solver"))
+    sprintf("exact %s, unproven incumbent", attr(x, "solver"))
   }
   rel <- if (isTRUE(attr(x, "proven"))) "=" else "<="
   sprintf("%d centre%s (%s) by %s, covering radius %s %s",
@@ -342,7 +345,7 @@ print.KCentreExact <- function(x, ...) {
 #'
 #' Parallel to [.AsMaxMinSelection()] for the fixed-cardinality solvers.
 #' An empty selection is returned unchanged.
-#' @param x Integer index vector carrying `score`, `size`, `time_s`, `iters`.
+#' @param x Integer index vector carrying `score`, `size`, `seconds`, `iters`.
 #' @return `.AsMaxMeanSelection()` returns `x` with class `"MaxMeanSelection"`,
 #'   or `x` unchanged if it is empty.
 #' @keywords internal
@@ -351,9 +354,8 @@ print.KCentreExact <- function(x, ...) {
     # Return:
     x
   } else {
-    class(x) <- "MaxMeanSelection"
     # Return:
-    x
+    `class<-`(x, "MaxMeanSelection")
   }
 }
 
@@ -400,7 +402,7 @@ summary.MaxMeanSelection <- function(object, ...) {
   .SummaryField("size",       attr(object, "size"),  12L)
   .SummaryField("objective",  .SummaryNum(attr(object, "score")), 12L)
   .SummaryField("iterations", attr(object, "iters"), 12L)
-  .SummaryField("time",  paste(.SummaryNum(attr(object, "time_s")), "s"), 12L)
+  .SummaryField("time",  paste(.SummaryNum(attr(object, "seconds")), "s"), 12L)
   invisible(object)
 }
 
@@ -434,7 +436,7 @@ format.MaxEntropySelection <- function(x, ...) {
   }
   sprintf("%d element%s (%s) by %s, log det = %s (repair removed %s of mass)",
           nc, if (nc == 1L) "" else "s", .FormatIndexList(idx), how,
-          format(signif(attr(x, "logDet"), 4L)),
+          format(signif(attr(x, "score"), 4L)),
           format(signif(attr(x, "negMass"), 3L)))
 }
 

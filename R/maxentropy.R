@@ -91,46 +91,42 @@
 
 #' Maximum-entropy (maxdet) subset selection
 #'
-#' `MaxEntropy()` selects the `k`-subset of points that maximises the
-#' log-determinant of its kernel block, \eqn{\log\det K_S} -- the spanned volume
-#' of the selection, the maximum-entropy sampling criterion
-#' \insertCite{Shewry1987}{Coreset} and the maximum-a-posteriori mode of a
-#' determinantal point process \insertCite{Kulesza2012}{Coreset}. A redundant
-#' point lies in the span of those already chosen, adds zero volume, and is
-#' never taken, so the selection is exactly density-blind.
+#' `MaxEntropy()` selects the `k` points that maximise the log-determinant of
+#' their kernel block, \eqn{\log\det K_S}. This is equivalent to finding the set
+#' of `k` points that span the largest volume, which corresponds to
+#' the maximum-entropy sampling criterion \insertCite{Shewry1987}{Coreset} and
+#' the maximum-_a-posteriori_ mode of a determinantal point process
+#' \insertCite{Kulesza2012}{Coreset}.
 #'
 #' A radial-basis kernel \eqn{K_{ij} = \exp(-d_{ij}^2 / 2\sigma^2)} is built from
-#' the supplied distances (`sigma` defaulting to the median positive distance)
-#' and repaired to a positive-semidefinite matrix, because a general distance is
-#' not of negative type and \eqn{\log\det} requires it. The exact argmax is
-#' NP-hard \insertCite{Kulesza2012}{Coreset}, so the selection is built greedily
-#' by pivoted Cholesky -- at each step adding the point of largest residual
-#' conditional variance -- with exact enumeration substituted where
-#' \eqn{\binom{n}{k}} does not exceed `maxCombos`. The greedy first pivot is tied
-#' on a unit-diagonal kernel and is broken deterministically by the most
-#' peripheral point (least total similarity), so no random seed is used.
+#' the supplied distances and repaired to a positive-semidefinite matrix.
+#' The exact argmax is NP-hard \insertCite{Kulesza2012}{Coreset}.
+#' A greedy approximation is built by pivoted Cholesky, adding at each step
+#' the point of largest residual conditional variance.
+#' Ties are broken by selecting the more peripheral point.
 #'
-#' @param k Integer target selection size, \eqn{1 \le k \le n}.
-#' @param d A `dist` object or square numeric distance matrix over the `n`
+#' @param k Integer specifying target selection size, \eqn{1 \le k \le n}.
+#' @param d `dist` object or square numeric distance matrix over the \eqn{n}
 #'   points.
-#' @param sigma Optional kernel bandwidth; defaults to the median positive
-#'   distance.
-#' @param repair Positive Semi-Definite repair method for the kernel:
-#' `"clip"` (nearest), `"shift"` (diagonal loading) or
-#' `"truncate"` (low-rank embedding).
-#' @param exact Logical, or `NA` (the default) to choose automatically: use the
-#'   exact enumeration when `choose(n, k) <= maxCombos`, otherwise the greedy.
-#'   `TRUE` forces enumeration (error if it exceeds `maxCombos`); `FALSE` forces
-#'   the greedy.
-#' @param maxCombos Numeric ceiling on `choose(n, k)` for exact enumeration.
+#' @param sigma Optional numeric specifying kernel bandwidth;
+#' defaults to the median positive distance.
+#' @param repair Character selecting a positive semi-definite repair method:
+#' `"clip"` (nearest), `"shift"` (diagonal loading) or `"truncate"` (low-rank
+#' embedding).
+#' @param exact Logical: `TRUE` uses explicit enumeration, failing with an error
+#' if `maxCombos` is exceeded; `FALSE` uses the greedy approximation.
+#' `NA` uses exact enumeration when `choose(n, k) <= maxCombos`,
+#' greedy otherwise.
+#' @param maxCombos Integer specifying ceiling on `choose(n, k)` for exact
+#' enumeration.
 #' @return `MaxEntropy()` returns an integer vector of length `k` (sorted
 #'   ascending) with class `"MaxEntropySelection"`, carrying attributes:
 #'   \describe{
-#'     \item{logDet, score}{The retained \eqn{\log\det K_S} of the selection;
-#'       `-Inf` for a degenerate selection (one forced to repeat near-identical
-#'       points because `k` exceeds the number of distinct points, which also
-#'       warns).}
-#'     \item{negMass}{Fraction of spectral mass removed by the Positive Semi-Definite repair.}
+#'     \item{score}{The retained \eqn{\log\det K_S} of the selection.
+#'       `-Inf` is returned for a degenerate selection where `k` exceeds the
+#'       number of distinct points.}
+#'     \item{negMass}{Fraction of spectral mass removed by the positive
+#'       semi-definite repair.}
 #'     \item{sigma, repair, exact}{The bandwidth, repair, and whether the
 #'       optimum was certified by enumeration.}
 #'     \item{seed, N, k}{The peripheral seed index, instance size, target size.}
@@ -143,7 +139,7 @@
 #' @export
 MaxEntropy <- function(k, d, sigma = NULL,
                        repair = c("clip", "shift", "truncate"),
-                       exact = NA, maxCombos = 3e5) {
+                       exact = NA, maxCombos = 3e5L) {
   repair <- match.arg(repair)
   d <- .ExactAsMatrix(d)
   if (!all(is.finite(d))) {
@@ -183,17 +179,15 @@ MaxEntropy <- function(k, d, sigma = NULL,
     idx <- sort(MaxEntropyGreedy_cpp(kp, k, as.integer(seed)))
   }
 
-  # Report the Cholesky log-determinant the exact selector maximises -- the same
-  # quantity for both paths. When k exceeds the distinct-point count the selection
-  # must repeat a point (pigeonhole), so its Gram matrix is singular and the true
-  # log-determinant is -Inf; report that honestly rather than the large finite
-  # value the clip-repaired kernel's softened duplicates would otherwise yield.
+  # Report the Cholesky log-determinant.
+  # When k exceeds the distinct-point count the selection must repeat a point,
+  # so its Gram matrix is singular and the true log-determinant is -Inf.
   logDet <- if (k > nDistinct) -Inf else MaxEntropyLogDet_cpp(kp, idx)
 
   # Return:
   structure(idx,
-            logDet = logDet, score = logDet, negMass = negMass,
-            sigma = sigmaUsed, repair = repair, exact = useExact,
-            seed = as.integer(seed), N = n, k = k,
+            score = logDet, negMass = negMass, sigma = sigmaUsed,
+            repair = repair, exact = useExact, seed = as.integer(seed),
+            N = n, k = k,
             producer = "MaxEntropy", class = "MaxEntropySelection")
 }

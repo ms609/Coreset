@@ -13,8 +13,8 @@
 #   KCentre()        -- CDSh heuristic (Garcia-Diaz et al. 2017/2019): ~1--3.5%
 #                       of optimum at O(n^2 log n), an order of magnitude tighter
 #                       than the Gonzalez 2-approximation that FarFirst() gives.
-#   ExactKCentre()   -- proven optimum on small instances via a covering integer
-#                       program, the covering dual of ExactMaxMin()'s packing IP.
+#   ExactKCentre()   -- proven optimum on small instances by an exhaustive
+#                       covering search, the dual of ExactMaxMin()'s packing.
 
 # ----- candidate radii ------------------------------------------------------
 
@@ -36,7 +36,7 @@
 }
 
 # The k-centre solvers assume a symmetric metric: `KCentreCandidates_cpp` reads
-# only the upper triangle and the kernel/covering-IP read d(i,j) as d(j,i), so
+# only the upper triangle and the kernel/cover search read d(i,j) as d(j,i), so
 # an asymmetric `d` would give a silently wrong covering radius (KC-002).
 # `.AsDistMatrix()` returns a matrix whose triangles agree exactly, which is
 # that guarantee; the solvers below need no guard of their own.
@@ -115,7 +115,7 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 
 # ----- CDSh heuristic -------------------------------------------------------
 
-#' Near-optimal discrete k-centre solver
+#' Discrete _k_-centre solver
 #'
 #' `KCentre()` selects \eqn{k} elements (centres) so as to minimize the largest
 #' distance from any point to its nearest centre (the covering radius),
@@ -123,9 +123,8 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' \insertCite{GarciaDiaz2017,GarciaDiaz2019}{Coreset}.
 #'
 #' On the benchmark instances of \insertCite{GarciaDiaz2019;textual}{Coreset},
-#' the \acronym{CDS} heuristic reaches roughly 1-3.5%
-#' of the optimum at \eqn{O(N^2 \log N)}, far tighter than [FarFirst()]
-#' (typically tens of per cent above optimum).
+#' the \acronym{CDS} heuristic reaches roughly 1&ndash;3.5%
+#' of the optimum at \eqn{O(N^2 \log N)}, far tighter than [FarFirst()].
 #'
 #' Despite this good performance in practice, the \acronym{CDSh} is a
 #' 3-approximation.
@@ -140,8 +139,8 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' @param d `dist` object or a square symmetric numeric distance matrix.
 #' @param nstart Integer specifying how many deterministic peripheral seeds to
 #'  try.
-#' @param effort Integer: if `> 0`, run a parallel `FarFirst()` search
-#'  with `effort` random seeds, returning the best of all results.
+#' @param effort Integer: if `> 0`, run `effort` parallel `FarFirst()` searches,
+#' each seeded on a distinct starting point, and return the best result found.
 #'
 #' @return `KCentre()` returns an integer vector of length \eqn{\le k} specifying
 #' the chosen centres in ascending order.
@@ -151,7 +150,8 @@ KCentreRadius <- function(d = NULL, idx, points = NULL) {
 #' [KCentreRadius()] for a selection's score;
 #' [FarFirst()] for the \insertCite{Gonzalez1985;textual}{Coreset}
 #' 2-approximation baseline.
-#' @references \insertAllCited{}
+# insertNoCite works around https://github.com/GeoBosh/Rdpack/issues/44
+#' @references \insertNoCite{Gonzalez1985}{Coreset}\insertAllCited{}
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(120), ncol = 2)
@@ -225,74 +225,55 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L) {
 
 # ----- exact covering IP ----------------------------------------------------
 
-# Solve one minimum-cover feasibility probe at radius r and classify it against
-# the centre budget k. The IP minimizes the number of open centres subject to
-# every point being within r of an open centre; r is feasible for k-centre iff
-# that minimum is <= k. The witness is validated independently of the solver
-# status (the chosen centres are checked to cover every point within r), exactly
-# as .MaxISVerdict() validates its independent set. Verdicts mirror that helper:
-# "feasible" (a <= k cover found), "infeasible" (IP proven optimal, min cover
-# > k), or "inconclusive" (budget expired).
+# Decide one covering feasibility probe at radius r against the centre budget
+# k: can k centres cover every point within r?
+#
+# `CoverDecide_cpp` reduces the probe (unit propagation, then point and centre
+# dominance to a fixpoint), splits what survives into components and searches
+# each exhaustively, so "infeasible" is a proof rather than a solver status.
+# This is the covering dual of `ThresholdDecide_cpp`'s clique search.
+#
+# A returned witness is validated against `d` independently of what produced
+# it -- its covering radius is scored and compared with r -- exactly as
+# .MaxISVerdict() validates its independent set. Verdicts mirror that helper:
+# "feasible" (a <= k cover found), "infeasible" (no such cover exists), or
+# "inconclusive" (the budget expired first).
 .MinCoverVerdict <- function(d, n, r, k, timeLimit) {
   if (!is.finite(timeLimit) || timeLimit <= 0) { # nocov start
     return(list(verdict = "inconclusive", witness = integer(0)))
   } # nocov end
-  # Coverage incidence at radius r: centre i covers point j iff d(i, j) <= r
-  # (includes i = j, distance 0). `which(arr.ind)` columns are (row = centre i,
-  # col = point j); the covering constraint for point j sums y over its centres.
-  cover <- which(d <= r, arr.ind = TRUE)
-  A <- Matrix::sparseMatrix(i = cover[, 2L], j = cover[, 1L], x = 1,
-                            dims = c(n, n))
-  res <- highs::highs_solve(
-    L       = rep.int(1, n),
-    lower   = rep.int(0, n),
-    upper   = rep.int(1, n),
-    A       = A,
-    lhs     = rep.int(1, n),                  # each point covered at least once
-    rhs     = rep.int(Inf, n),
-    types   = rep.int("I", n),                # integer var on [0, 1] = binary
-    maximum = FALSE,
-    control = list(
-      threads    = 1L,                        # determinism
-      time_limit = timeLimit
-    )
-  )
-  sel <- which(res$primal_solution > 0.5)
-  # Independent validation: do the chosen centres cover every point within r?
-  validCover <- length(sel) >= 1L &&
-    all(apply(d[sel, , drop = FALSE] <= r, 2L, any))
-
-  if (validCover && length(sel) <= k) {
+  res <- CoverDecide_cpp(d, r, k, timeLimit)
+  if (identical(res[["status"]], "feasible")) {
+    sel <- res[["witness"]]
+    if (length(sel) < 1L || length(sel) > k ||
+        KCentreRadius(d, sel) > r) { # nocov start
+      stop("Internal error: cover search returned a set not covering within ",
+           r)
+    } # nocov end
     return(list(verdict = "feasible", witness = sel))
   }
-  # Infeasibility is provable only when the IP reached optimality and the
-  # certified minimum cover still exceeds k.
-  optimal <- identical(res$status_message, "Optimal")
-  if (optimal && validCover && length(sel) > k) {
-    return(list(verdict = "infeasible", witness = integer(0)))
-  }
-  list(verdict = "inconclusive", witness = integer(0))  # nocov
+  list(verdict = res[["status"]], witness = integer(0))
 }
 
-#' Exact discrete k-centre optimum on small instances
+#' Exact discrete _k_-centre optimum
 #'
-#' `ExactKCentre()` finds an optimal solution to the discrete \emph{k}-centre
+#' `ExactKCentre()` finds an optimal solution to the discrete _k_-centre
 #' problem.
 #'
 #' The optimum covering radius is the smallest threshold `r`, over the achieved
 #' distinct distances, for which `k` centres can cover every point within `r`.
 #'
-#' Each probe solves a minimum-cardinality \emph{set-cover} integer program with
-#' the `highs` MILP backend, the covering constraints held as a sparse matrix --
-#' the covering dual of [ExactMaxMin()]'s node-packing program. The search is
-#' warm-started from the [KCentre()] (CDSh) radius, a proven feasible upper bound
-#' that caps the binary search, then bisects downward to the smallest feasible
-#' radius.
+#' Each probe asks whether `k` centres cover every point within a candidate
+#' radius. This is decided combinatorially via unit propagation and dominance
+#' reduction, then an exhaustive component-wise search.
+#' The search is warm-started from the [KCentre()] radius, then bisects
+#' downwards.
 #'
 #' @inheritParams KCentre
-#' @param maxSeconds Wall-clock budget in seconds for the whole search.
-#' If it expires before the optimum is proven, the smallest radius proven
-#' feasible so far is returned, with the attribute `proven = FALSE`.
+#' @param maxSeconds Numeric specifying wall-clock budget, in seconds, for
+#' the search.
+#' If the time expires before the optimum is proven, the smallest radius proven
+#' feasible is returned, with the attribute `proven = FALSE`.
 #' @templateVar progress_shows a progress indicator is shown
 #' @template progress
 #' @return `ExactKCentre()` returns an integer vector of length \eqn{\le k}
@@ -302,45 +283,21 @@ KCentre <- function(k, d, nstart = 1L, effort = 1L) {
 #'     \item{radius}{The covering radius achieved; the proven optimum when
 #'       `proven` is `TRUE`, otherwise an upper bound.}
 #'     \item{proven}{Logical: `TRUE` if optimality is certified.}
-#'     \item{time_s}{Wall-clock seconds elapsed.}
+#'     \item{seconds}{Wall-clock seconds elapsed.}
 #'     \item{N, k}{Instance size and centre budget.}
 #'   }
-#'   It prints as a one-line summary and indexes a matrix or data frame directly.
-#'   The `"KCentreSelection"` superclass means [KCentreRadius()] and any generic
-#'   written for that class work here too.
-#'
-#' The covering optimum may be attained by fewer than `k` centres (extra centres
-#' never help once coverage is achieved); the result then has length `< k` and the
-#' reported `radius` is still the proven \emph{k}-centre optimum. The problem is
-#' NP-hard, so this is an external ground-truth reference for small instances,
-#' not a scalable method.
 #'
 #' @seealso [KCentre()] for the fast near-optimal heuristic; [ExactMaxMin()] for
 #'   the dual MMDP optimum.
-#' @references \insertAllCited{}
 #' @examples
-#' \donttest{
-#' if (requireNamespace("highs", quietly = TRUE) &&
-#'     requireNamespace("Matrix", quietly = TRUE)) {
-#'   set.seed(1)
-#'   pts <- matrix(rnorm(40), ncol = 2)
-#'   d <- dist(pts)
-#'   ExactKCentre(3L, d)
-#' }
-#' }
+#' set.seed(1)
+#' pts <- matrix(rnorm(40), ncol = 2)
+#' d <- dist(pts)
+#' ExactKCentre(3L, d)
 #' @export
 ExactKCentre <- function(k, d, maxSeconds = 60) {
   progress <- getOption("Coreset.progress", interactive())
   t0 <- proc.time()[[3L]]
-  if (!requireNamespace("highs", quietly = TRUE)) { # nocov start
-    stop("The `highs` package is required for ExactKCentre(). ",
-         "Install it with install.packages(\"highs\").")
-  } # nocov end
-  if (!requireNamespace("Matrix", quietly = TRUE)) { # nocov start
-    stop("The `Matrix` package is required for ExactKCentre(). ",
-         "Install it with install.packages(\"Matrix\").")
-  } # nocov end
-
   d <- .AsDistMatrix(d)
   n <- nrow(d)
   if (length(k) != 1L || !is.finite(k) || k < 1L) {
@@ -363,8 +320,8 @@ ExactKCentre <- function(k, d, maxSeconds = 60) {
       indices,
       radius    = KCentreRadius(d, indices),
       proven    = proven,
-      time_s    = Elapsed(),
-      solver    = "highs",
+      seconds    = Elapsed(),
+      solver    = "cover search",
       N         = n,
       k         = as.integer(k),
       class     = c("KCentreExact", "KCentreSelection")

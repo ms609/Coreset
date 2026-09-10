@@ -17,7 +17,7 @@ for (i in seq_len(nrow(old))) {
   rows[[i]] <- data.frame(case = cs, n = nrow(d), k = k,
     old = old$objective[i], new = r$objective,
     match = isTRUE(all.equal(old$objective[i], r$objective)) && r$proven,
-    old_s = old$time_s[i], new_s = el, speedup = old$time_s[i] / el,
+    old_s = old$seconds[i], new_s = el, speedup = old$seconds[i] / el,
     stringsAsFactors = FALSE)
 }
 R <- do.call(rbind, rows)

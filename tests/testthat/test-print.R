@@ -99,7 +99,7 @@ test_that("ExactMaxMin prints proof status, indices and objective", {
   # Built directly so the test does not require the `highs` solver.
   proven <- .AsMaxMinSelection(
     structure(c(1L, 2L, 3L), score = 0.5, proven = TRUE,
-              time_s = 0.1, solver = "highs", N = 10L, k = 3L),
+              seconds = 0.1, solver = "highs", N = 10L, k = 3L),
     producer = "ExactMaxMin"
   )
   expect_s3_class(proven, "MaxMinSelection")
@@ -168,7 +168,7 @@ test_that("summary table tolerates NA T_k (all-NA ensemble)", {
 test_that("summary of ExactMaxMin reports instance, objective and proof status", {
   proven <- .AsMaxMinSelection(
     structure(c(1L, 2L, 3L), score = 0.5, proven = TRUE,
-              time_s = 0.1, solver = "highs", N = 10L, k = 3L),
+              seconds = 0.1, solver = "highs", N = 10L, k = 3L),
     producer = "ExactMaxMin"
   )
   out <- capture.output(ret <- withVisible(summary(proven)))

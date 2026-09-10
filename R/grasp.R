@@ -285,28 +285,27 @@
 #' This method will fail if the complete \eqn{N \times N} distance matrix is
 #' too large to fit into memory.
 #'
+#' @inheritParams DropAdd
 #' @param k Integer subset size, `2 <= k <= nrow(d)`.
 #' @param d Either a `dist` object or a square symmetric numeric matrix.
 #' @param plateau Integer; stop after this many consecutive GRASP
-#'   iterations without an improvement to the best elite objective. The
-#'   primary, deterministic stopping criterion.
+#'   iterations have not improved the best elite objective.
 #' @param eliteSize Size of the elite set |ES|.
-#' @param alpha Construction greediness in `[0, 1]`. Each step draws the next
-#'   point at random from a shortlist of the strongest candidates -- those
-#'   whose gain lies within a fraction `alpha` of the best-to-worst spread.
-#'   `alpha = 1` is pure greedy (best only); `alpha = 0` is uniform random
-#'   among candidates.
+#' @param alpha Numeric in `[0, 1]` specifying construction greediness.
+#'   Each step draws the next point at random from a shortlist of the strongest
+#'   candidates whose gain lies within a fraction `alpha` of the best-to-worst
+#'   spread.
+#'   `alpha = 1` is pure greedy; `alpha = 0` is uniform random among candidates.
 #' @param maxSeconds Numeric specifying wall-clock ceiling, in seconds.
 #' @templateVar default `2000L`
 #' @templateVar default_basis conservative because `Grasp()` is matrix-only, so
 #'   the coreset subproblem is a dense \eqn{m \times m} matrix
 #'   (\eqn{2000 \times 2000 \approx} 32 MB)
-#' @template maxCandidates
 #' @return `Grasp()` returns an integer vector of length `k` specifying the
 #' indices of the selected points, with attributes:
 #'   \describe{
 #'     \item{score}{Achieved MaxMin objective \eqn{T_k}.}
-#'     \item{time_s}{Wall-clock seconds spent.}
+#'     \item{seconds}{Wall-clock seconds spent.}
 #'     \item{iters}{Number of GRASP refinement iterations executed.}
 #'     \item{pr_calls}{Number of path-relinking pair-applications run.}
 #'   }
@@ -403,7 +402,7 @@ Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
     cli::cli_progress_done(id = pb)
     itersMsg <- as.integer(out$iters)
     tkMsg    <- as.numeric(out$objective)
-    timeMsg  <- as.numeric(out$time_s)
+    timeMsg  <- as.numeric(out$seconds)
     cli::cli_alert_success(
       "Grasp: {itersMsg} iters, T_k = {signif(tkMsg, 4)}, {round(timeMsg, 1)}s"
     )
@@ -413,7 +412,7 @@ Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
   .AsMaxMinSelection(structure(
     sort(as.integer(out$indices)),
     score    = as.numeric(out$objective),
-    time_s   = as.numeric(out$time_s),
+    seconds   = as.numeric(out$seconds),
     iters    = as.integer(out$iters),
     pr_calls = as.integer(out$pr_calls)
   ), "Grasp")
@@ -533,7 +532,7 @@ Grasp <- function(k, d, plateau = 100L, eliteSize = 10L, alpha = 0.8,
   .AsMaxMinSelection(structure(
     sort(as.integer(bestSel)),
     score    = bestZ,
-    time_s   = proc.time()[[3L]] - t0,
+    seconds   = proc.time()[[3L]] - t0,
     iters    = iters,
     pr_calls = prCalls
   ), "Grasp")

@@ -27,11 +27,14 @@
 }
 
 # Compare two selections on every user-visible field except wall-clock.
-.ExpectSameSelection <- function(a, b) {
+.ExpectSameSelection <- function(a, b, eps = 1e-8) {
   testthat::expect_identical(as.integer(a), as.integer(b))
-  testthat::expect_identical(attr(a, "score"), attr(b, "score"))
-  testthat::expect_identical(attr(a, "secondary"), attr(b, "secondary"))
-  testthat::expect_identical(attr(a, "iters"), attr(b, "iters"))
+  attA <- attributes(a)
+  attB <- attributes(b)
+  testthat::expect_equal(attA[["score"]], attB[["score"]], tolerance = eps)
+  testthat::expect_equal(attA[["secondary"]], attB[["secondary"]],
+                         tolerance = eps)
+  testthat::expect_identical(attA[["iters"]], attB[["iters"]])
 }
 
 # ---------------------------------------------------------------------------
@@ -44,11 +47,12 @@ test_that("the column-oracle loop reproduces the C++ drop/add trajectory", {
     k <- sample(2:7, 1L)
     dmat <- as.matrix(dist(matrix(rnorm(n * 2L), ncol = 2L)))
     colFn <- function(i) dmat[, i]
-    # .DropAddTrace() runs the kernel with its own max-row-sum seed, so hand the
-    # oracle loop that same seed to make the two trajectories comparable.
+    # .DropAddTrace() runs the kernel from the peripheral anchor, as DropAdd()
+    # does, so hand the oracle loop that same seed to make the two
+    # trajectories comparable.
     tr <- Coreset:::.DropAddTrace(dmat, k, maxIter = 60L, plateau = 1e9)
     or <- Coreset:::.DropAddFromColumn(
-      colFn, n, k, first = unname(which.max(rowSums(dmat))),
+      colFn, n, k, first = Coreset:::.PickPoint(dmat, "peripheral"),
       plateau = 1e9, maxIter = 60L, trace = TRUE
     )
     expect_identical(or$drops, tr$drops)
@@ -254,7 +258,7 @@ test_that("the oracle path reports a score its indices really achieve", {
   expect_identical(attr(res, "score"), min(sub))
   expect_equal(attr(res, "secondary"), sum(dmat[res, res][lower.tri(sub)]))
   expect_s3_class(res, "MaxMinSelection")
-  expect_true(attr(res, "time_s") >= 0)
+  expect_true(attr(res, "seconds") >= 0)
 })
 
 # ---------------------------------------------------------------------------

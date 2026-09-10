@@ -118,7 +118,7 @@ test_that("DropAdd thinned result is deterministic and original-space", {
   dat <- MakeData()
   a <- suppressWarnings(DropAdd(3L, d = dat$d, maxCandidates = 8L))
   b <- suppressWarnings(DropAdd(3L, d = dat$d, maxCandidates = 8L))
-  # Selection + score are deterministic (the volatile `time_s` attribute aside).
+  # Selection + score are deterministic (the volatile `seconds` attribute aside).
   expect_identical(as.integer(a), as.integer(b))
   expect_equal(attr(a, "score"), attr(b, "score"))
   # The selection is a subset of the original-space coreset.

@@ -46,30 +46,16 @@ List DropAdd_cpp(NumericMatrix dmat, int m, double time_budget_s,
   std::vector<int> min_dist_count(n, 0);
 
   // -- Construction (Algorithm 1) -----------------------------------------
-  // Seed: argmax over rows of row-sum; ties broken by smallest index.
-  // Accumulate row-sums column-sequentially. dmat is column-major, so the
-  // naive i-outer/j-inner loop reads D(i,j)=dp[i+j*n] with stride n (a cache
-  // miss per step at large n); sweeping j outer / i inner over the contiguous
-  // column `dp + j*n` is sequential. Each rs[i] still accumulates over j in
-  // increasing order, so the sums — and the argmax seed — are bit-identical.
-  // seed0 >= 0 overrides the default warm-start with a caller-supplied 0-based
-  // start index (R/dropadd.R::DropAdd() validates the range); seed0 = -1 (the
-  // default) uses the max-row-sum seed. The override exists so the construction
-  // can be started from any peripheral seed without rebuilding the kernel.
-  int seed = 0;
-  if (seed0 >= 0) {
-    seed = seed0;
-  } else {
-    std::vector<double> rs(n, 0.0);
-    for (int j = 0; j < n; ++j) {
-      const double *col = dp + (std::size_t)j * n;
-      for (int i = 0; i < n; ++i) rs[i] += col[i];
-    }
-    double best_rs = R_NegInf;
-    for (int i = 0; i < n; ++i) {
-      if (rs[i] > best_rs) { best_rs = rs[i]; seed = i; }
-    }
+  // The construction starts from a caller-supplied 0-based index; the kernel
+  // has no seed of its own. R/dropadd.R::DropAdd() validates the index and
+  // fills it from the O(n) two-sweep peripheral anchor, the strongest of the
+  // seven profiled at 0214ab2 (mean gap to the proven optimum 0.011 over a
+  // 40-cell grid, against 0.029 for the max-row-sum anchor Porumbel uses).
+  if (seed0 < 0 || seed0 >= n) {
+    stop("seed0 must be a 0-based start index in [0, nrow(dmat)); "
+         "DropAdd() supplies the peripheral anchor");
   }
+  const int seed = seed0;
   S[0] = seed;
   in_S[seed] = 1;
   for (int i = 0; i < n; ++i) {

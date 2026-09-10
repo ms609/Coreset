@@ -15,7 +15,8 @@
 #         w_i <= U_i x_i            (w_i = 0 unless i is selected)
 #         w_i <= sum_j d_ij x_j     (w_i <= a_i)
 #         x in {0,1}, w >= 0
-# where U_i = sum of the k largest d_ij is an upper bound on a_i. Under
+# where U_i = sum of the k - 1 largest d_ij is the tightest upper bound on a_i,
+# whose sum runs over the k - 1 other members of the selection. Under
 # maximisation the two upper bounds force w_i = a_i exactly when i is selected,
 # so no lower-bound constraints are needed. The program has only 2n variables
 # (n binary + n continuous) and 1 + 2n constraints -- far smaller and tighter
@@ -103,37 +104,49 @@
 
 # ----- exact MILP -----------------------------------------------------------
 
+# Cap on a_i, the summed distance from a selected point i to the rest of the
+# selection. That sum runs over the other k - 1 members, so the k - 1 largest
+# distances from i bound it -- and some selection reaches that sum, so the cap
+# is attained rather than merely valid.
+.MaxSumCaps <- function(d, k) {
+  vapply(seq_len(nrow(d)), function(i) {
+    sum(sort(d[i, -i], decreasing = TRUE)[seq_len(k - 1L)])
+  }, double(1))
+}
+
 #' Exact Maximum Diversity Problem (max-sum) solution
 #'
 #' `ExactMaxSum()` finds the optimal solution to the Max-Sum Diversity Problem
-#' (the "maximum diversity problem"): select the `k`-subset of points
-#' maximising the **total** pairwise distance it contains. It is the max-sum
-#' counterpart of [ExactMaxMin()] (which maximises the *minimum* pairwise
-#' distance), solved by per-node integer-program linearisation
-#' \insertCite{Kuo1993}{Coreset}. As the problem is NP-hard it is feasible only
-#' for small sets.
+#' (the "maximum diversity problem"): it selects the `k` points that maximizes
+#' the total pairwise distance between points. As the problem is NP-hard, it is
+#' feasible only for small sets.
 #'
-#' The optimum is floored by a multi-start 1-swap local search, which warms the
-#' lower bound and is returned when the MILP cannot prove optimality within
-#' `maxSeconds` -- so the result is always at least a strong heuristic incumbent.
+#' The solver uses per-node integer-program linearisation
+#' \insertCite{Kuo1993}{Coreset}, starting from a multi-start 1-swap local
+#' search, whose result is returned when optimality cannot be proven within
+#' `maxSeconds`.
 #'
 #' @inheritParams ExactMaxMin
-#' @return `ExactMaxSum()` returns an integer vector of length `k` (sorted
-#'   ascending) with class `"MaxSumSelection"`, carrying attributes:
+#' @return `ExactMaxSum()` returns an integer vector of length `k`, sorted
+#'   ascending, with class `"MaxSumSelection"`, carrying attributes:
 #'   \describe{
-#'     \item{score}{Achieved total pairwise distance within the selection. When
-#'       `proven` is `TRUE` this is the optimum; otherwise a lower bound.}
-#'     \item{proven}{Logical: `TRUE` if optimality was certified within the
-#'       budget.}
-#'     \item{time_s, N, k}{Wall-clock seconds, instance size, target size.}
+#'     \item{score}{Numeric specifying the achieved total pairwise distance
+#'     within the selection. When `proven` is `TRUE` this is the optimum;
+#'     otherwise a lower bound.}
+#'     \item{proven}{Logical: `TRUE` if optimality was certified.}
+#'     \item{seconds, N, k}{Numerics reporting the wall-clock seconds elapsed;
+#'      instance size; and target size.}
 #'   }
 #' @references \insertAllCited{}
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(20), ncol = 2)
-#' ExactMaxSum(3L, dist(pts))
+#' # Package 'highs' is required for ExactMaxSum
+#' if (requireNamespace("highs", quietly = TRUE)) {
+#'   ExactMaxSum(3L, dist(pts))
+#' }
 #' @export
-ExactMaxSum <- function(k, d, maxSeconds = 60, warmStart = NULL) {
+ExactMaxSum <- function(k, d, maxSeconds = 30, warmStart = NULL) {
   t0 <- proc.time()[[3L]]
   if (!requireNamespace("highs", quietly = TRUE)) { # nocov start
     stop("The `highs` package is required for ExactMaxSum(). ",
@@ -160,11 +173,8 @@ ExactMaxSum <- function(k, d, maxSeconds = 60, warmStart = NULL) {
     }
   }
 
-  # Kuo--Glover--Dhir MILP. Variables x_1..x_n (binary), w_1..w_n (continuous);
-  # U_i bounds a_i above by the sum of the k largest distances from i.
-  U <- vapply(seq_len(n), function(i) {
-    sum(sort(d[i, -i], decreasing = TRUE)[seq_len(min(k, n - 1L))])
-  }, double(1))
+  # Kuo--Glover--Dhir MILP. Variables x_1..x_n (binary), w_1..w_n (continuous).
+  U <- .MaxSumCaps(d, k)
   ri <- rep(1L, n); ci <- seq_len(n); vi <- rep(1, n)            # sum x = k
   rA <- 1L + seq_len(n)                                          # w_i <= U_i x_i
   ri <- c(ri, rA, rA); ci <- c(ci, n + seq_len(n), seq_len(n)); vi <- c(vi, rep(1, n), -U)
@@ -199,7 +209,7 @@ ExactMaxSum <- function(k, d, maxSeconds = 60, warmStart = NULL) {
   }
 
   # Return:
-  structure(idx, score = score, proven = proven, time_s = Elapsed(),
+  structure(idx, score = score, proven = proven, seconds = Elapsed(),
             N = n, k = as.integer(k), producer = "ExactMaxSum",
             class = "MaxSumSelection")
 }

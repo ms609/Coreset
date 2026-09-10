@@ -1654,6 +1654,147 @@ Status: Area 2 → OPTIMISED; the matrix kernel's serial-at-limit certification
 from round 10 stands for its passes (argmax fusion and threading both measured
 flat there) but not for the recompute branch, which this round moved.
 
+## Round 14 — 2026-08-18 — Area 2 (DropAdd): the last symmetry site was dead
+code; removed, and the drivers moved onto the production protocol
+
+**Trigger:** user decision. With asymmetric input refused at intake (round 13),
+the matrix kernel may treat `d` as exactly symmetric everywhere, so this round
+swept it for any remaining site where symmetry removes a read.
+
+**There is exactly one, and it was API-dead.** Every other matrix read in the
+kernel is a whole column that is genuinely needed: the drop and add passes
+touch `d(i, x)` for all `i`, and the recompute branch's layout choice was
+already taken in round 13. The one full-matrix sweep left was the
+construction's max-row-sum seed (`seed0 = -1`), and `DropAdd()` had not
+reached it since `0214ab2`: the wrapper fills `matrixSeed0` from
+`.PickPoint(dmat, "peripheral")`, which returns >= 1 on every branch, so the
+`seed0 >= 0` arm was always taken. `0214ab2` made that change deliberately —
+the max-row-sum anchor was both O(n^2) *and* the worst of the seven profiled
+(mean gap to the proven optimum 0.029 against the peripheral anchor's 0.011
+over a 40-cell grid). Only `.DropAddTrace()` and the profiling drivers still
+reached it.
+
+**The lever was built and verified before the reach problem surfaced,** so its
+cost is recorded rather than guessed. Column `j`'s entry `i < j` serves both
+`rs[i]` and `rs[j]`, so the upper triangle alone suffices — `n(n+1)/2` elements
+rather than `n^2` — with `rs[j]` accumulated in a register chain stored once,
+complete, at the diagonal. Summation order is untouched: `rs[k]` still
+receives `d(k, 0..k-1)`, then `d(k, k)`, then `d(k, k+1..n-1)`, the same
+left-associated chain, exact because `d(i, j) == d(j, i)` exactly. Columns
+band four at a time, since the chain is a loop-carried dependency and one
+chain per column would trade the halved traffic for a serial add latency
+costing more than it saves. (Round 9's banding result does not refute this:
+that loop was memory-bound, where banding cannot help; here banding breaks a
+latency chain.) **295/295 battery bit-identical, suite green** — then declined,
+and the sweep it optimised removed instead. Never timed: the disposition was
+reachability-based, so a measurement would only have priced a branch no caller
+reaches.
+
+**What shipped.**
+- `src/dropadd.cpp`: the max-row-sum fallback is gone. The kernel now requires
+  `seed0` in `[0, n)` and errors otherwise — a range the wrapper already
+  validated, so this is a tightening for direct callers only. The points
+  kernel's `-1` anti-centroid fallback is untouched: it **is** the points
+  path's production default.
+- `.DropAddTrace()` and `.DropAddConstruct()` seed at the peripheral anchor,
+  so the trace helper and the pure-R twin walk the trajectory `DropAdd()`
+  actually walks. `.DropAddConstruct()` gained a `first =` argument mirroring
+  `.DropAddConstructColumn()`. The oracle test's compensating row-sum seed
+  went with it.
+- `dropadd-timing.R` and `dropadd-vtune10.R`: matrix cells take the production
+  peripheral seed, computed once outside the timed thunks. **Every matrix
+  timing from rounds 4-13 measured `seed0 = -1`** and billed each construct
+  cell for an O(n^2) sweep the wrapper had stopped running, so those numbers
+  are not comparable with anything measured after this round. Points cells are
+  unaffected — their protocol was already production.
+- `dropadd-battery.R`: the matrix cases move from `-1L` to fixed explicit
+  seeds (0/1/3, keeping all three shapes); the `recP(..., -1L)` cases keep the
+  default, exercising the live points fallback. Verified by capturing the
+  updated script against the pre-removal kernel and comparing after: 295/295
+  bit-identical, within-build invariants OK. **This commit is the new
+  frozen-baseline reference** — the old `-1L` matrix cases are unreproducible
+  under the new script by design.
+
+**Re-baselined on Hamilton** (r/4.5.1, serial, three whole-script reps per
+job, objectives identical throughout). Full tables in baselines.md. Two
+findings beyond the numbers, both of which change how this area is measured:
+
+*A kernel row is not a call cost.* The cells call the kernels directly, so
+they exclude what `DropAdd()` pays first: the O(n^2) `.AsDistMatrix` symmetry
+scan (32.5 ms at n = 4000) and the O(n) peripheral seed (0.1 ms). The scan is
+**160x the `m=10 construct` cell and 78% of a whole `DropAdd(20, d4)` call**.
+Round 13 kept that scan for DropAdd deliberately — the recompute branch's
+triangle choice needs exact symmetry — so it is required per-call work that
+no kernel row contains. Worse for cross-area reading, `farfirst-timing.R`
+times `FarFirst()` through the public API: its rows carry an intake of the
+same kind, so a kernel row set beside a FarFirst row understates DropAdd by
+roughly the intake, which is most of a small-k call. Cells for the intake,
+the seed, and two whole-API calls are now in the driver; only the latter
+compare with the FarFirst area.
+
+*The switch pair is not trustworthy across jobs.* Within a job, rep spread
+reaches 6.5%. Between two jobs on different `-p shared` nodes, identical code
+walking identical trajectories, `m=400 search1500` moved **49%** and `m=600`
+**18%** — the two cells either side of the `m = n/8` recompute switch, and the
+most memory-bandwidth-sensitive in the set, on a partition where another job
+can contend for bandwidth. Everything else held to ~4%. So a matrix cell must
+not be regressed against an absolute number from a previous job; both arms
+belong interleaved inside one job on one node, as `coreset-kc/kcab.sh` does.
+
+No cell is a speedup over rounds 4-13 — the matrix cells changed protocol and
+the points cells changed machine — and the record says so rather than banking
+a number the code did not earn. The structural figure is
+`matrix n=4e3 m=10 construct` at **0.2 ms**: under the old protocol that cell
+was dominated by the row-sum sweep, so it was almost entirely timing a warm
+start `DropAdd()` had abandoned; what remains is the ten column passes the
+construction performs.
+
+**Refuted by design — fusing the seed row-sums into `.AsDistMatrix`'s symmetry
+scan.** The scan already reads every element, but it runs on the *pre-averaged*
+matrix, so scan-time row sums would be sums of the wrong matrix whenever
+intake repairs a rounding asymmetry; and it would tax Grasp and k-centre
+intake for a DropAdd-only benefit that no longer exists.
+
+Status: Area 2 → OPTIMISED, unchanged. The matrix kernel is at its symmetry
+limit on every live path, and the triangle-sweep lever is closed permanently —
+its target no longer exists. Round 13's leads stand: lazy second-minimum
+record (re-measure the branch share first) and the K-row coordinate pre-gather
+for the points recompute.
+
+**The CI benchmark's DropAdd verdict on this branch is an artefact.** The
+workflow reported `DropAdd(20, d500, plateau=2000)` −6.59% and
+`DropAdd(250, d500, plateau=2000)` −5.4%, both "slower", with the points cell
+NSD. Nothing on the executed path can account for it: with `seed0 >= 0` — which
+`DropAdd()` always supplies — the old kernel did `seed = seed0` and the new one
+does a bounds check plus the same assignment, and no loop moved. Two
+interleaved A/B jobs (merge-base 266351b vs branch head, both arms inside one
+job on one node, 25 inner reps per matrix cell, scores identical throughout)
+put the new code **faster**, not slower:
+
+| cell | base-first, 7 reps (cn027) | order-swapped, 8 reps (cn025) |
+|------|---------------------------:|------------------------------:|
+| `DropAdd(20, d500, plateau=2000)` | 0.952 | 0.975 |
+| `DropAdd(250, d500, plateau=2000)` | 0.959 | 0.965 |
+| `DropAdd(20, pts4000, plateau=1000)` | 0.985 | 0.988 |
+
+Same magnitude as CI, opposite sign. This extends round 11's precedent, where
+the runner reported +9.09% on this very cell while the round shipped nothing
+for the kernel, and ±13% on two FarFirst cells whose only diff was three
+deleted `// nocov` comment lines.
+
+Two cautions for whoever reads those ratios. **Running one arm always first
+biases every cell**: base-first put cell A at 0.952, and swapping the order on
+alternate reps moved it to 0.975. **The points cell is the floor** — its kernel
+(`dropadd_mf.cpp`) is byte-identical in both arms, yet it reads 1.2% fast, so
+~1.2% is this harness's systematic error, not signal. Against that floor the
+m=250 cell (3.5%, non-overlapping rep distributions) looks real and the m=20
+cell (2.5%, overlapping) is suggestive. A plausible mechanism is that the
+removed branch declared a `std::vector<double> rs(n, 0.0)`: a
+non-trivially-destructible local forces exception-handling cleanup paths even
+when never executed, so deleting it can simplify codegen across the whole
+function. **Recorded, not banked** — the round removed dead code and claims no
+speedup, and 2-3% at a 1.2% floor does not deserve one.
+
 ---
 
 ## Round 14 — `ExactMaxMin` threshold search (2026-08-18)
@@ -1775,12 +1916,195 @@ partition support "this bound was lifted" and "the pool costs this much"; they
 do not support a percentage.
 
 Status: `graspPlateau` stays at 50 -- deeper is a measured loss.
-`dropPlateau = 5000` is recommended and not yet defaulted; it is free, it
-cannot lower the bound, and it buys pmed30. Adopting it belongs with the
-`b0bbaa7` merge and re-pin, as one re-measure.
+We tried raising `dropPlateau` from 512 to 5000 by running against `6eb4681`
+under Round 19's one-restart pool, on ORLIB at 
+three seeds and on eight ladder cells (`FurthestPoint` jobs 18538570 / 18538571,
+harness `dev/dplat/`). Quality is identical on all 128 cells. The deeper pass
+lifts the opening bound on three cells, but the probe the lift saves is worth
+nothing, leaving only the pool's debit, +2.63 s over ORLIB and +0.14 s over 
+the ladder.
+
+## Round 16a — `ExactKCentre`: the covering IP replaced by an exhaustive search (2026-08-19)
+
+**Trigger:** T-011, PENDING since round 6 (2026-06-11) and the only focus area with
+no measurement at all. Round 6 predicted the cost would sit in the `highs`
+covering-IP solves, with the per-probe `which(d <= r, arr.ind = TRUE)` over an
+n x n logical as the actionable pure-R lever.
+
+**The prediction was half right, and the wrong half set the round.** Decomposing
+one probe (20 reps, ionosphere n=351 and penguins n=342): `highs_solve` **84-97%**,
+`which(arr.ind)` 1-2%, `Matrix::sparseMatrix` 1-15%, witness validation ~0. Round
+5's sparse rewrite had already taken the R glue out, so the IP was indeed the
+cost -- but not because the problem was hard.
+
+**What the audit found.** Over the 56-cell grid the bisection visits **707**
+thresholds, 494 infeasible and 213 feasible. Two facts about them, both counts
+and so both local-safe:
+
+- Standard set-cover reductions -- unit propagation, point dominance (N[a] a
+  subset of N[b] means covering a covers b), centre dominance -- collapse the
+  model from 342 points to **11-98**, and from 351 points to **10-57**.
+- Probe cost is **uniform** across the bisection: the costliest probe is 7-39% of
+  its cell, where a genuinely hard search concentrates near the optimum.
+
+Uniform cost on a model that reduces to a few dozen points is the signature of
+fixed per-solve overhead, not of search. So the IP is removed rather than tuned,
+as round 12 did on the packing side -- and for the opposite reason. There the IP
+was too slow at a hard problem; here it was too slow at an easy one.
+
+**Shipped -- `CoverDecide_cpp` (`src/kcentre_cover.cpp`).** Because `d(i,j) <= r`
+is symmetric, the coverage incidence IS the closed neighbourhood of the threshold
+graph, so a probe is "does G(r) admit a dominating set of size <= k" and one array
+of bitmaps serves centres and points alike. The kernel runs unit propagation, then
+both dominance rules to a fixpoint, splits what survives into components (their
+minimum covers add, so each is solved against the budget the earlier ones left),
+and searches each with a depth-first descent branching on the least-covered
+uncovered point -- a complete branch, so the search is exhaustive and "infeasible"
+is a proof rather than a solver status. It is bounded by a greedy
+disjoint-neighbourhood count: points that no available centre covers together each
+need a centre of their own. `highs` and `Matrix` leave `ExactKCentre`'s path
+entirely; both stay in Suggests for `MaxSum` and the test oracles.
+
+Minimum-degree branching turned out to carry a second guarantee worth recording:
+a point stranded in a child -- every centre covering it removed by the branch
+loop's earlier siblings -- would need fewer available centres than the branch
+point, which is what the branch point minimises. So no child ever sees an
+uncoverable point, and two guards written for that case were deleted rather than
+tested.
+
+**Measured, and NOT shipped: the certificate that literally reuses the packing
+kernel.** Two points that no single centre can cover need separate centres, so a
+set of pairwise non-co-coverable points of size k+1 refutes a threshold outright
+-- and such a set is a clique in the complement of the co-coverability graph,
+which is exactly the question `ThresholdDecide_cpp` answers. Fed the conflict
+edges, it settles **323 of the 494** infeasible probes with no search of our own.
+It is real, and it is the concrete structural duality between the two solvers, but
+the dominance-plus-search route settles all 494 and costs less, so it stays a
+recorded fact rather than code. It does not assume the triangle inequality: the
+metric shortcut "k+1 points pairwise more than 2r apart" is the same statement
+only when `d` is a metric, and `.AsDistMatrix` guarantees symmetry, not that.
+
+**Verification.**
+
+- **Probe-level oracle** (`kcentre-exact-oracle.R`): over all **707** thresholds
+  the grid's bisection visits, the kernel and the set-cover IP agree on **every**
+  verdict -- 0 mismatches -- and every feasible witness independently covers
+  within the probed radius. Because the search is exhaustive this is exact
+  agreement, not merely verdict-preservation. Search nodes: 666,650 total,
+  86,877 in the worst probe.
+- **Grid battery** (`kcentre-exact-grid.R`, 56 cells): radius bit-identical,
+  `proven` identical, every witness independently valid, on both Hamilton runs.
+  The witness is free to differ where several optimal centre sets exist -- the
+  round-11 steer on the dual -- but radius identity is witness-independent: a
+  proven optimum's witness achieves exactly the smallest feasible candidate,
+  since its own achieved radius is itself a feasible candidate.
+- Kernel unit tests against brute-force minimum cover (>200 probes at n=9, exact
+  agreement) and against a `highs` set-cover oracle at n=30, past brute force's
+  reach; targeted structures for propagation, dominance ties, components, both
+  timeout paths, and determinism.
+- Full suite **0 fail / 2 skip** (Geo loader only); covr **100%** on
+  `R/kcentre.R` and `src/kcentre_cover.cpp`.
+
+**Result (Hamilton, job 18448838; both arms built and run in one task on one
+node, interleaved, 3 repeats, per-cell medians).** Base is `ef45de3`, the
+round-15 tip.
+
+| | base | new | |
+|---|--:|--:|--:|
+| grid, 56 cells | 59.85 s | 5.39 s | **11.1x** |
+| per-repeat totals | 59.76 / 59.78 / 59.59 | 5.32 / 5.41 / 5.40 | |
+
+Per cell the range is 1.2x to 188x, and the shape of that range is the finding:
+every cell except four lands between 23x and 188x, while `tc7_ring` and `tc9_iris`
+(both n = 150) sit at 1.2-1.9x. Those two are not search-bound.
+
+**The residue is the warm start, and it is round 15's lesson in mirror.** On the
+shipped build (same job, 3 repeats, medians):
+
+| cell | n | candidates | CDSh warm start | threshold search | warm start % | probes from CDSh | probes from Gonzalez | same optimum |
+|---|--:|--:|--:|--:|--:|--:|--:|:--|
+| `tc7_ring` | 150 | 0.001 s | 0.767 s | 0.001 s | 100% | 10 | 11 | yes |
+| `tc9_iris` | 150 | 0.001 s | 0.475 s | 0.001 s | 100% | 11 | 12 | yes |
+| `tc20_zoo` | 101 | 0.001 s | 0.038 s | 0.000 s | 97% | 7 | 8 | yes |
+| `tc22_penguins` | 342 | 0.004 s | 0.010 s | 0.007 s | 48% | 13 | 14 | yes |
+| `tc11_ionosphere` | 351 | 0.005 s | 0.012 s | 0.008 s | 48% | 16 | 16 | yes |
+| `tc8_highdim_gaussians` | 155 | 0.001 s | 0.003 s | 0.018 s | 14% | 12 | 14 | yes |
+| `tc1_uniform` | 200 | 0.002 s | 0.004 s | 0.059 s | 6% | 12 | 12 | yes |
+
+`KCentre()` runs an exhaustive candidate scan below `.kCentreExhaustiveMaxCand`
+(n <= 150), which is why the two floor cells cost what they do. Round 15 priced
+`ExactMaxMin`'s heuristic pool against the probes it saves and found it wanting;
+the same arithmetic holds here and is now far more lopsided, because the probes it
+saves have become free. A Gonzalez peripheral pass costs nothing measurable, opens
+0-2 probes higher, and reaches the **same optimum on all seven cells** --
+correctness never depended on warm-start quality, which only sets where the
+bisection starts.
+
+**Not shipped, deliberately.** Which heuristic seeds `ExactKCentre` is a question
+about `KCentre()`'s API surface, not about this kernel, and it is separable: the
+gain is confined to n <= 150 and it would move the probe trajectory and the
+returned witness. Recorded for the maintainer, on round 15's precedent
+("recommended, not yet defaulted").
+
+**The search's own wall, for whoever comes next.** Refutation is what the kernel
+spends its nodes on, and the cost climbs steeply with k: 200 points in five
+dimensions need 7.4M nodes to refute at k = 10 and **1.2 x 10^8** at k = 14. The
+grid never approaches that -- its worst probe is 86,877 nodes -- but it is the
+area's limit, and the obvious lever is one to **import** from area 4 rather than
+export to it: the covering search has no colouring-style bound, only the greedy
+disjoint-neighbourhood count.
+
+### What might transfer to `ExactMaxMin`
+
+Its threshold search is OPTIMISED and its clique kernel AT-LIMIT (rounds 5, 11,
+12, 14, 15), so the question is what the dual turned out to need that the packing
+side has not tried. Three answers, one of them a live candidate:
+
+1. **Vertex dominance is absent from `ThresholdDecide_cpp`, and it is not on
+   round 14's closed list.** Dominance was this round's single biggest lever --
+   it is what turns a 342-point probe into an 11-point one. The packing kernel
+   peels to the (k-1)-core and bounds by colouring, but never applies the clique
+   analogue: if N[u] is contained in N[v] for adjacent u, v, then u can be
+   discarded, because any clique through u extends through v. Round 14 closed MCS
+   re-numbering, a greedy clique pass, and a per-node core peel -- not this.
+   **But do not build it on the strength of this round.** The two sides' costs sit
+   in different places: covering probes were cheap and uniform, with the time
+   going to solver overhead, whereas round 14 showed the packing cost concentrated
+   in a few genuinely hard probes (pmed34's single 54 s feasible probe). Dominance
+   pays only if it shrinks *those* graphs. The measurement that decides it is
+   cheap and has the same shape as this round's audit: count how far a dominance
+   pass peels the certifying probe's graph on pmed34, pmed40 and `tc7_ring`,
+   before writing any kernel.
+
+2. **Unit propagation does not transfer, and that is worth saying so nobody
+   chases it.** A point with one available centre forces that centre open, and the
+   cascade settles most covering probes outright. There is no packing analogue: no
+   vertex is ever forced *into* a clique, so the covering side's most productive
+   reduction has no image on the max-min side at all. The duality between the two
+   solvers is real, but it is not a symmetry.
+
+3. **The warm-start economics replicate exactly** (see the table above), which is
+   corroboration rather than a new lever: round 15's finding that a heuristic pool
+   must be priced against the probes it saves is not an artefact of `Grasp`'s cost
+   curve. It is what happens whenever a solver's search gets fast enough, and it
+   will happen again to any future round that speeds one up.
+
+The traffic also runs the other way, and that is the more valuable direction right
+now: **the colour bound belongs in the covering search**. Area 4's Tomita
+colour-sort is what makes its refutations cheap; the covering kernel has only a
+greedy disjoint-neighbourhood count, and its 10^8-node refutations at k = 14 are
+where that gap shows.
+
+**Cleanup.** Hamilton scratch under `/nobackup/pjjg18/coreset-kc/`; scratch
+libraries and audit rds files in the session scratchpad, outside the repo. No
+VTune this round -- the hot compiled code being replaced was `highs`'s, not ours,
+so an R-level decomposition plus counts located it, and the skill's triage step
+was answered without a sampling profiler. Drivers added: `kcentre-exact-audit.R`,
+`kcentre-exact-audit2.R`, `kcentre-exact-oracle.R`, `kcentre-exact-grid.R`.
+In-round fixes, so no issues filed (skill rule).
 
 
-## Round 16 — 2026-08-19 — Area 4 (ExactMaxMin): the declined root-branch
+## Round 16b — 2026-08-19 — Area 4 (ExactMaxMin): the declined root-branch
 parallelism revived for refutations, and measured in both regimes
 
 **Trigger:** user go-ahead on Round 12's declined lever once the selection

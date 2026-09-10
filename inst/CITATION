@@ -1,17 +1,21 @@
-citHeader("To cite Coreset in publications use:")
-
-year <- format(Sys.Date(), "%Y")
+mrs <- person(c("Martin", "R."), "Smith", email = "martin.smith@durham.ac.uk")
+vers <- paste("R package version", meta$Version)
 
 bibentry(
-  bibtype  = "Manual",
+  bibtype = "Manual",
+  key = "Smith2026",
   title    = "{Coreset}: Discrete Diversity, Dispersion, and Coverage Subset Selection",
-  author   = person("Martin R.", "Smith"),
-  year     = year,
-  note     = paste("R package version", meta$Version),
-  url      = "https://github.com/ms609/Coreset",
+  author = mrs,
+  note = vers,
+  year = 2026,
+  url = "https://ms609.github.io/Coreset/",
+  doi = "10.32614/CRAN.package.Coreset",
+  organization = "Comprehensive R Archive Network",
+  address = "Vienna",
   textVersion = paste0(
-    "Martin R. Smith (", year,
-    "). Coreset: Discrete Diversity, Dispersion, and Coverage Subset Selection. ",
-    "R package version ", meta$Version, ". https://github.com/ms609/Coreset"
-  )
+    "Smith (2026). Coreset: discrete diversity, dispersion, and coverage subset",
+    " selection. Comprehensive R Archive Network, Vienna. ",
+    "doi: 10.32614/CRAN.package.Coreset"
+  ),
+  mfooter = "Citations for individual methods are provided on their manual pages, which can be viewed by typing help(\"FunctionName\").",
 )

@@ -47,6 +47,8 @@ name: R-CMD-check
 # Waves:
 #   sense-check -> arm (cheapest), always runs, never cancelled. Fast signal.
 #   core        -> Windows (+codecov) / R 4.1 / R devel; only if sense-check passed.
+#   benchmark   -> PR-vs-base timings; also only if sense-check passed, and only
+#                  on pull_request / workflow_dispatch.
 #   full        -> macOS x2 + ubuntu-24.04 (release) backstop; only once core is green.
 #   revdepcheck -> reverse-dependency checks; also gated on core being green.
 jobs:
@@ -276,6 +278,204 @@ jobs:
               repo: context.repo.repo,
               issue_number: 170,
               state: 'open'
+            });
+
+  # ---------------------------------------------------------------------------
+  # Also wave 2: the benchmark comparison, gated on sense-check for the same
+  # reason as `core` -- a tree that does not build cannot be timed, so four
+  # benchmark passes over a broken package only rediscover what the cheap leg
+  # already said. Never runs on push or schedule: outside a PR there is no base
+  # ref to compare against.
+  # ---------------------------------------------------------------------------
+  benchmark:
+    needs: sense-check
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    # Healthy run is ~8 min. A hung setup or a wedged benchmark otherwise
+    # runs to the 6-hour default, holding a runner the whole time.
+    timeout-minutes: 30
+
+    concurrency:
+      group: ${{ github.workflow }}-benchmark-${{ github.ref }}
+      cancel-in-progress: true
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      RSPM: "https://packagemanager.rstudio.com/cran/__linux__/noble/latest"
+      _R_CHECK_BUILD_VIGNETTES_: false
+      _R_CHECK_CRAN_INCOMING_: false
+      _R_CHECK_FORCE_SUGGESTS_: false # CRAN settings
+      R_REMOTES_STANDALONE: true
+      R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
+      R_REALLY_FORCE_SYMBOLS: true # Until R4.3
+      PKG_CXXFLAGS: "-O3" # release-grade optimisation for the compiled kernels
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v6
+        with:
+          path: pr
+
+      - name: Checkout target branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.ref || 'main' }}
+          path: main
+
+      # setup-r's first act on Linux is an internal `apt-get update`, and apt
+      # applies no transfer timeout by default: when a mirror accepts the
+      # connection and then stalls, the fetch never returns and the step burns
+      # the job's entire 6-hour budget. Observed 2026-08-19, when
+      # azure.archive.ubuntu.com went dark and the archive.ubuntu.com fallback
+      # stalled part-way through the index fetch -- a step whose healthy cost is
+      # ~35 s sat at 75 minutes. Capping the timeout turns that into a retry.
+      - name: Make apt fail fast on a stalled mirror
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo tee /etc/apt/apt.conf.d/99-ci-timeouts > /dev/null <<'EOF'
+          Acquire::Retries "3";
+          Acquire::http::Timeout "20";
+          Acquire::https::Timeout "20";
+          Acquire::ftp::Timeout "20";
+          EOF
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        timeout-minutes: 15
+
+      - name: Install R dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: pr
+          dependencies: '"hard"'
+          needs: benchmark
+
+      - name: Benchmark PR
+        uses: ms609/actions/benchmark-step@main
+        with:
+          path: pr
+          output: pr
+
+      - name: Benchmark target
+        uses: ms609/actions/benchmark-step@main
+        with:
+          path: main
+          output: main
+
+      - name: Benchmark PR again
+        uses: ms609/actions/benchmark-step@main
+        with:
+          path: pr
+          output: pr2
+
+      # Both trees are measured twice, alternating, so the comparison can size
+      # its noise band from replicates of each: a single sample of the target
+      # cannot tell a real change from the runner's between-step drift.
+      - name: Benchmark target again
+        uses: ms609/actions/benchmark-step@main
+        with:
+          path: main
+          output: main2
+
+      - run: dir pr-benchmark-results
+        working-directory: pr
+      - run: dir main-benchmark-results
+        working-directory: pr
+
+      - name: Compare benchmarks
+        id: compare_results
+        working-directory: pr
+        run: |
+          Rscript benchmark/_compare_results.R
+        shell: bash
+
+      - name: Upload PR benchmark results
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: pr-benchmark-results
+          path: pr/pr-benchmark-results/*.bench.Rds
+
+      - name: Upload main benchmark results
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: main-benchmark-results
+          path: pr/main-benchmark-results/*.bench.Rds
+
+      - name: Comment on PR
+        if: always() && github.event_name == 'pull_request' && steps.compare_results.outputs.report != ''
+        uses: actions/github-script@v9
+        env:
+          BENCHMARK_MESSAGE: ${{ steps.compare_results.outputs.report }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const benchmarkIdentifier = '<!-- benchmark-comment -->';
+
+            // Nothing below may throw: this step exists to post the new result,
+            // and losing that to a hiccup in the tidy-up of the old ones would
+            // be a poor trade. Both halves warn instead.
+            let previousBenchmarkComments = [];
+            try {
+              // The listing has to come from GraphQL: REST's comment payload
+              // omits isMinimized, so it cannot tell a comment this step has
+              // already collapsed from a live one, and each run would re-
+              // minimize the whole history.
+              const { repository } = await github.graphql(`
+                query($owner: String!, $repo: String!, $number: Int!) {
+                  repository(owner: $owner, name: $repo) {
+                    pullRequest(number: $number) {
+                      comments(last: 100) {
+                        nodes { id body isMinimized author { __typename } }
+                      }
+                    }
+                  }
+                }`, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                number: context.issue.number
+              });
+              previousBenchmarkComments =
+                repository.pullRequest.comments.nodes.filter(comment =>
+                  comment.author?.__typename === 'Bot' &&
+                  comment.body.includes(benchmarkIdentifier) &&
+                  !comment.isMinimized
+                );
+            } catch (error) {
+              core.warning(`Could not list benchmark comments: ${error.message}`);
+            }
+
+            // Collapse each as outdated. The likeliest failure is a token
+            // without the scope minimizeComment needs.
+            for (const comment of previousBenchmarkComments) {
+              try {
+                await github.graphql(`
+                  mutation($id: ID!) {
+                    minimizeComment(input: { subjectId: $id, classifier: OUTDATED }) {
+                      minimizedComment { isMinimized }
+                    }
+                  }`, { id: comment.id });
+              } catch (error) {
+                core.warning(
+                  `Could not collapse benchmark comment ${comment.id}: ${error.message}`
+                );
+              }
+            }
+
+            // Create new comment with identifier
+            const newCommentBody = benchmarkIdentifier + '\n' + process.env.BENCHMARK_MESSAGE;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: newCommentBody
             });
 
   # ---------------------------------------------------------------------------

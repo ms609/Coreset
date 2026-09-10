@@ -26,7 +26,10 @@ Terse summary of the object returned by \code{\link[=ExactMaxSum]{ExactMaxSum()}
 }
 \examples{
 set.seed(1)
-ExactMaxSum(3L, dist(matrix(rnorm(20), ncol = 2)))
+# Package 'highs' is required for ExactMaxSum()
+if (requireNamespace("highs", quietly = TRUE)) {
+  ExactMaxSum(3L, dist(matrix(rnorm(20), ncol = 2)))
+}
 }
 \seealso{
 Other reporting functions:

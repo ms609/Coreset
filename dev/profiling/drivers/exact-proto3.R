@@ -72,7 +72,7 @@ Exact_v3 <- function(d, m, maxSeconds = 600, cutoff = TRUE, seedMethod = "dropad
   }
   idx <- sort(bestW[seq_len(m)]); s2 <- d[idx, idx]; diag(s2) <- Inf
   list(indices = idx, objective = min(s2), proven = !inconcl,
-       time_s = Elapsed(), n = n, m = as.integer(m), nProbe = nProbe, LB = LB)
+       seconds = Elapsed(), n = n, m = as.integer(m), nProbe = nProbe, LB = LB)
 }
 
 bench <- function(case, k = 10L) {

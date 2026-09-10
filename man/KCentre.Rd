@@ -3,7 +3,7 @@
 \name{KCentre}
 \alias{KCentre}
 \alias{KCenter}
-\title{Near-optimal discrete k-centre solver}
+\title{Discrete \emph{k}-centre solver}
 \usage{
 KCentre(k, d, nstart = 1L, effort = 1L)
 
@@ -18,8 +18,8 @@ from 1 to \code{nrow(d)}.}
 \item{nstart}{Integer specifying how many deterministic peripheral seeds to
 try.}
 
-\item{effort}{Integer: if \verb{> 0}, run a parallel \code{FarFirst()} search
-with \code{effort} random seeds, returning the best of all results.}
+\item{effort}{Integer: if \verb{> 0}, run \code{effort} parallel \code{FarFirst()} searches,
+each seeded on a distinct starting point, and return the best result found.}
 }
 \value{
 \code{KCentre()} returns an integer vector of length \eqn{\le k} specifying
@@ -35,9 +35,8 @@ using the Critical Dominating Set heuristic (\acronym{CDSh})
 }
 \details{
 On the benchmark instances of \insertCite{GarciaDiaz2019;textual}{Coreset},
-the \acronym{CDS} heuristic reaches roughly 1-3.5\%
-of the optimum at \eqn{O(N^2 \log N)}, far tighter than \code{\link[=FarFirst]{FarFirst()}}
-(typically tens of per cent above optimum).
+the \acronym{CDS} heuristic reaches roughly 1–3.5\%
+of the optimum at \eqn{O(N^2 \log N)}, far tighter than \code{\link[=FarFirst]{FarFirst()}}.
 
 Despite this good performance in practice, the \acronym{CDSh} is a
 3-approximation.
@@ -57,7 +56,7 @@ KCentreRadius(d, centres)
 KCentreRadius(d, FarFirst(5L, d, nSeeds = 1))
 }
 \references{
-\insertAllCited{}
+\insertNoCite{Gonzalez1985}{Coreset}\insertAllCited{}
 }
 \seealso{
 \code{\link[=ExactKCentre]{ExactKCentre()}} for the proven optimum;

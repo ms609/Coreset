@@ -3,7 +3,7 @@
 \name{ExactKCentre}
 \alias{ExactKCentre}
 \alias{ExactKCenter}
-\title{Exact discrete k-centre optimum on small instances}
+\title{Exact discrete \emph{k}-centre optimum}
 \usage{
 ExactKCentre(k, d, maxSeconds = 60)
 
@@ -15,9 +15,10 @@ from 1 to \code{nrow(d)}.}
 
 \item{d}{\code{dist} object or a square symmetric numeric distance matrix.}
 
-\item{maxSeconds}{Wall-clock budget in seconds for the whole search.
-If it expires before the optimum is proven, the smallest radius proven
-feasible so far is returned, with the attribute \code{proven = FALSE}.}
+\item{maxSeconds}{Numeric specifying wall-clock budget, in seconds, for
+the search.
+If the time expires before the optimum is proven, the smallest radius proven
+feasible is returned, with the attribute \code{proven = FALSE}.}
 }
 \value{
 \code{ExactKCentre()} returns an integer vector of length \eqn{\le k}
@@ -27,18 +28,9 @@ It has class \code{c("KCentreExact", "KCentreSelection")} and attributes:
 \item{radius}{The covering radius achieved; the proven optimum when
 \code{proven} is \code{TRUE}, otherwise an upper bound.}
 \item{proven}{Logical: \code{TRUE} if optimality is certified.}
-\item{time_s}{Wall-clock seconds elapsed.}
+\item{seconds}{Wall-clock seconds elapsed.}
 \item{N, k}{Instance size and centre budget.}
 }
-It prints as a one-line summary and indexes a matrix or data frame directly.
-The \code{"KCentreSelection"} superclass means \code{\link[=KCentreRadius]{KCentreRadius()}} and any generic
-written for that class work here too.
-
-The covering optimum may be attained by fewer than \code{k} centres (extra centres
-never help once coverage is achieved); the result then has length \verb{< k} and the
-reported \code{radius} is still the proven \emph{k}-centre optimum. The problem is
-NP-hard, so this is an external ground-truth reference for small instances,
-not a scalable method.
 }
 \description{
 \code{ExactKCentre()} finds an optimal solution to the discrete \emph{k}-centre
@@ -48,12 +40,11 @@ problem.
 The optimum covering radius is the smallest threshold \code{r}, over the achieved
 distinct distances, for which \code{k} centres can cover every point within \code{r}.
 
-Each probe solves a minimum-cardinality \emph{set-cover} integer program with
-the \code{highs} MILP backend, the covering constraints held as a sparse matrix --
-the covering dual of \code{\link[=ExactMaxMin]{ExactMaxMin()}}'s node-packing program. The search is
-warm-started from the \code{\link[=KCentre]{KCentre()}} (CDSh) radius, a proven feasible upper bound
-that caps the binary search, then bisects downward to the smallest feasible
-radius.
+Each probe asks whether \code{k} centres cover every point within a candidate
+radius. This is decided combinatorially via unit propagation and dominance
+reduction, then an exhaustive component-wise search.
+The search is warm-started from the \code{\link[=KCentre]{KCentre()}} radius, then bisects
+downwards.
 }
 \section{Progress bar}{
 
@@ -62,18 +53,10 @@ To toggle, set \code{options("Coreset.progress" = FALSE)} (or \code{TRUE}).
 }
 
 \examples{
-\donttest{
-if (requireNamespace("highs", quietly = TRUE) &&
-    requireNamespace("Matrix", quietly = TRUE)) {
-  set.seed(1)
-  pts <- matrix(rnorm(40), ncol = 2)
-  d <- dist(pts)
-  ExactKCentre(3L, d)
-}
-}
-}
-\references{
-\insertAllCited{}
+set.seed(1)
+pts <- matrix(rnorm(40), ncol = 2)
+d <- dist(pts)
+ExactKCentre(3L, d)
 }
 \seealso{
 \code{\link[=KCentre]{KCentre()}} for the fast near-optimal heuristic; \code{\link[=ExactMaxMin]{ExactMaxMin()}} for

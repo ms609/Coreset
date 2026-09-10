@@ -16,12 +16,14 @@
 # Constructive phase (Algorithm 1).
 # Returns list(S = integer(k), iter_add = integer(k)) where iter_add[i] is
 # the iteration at which S[i] was added (= i).
-.DropAddConstruct <- function(dmat, k) {
+.DropAddConstruct <- function(dmat, k,
+                              first = .PickPoint(dmat, "peripheral")) {
   n <- nrow(dmat)
   S <- integer(k)
-  # Seed point: argmax over Z of sum_y d(x, y) (Porumbel's eq. before Alg. 1).
-  rowSumsD <- rowSums(dmat)
-  S[1L] <- which.max(rowSumsD)
+  # Seed point: the peripheral anchor, as DropAdd() and the C++ kernel use.
+  # (Porumbel seeds at argmax over Z of sum_y d(x, y), the eq. before Alg. 1 —
+  # the weaker anchor of the two by the 0214ab2 grid.)
+  S[1L] <- as.integer(first)
   inS <- logical(n)
   inS[S[1L]] <- TRUE
 
@@ -352,14 +354,16 @@
 # Runs the production C++ DropAdd with tracing enabled and returns the
 # dropped/added index sequences alongside the result, so the FIFO + tabu
 # invariants can be asserted without exposing a `.trace` argument on `DropAdd()`.
-# Kept deliberately thin: it mirrors only the `d`-path coercion and the single
-# C++ call.
+# Kept deliberately thin: it mirrors the `d`-path coercion, the peripheral
+# seed and the single C++ call, so the traced trajectory is the one DropAdd()
+# actually walks.
 .DropAddTrace <- function(d, k, maxIter = NULL, plateau = 5000L,
                           maxSeconds = Inf) {
   dmat <- .AsDistMatrix(d)
   cppMaxIter <- if (is.null(maxIter)) .Machine$integer.max else as.integer(maxIter)
   out <- DropAdd_cpp(dmat, as.integer(k), as.double(maxSeconds),
-                       cppMaxIter, as.integer(plateau), TRUE)
+                       cppMaxIter, as.integer(plateau), TRUE,
+                       as.integer(.PickPoint(dmat, "peripheral")) - 1L)
   list(
     indices = sort(as.integer(out$indices)),
     score   = as.numeric(out$objective),
@@ -381,9 +385,7 @@
 #'
 #' @param k Integer: subset size, \eqn{2 \le k \le N}.
 #' @param d A \code{dist} object, a square symmetric numeric matrix, or a
-#'  distance-column function (see §*Distance-column function*).
-#' @param N Integer: the total number of elements. Required only if `d` is a
-#'  function.
+#'  distance-column function (see below).
 #' @param points A numeric \eqn{N \times \mathrm{dim}} coordinate matrix (or an
 #'  object coercible to one via \code{as.matrix}).
 #'  Must be complete (no \code{NA}).
@@ -394,31 +396,30 @@
 #'  iterations do not improve the score.
 #' @param maxSeconds Numeric: terminate search after this many seconds have
 #' elapsed.
-#' @param seed Optional integer: a 1-based start index that overrides the
-#'  construction's default warm-start seed.
-#'  `NULL` (default) keeps the method's own seed. Not supported when
-#'  `maxCandidates = 0L`.
-#' @templateVar default `46340L`
-#' @templateVar default_basis the dense-distance-matrix feasibility ceiling
-#'   (`floor(sqrt(.Machine$integer.max))`) the `points` path already crosses
-#' @template maxCandidates
+#' @param maxCandidates Integer: when the number of candidate points \eqn{N}
+#'   exceeds `maxCandidates`, the solver runs on a coreset of `maxCandidates`
+#'   chosen by  [FarFirst()].
+#'   `maxCandidates = 0` (or `Inf`) disables thinning.
+#' @param seed Optional integer specifying the index of an element with which to
+#' seed the warm-start search.
+#' @param N Integer: the total number of elements. Required only if `d` is a
+#'  function.
 #' @templateVar progress_shows status messages are shown
 #' @template progress
 #'
-#' @return `DropAdd()` returns an integer vector of length \code{k} containing the 1-based selected
-#'   indices **sorted ascending** (unlike [FarFirst()], which returns
-#'   farthest-first order), with attributes:
+#' @return `DropAdd()` returns an integer vector of length \code{k} containing
+#'  the selected indices, sorted ascending, with attributes:
 #'   \describe{
-#'     \item{score}{numeric(1), achieved MaxMin objective
+#'     \item{score}{numeric specifying the achieved MaxMin objective
 #'       \eqn{\min_{i \ne j \in S} d_{ij}}.}
-#'     \item{secondary}{numeric(1), achieved sum of pairwise distances over
-#'       \eqn{S} (upper-triangle sum).}
-#'     \item{time_s}{numeric(1), wall-clock seconds spent.}
-#'     \item{iters}{integer(1), main-loop iterations executed (excluding the
-#'       construction phase).}
+#'     \item{secondary}{numeric specifying the achieved (upper triangle) sum of
+#'     pairwise distances over \eqn{S}.}
+#'     \item{seconds}{numeric specifying wall-clock seconds spent.}
+#'     \item{iters}{integer specifying main-loop iterations executed, excluding
+#'       the construction phase.}
 #'   }
 #'   The vector has class `"MaxMinSelection"` and prints as a one-line summary
-#'   (see [print.MaxMinSelection()]); it is otherwise an ordinary integer vector.
+#'   (see [print.MaxMinSelection()]).
 #'
 #' @section Parallelism:
 #' To parallelize computation when OpenMP is available, set the `"mc.cores"`
@@ -430,14 +431,14 @@
 #'
 #' @section Distance function:
 #' When `d` is a function, `d(i)` must return the distances from element `i`
-#' to every element (length `N`, with the self-distance ignored)
-#' or to every *other* element (length `N - 1`, in order).
+#' to every element (length `N`, with the self-distance ignored),
+#' or to every element except `i` (length `N - 1`, in order).
 #' `N` is required, and memory is \eqn{O(N)}.
 #' This suits metrics where no stored matrix or coordinate embedding is available.
 #'
-#' It is likely that `d` will be called many times; unless `d` implements
-#' caching, specifying a distance matrix is likely to require less calculation
-#' than the multiple calls to `d`, where memory permits.
+#' Because `d` is typically called many times; specifying a distance matrix
+#' (where memory permits) is likely to require less calculation than multiple
+#' calls to `d`, unless `d` implements efficient caching.
 #'
 #' @references \insertAllCited{}
 #'
@@ -573,7 +574,7 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
       sort(as.integer(out$indices)),
       score     = as.numeric(out$objective),
       secondary = as.numeric(out$secondary),
-      time_s    = timeS,
+      seconds    = timeS,
       iters     = as.integer(out$iters)
     ), "DropAdd"))
   }
@@ -601,7 +602,7 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
       sort(as.integer(out$indices)),
       score     = as.numeric(out$objective),
       secondary = as.numeric(out$secondary),
-      time_s    = timeS,
+      seconds    = timeS,
       iters     = as.integer(out$iters)
     ), "DropAdd"))
   }
@@ -613,9 +614,9 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
       .auto_close = FALSE
     )
   }
-  # The O(n) peripheral anchor gives a lower post-tabu-search gap to the
-  # optimum than the kernel's own O(n^2) max-row-sum fallback (seed0 = -1),
-  # matching the points-path and oracle-path defaults.
+  # The kernel takes no start of its own, so supply the O(n) peripheral
+  # anchor: the lowest post-tabu-search gap to the optimum of the seven
+  # profiled at 0214ab2, and the points- and oracle-path default.
   matrixSeed0 <- if (is.null(seed)) {
     as.integer(.PickPoint(dmat, "peripheral")) - 1L
   } else {
@@ -635,7 +636,7 @@ DropAdd <- function(k, d = NULL, plateau = 5000L, maxSeconds = Inf,
     sort(as.integer(out$indices)),
     score     = as.numeric(out$objective),
     secondary = as.numeric(out$secondary),
-    time_s    = timeS,
+    seconds    = timeS,
     iters     = as.integer(out$iters)
   ), "DropAdd")
 }

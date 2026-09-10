@@ -37,9 +37,9 @@
 #' reached.
 #'
 #' The reinforcement-learning and tabu hyperparameters are fixed at the tuned
-#' values reported by \insertCite{Dieudonne2020}{Coreset} (greedy factor
+#' values reported by \insertCite{Dieudonne2020;textual}{Coreset}: greedy factor
 #' \eqn{\epsilon = 0.7}, learning rate \eqn{\alpha = 0.5}, discount
-#' \eqn{\gamma = 0.5}, maximum tabu tenure \eqn{120}, search depth 50&nbsp;000).
+#' \eqn{\gamma = 0.5}, maximum tabu tenure 120, search depth 50&nbsp;000.
 #'
 #' @param d A `dist` object or square numeric matrix of pairwise distances;
 #'   values may be negative, and an asymmetric matrix is symmetrized to
@@ -59,10 +59,8 @@
 #'     \item{score}{numeric, achieved objective
 #'       \eqn{\sum_{i<j \in S} d_{ij} / |S|}.}
 #'     \item{size}{integer, number of selected elements \eqn{|S|}.}
-#'     \item{time_s}{numeric, wall-clock seconds spent.}
-#'     \item{iters}{numeric, total tabu-search iterations across restarts.
-#'       Stored as a double, not an integer, because a long run can exceed the
-#'       32-bit integer range.}
+#'     \item{seconds}{numeric, wall-clock seconds spent.}
+#'     \item{iters}{numeric, total tabu-search iterations across restarts.}
 #'   }
 #'   The vector has class `"MaxMeanSelection"` and prints as a one-line summary
 #'   (see [print.MaxMeanSelection()]); it is otherwise an ordinary integer
@@ -149,7 +147,7 @@ MaxMean <- function(d, maxSeconds = 0.1, maxIter = 1000, useRL = TRUE) {
     sort(as.integer(out$indices)),
     score  = as.numeric(out$objective),
     size   = length(out$indices),
-    time_s = timeS,
+    seconds = timeS,
     iters  = as.numeric(out$iters)
   ))
 }

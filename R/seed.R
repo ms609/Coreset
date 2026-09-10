@@ -1,4 +1,4 @@
-﻿# seed.R
+# seed.R
 #
 # Peripheral seeding strategies for Gonzalez farthest-first selection, and the
 # ensemble driver that runs several and keeps the best by MinDist(). The single
@@ -244,7 +244,8 @@
 #'    then the point furthest from that (a diameter-endpoint approximation).
 #'    \eqn{O(N)}.}
 #'   \item{`"anti_centroid"`}{The point farthest from the coordinate mean
-#'     (\eqn{\argmax ||x - x_bar||}). \eqn{O(N * dim)}. Requires `points`.}
+#'     (\eqn{\arg\max \|x - \bar{x}\|}{argmax ||x - x_bar||}).
+#'      \eqn{O(N * dim)}. Requires `points`.}
 #'   \item{`"random_furthest"`}{The point furthest from a random pivot.
 #'   \eqn{O(N)}.}
 #'   \item{`"diameter"`}{A row endpoint of the diameter pair (the maximum

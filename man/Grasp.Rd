@@ -20,37 +20,29 @@ Grasp(
 \item{d}{Either a \code{dist} object or a square symmetric numeric matrix.}
 
 \item{plateau}{Integer; stop after this many consecutive GRASP
-iterations without an improvement to the best elite objective. The
-primary, deterministic stopping criterion.}
+iterations have not improved the best elite objective.}
 
 \item{eliteSize}{Size of the elite set |ES|.}
 
-\item{alpha}{Construction greediness in \verb{[0, 1]}. Each step draws the next
-point at random from a shortlist of the strongest candidates -- those
-whose gain lies within a fraction \code{alpha} of the best-to-worst spread.
-\code{alpha = 1} is pure greedy (best only); \code{alpha = 0} is uniform random
-among candidates.}
+\item{alpha}{Numeric in \verb{[0, 1]} specifying construction greediness.
+Each step draws the next point at random from a shortlist of the strongest
+candidates whose gain lies within a fraction \code{alpha} of the best-to-worst
+spread.
+\code{alpha = 1} is pure greedy; \code{alpha = 0} is uniform random among candidates.}
 
 \item{maxSeconds}{Numeric specifying wall-clock ceiling, in seconds.}
 
-\item{maxCandidates}{Integer: a composable-coreset tractability cap. When the
-number of candidate points \code{N} exceeds \code{maxCandidates}, \code{\link[=FarFirst]{FarFirst()}} thins
-the candidates to a \code{maxCandidates}-point coreset (with the deterministic,
-RNG-free \code{"peripheral"} seed, so no random stream is perturbed), the solver
-runs on the coreset, and the chosen indices are mapped back to the original
-numbering. This lets the solver produce a solution at scales where it would
-otherwise be intractable. \code{maxCandidates = 0} (or \code{Inf}) disables thinning
-and runs on the full problem; a cap at or above \code{N} is a no-op. A cap below
-\code{k} is an error. The default is \code{2000L}, conservative because \code{Grasp()} is matrix-only, so
-Thinning is \strong{on by default}: an input larger than the cap is thinned (and
-a warning is emitted) unless \code{maxCandidates = 0} is passed.}
+\item{maxCandidates}{Integer: when the number of candidate points \eqn{N}
+exceeds \code{maxCandidates}, the solver runs on a coreset of \code{maxCandidates}
+chosen by  \code{\link[=FarFirst]{FarFirst()}}.
+\code{maxCandidates = 0} (or \code{Inf}) disables thinning.}
 }
 \value{
 \code{Grasp()} returns an integer vector of length \code{k} specifying the
 indices of the selected points, with attributes:
 \describe{
 \item{score}{Achieved MaxMin objective \eqn{T_k}.}
-\item{time_s}{Wall-clock seconds spent.}
+\item{seconds}{Wall-clock seconds spent.}
 \item{iters}{Number of GRASP refinement iterations executed.}
 \item{pr_calls}{Number of path-relinking pair-applications run.}
 }

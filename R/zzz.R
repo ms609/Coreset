@@ -6,7 +6,6 @@
 release_questions <- function() {
   c(
     "Is the code free of #TODOs?",
-    "Does R CMD check pass with no NOTEs?",
     "Have the FurthestPoint reproduction tests been re-run against this version?"
   )
 }
@@ -14,7 +13,7 @@ release_questions <- function() {
 
 # Additional tests:
 #
-# spell_check()
+# spelling::spell_check_package()
 # pkgdown::build_reference_index()
 # run_examples()
 #

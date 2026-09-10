@@ -33,4 +33,6 @@ memcheck
 ^dev$
 ^\.positai$
 ^\.claude$
+^\.agent.*$
 ^Meta$
+^cran-comments\.md$

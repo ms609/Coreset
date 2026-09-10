@@ -31,6 +31,7 @@
 #include <limits>
 #include <chrono>
 #include <utility>
+#include <tuple>
 using namespace Rcpp;
 
 // Phase-B batch size: fixed, algorithm-defining (see header note). Sized for
@@ -700,11 +701,15 @@ List Grasp_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter,
   {
     std::vector<int> ord(elite_size);
     for (int i = 0; i < elite_size; ++i) ord[i] = i;
-    std::stable_sort(ord.begin(), ord.end(),
-                     [&](int a, int b) { return ESz[a] > ESz[b]; });
+    std::sort(ord.begin(), ord.end(),
+              [&](const int& a, const int& b) {
+                return std::tie(ESz[a], b) > std::tie(ESz[b], a);
+              });
     std::vector<std::vector<int>> ES2(elite_size);
     std::vector<double> ESz2(elite_size);
-    for (int i = 0; i < elite_size; ++i) { ES2[i] = ES[ord[i]]; ESz2[i] = ESz[ord[i]]; }
+    for (int i = 0; i < elite_size; ++i) {
+      ES2[i] = ES[ord[i]]; ESz2[i] = ESz[ord[i]];
+    }
     ES.swap(ES2);
     ESz.swap(ESz2);
   }
@@ -818,7 +823,7 @@ List Grasp_cpp(NumericMatrix dmat, int m, int max_no_improve, int max_iter,
   return List::create(
     _["indices"]   = indices,
     _["objective"] = best_z,
-    _["time_s"]    = elapsed(),
+    _["seconds"]    = elapsed(),
     _["iters"]     = iters,
     _["pr_calls"]  = pr_calls
   );
