@@ -20,7 +20,7 @@ on:
           Comma-separated list of R-hub platforms to use.
           Full list: summary(rhub::rhub_platforms())
         type: string
-        default: 'linux,windows,macos'
+        default: 'linux,windows,macos-arm64'
       name:
         description: 'Run name (optional)'
         type: string
@@ -28,7 +28,7 @@ on:
 jobs:
 
   setup:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     outputs:
       containers: ${{ steps.rhub-setup.outputs.containers }}
       platforms: ${{ steps.rhub-setup.outputs.platforms }}
