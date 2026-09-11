@@ -149,6 +149,21 @@ test_that("MaxEntropy is density-blind: a duplicated point is never co-selected"
   }
 })
 
+test_that(".MaxEntropyPrepare takes the Cholesky fast path for a PSD kernel", {
+  # Genuine Euclidean distances give an already-PSD RBF kernel, so "clip" and
+  # "shift" should return it unmodified (negMass == 0) without needing the
+  # eigendecomposition -- verified indirectly via bitwise-identical output.
+  set.seed(9)
+  d <- as.matrix(dist(matrix(rnorm(40), ncol = 2)))
+  kern <- .MaxEntropyKernel(d)
+  ks <- (kern + t(kern)) / 2
+  for (method in c("clip", "shift")) {
+    prep <- .MaxEntropyPrepare(kern, method)
+    expect_identical(prep$negMass, 0)
+    expect_identical(prep$kp, ks)
+  }
+})
+
 test_that("MaxEntropy honours k edge cases and rejects bad k", {
   set.seed(7)
   d <- dist(matrix(rnorm(20), ncol = 2))              # n = 10

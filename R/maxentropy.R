@@ -48,6 +48,18 @@
                                keep = 0.99, tol = 1e-9) {
   method <- match.arg(method)
   ks <- (k + t(k)) / 2
+  # "clip"/"shift" are no-ops on an already-PSD kernel (the common case for
+  # genuine Euclidean distances), so try a Cholesky factorisation first --
+  # ~3x cheaper than eigen() and lets us skip the O(n^3) eigendecomposition
+  # entirely when it succeeds. "truncate" always needs the spectrum (it keeps
+  # only the top eigen-mass), so it can't use this fast path.
+  if (method != "truncate") {
+    chol_ks <- tryCatch(chol(ks), error = function(e) NULL)
+    if (!is.null(chol_ks)) {
+      # Return: already PSD -- no repair needed, eigen() cost avoided.
+      return(list(kp = ks, negMass = 0))
+    }
+  }
   e <- eigen(ks, symmetric = TRUE)
   lam <- e$values
   neg <- lam[lam < -tol]
