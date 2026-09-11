@@ -62,73 +62,9 @@ jobs:
         with:
           token: ${{ secrets.RHUB_TOKEN }}
           job-config: ${{ matrix.config.job-config }}
-
-      - uses: dcarbone/install-jq-action@v4.0.1
-
-      - name: Quarto installation - provide dummy 'sudo'
-        run: |
-          if ! command -v sudo >/dev/null 2>&1; then
-            echo '#!/bin/sh' > /usr/local/bin/sudo
-            echo 'exec "$@"' >> /usr/local/bin/sudo
-            chmod +x /usr/local/bin/sudo
-          fi
-
-      - name: Detect OS distribution
-        id: os-check
-        run: |
-          if [ -f /etc/os-release ]; then
-            . /etc/os-release
-            case "$ID" in
-              fedora|rhel|centos|rocky|almalinux)
-                echo "is_fedora=true" >> $GITHUB_OUTPUT
-                ;;
-              *)
-                echo "is_fedora=false" >> $GITHUB_OUTPUT
-                ;;
-            esac
-          else
-            echo "is_fedora=false" >> $GITHUB_OUTPUT
-          fi
-
-      # UBUNTU
-      - name: Fetch Ubuntu dependencies needed by Quarto dynamic binary
-        if: ${{ steps.os-check.outputs.is_fedora != 'true' }}
-        run: |
-          apt-get update -qq && apt-get install -y -qq wget libc6
-
-      - if: ${{ steps.os-check.outputs.is_fedora != 'true' }}
-        uses: quarto-dev/quarto-actions/setup@v2
-
-      # FEDORA
-      - name: Fetch Fedora dependencies needed by Quarto dynamic binary
-        if: ${{ steps.os-check.outputs.is_fedora == 'true' }}
-        run: |
-          dnf install -y wget glibc glibc-common libstdc++ tar || yum install -y wget glibc libstdc++ tar
-
-      - name: Install Quarto CLI via Tarball (Fedora)
-        if: ${{ steps.os-check.outputs.is_fedora == 'true' }}
-        run: |
-          QUARTO_URL=$(curl -s https://api.github.com/repos/quarto-dev/quarto-cli/releases/latest | jq -r '.assets[] | select(.name | endswith("linux-amd64.tar.gz")) | .browser_download_url')
-
-          if [ -z "$QUARTO_URL" ] || [ "$QUARTO_URL" = "null" ]; then
-            QUARTO_URL="https://github.com/quarto-dev/quarto-cli/releases/download/v1.5.57/quarto-1.5.57-linux-amd64.tar.gz"
-          fi
-
-          mkdir -p /opt/quarto
-          curl -sL "$QUARTO_URL" | tar -xz -C /opt/quarto --strip-components=1
-
-          ln -sf /opt/quarto/bin/quarto /usr/local/bin/quarto
-
-      - name: Configure Quarto environment
-        run: |
-          QUARTO_BIN=$(command -v quarto || echo "/opt/quarto/bin/quarto")
-          QUARTO_DIR=$(dirname "$QUARTO_BIN")
-          echo "QUARTO_PATH=$QUARTO_BIN" >> $GITHUB_ENV
-          echo "QUARTO_BIN_PATH=$QUARTO_DIR" >> $GITHUB_ENV
-
-      - name: Pre-install package for Quarto vignette subprocess
-        run: R CMD INSTALL .
-        shell: bash
+      - uses: ms609/rhub-quarto@main
+        with:
+          linux: 'true'      
       - uses: r-hub/actions/run-check@v1
         with:
           token: ${{ secrets.RHUB_TOKEN }}
@@ -158,10 +94,9 @@ jobs:
         with:
           job-config: ${{ matrix.config.job-config }}
           token: ${{ secrets.RHUB_TOKEN }}
-      - uses: quarto-dev/quarto-actions/setup@v2
-      - name: Pre-install package for Quarto vignette subprocess
-        run: R CMD INSTALL .
-        shell: bash
+      - uses: ms609/rhub-quarto@main
+        with:
+          linux: 'false'
       - uses: r-hub/actions/run-check@v1
         with:
           job-config: ${{ matrix.config.job-config }}
