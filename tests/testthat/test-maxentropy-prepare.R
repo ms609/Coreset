@@ -124,6 +124,22 @@ test_that("SymEigenPartial_cpp reproduces eigen() on each side of the spectrum",
   expect_identical(ncol(SymEigenPartial_cpp(ks, 2L, 0)$vectors), 1L)
   expect_identical(ncol(SymEigenPartial_cpp(-diag(3), 2L, 0.99)$vectors), 0L)
 
+  # Truncate keeping the majority: the DROPPED components (the smaller set)
+  # are returned instead, side -1, so the caller subtracts them from ks.
+  posPsd <- vPsd$values[vPsd$values > 0]
+  rPsd <- which(cumsum(sort(posPsd, decreasing = TRUE)) / sum(posPsd) >= 0.999)[1]
+  expect_gt(rPsd, n / 2)
+  v2c <- SymEigenPartial_cpp(ksPsd, 2L, 0.999)
+  expect_identical(v2c$side, -1L)
+  expect_identical(ncol(v2c$vectors), n - rPsd)
+  expect_equal(v2c$pvalues, vPsd$values[seq_len(n - rPsd)])
+  expect_equal(ksPsd %*% v2c$vectors, v2c$vectors %*% diag(v2c$pvalues, n - rPsd))
+  # Keeping everything drops nothing: an empty dropped side, and kp = ks exactly.
+  v2a <- SymEigenPartial_cpp(ksPsd, 2L, 2)
+  expect_identical(v2a$side, -1L)
+  expect_identical(dim(v2a$vectors), c(n, 0L))
+  expect_identical(.MaxEntropyPrepare(ksPsd, "truncate", keep = 2)$kp, ksPsd)
+
   # Edge cases.
   e0 <- SymEigenPartial_cpp(matrix(0, 0, 0), 1L, 0.99)
   expect_length(e0$values, 0L)
@@ -137,9 +153,12 @@ test_that("SymEigenPartial_cpp reproduces eigen() on each side of the spectrum",
   e2 <- SymEigenPartial_cpp(matrix(3, 1, 1), 1L, 0.99)
   expect_identical(e2$side, 0L)
   expect_equal(e2$values, 3)
+  # 1 x 1 positive, truncate: keeping the one dimension drops nothing, so the
+  # (empty) dropped set is the smaller side and kp is ks itself.
   e3 <- SymEigenPartial_cpp(matrix(3, 1, 1), 2L, 0.99)
-  expect_equal(e3$pvalues, 3)
-  expect_equal(abs(e3$vectors), matrix(1, 1, 1))
+  expect_identical(e3$side, -1L)
+  expect_identical(dim(e3$vectors), c(1L, 0L))
+  expect_identical(.MaxEntropyPrepare(matrix(3, 1, 1), "truncate")$kp, matrix(3, 1, 1))
   expect_error(SymEigenPartial_cpp(matrix(0, 2, 3), 0L, 0.99), "square")
   expect_error(SymEigenPartial_cpp(ks, 3L, 0.99), "mode")
 })
@@ -153,9 +172,15 @@ test_that("RankUpdate_cpp is the explicit rank-p product", {
   r <- RankUpdate_cpp(base, V, lam)
   expect_equal(r, base + V %*% diag(lam) %*% t(V))
   expect_identical(r, t(r))
-  # A negative weight is roundoff on the wrong side of the cut: treated as 0.
+  # A negative weight subtracts its component (the dropped side of a
+  # truncation carries both signs).
   expect_equal(RankUpdate_cpp(NULL, V, c(0.5, -1, 1e-3)),
-               V[, c(1, 3)] %*% diag(c(0.5, 1e-3)) %*% t(V[, c(1, 3)]))
+               V %*% diag(c(0.5, -1, 1e-3)) %*% t(V))
+  expect_equal(RankUpdate_cpp(base, V, -lam), base - V %*% diag(lam) %*% t(V))
+  expect_equal(RankUpdate_cpp(NULL, V, -lam), -(V %*% diag(lam) %*% t(V)))
+  # All weights non-negative: one update, as before.
+  expect_identical(RankUpdate_cpp(base, V, c(0.5, 0, 1e-3)),
+                   RankUpdate_cpp(base, V[, c(1, 3)], c(0.5, 1e-3)))
   V0 <- V[, 0, drop = FALSE]
   expect_identical(RankUpdate_cpp(base, V0, numeric(0)), base)
   expect_identical(RankUpdate_cpp(NULL, V0, numeric(0)), matrix(0, 8, 8))

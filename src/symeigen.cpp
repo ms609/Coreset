@@ -24,6 +24,7 @@
 #endif
 #include <vector>
 #include <algorithm>
+#include <cmath>
 using namespace Rcpp;
 
 // dstemr (LAPACK >= 3.1) is not declared in R_ext/Lapack.h but is exported by
@@ -64,7 +65,9 @@ static int TopByMass(const NumericVector& vals, double keep) {
 //           (side = -1), else the positive ones (side = +1). side = 0 (no
 //           vectors) when no eigenvalue is negative.
 //   mode 2: eigenvectors of the top r eigenvalues holding `keep` of the
-//           positive eigen-mass (side = +1; r may be 0).
+//           positive eigen-mass (side = +1; r may be 0) -- or, when those are
+//           the majority (r > n / 2), of the n - r eigenvalues the truncation
+//           DROPS (side = -1): the caller subtracts them instead.
 // Returns list(values = all n eigenvalues ascending, side, pvalues = the
 // eigenvalues of the returned vectors (ascending), vectors = n x p matrix).
 // Only the lower triangle of A is read: pass a symmetric matrix.
@@ -106,7 +109,8 @@ List SymEigenPartial_cpp(const NumericMatrix& A, int mode, double keep) {
     }
   } else if (mode == 2) {
     const int r = TopByMass(values, keep);
-    il = n - r + 1; iu = n; side = 1;
+    if (r <= n - r) { il = n - r + 1; iu = n; side = 1; }
+    else            { il = 1; iu = n - r; side = -1; }
   }
   const int p = iu - il + 1;
   if (p <= 0) {
@@ -151,10 +155,12 @@ List SymEigenPartial_cpp(const NumericMatrix& A, int mode, double keep) {
                       _["pvalues"] = pv, _["vectors"] = Z);
 }
 
-// base + V diag(lam) V^T for lam >= 0 (a negative entry counts as zero: it is
-// roundoff on the wrong side of the cut), by one symmetric rank-p update
-// (dsyrk) on a copy of `base` -- or on zeros when base is NULL -- mirrored to
-// full storage so the result is symmetric to the bit.
+// base + V diag(lam) V^T by symmetric rank-p updates (dsyrk) on a copy of
+// `base` -- or on zeros when base is NULL -- mirrored to full storage so the
+// result is symmetric to the bit. The columns with lam >= 0 go in one
+// (added) update and those with lam < 0 in a second (subtracted) one, so a
+// signed `lam` -- the eigenvalues a truncation drops, of either sign -- is
+// handled without squaring away its signs.
 // [[Rcpp::export]]
 NumericMatrix RankUpdate_cpp(Nullable<NumericMatrix> base, const NumericMatrix& V,
                              const NumericVector& lam) {
@@ -167,16 +173,28 @@ NumericMatrix RankUpdate_cpp(Nullable<NumericMatrix> base, const NumericMatrix& 
     std::copy(b.begin(), b.end(), out.begin());
   }
   if (p == 0 || n == 0) return out;
-  std::vector<double> Vs(V.begin(), V.end());
+  std::vector<double> Vpos, Vneg;
+  Vpos.reserve(static_cast<size_t>(n) * p);
   for (int j = 0; j < p; ++j) {
-    const double s = std::sqrt(lam[j] > 0.0 ? lam[j] : 0.0);
-    double* col = Vs.data() + static_cast<size_t>(j) * n;
-    for (int i = 0; i < n; ++i) col[i] *= s;
+    std::vector<double>& dst = lam[j] < 0.0 ? Vneg : Vpos;
+    const double s = std::sqrt(std::fabs(lam[j]));
+    const double* col = &V(0, j);
+    for (int i = 0; i < n; ++i) dst.push_back(col[i] * s);
   }
   const char uplo = 'L', trans = 'N';
-  const double alpha = 1.0, beta = base.isNotNull() ? 1.0 : 0.0;
-  F77_CALL(dsyrk)(&uplo, &trans, &n, &p, &alpha, Vs.data(), &n, &beta,
-                  out.begin(), &n FCONE FCONE);
+  double beta = base.isNotNull() ? 1.0 : 0.0;
+  const int pPos = static_cast<int>(Vpos.size() / n), pNeg = p - pPos;
+  if (pPos > 0) {
+    const double alpha = 1.0;
+    F77_CALL(dsyrk)(&uplo, &trans, &n, &pPos, &alpha, Vpos.data(), &n, &beta,
+                    out.begin(), &n FCONE FCONE);
+    beta = 1.0;
+  }
+  if (pNeg > 0) {
+    const double alpha = -1.0;
+    F77_CALL(dsyrk)(&uplo, &trans, &n, &pNeg, &alpha, Vneg.data(), &n, &beta,
+                    out.begin(), &n FCONE FCONE);
+  }
   for (int j = 0; j < n; ++j) {
     for (int i = j + 1; i < n; ++i) out(j, i) = out(i, j);
   }

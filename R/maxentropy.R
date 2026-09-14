@@ -51,9 +51,10 @@
 # and returned as is: clip and shift would not change it. Otherwise
 # SymEigenPartial_cpp() tridiagonalises once (4/3 n^3), takes every eigenvalue
 # from the tridiagonal form (O(n^2)), and computes only the eigenvectors the
-# repair needs: the negative side of the spectrum (or the positive side when
-# that is smaller) for clip, none for shift, the top r for truncate. The
-# repaired kernel is a rank-p update of ks (n^2 p).
+# repair needs: the smaller side of zero for clip, none for shift, and for
+# truncate the smaller of the kept and dropped sets. The repaired kernel is a
+# rank-p update of ks (n^2 p) -- subtracting the dropped components or
+# rebuilding from the kept ones.
 .MaxEntropyPrepare <- function(k, method = c("clip", "shift", "truncate"),
                                keep = 0.99, tol = 1e-9) {
   method <- match.arg(method)
@@ -77,15 +78,16 @@
     },
     # clip: subtract the negative eigen-component (kp = ks - V L- V^T, a rank-m
     # update) or, when the negatives are the majority, rebuild from the
-    # positive one (kp = V L+ V^T).
-    clip = if (eig[["side"]] == 0L) {
+    # positive one (kp = V L+ V^T). truncate: likewise from whichever of the
+    # kept and dropped components is the smaller set.
+    clip = ,
+    truncate = if (eig[["side"]] == 0L) {
       ks
     } else if (eig[["side"]] < 0L) {
       RankUpdate_cpp(ks, eig[["vectors"]], -eig[["pvalues"]])
     } else {
       RankUpdate_cpp(NULL, eig[["vectors"]], eig[["pvalues"]])
-    },
-    truncate = RankUpdate_cpp(NULL, eig[["vectors"]], eig[["pvalues"]])
+    }
   )
   # Return:
   list(kp = kp, negMass = negMass)
