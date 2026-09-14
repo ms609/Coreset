@@ -50,3 +50,4 @@ jobs:
       - uses: ms609/actions/asan@main
         with:
           test: ${{ matrix.config.test }}
+          token: ${{ secrets.GITHUB_TOKEN }}
