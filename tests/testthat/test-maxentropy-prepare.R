@@ -262,6 +262,10 @@ test_that(".MaxEntropyPrepare matches the full-eigendecomposition reference", {
     expect_identical(prep$negMass, 0)
   }
   expect_identical(.MaxEntropyPrepare(psd, "truncate")$kp, psd)
+  # tol = 0 removes the margin: the zero pivot fails the certificate, and the
+  # eigen path then finds no negative side to subtract.
+  expect_identical(.MaxEntropyPrepare(psd, "clip", tol = 0),
+                   list(kp = psd, negMass = 0))
   # symmetric = TRUE skips the averaging and keeps `k` as is, attributes and
   # all, on the certified path; the repaired kernels are the same numbers.
   kern <- .MaxEntropyKernel(fx$psd)
