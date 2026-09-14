@@ -1,18 +1,7 @@
 # Coreset 1.0.0.9000 (development)
 
-- `MaxEntropy()` is roughly 2-8x faster at large `n` (least where the kernel
-  is half negative, most where it is positive-definite): the positive-semidefinite
-  repair no longer computes every eigenvector of the kernel. A kernel that is
-  already positive-definite (Euclidean distances in moderate dimension; many
-  tree-distance kernels) is certified by one Cholesky factorisation and used as
-  is; otherwise the kernel is tridiagonalised once and only the eigenvectors
-  the repair needs (the negative side of the spectrum, or the smaller side, for
-  `"clip"`; none for `"shift"`; the retained top dimensions for `"truncate"`)
-  are computed and applied as a low-rank update (LAPACK `dsytrd`/`dsterf`/
-  `dstemr`/`dormtr`). The default bandwidth and kernel are now built in C++
-  over one triangle. Repaired kernels agree with 1.0.0 to round-off; a selection
-  can differ only where `k` exceeds the numerical rank of the repaired kernel,
-  where every pick is arbitrary (issue #28; supersedes #29).
+- `MaxEntropy()` is roughly 2-8x faster at large `n`.
+
 
 # Coreset 1.0.0 (2026-09-09)
 
