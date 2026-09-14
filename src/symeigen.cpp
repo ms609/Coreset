@@ -24,6 +24,7 @@
 #endif
 #include <vector>
 #include <algorithm>
+#include <cfloat>
 #include <cmath>
 using namespace Rcpp;
 
@@ -37,6 +38,39 @@ extern "C" void F77_NAME(dstemr)(const char* jobz, const char* range,
                                  const int* nzc, int* isuppz, int* tryrac,
                                  double* work, const int* lwork, int* iwork,
                                  const int* liwork, int* info FCLEN FCLEN);
+
+// Positive-definiteness certificate: TRUE when the Cholesky factorisation
+// (dpotrf) of A + delta I succeeds, delta = min(4 n eps ||A||_inf, tol). Every
+// eigenvalue of A is then above -delta up to dpotrf's own backward error
+// (~n eps ||A||), the resolution of any dense eigen-solver as well, so a
+// negative one is round-off, below `tol`, and the clip would remove only
+// round-off components (negMass is 0 by its definition); tol = 0 is the plain
+// positive-definite test. The recursive
+// dpotrf2 on the lower triangle is the fastest variant under reference BLAS:
+// its trailing updates are axpy-form dgemm calls, which vectorise, where the
+// upper form's dot-product dgemm does not, and its large recursive blocks beat
+// dpotrf's fixed nb = 64. The pass/fail verdict is the only output; no factor
+// bits are kept.
+// [[Rcpp::export]]
+bool CholCertificate_cpp(const NumericMatrix& A, double tol) {
+  const int n = A.nrow();
+  if (A.ncol() != n) stop("`A` must be square");
+  if (n == 0) return true;
+  std::vector<double> a(A.begin(), A.end());        // dpotrf overwrites its input
+  double normInf = 0.0;
+  for (int i = 0; i < n; ++i) {
+    double s = 0.0;
+    for (int j = 0; j < n; ++j) s += std::fabs(a[static_cast<size_t>(j) * n + i]);
+    if (s > normInf) normInf = s;
+  }
+  const double delta = std::min(4.0 * n * DBL_EPSILON * normInf, tol);
+  for (int i = 0; i < n; ++i) a[static_cast<size_t>(i) * n + i] += delta;
+  const char uplo = 'L';
+  int info = 0;
+  F77_CALL(dpotrf2)(&uplo, &n, a.data(), &n, &info FCONE);
+  if (info < 0) stop("LAPACK dpotrf2 failed (info = %d)", info);  // # nocov
+  return info == 0;
+}
 
 // Number of leading positive eigenvalues (of `vals`, ascending) needed to hold
 // a fraction `keep` of the positive eigen-mass -- the truncate rule of

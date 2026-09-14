@@ -109,6 +109,10 @@ MaxMean_cpp <- function(dmat, time_budget_s, iter_budget, alpha_depth, T_min, T_
     .Call(`_Coreset_MaxMean_cpp`, dmat, time_budget_s, iter_budget, alpha_depth, T_min, T_max, epsilon, alpha_rl, gamma_rl, use_rl)
 }
 
+CholCertificate_cpp <- function(A, tol) {
+    .Call(`_Coreset_CholCertificate_cpp`, A, tol)
+}
+
 SymEigenPartial_cpp <- function(A, mode, keep) {
     .Call(`_Coreset_SymEigenPartial_cpp`, A, mode, keep)
 }

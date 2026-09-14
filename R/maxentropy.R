@@ -45,23 +45,37 @@
 # magnitude of the repair, reported so a caller sees when the Euclidean
 # approximation is doing real work.
 #
-# Cost: this is MaxEntropy()'s O(n^3) step. A kernel that is already positive-
-# definite -- genuine Euclidean distances in moderate dimension, and many
-# tree-distance kernels -- is certified by one Cholesky factorisation (n^3 / 3)
-# and returned as is: clip and shift would not change it. Otherwise
-# SymEigenPartial_cpp() tridiagonalises once (4/3 n^3), takes every eigenvalue
-# from the tridiagonal form (O(n^2)), and computes only the eigenvectors the
-# repair needs: the smaller side of zero for clip, none for shift, and for
-# truncate the smaller of the kept and dropped sets. The repaired kernel is a
-# rank-p update of ks (n^2 p) -- subtracting the dropped components or
-# rebuilding from the kept ones.
+# Cost: this is MaxEntropy()'s O(n^3) step. A kernel that is positive-definite
+# is certified by one Cholesky factorisation (n^3 / 3) and returned as is.
+# For clip the factorisation is of ks + delta I, delta = min(4 n eps ||ks||,
+# tol), so a kernel that is positive-definite to within round-off -- genuine
+# Euclidean distances in low dimension, whose computed spectrum has many
+# round-off negatives -- is certified too: any negative eigenvalue is then
+# within the resolution of a dense eigen-solver, the clip would change ks
+# only by round-off, and negMass is 0 by its definition. shift gets no such
+# margin (delta = 0): its repair of a round-off-indefinite kernel is a ridge
+# of `tol`, not a round-off change, so it keeps the plain positive-definite
+# test. Otherwise SymEigenPartial_cpp() tridiagonalises once
+# (4/3 n^3), takes every eigenvalue from the tridiagonal form (O(n^2)), and
+# computes only the eigenvectors the repair needs: the smaller side of zero for
+# clip, none for shift, and for truncate the smaller of the kept and dropped
+# sets. The repaired kernel is a rank-p update of ks (n^2 p) -- subtracting the
+# dropped components or rebuilding from the kept ones.
+#
+# `symmetric = TRUE` promises that `k` is exactly symmetric, as
+# .MaxEntropyKernel() returns it, and skips the averaging (two n^2 passes);
+# `k` is then used as is, attributes included.
 .MaxEntropyPrepare <- function(k, method = c("clip", "shift", "truncate"),
-                               keep = 0.99, tol = 1e-9) {
+                               keep = 0.99, tol = 1e-9, symmetric = FALSE) {
   method <- match.arg(method)
-  ks <- (k + t(k)) / 2
-  attributes(ks) <- attributes(ks)["dim"]        # a bare matrix on every path
+  if (symmetric) {
+    ks <- k
+  } else {
+    ks <- (k + t(k)) / 2
+    attributes(ks) <- attributes(ks)["dim"]      # a bare matrix on every path
+  }
   if (method != "truncate" &&
-      !is.null(tryCatch(chol(ks), error = function(e) NULL))) {
+      CholCertificate_cpp(ks, if (method == "clip") tol else 0)) {
     # Return: numerically positive-definite; nothing to repair.
     return(list(kp = ks, negMass = 0))
   }
@@ -177,7 +191,7 @@ MaxEntropy <- function(k, d, sigma = NULL,
 
   kern <- .MaxEntropyKernel(d, sigma)
   sigmaUsed <- attr(kern, "sigma")
-  prep <- .MaxEntropyPrepare(kern, repair)
+  prep <- .MaxEntropyPrepare(kern, repair, symmetric = TRUE)
   negMass <- prep$negMass
   kp <- prep$kp
 

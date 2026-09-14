@@ -376,6 +376,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// CholCertificate_cpp
+bool CholCertificate_cpp(const NumericMatrix& A, double tol);
+RcppExport SEXP _Coreset_CholCertificate_cpp(SEXP ASEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type A(ASEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(CholCertificate_cpp(A, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
 // SymEigenPartial_cpp
 List SymEigenPartial_cpp(const NumericMatrix& A, int mode, double keep);
 RcppExport SEXP _Coreset_SymEigenPartial_cpp(SEXP ASEXP, SEXP modeSEXP, SEXP keepSEXP) {
@@ -466,6 +478,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_Coreset_EuclidColFromPoints_cpp", (DL_FUNC) &_Coreset_EuclidColFromPoints_cpp, 2},
     {"_Coreset_DiameterFromPoints_cpp", (DL_FUNC) &_Coreset_DiameterFromPoints_cpp, 2},
     {"_Coreset_MaxMean_cpp", (DL_FUNC) &_Coreset_MaxMean_cpp, 10},
+    {"_Coreset_CholCertificate_cpp", (DL_FUNC) &_Coreset_CholCertificate_cpp, 2},
     {"_Coreset_SymEigenPartial_cpp", (DL_FUNC) &_Coreset_SymEigenPartial_cpp, 3},
     {"_Coreset_RankUpdate_cpp", (DL_FUNC) &_Coreset_RankUpdate_cpp, 3},
     {"_Coreset_AllFinite_cpp", (DL_FUNC) &_Coreset_AllFinite_cpp, 2},

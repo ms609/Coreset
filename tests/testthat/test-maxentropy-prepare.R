@@ -163,6 +163,44 @@ test_that("SymEigenPartial_cpp reproduces eigen() on each side of the spectrum",
   expect_error(SymEigenPartial_cpp(ks, 3L, 0.99), "mode")
 })
 
+test_that("CholCertificate_cpp certifies positive-definiteness to round-off", {
+  fx <- .Fixtures()
+  expect_true(CholCertificate_cpp(.Sym(.MaxEntropyKernel(fx$psd)), 1e-9))
+  expect_false(CholCertificate_cpp(.Sym(.MaxEntropyKernel(fx$neg)), 1e-9))
+  expect_false(CholCertificate_cpp(.Sym(.MaxEntropyKernel(fx$pos)), 1e-9))
+  # Exactly singular: the round-off shift lifts the zero pivot.
+  expect_true(CholCertificate_cpp(diag(c(1, 0)), 1e-9))
+  # A rank-2 Gram matrix, whose 28 zero eigenvalues compute as round-off of
+  # either sign, is certified; a genuine negative eigenvalue is not.
+  set.seed(4)
+  G <- tcrossprod(matrix(rnorm(60), 30))
+  expect_true(CholCertificate_cpp(G, 1e-9))
+  expect_false(CholCertificate_cpp(G - 1e-6 * diag(30), 1e-9))
+  # The shift is capped at `tol`: 4 n eps ||A|| = 1.8e-8 here, so the
+  # -5e-10 eigenvalue passes at tol = 1e-9 and fails at tol = 1e-10.
+  A <- diag(c(1e7, -5e-10))
+  expect_true(CholCertificate_cpp(A, 1e-9))
+  expect_false(CholCertificate_cpp(A, 1e-10))
+  # End to end: a 2-D Euclidean kernel at this size is indefinite by round-off
+  # only (Cholesky itself fails), negMass is 0 and nothing is repaired; the
+  # shift repair, which would add a ridge of `tol`, still selects the same
+  # points within the numerical rank.
+  set.seed(2)
+  d <- as.matrix(dist(matrix(rnorm(1000), ncol = 2)))
+  kern <- .MaxEntropyKernel(d)
+  expect_error(chol(.Sym(kern)), "not positive")
+  expect_identical(.MaxEntropyPrepare(kern, "clip", symmetric = TRUE)$kp, kern)
+  sel <- MaxEntropy(5L, d)
+  expect_identical(attr(sel, "negMass"), 0)
+  expect_identical(as.integer(sel), as.integer(MaxEntropy(5L, d, repair = "shift")))
+  ref <- .RefPrepare(.RefKernel(d), "clip")$kp
+  expect_identical(as.integer(sel),
+                   sort(MaxEntropyGreedy_cpp(ref, 5L, which.min(rowSums(ref)))))
+  # Edge cases.
+  expect_true(CholCertificate_cpp(matrix(0, 0, 0), 1e-9))
+  expect_error(CholCertificate_cpp(matrix(1, 2, 3), 1e-9), "square")
+})
+
 test_that("RankUpdate_cpp is the explicit rank-p product", {
   set.seed(12)
   V <- matrix(rnorm(24), 8, 3)
@@ -214,8 +252,9 @@ test_that(".MaxEntropyPrepare matches the full-eigendecomposition reference", {
     expect_identical(prep$kp, .Sym(kern))
     expect_identical(prep$negMass, 0)
   }
-  # Positive-SEMIdefinite kernel (a zero pivot fails the Cholesky certificate,
-  # yet no eigenvalue is negative): nothing to clip or shift.
+  # Positive-SEMIdefinite kernel (a zero pivot, which the certificate's
+  # round-off shift lifts for clip, while shift finds no negative eigenvalue):
+  # nothing to clip or shift.
   psd <- diag(c(1, 0))
   for (method in c("clip", "shift")) {
     prep <- .MaxEntropyPrepare(psd, method)
@@ -223,6 +262,17 @@ test_that(".MaxEntropyPrepare matches the full-eigendecomposition reference", {
     expect_identical(prep$negMass, 0)
   }
   expect_identical(.MaxEntropyPrepare(psd, "truncate")$kp, psd)
+  # symmetric = TRUE skips the averaging and keeps `k` as is, attributes and
+  # all, on the certified path; the repaired kernels are the same numbers.
+  kern <- .MaxEntropyKernel(fx$psd)
+  expect_identical(.MaxEntropyPrepare(kern, "clip", symmetric = TRUE)$kp, kern)
+  kern <- .MaxEntropyKernel(fx$neg)
+  for (method in c("clip", "shift", "truncate")) {
+    sym <- .MaxEntropyPrepare(kern, method, symmetric = TRUE)
+    avg <- .MaxEntropyPrepare(kern, method)
+    expect_equal(sym$kp, avg$kp, ignore_attr = TRUE, tolerance = 0)
+    expect_identical(sym$negMass, avg$negMass)
+  }
   # Back-compat wrappers.
   kern <- .MaxEntropyKernel(fx$neg)
   expect_identical(.MaxEntropyNegMass(kern), .MaxEntropyPrepare(kern, "clip")$negMass)
