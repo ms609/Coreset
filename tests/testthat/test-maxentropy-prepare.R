@@ -263,6 +263,12 @@ test_that("the column-sweep greedy is bit-identical to the per-row form", {
   }
   expect_identical(MaxEntropyGreedy_cpp(diag(4), 6L, 2L), c(2L, 1L, 3L, 4L))  # k > n
   expect_length(MaxEntropyGreedy_cpp(diag(4), 0L, 1L), 0L)
+  # Exact ties resolve to the lowest ORIGINAL index (which.max's rule) even
+  # once the greedy's internal row order has been permuted by earlier picks:
+  # after picking 3 then 1 the rows sit in the order 4, 2, 5, and after the
+  # seedless first pick of 1 in the order 5, 2, 3, 4.
+  expect_identical(MaxEntropyGreedy_cpp(diag(5), 5L, 3L), c(3L, 1L, 2L, 4L, 5L))
+  expect_identical(MaxEntropyGreedy_cpp(diag(5), 5L, 0L), 1:5)
 })
 
 test_that("DistinctRows_cpp counts rows as duplicated() does", {

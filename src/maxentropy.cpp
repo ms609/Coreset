@@ -44,47 +44,64 @@ IntegerVector MaxEntropyGreedy_cpp(const NumericMatrix& K, int k, int seed) {
   if (k > n) k = n;
   if (k < 1) return IntegerVector(0);
 
+  // Rows live in physical slots: the still-available points occupy slots
+  // 0..nAvail-1 and each pivot is swapped into the last available slot as it
+  // is chosen, so every sweep below touches only the rows it can still
+  // change. orig[slot] is the original (0-based) point index.
   std::vector<double> d(n);
-  for (int i = 0; i < n; ++i) d[i] = K(i, i);
-  // L holds the first k Cholesky columns, column-major (column t contiguous),
-  // so the O(n t) dot products against pivot row j at step t run as
-  // vectorisable column sweeps: prev[row] += L[row, s] * L[j, s] with s
-  // ascending, the summation order of a per-row dot product, so the factor
-  // does not depend on this layout.
+  std::vector<int> orig(n);
+  for (int i = 0; i < n; ++i) { d[i] = K(i, i); orig[i] = i; }
+  // L holds the first k Cholesky columns, column-major (column t contiguous)
+  // and indexed by slot, so the O(nAvail t) dot products against pivot row j
+  // at step t run as vectorisable column sweeps: prev[row] += L[row, s] *
+  // L[j, s] with s ascending, the summation order of a per-row dot product,
+  // so the factor does not depend on this layout or on the slot order.
   std::vector<double> L(static_cast<size_t>(n) * k, 0.0);
   std::vector<double> prev(n);
-  std::vector<bool> avail(n, true);
   IntegerVector perm(k);
+  int nAvail = n;
 
   for (int t = 0; t < k; ++t) {
-    int j;
+    int pj;                               // pivot slot
     if (t == 0 && seed >= 1 && seed <= n) {
-      j = seed - 1;                       // seed is 1-based; ignored if out of range
-    } else {
-      // First argmax of d over available points (ties -> first, as which.max).
-      j = -1;
+      pj = seed - 1;                      // seed is 1-based; slots are still in
+    } else {                              // original order at t == 0
+      // First argmax of d over available points (ties -> lowest original
+      // index, as which.max over the original rows).
+      pj = -1;
       double best = R_NegInf;
-      for (int i = 0; i < n; ++i) {
-        if (avail[i] && d[i] > best) { best = d[i]; j = i; }
+      int bestOrig = n;
+      for (int s = 0; s < nAvail; ++s) {
+        if (d[s] > best || (d[s] == best && orig[s] < bestOrig)) {
+          best = d[s]; pj = s; bestOrig = orig[s];
+        }
       }
     }
+    const int j = orig[pj];
     perm[t] = j + 1;                      // store 1-based
-    avail[j] = false;
+    const int last = --nAvail;            // the pivot's slot from now on
+    if (pj != last) {
+      std::swap(d[pj], d[last]);
+      std::swap(orig[pj], orig[last]);
+      for (int s = 0; s < t; ++s) {
+        double* Ls = L.data() + static_cast<size_t>(s) * n;
+        std::swap(Ls[pj], Ls[last]);
+      }
+    }
 
-    const double Ljt = std::sqrt(d[j] > 0.0 ? d[j] : 0.0);
+    const double Ljt = std::sqrt(d[last] > 0.0 ? d[last] : 0.0);
     double* Lt = L.data() + static_cast<size_t>(t) * n;
-    Lt[j] = Ljt;
+    Lt[last] = Ljt;
     if (Ljt > 0.0) {
-      std::fill(prev.begin(), prev.end(), 0.0);
+      std::fill(prev.begin(), prev.begin() + nAvail, 0.0);
       for (int s = 0; s < t; ++s) {
         const double* Ls = L.data() + static_cast<size_t>(s) * n;
-        const double Ljs = Ls[j];
-        for (int row = 0; row < n; ++row) prev[row] += Ls[row] * Ljs;
+        const double Ljs = Ls[last];
+        for (int row = 0; row < nAvail; ++row) prev[row] += Ls[row] * Ljs;
       }
       const double* Kj = &K(0, j);
-      for (int row = 0; row < n; ++row) {
-        if (!avail[row]) continue;
-        const double val = (Kj[row] - prev[row]) / Ljt;
+      for (int row = 0; row < nAvail; ++row) {
+        const double val = (Kj[orig[row]] - prev[row]) / Ljt;
         Lt[row] = val;
         d[row] -= val * val;
         if (d[row] < 0.0) d[row] = 0.0;
@@ -96,26 +113,29 @@ IntegerVector MaxEntropyGreedy_cpp(const NumericMatrix& K, int k, int seed) {
 
 // Log-determinant of the k x k submatrix K[idx, idx] by Cholesky, or R_NegInf
 // if it is not positive-definite (a near-duplicate / collinear subset, which a
-// max-log-det search rejects anyway).
+// max-log-det search rejects anyway). Left-looking by column: entry (i, j) is
+// K(i, j) minus L[i, s] * L[j, s] for s ascending, then divided by L[j, j] --
+// the per-entry operation order of a row-by-row factorisation -- but the
+// column's entries advance together, so each s-sweep is a contiguous,
+// vectorisable pass over rows j..m-1.
 static double SubLogDet(const NumericMatrix& K, const std::vector<int>& idx) {
   const int m = static_cast<int>(idx.size());
-  std::vector<double> Lc(static_cast<size_t>(m) * m, 0.0);  // lower triangle
+  std::vector<double> Lc(static_cast<size_t>(m) * m, 0.0);  // column-major
+  std::vector<double> col(m);
   double logdet = 0.0;
-  for (int i = 0; i < m; ++i) {
-    for (int j = 0; j <= i; ++j) {
-      double sum = K(idx[i], idx[j]);
-      for (int s = 0; s < j; ++s) {
-        sum -= Lc[static_cast<size_t>(i) * m + s] * Lc[static_cast<size_t>(j) * m + s];
-      }
-      if (i == j) {
-        if (sum <= 0.0) return R_NegInf;               // not positive-definite
-        const double diag = std::sqrt(sum);
-        Lc[static_cast<size_t>(i) * m + j] = diag;
-        logdet += 2.0 * std::log(diag);
-      } else {
-        Lc[static_cast<size_t>(i) * m + j] = sum / Lc[static_cast<size_t>(j) * m + j];
-      }
+  for (int j = 0; j < m; ++j) {
+    for (int i = j; i < m; ++i) col[i] = K(idx[i], idx[j]);
+    for (int s = 0; s < j; ++s) {
+      const double* Ls = Lc.data() + static_cast<size_t>(s) * m;
+      const double Ljs = Ls[j];
+      for (int i = j; i < m; ++i) col[i] -= Ls[i] * Ljs;
     }
+    if (col[j] <= 0.0) return R_NegInf;                // not positive-definite
+    const double diag = std::sqrt(col[j]);
+    double* Lj = Lc.data() + static_cast<size_t>(j) * m;
+    Lj[j] = diag;
+    logdet += 2.0 * std::log(diag);
+    for (int i = j + 1; i < m; ++i) Lj[i] = col[i] / diag;
   }
   return logdet;
 }
