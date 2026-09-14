@@ -247,11 +247,16 @@ test_that("the column-sweep greedy is bit-identical to the per-row form", {
     }
     perm
   }
+  # k stays within the numerical rank of each repaired kernel (the residual
+  # variance at every pick is >= 1e-3, three orders above round-off): past it
+  # the picks are noise, and a compiler that contracts a * b + c into an FMA
+  # (arm64) would legitimately break bit-identity with the interpreter there.
   fx <- .Fixtures()
-  for (d in fx[c("psd", "pos")]) {
-    kp <- .MaxEntropyPrepare(.MaxEntropyKernel(d), "clip")$kp
+  kMax <- c(psd = 10L, neg = 10L, pos = 9L)
+  for (nm in names(kMax)) {
+    kp <- .MaxEntropyPrepare(.MaxEntropyKernel(fx[[nm]]), "clip")$kp
     seed <- which.min(rowSums(kp))
-    for (k in c(1L, 6L, nrow(kp) %/% 2L)) {
+    for (k in c(1L, 6L, kMax[[nm]])) {
       expect_identical(MaxEntropyGreedy_cpp(kp, k, as.integer(seed)),
                        as.integer(greedyRows(kp, k, seed)))
     }

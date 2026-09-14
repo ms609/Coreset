@@ -1,6 +1,7 @@
 # Coreset 1.0.0.9000 (development)
 
-- `MaxEntropy()` is 2.5-6x faster at large `n`: the positive-semidefinite
+- `MaxEntropy()` is roughly 2-8x faster at large `n` (least where the kernel
+  is half negative, most where it is positive-definite): the positive-semidefinite
   repair no longer computes every eigenvector of the kernel. A kernel that is
   already positive-definite (Euclidean distances in moderate dimension; many
   tree-distance kernels) is certified by one Cholesky factorisation and used as
