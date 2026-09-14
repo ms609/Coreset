@@ -6,72 +6,89 @@
 # maximum-a-posteriori mode of a determinantal point process (Kulesza & Taskar
 # 2012). The combinatorial core (greedy pivoted Cholesky and exact enumeration)
 # is in src/maxentropy.cpp; the kernel construction and its positive-
-# semidefinite repair are kept here in R, reusing the same LAPACK eigendecom-
-# position `eigen()` provides so the repair is a transparent modelling step.
+# semidefinite repair are orchestrated here, on top of the LAPACK partial
+# eigendecomposition in src/symeigen.cpp, so the repair stays a transparent
+# modelling step.
 #
 # A redundant tree adds zero volume (det -> 0) and is never co-selected, so the
 # objective is exactly density-blind. Because the exact argmax is NP-hard the
 # greedy selector is the workhorse; exact enumeration is used only where
 # choose(n, k) is small enough to certify the optimum.
 
-# ----- kernel + PSD repair (in R; LAPACK via eigen()) -----------------------
+# ----- kernel + PSD repair ---------------------------------------------------
 
-# RBF / Gaussian similarity kernel from a distance matrix. `sigma` defaults to
-# the median of the POSITIVE distances -- robust when many pairs are exact
-# duplicates, where the median over all pairs would collapse toward zero.
+# RBF / Gaussian similarity kernel from a symmetric distance matrix. `sigma`
+# defaults to the median of the POSITIVE distances -- robust when many pairs
+# are exact duplicates, where the median over all pairs would collapse toward
+# zero. Both the median and the kernel are computed in C++ over one triangle:
+# the values are bit-identical to `median(d[d > 0])` and
+# `exp(-(d ^ 2) / (2 * sigma ^ 2))`, without their n^2 temporaries.
 .MaxEntropyKernel <- function(d, sigma = NULL) {
   if (is.null(sigma)) {
-    pos <- d[d > 0]
-    sigma <- if (length(pos)) stats::median(pos) else 1
+    sigma <- MedianPositiveUpper_cpp(d)
+    if (is.na(sigma)) sigma <- 1
   }
-  k <- exp(-(d ^ 2) / (2 * sigma ^ 2))
+  k <- RbfKernel_cpp(d, sigma)
+  dimnames(k) <- dimnames(d)
   attr(k, "sigma") <- sigma
   # Return:
   k
 }
 
-# One eigendecomposition serving both outputs the wrapper needs from the kernel:
-# the positive-semidefinite repair and the negative-eigenvalue mass. eigen() is
-# the wrapper's dominant cost at large n, so it is computed ONCE here (rather than
-# once for the repair and again, values-only, for negMass), and the default clip
-# repair is reconstructed with a symmetric rank-k product (tcrossprod / dsyrk),
-# ~3.6x faster than the general V (Lambda V^T) matmul and numerically identical.
+# Positive-semidefinite repair of the kernel, and the negative-eigenvalue mass:
 #
 #   clip     -- eigen-clip negatives to zero (the nearest PSD matrix)
 #   shift    -- diagonal loading by |lambda_min| (preserves eigenvectors)
 #   truncate -- retain the top positive dimensions holding `keep` of the
 #               positive eigen-mass (a lossy low-rank embedding)
+#
 # negMass is the fraction of total |eigenvalue| carried by the negatives -- the
 # magnitude of the repair, reported so a caller sees when the Euclidean
 # approximation is doing real work.
+#
+# Cost: this is MaxEntropy()'s O(n^3) step. A kernel that is already positive-
+# definite -- genuine Euclidean distances in moderate dimension, and many
+# tree-distance kernels -- is certified by one Cholesky factorisation (n^3 / 3)
+# and returned as is: clip and shift would not change it. Otherwise
+# SymEigenPartial_cpp() tridiagonalises once (4/3 n^3), takes every eigenvalue
+# from the tridiagonal form (O(n^2)), and computes only the eigenvectors the
+# repair needs: the negative side of the spectrum (or the positive side when
+# that is smaller) for clip, none for shift, the top r for truncate. The
+# repaired kernel is then a rank-p update (n^2 p) rather than the n^3
+# reconstruction from all n eigenvectors eigen() forces.
 .MaxEntropyPrepare <- function(k, method = c("clip", "shift", "truncate"),
                                keep = 0.99, tol = 1e-9) {
   method <- match.arg(method)
   ks <- (k + t(k)) / 2
-  e <- eigen(ks, symmetric = TRUE)
-  lam <- e$values
+  attributes(ks) <- attributes(ks)["dim"]        # a bare matrix on every path
+  if (method != "truncate" &&
+      !is.null(tryCatch(chol(ks), error = function(e) NULL))) {
+    # Return: numerically positive-definite; nothing to repair.
+    return(list(kp = ks, negMass = 0))
+  }
+  eig <- SymEigenPartial_cpp(ks, switch(method, clip = 1L, shift = 0L,
+                                        truncate = 2L), keep)
+  lam <- eig[["values"]]                                   # ascending
   neg <- lam[lam < -tol]
   negMass <- if (length(lam)) sum(abs(neg)) / sum(abs(lam)) else 0
-  if (method == "shift") {
-    lmin <- min(lam)
-    kp <- if (lmin < 0) ks + (-lmin + tol) * diag(nrow(ks)) else ks
-  } else {
-    lam[lam < 0] <- 0
-    if (method == "truncate") {
-      pos <- lam[lam > 0]
-      if (length(pos)) {
-        cum <- cumsum(sort(pos, decreasing = TRUE)) / sum(pos)
-        thresh <- sort(pos, decreasing = TRUE)[which(cum >= keep)[1]]
-        lam[lam < thresh] <- 0
-      }
-      kp <- e$vectors %*% (lam * t(e$vectors))
+  kp <- switch(method,
+    shift = if (length(lam) && lam[[1]] < 0) {
+      ks + (-lam[[1]] + tol) * diag(nrow(ks))
     } else {
-      # clip: nearest PSD = (V sqrt(Lambda))(V sqrt(Lambda))^T by a symmetric
-      # rank-k update; scale eigenvector column m by sqrt(lambda_m) (column-major,
-      # so `each = n` aligns each scalar with its column).
-      kp <- tcrossprod(e$vectors * rep(sqrt(lam), each = nrow(ks)))
-    }
-  }
+      ks
+    },
+    # clip: subtract the negative eigen-component (kp = ks - V L- V^T, a rank-m
+    # update) or, when the negatives are the majority, rebuild from the
+    # positive one (kp = V L+ V^T).
+    clip = if (eig[["side"]] == 0L) {
+      ks
+    } else if (eig[["side"]] < 0L) {
+      RankUpdate_cpp(ks, eig[["vectors"]], -eig[["pvalues"]])
+    } else {
+      RankUpdate_cpp(NULL, eig[["vectors"]], eig[["pvalues"]])
+    },
+    truncate = RankUpdate_cpp(NULL, eig[["vectors"]], eig[["pvalues"]])
+  )
   # Return:
   list(kp = kp, negMass = negMass)
 }
@@ -150,7 +167,7 @@ MaxEntropy <- function(k, d, sigma = NULL,
   if (is.na(k) || k < 1L || k > n) {
     stop("`k` must satisfy 1 <= k <= nrow(d)")
   }
-  nDistinct <- sum(!duplicated(d))
+  nDistinct <- DistinctRows_cpp(d)                 # == sum(!duplicated(d))
   if (k > nDistinct) {
     warning(sprintf(paste0("`k` (%d) exceeds the number of distinct points (%d); ",
                            "the selection must repeat near-identical points and ",

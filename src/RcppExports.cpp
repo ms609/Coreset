@@ -181,6 +181,40 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// MedianPositiveUpper_cpp
+double MedianPositiveUpper_cpp(const NumericMatrix& d);
+RcppExport SEXP _Coreset_MedianPositiveUpper_cpp(SEXP dSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type d(dSEXP);
+    rcpp_result_gen = Rcpp::wrap(MedianPositiveUpper_cpp(d));
+    return rcpp_result_gen;
+END_RCPP
+}
+// RbfKernel_cpp
+NumericMatrix RbfKernel_cpp(const NumericMatrix& d, double sigma);
+RcppExport SEXP _Coreset_RbfKernel_cpp(SEXP dSEXP, SEXP sigmaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type d(dSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    rcpp_result_gen = Rcpp::wrap(RbfKernel_cpp(d, sigma));
+    return rcpp_result_gen;
+END_RCPP
+}
+// DistinctRows_cpp
+int DistinctRows_cpp(const NumericMatrix& d);
+RcppExport SEXP _Coreset_DistinctRows_cpp(SEXP dSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type d(dSEXP);
+    rcpp_result_gen = Rcpp::wrap(DistinctRows_cpp(d));
+    return rcpp_result_gen;
+END_RCPP
+}
 // MaximinFrom_cpp
 Rcpp::IntegerVector MaximinFrom_cpp(Rcpp::NumericMatrix d, int n, int first, int n_threads);
 RcppExport SEXP _Coreset_MaximinFrom_cpp(SEXP dSEXP, SEXP nSEXP, SEXP firstSEXP, SEXP n_threadsSEXP) {
@@ -342,6 +376,32 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// SymEigenPartial_cpp
+List SymEigenPartial_cpp(const NumericMatrix& A, int mode, double keep);
+RcppExport SEXP _Coreset_SymEigenPartial_cpp(SEXP ASEXP, SEXP modeSEXP, SEXP keepSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type A(ASEXP);
+    Rcpp::traits::input_parameter< int >::type mode(modeSEXP);
+    Rcpp::traits::input_parameter< double >::type keep(keepSEXP);
+    rcpp_result_gen = Rcpp::wrap(SymEigenPartial_cpp(A, mode, keep));
+    return rcpp_result_gen;
+END_RCPP
+}
+// RankUpdate_cpp
+NumericMatrix RankUpdate_cpp(Nullable<NumericMatrix> base, const NumericMatrix& V, const NumericVector& lam);
+RcppExport SEXP _Coreset_RankUpdate_cpp(SEXP baseSEXP, SEXP VSEXP, SEXP lamSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Nullable<NumericMatrix> >::type base(baseSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type V(VSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type lam(lamSEXP);
+    rcpp_result_gen = Rcpp::wrap(RankUpdate_cpp(base, V, lam));
+    return rcpp_result_gen;
+END_RCPP
+}
 // AllFinite_cpp
 bool AllFinite_cpp(SEXP x, int n_threads);
 RcppExport SEXP _Coreset_AllFinite_cpp(SEXP xSEXP, SEXP n_threadsSEXP) {
@@ -391,6 +451,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_Coreset_MaxEntropyGreedy_cpp", (DL_FUNC) &_Coreset_MaxEntropyGreedy_cpp, 3},
     {"_Coreset_MaxEntropyExact_cpp", (DL_FUNC) &_Coreset_MaxEntropyExact_cpp, 2},
     {"_Coreset_MaxEntropyLogDet_cpp", (DL_FUNC) &_Coreset_MaxEntropyLogDet_cpp, 2},
+    {"_Coreset_MedianPositiveUpper_cpp", (DL_FUNC) &_Coreset_MedianPositiveUpper_cpp, 1},
+    {"_Coreset_RbfKernel_cpp", (DL_FUNC) &_Coreset_RbfKernel_cpp, 2},
+    {"_Coreset_DistinctRows_cpp", (DL_FUNC) &_Coreset_DistinctRows_cpp, 1},
     {"_Coreset_MaximinFrom_cpp", (DL_FUNC) &_Coreset_MaximinFrom_cpp, 4},
     {"_Coreset_MaximinMultiFrom_cpp", (DL_FUNC) &_Coreset_MaximinMultiFrom_cpp, 4},
     {"_Coreset_MatrixOffDiagMax_cpp", (DL_FUNC) &_Coreset_MatrixOffDiagMax_cpp, 2},
@@ -403,6 +466,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_Coreset_EuclidColFromPoints_cpp", (DL_FUNC) &_Coreset_EuclidColFromPoints_cpp, 2},
     {"_Coreset_DiameterFromPoints_cpp", (DL_FUNC) &_Coreset_DiameterFromPoints_cpp, 2},
     {"_Coreset_MaxMean_cpp", (DL_FUNC) &_Coreset_MaxMean_cpp, 10},
+    {"_Coreset_SymEigenPartial_cpp", (DL_FUNC) &_Coreset_SymEigenPartial_cpp, 3},
+    {"_Coreset_RankUpdate_cpp", (DL_FUNC) &_Coreset_RankUpdate_cpp, 3},
     {"_Coreset_AllFinite_cpp", (DL_FUNC) &_Coreset_AllFinite_cpp, 2},
     {"_Coreset_SymmetryScan_cpp", (DL_FUNC) &_Coreset_SymmetryScan_cpp, 2},
     {"_Coreset_Symmetrised_cpp", (DL_FUNC) &_Coreset_Symmetrised_cpp, 1},

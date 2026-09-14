@@ -4,22 +4,27 @@
 // kernel K (n x n, symmetric, positive-semidefinite) and a target size k, find
 // the k-subset S maximising log det K_S -- the spanned volume of the selection,
 // the Shewry & Wynn (1987) maximum-entropy sampling criterion and the MAP mode
-// of a determinantal point process. The kernel construction and its PSD repair
-// live in R (R/maxentropy.R); these kernels take the already-repaired K.
+// of a determinantal point process. The PSD repair is orchestrated in R
+// (R/maxentropy.R) over the partial eigendecomposition in src/symeigen.cpp;
+// the selectors here take the already-repaired K.
 //
-// Two routines, mirroring the rest of the package's heuristic/exact split:
+// Two selectors, mirroring the rest of the package's heuristic/exact split:
 //   * MaxEntropyGreedy_cpp -- greedy pivoted Cholesky (add the point of largest
 //     residual conditional variance == largest log-det increment). O(n k^2).
 //     The exact argmax is NP-hard, so this is the workhorse.
 //   * MaxEntropyExact_cpp  -- exact enumeration of all k-subsets, scoring each
 //     by a Cholesky log-determinant; for small instances only (the R wrapper
 //     gates on choose(n, k)).
-//
-// Both are deterministic and return 1-based indices.
+// Both are deterministic and return 1-based indices. The O(n^2) helpers the
+// wrapper needs (default bandwidth, RBF kernel, distinct-row count) follow.
 
 #include <Rcpp.h>
 #include <vector>
 #include <cmath>
+#include <algorithm>
+#include <numeric>
+#include <cstring>
+#include <cstdint>
 using namespace Rcpp;
 
 // Greedy maximum-entropy selection by pivoted Cholesky.
@@ -41,8 +46,14 @@ IntegerVector MaxEntropyGreedy_cpp(const NumericMatrix& K, int k, int seed) {
 
   std::vector<double> d(n);
   for (int i = 0; i < n; ++i) d[i] = K(i, i);
-  // L[i] holds the first k Cholesky entries for row i (only columns < t used).
-  std::vector< std::vector<double> > L(n, std::vector<double>(k, 0.0));
+  // L holds the first k Cholesky columns, column-major (column t contiguous),
+  // so the O(n t) dot products against pivot row j at step t run as
+  // vectorisable column sweeps (prev[row] += L[row, s] * L[j, s], s ascending)
+  // rather than a latency-bound per-row reduction. The accumulation order per
+  // row is unchanged, so the factor and the picks are bit-identical to the
+  // per-row form.
+  std::vector<double> L(static_cast<size_t>(n) * k, 0.0);
+  std::vector<double> prev(n);
   std::vector<bool> avail(n, true);
   IntegerVector perm(k);
 
@@ -62,14 +73,20 @@ IntegerVector MaxEntropyGreedy_cpp(const NumericMatrix& K, int k, int seed) {
     avail[j] = false;
 
     const double Ljt = std::sqrt(d[j] > 0.0 ? d[j] : 0.0);
-    L[j][t] = Ljt;
+    double* Lt = L.data() + static_cast<size_t>(t) * n;
+    Lt[j] = Ljt;
     if (Ljt > 0.0) {
+      std::fill(prev.begin(), prev.end(), 0.0);
+      for (int s = 0; s < t; ++s) {
+        const double* Ls = L.data() + static_cast<size_t>(s) * n;
+        const double Ljs = Ls[j];
+        for (int row = 0; row < n; ++row) prev[row] += Ls[row] * Ljs;
+      }
+      const double* Kj = &K(0, j);
       for (int row = 0; row < n; ++row) {
         if (!avail[row]) continue;
-        double prev = 0.0;
-        for (int s = 0; s < t; ++s) prev += L[row][s] * L[j][s];
-        const double val = (K(row, j) - prev) / Ljt;
-        L[row][t] = val;
+        const double val = (Kj[row] - prev[row]) / Ljt;
+        Lt[row] = val;
         d[row] -= val * val;
         if (d[row] < 0.0) d[row] = 0.0;
       }
@@ -151,4 +168,101 @@ double MaxEntropyLogDet_cpp(const NumericMatrix& K, const IntegerVector& idx) {
     id[static_cast<size_t>(i)] = v - 1;               // 1-based -> 0-based
   }
   return SubLogDet(K, id);
+}
+
+// ----- kernel construction --------------------------------------------------
+
+// Median of the positive entries of the strict upper triangle of a symmetric
+// matrix -- the default RBF bandwidth. Mirrors stats::median() on the positive
+// entries of the whole matrix (each off-diagonal value appears twice there, and
+// the median of a doubled multiset is the median of the multiset; the mean of
+// the two middle values is accumulated in long double as R's mean() does), at
+// a fraction of the cost: no n^2 logical mask, no n^2 copy, a selection
+// instead of a sort. NA when no entry is positive.
+//
+// [[Rcpp::export]]
+double MedianPositiveUpper_cpp(const NumericMatrix& d) {
+  const int n = d.nrow();
+  if (d.ncol() != n) stop("`d` must be square");
+  std::vector<double> v;
+  v.reserve(static_cast<size_t>(n) * (n > 0 ? n - 1 : 0) / 2);
+  for (int j = 1; j < n; ++j) {
+    for (int i = 0; i < j; ++i) {
+      const double x = d(i, j);
+      if (x > 0.0) v.push_back(x);
+    }
+  }
+  const size_t m = v.size();
+  if (m == 0) return NA_REAL;
+  const size_t half = (m + 1) / 2 - 1;               // lower middle, 0-based
+  std::nth_element(v.begin(), v.begin() + half, v.end());
+  const double lo = v[half];
+  if (m % 2 == 1) return lo;
+  const double hi = *std::min_element(v.begin() + half + 1, v.end());
+  const long double sum = static_cast<long double>(lo) + static_cast<long double>(hi);
+  return static_cast<double>(sum / 2.0L);
+}
+
+// RBF kernel exp(-d^2 / (2 sigma^2)) of a symmetric distance matrix, computed
+// on the upper triangle and mirrored. Bit-identical to the R expression.
+//
+// [[Rcpp::export]]
+NumericMatrix RbfKernel_cpp(const NumericMatrix& d, double sigma) {
+  const int n = d.nrow();
+  if (d.ncol() != n) stop("`d` must be square");
+  NumericMatrix k(n, n);
+  const double denom = 2.0 * (sigma * sigma);
+  for (int j = 0; j < n; ++j) {
+    for (int i = 0; i <= j; ++i) {
+      const double x = d(i, j);
+      const double v = std::exp(-(x * x) / denom);
+      k(i, j) = v;
+      k(j, i) = v;
+    }
+  }
+  return k;
+}
+
+// Number of distinct rows of a numeric matrix -- what sum(!duplicated(d))
+// counts (rows are equal when every entry is ==, so 0 and -0 agree; entries
+// are finite here, validated upstream) -- without duplicated.matrix()'s
+// per-row list allocation and hashing. Rows are bucketed by a hash of their
+// bit patterns (-0 normalised to 0) and compared exactly within a bucket.
+//
+// [[Rcpp::export]]
+int DistinctRows_cpp(const NumericMatrix& d) {
+  const int n = d.nrow(), m = d.ncol();
+  if (n == 0) return 0;
+  std::vector<uint64_t> h(n, 1469598103934665603ULL);          // FNV-1a
+  for (int j = 0; j < m; ++j) {
+    const double* col = &d(0, j);
+    for (int i = 0; i < n; ++i) {
+      double x = col[i];
+      if (x == 0.0) x = 0.0;                                      // -0 -> +0
+      uint64_t bits;
+      std::memcpy(&bits, &x, sizeof bits);
+      h[i] = (h[i] ^ bits) * 1099511628211ULL;
+    }
+  }
+  std::vector<int> ord(n);
+  std::iota(ord.begin(), ord.end(), 0);
+  std::sort(ord.begin(), ord.end(), [&](int a, int b) { return h[a] < h[b]; });
+  const auto rowsEqual = [&](int a, int b) {
+    for (int j = 0; j < m; ++j) if (d(a, j) != d(b, j)) return false;
+    return true;
+  };
+  int distinct = 0;
+  std::vector<int> reps;
+  for (int a = 0; a < n; ) {
+    int b = a;
+    while (b < n && h[ord[b]] == h[ord[a]]) ++b;
+    reps.clear();
+    for (int q = a; q < b; ++q) {
+      bool dup = false;
+      for (const int r : reps) if (rowsEqual(ord[q], r)) { dup = true; break; }
+      if (!dup) { reps.push_back(ord[q]); ++distinct; }
+    }
+    a = b;
+  }
+  return distinct;
 }

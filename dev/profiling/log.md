@@ -2357,4 +2357,83 @@ re-measure of the exact rows on the frozen bundle is the remaining step;
 tc17_vehicle k100 / tc18_vowel k100 verdicts at the 160000 s cap
 (18482321) fold into it.
 
+## Round 20 — 2026-09-14 — Area 7: MaxEntropy kernel repair  [user: /profile MaxEntropy; #28, #29]
+
+**Task:** profile `MaxEntropy()` and optimise until nothing is left; assess
+#29 (Cholesky-first, "may be a bad idea?!"). Closes #28.
+
+**Triage (step timing, `dev/profiling/drivers/maxentropy.R`; VTune skipped —
+the hotspot is LAPACK called from R):** at n=1200 the 1.0.0 call was 2.4–3.0 s,
+of which `eigen(symmetric = TRUE)` 1.87 s and the `tcrossprod` reconstruction
+0.58 s; kernel construction 0.12 s, `duplicated(d)` 0.03 s; greedy at k=n/2
+0.13 s. The June round's AT-LIMIT verdict ("the full spectrum is required")
+was wrong in one word: the repair needs every eigen*value* but only the
+eigen*vectors* on one side of zero — `eigen(only.values = TRUE)` is 0.52 s, so
+~1.35 s of the 1.87 s was the back-transformation of n eigenvectors the clip
+never used, and the n³ reconstruction rebuilt a matrix that a rank-m update
+would have perturbed.
+
+**Instance families** (the spectrum decides the cost, so the driver carries
+four): Euclidean 8-D (numerically PD); Euclidean 2-D (PSD in exact arithmetic,
+43% of computed eigenvalues negative round-off); Euclidean^1.2 (97% negative —
+the *positive* side is the small one); CID between random 40-leaf trees
+(TreeDist; 14% negative at n=1200, PD at n=500 and for 80-leaf trees). RF and
+CID-40/80 kernels were PD in every instance tried; CID-20 and low-dimensional
+Euclidean at n >= 200 were not.
+
+**Levers shipped (one PR, supersedes #29):**
+1. *Cholesky certificate* (#29's idea, kept): `chol(ks)` succeeding proves the
+   kernel numerically PD, so clip and shift return `ks` (n³/3 vs 4.3 n³).
+   Penalty when it fails: 0.11 s of 0.9 s at CID-1200 (fails at pivot 558 —
+   blocked `dpotrf` has done most of the trailing update by then); ~0 for
+   euclid2/pow12 (fails at pivots 59/7). Under an optimised BLAS the level-3
+   probe gets cheaper faster than the level-2-bound tridiagonalisation, so
+   the trade only improves on Hamilton/OpenBLAS. #29 as filed had two
+   defects: its bench file sat at the repo root (the harness globs
+   `benchmark/bench-*.R`, hence the PR's benchmark comment had no MaxEntropy
+   row) and it left the eigen path as the full `eigen()`.
+2. *Partial eigendecomposition* (`src/symeigen.cpp`): `dsytrd` once, `dsterf`
+   for all eigenvalues (bit-for-bit what `eigen(only.values = TRUE)` returns),
+   then `dstemr` (MRRR, RANGE='I') + `dormtr` for the p vectors on the smaller
+   side of zero (clip), none (shift), or the top r by cumulative mass
+   (truncate), and `dsyrk` rank-p reconstruction (`RankUpdate_cpp`). The
+   dsyevr-style subset path (`dstebz` + `dstein`) was tried first and lost on
+   the 43%-negative family (1.86 s vs 1.03 s partial-eig) to `dstein`'s O(n p²)
+   cluster reorthogonalisation; `dstemr` is declared locally (not in
+   `R_ext/Lapack.h`, exported by Rlapack and every external LAPACK).
+   `PKG_LIBS` gains `$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)`.
+3. *O(n²) R overhead*: default bandwidth via `nth_element` on the upper
+   triangle (median of a doubled multiset = median of the multiset; long
+   double mean as R's), kernel `exp` over one triangle mirrored, distinct-row
+   count by hashed exact comparison (`==`, so -0 == 0 as `duplicated()`).
+   All three bit-identical to the R expressions (test-asserted).
+4. *Greedy* (k = n/2): `L` stored column-major with the pivot-row dot products
+   accumulated as column sweeps in the same s-order — bit-identical picks,
+   vectorisable inner loop. 0.17 → 0.11 s (k=600 incl. the 0.04 s log-det).
+
+**Verified (A/B, installed builds, medians of 3, n=1200):** euclid8 2.41 →
+0.31 s (7.8×), k=n/2 2.71 → 0.42 (6.5×); euclid2 2.12 → 1.18 (1.8×); pow12
+2.05 → 0.58 (3.5×); cid 2.31 → 0.90 (2.6×); shift 1.9 → 0.30–0.65; truncate
+3.0 → 0.55–1.76. n=500 PD 0.19 → 0.03. Repaired kernels agree with 1.0.0 to
+<= 7e-13 (max abs), negMass to 8 digits; selections identical across a
+504-cell sweep (dims 2/3/8, n 12–160, Euclidean and ^1.2, greedy and exact,
+k in {2, 4, n/3}) except 40 greedy cells at k = n/3 on ^1.2 kernels, every one
+of which picks at a residual variance of ~5e-16, i.e. past the numerical rank
+of the repaired kernel, where 1.0.0's pick was equally arbitrary (both
+log-dets -Inf or ~e^-49). Full suite 311/311; covr 100% on the three files.
+
+**Declined / floor:** `dsytrd` (4/3 n³, half level-2) is the floor of any
+dense symmetric route — 0.5 s of the 0.9 s CID call. `SubLogDet` via
+`dpotrf` would save 0.04 s at k=600 but changes the reported score's bits;
+not worth it. The `chol` probe (0.25 s) has no O(n²) replacement: no
+certificate of positive-definiteness is cheaper than a factorisation.
+Exact enumeration is bounded by `maxCombos` and untouched. Single BLAS
+thread here; `mc.cores` does not apply (no package-side parallelism on this
+path).
+
+**Cleanup:** no VTune result dirs; scratch builds lived in the session
+scratchpad. `last_focus` unchanged (targeted round).
+
+---
+
 last_focus: 19
