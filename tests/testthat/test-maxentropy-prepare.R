@@ -229,8 +229,8 @@ test_that("MaxEntropy selects identically on PSD and indefinite kernels", {
 })
 
 test_that("the column-sweep greedy is bit-identical to the per-row form", {
-  # The 1.0.0 greedy accumulated each row's dot product against the pivot row
-  # in its own scalar loop; the column sweep keeps that summation order.
+  # Reference greedy with a scalar per-row dot product against the pivot row;
+  # the C++ column sweep must reproduce its summation order bit for bit.
   greedyRows <- function(kp, k, seed) {
     n <- nrow(kp); dd <- diag(kp); L <- matrix(0, n, k)
     avail <- rep(TRUE, n); perm <- integer(k)

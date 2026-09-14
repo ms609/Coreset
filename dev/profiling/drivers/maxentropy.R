@@ -17,7 +17,7 @@
 #   cid      -- Clustering-information distance between random 40-leaf trees
 #               (TreeDist): indefinite, ~14% negative at n = 1200; skipped if
 #               TreeDist is not installed
-# bare (new build, 2026-09-14): ~75 s; old build ~150 s.
+# bare: ~75 s on 2026-09-14.
 lib <- Sys.getenv("CORESET_LIB", unset = NA)
 if (!is.na(lib) && nzchar(lib)) .libPaths(c(lib, .libPaths()))
 suppressMessages(library(Coreset))

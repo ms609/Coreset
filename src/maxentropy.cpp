@@ -48,10 +48,9 @@ IntegerVector MaxEntropyGreedy_cpp(const NumericMatrix& K, int k, int seed) {
   for (int i = 0; i < n; ++i) d[i] = K(i, i);
   // L holds the first k Cholesky columns, column-major (column t contiguous),
   // so the O(n t) dot products against pivot row j at step t run as
-  // vectorisable column sweeps (prev[row] += L[row, s] * L[j, s], s ascending)
-  // rather than a latency-bound per-row reduction. The accumulation order per
-  // row is unchanged, so the factor and the picks are bit-identical to the
-  // per-row form.
+  // vectorisable column sweeps: prev[row] += L[row, s] * L[j, s] with s
+  // ascending, the summation order of a per-row dot product, so the factor
+  // does not depend on this layout.
   std::vector<double> L(static_cast<size_t>(n) * k, 0.0);
   std::vector<double> prev(n);
   std::vector<bool> avail(n, true);
@@ -173,12 +172,11 @@ double MaxEntropyLogDet_cpp(const NumericMatrix& K, const IntegerVector& idx) {
 // ----- kernel construction --------------------------------------------------
 
 // Median of the positive entries of the strict upper triangle of a symmetric
-// matrix -- the default RBF bandwidth. Mirrors stats::median() on the positive
-// entries of the whole matrix (each off-diagonal value appears twice there, and
-// the median of a doubled multiset is the median of the multiset; the mean of
-// the two middle values is accumulated in long double as R's mean() does), at
-// a fraction of the cost: no n^2 logical mask, no n^2 copy, a selection
-// instead of a sort. NA when no entry is positive.
+// matrix -- the default RBF bandwidth. Equals stats::median(d[d > 0]): each
+// off-diagonal value appears twice in the whole matrix, and the median of a
+// doubled multiset is the median of the multiset; the mean of the two middle
+// values is accumulated in long double as R's mean() does. A selection, not a
+// sort. NA when no entry is positive.
 //
 // [[Rcpp::export]]
 double MedianPositiveUpper_cpp(const NumericMatrix& d) {
@@ -223,11 +221,10 @@ NumericMatrix RbfKernel_cpp(const NumericMatrix& d, double sigma) {
   return k;
 }
 
-// Number of distinct rows of a numeric matrix -- what sum(!duplicated(d))
-// counts (rows are equal when every entry is ==, so 0 and -0 agree; entries
-// are finite here, validated upstream) -- without duplicated.matrix()'s
-// per-row list allocation and hashing. Rows are bucketed by a hash of their
-// bit patterns (-0 normalised to 0) and compared exactly within a bucket.
+// Number of distinct rows of a numeric matrix, as sum(!duplicated(d)) counts
+// them: rows are equal when every entry is == (so 0 and -0 agree; entries are
+// finite here, validated upstream). Rows are bucketed by a hash of their bit
+// patterns (-0 normalised to 0) and compared exactly within a bucket.
 //
 // [[Rcpp::export]]
 int DistinctRows_cpp(const NumericMatrix& d) {

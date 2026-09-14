@@ -5,17 +5,16 @@
 // the FULL spectrum (negMass, lambda_min, the truncation threshold) but only a
 // SUBSET of the eigenvectors: those of the negative eigenvalues (clip -- or of
 // the positive ones when they are the minority), or the top r (truncate).
-// eigen() computes all n eigenvectors, and the 2n^3 back-transformation and n^3
-// reconstruction they entail dominated MaxEntropy() at large n. Here the matrix
-// is tridiagonalised once (dsytrd, 4/3 n^3), all eigenvalues come from the
-// tridiagonal form (dsterf, O(n^2)), and only the p wanted eigenvectors are
-// computed (dstemr, O(n p)) and back-transformed (dormtr, 2 n^2 p).
+// The matrix is tridiagonalised once (dsytrd, 4/3 n^3), all eigenvalues come
+// from the tridiagonal form (dsterf, O(n^2)), and only the p wanted
+// eigenvectors are computed (dstemr, O(n p)) and back-transformed (dormtr,
+// 2 n^2 p); eigen() would back-transform all n (2 n^3).
 //
 // dsyevr -- what eigen(symmetric = TRUE) calls -- takes the same route for a
-// full spectrum; for a subset it falls back to bisection + inverse iteration
+// full spectrum; for a subset it uses bisection + inverse iteration
 // (dstebz/dstein), whose O(n p^2) reorthogonalisation of clustered eigenvalues
-// made a half-negative spectrum no faster than eigen(). dstemr's MRRR subset
-// mode keeps the vectors orthogonal without it.
+// costs as much as the full back-transformation once p ~ n/2. dstemr's MRRR
+// subset mode keeps the vectors orthogonal without it.
 
 #define USE_FC_LEN_T
 #include <Rcpp.h>

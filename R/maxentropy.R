@@ -20,9 +20,8 @@
 # RBF / Gaussian similarity kernel from a symmetric distance matrix. `sigma`
 # defaults to the median of the POSITIVE distances -- robust when many pairs
 # are exact duplicates, where the median over all pairs would collapse toward
-# zero. Both the median and the kernel are computed in C++ over one triangle:
-# the values are bit-identical to `median(d[d > 0])` and
-# `exp(-(d ^ 2) / (2 * sigma ^ 2))`, without their n^2 temporaries.
+# zero. The median and the kernel are computed in C++ over one triangle and
+# equal `median(d[d > 0])` and `exp(-(d ^ 2) / (2 * sigma ^ 2))` bit for bit.
 .MaxEntropyKernel <- function(d, sigma = NULL) {
   if (is.null(sigma)) {
     sigma <- MedianPositiveUpper_cpp(d)
@@ -54,8 +53,7 @@
 # from the tridiagonal form (O(n^2)), and computes only the eigenvectors the
 # repair needs: the negative side of the spectrum (or the positive side when
 # that is smaller) for clip, none for shift, the top r for truncate. The
-# repaired kernel is then a rank-p update (n^2 p) rather than the n^3
-# reconstruction from all n eigenvectors eigen() forces.
+# repaired kernel is a rank-p update of ks (n^2 p).
 .MaxEntropyPrepare <- function(k, method = c("clip", "shift", "truncate"),
                                keep = 0.99, tol = 1e-9) {
   method <- match.arg(method)
