@@ -45,12 +45,12 @@ extern "C" void F77_NAME(dstemr)(const char* jobz, const char* range,
 // (~n eps ||A||), the resolution of any dense eigen-solver as well, so a
 // negative one is round-off, below `tol`, and the clip would remove only
 // round-off components (negMass is 0 by its definition); tol = 0 is the plain
-// positive-definite test. The recursive
-// dpotrf2 on the lower triangle is the fastest variant under reference BLAS:
-// its trailing updates are axpy-form dgemm calls, which vectorise, where the
-// upper form's dot-product dgemm does not, and its large recursive blocks beat
-// dpotrf's fixed nb = 64. The pass/fail verdict is the only output; no factor
-// bits are kept.
+// positive-definite test. The lower-triangle form is the faster one under
+// reference BLAS: its trailing updates are axpy-form dgemm calls, which
+// vectorise, where the upper form's (chol()'s) dot-product dgemm does not.
+// (The recursive dpotrf2 is ~10% faster again but needs LAPACK >= 3.6, above
+// the 3.2 floor R accepts for an external LAPACK.) The pass/fail verdict is
+// the only output; no factor bits are kept.
 // [[Rcpp::export]]
 bool CholCertificate_cpp(const NumericMatrix& A, double tol) {
   const int n = A.nrow();
@@ -67,8 +67,8 @@ bool CholCertificate_cpp(const NumericMatrix& A, double tol) {
   for (int i = 0; i < n; ++i) a[static_cast<size_t>(i) * n + i] += delta;
   const char uplo = 'L';
   int info = 0;
-  F77_CALL(dpotrf2)(&uplo, &n, a.data(), &n, &info FCONE);
-  if (info < 0) stop("LAPACK dpotrf2 failed (info = %d)", info);  // # nocov
+  F77_CALL(dpotrf)(&uplo, &n, a.data(), &n, &info FCONE);
+  if (info < 0) stop("LAPACK dpotrf failed (info = %d)", info);  // # nocov
   return info == 0;
 }
 

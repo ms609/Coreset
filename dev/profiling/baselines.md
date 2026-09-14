@@ -385,19 +385,22 @@ Inner-loop self-time split (VTune, n=500): scan ~69%, P-array update ~31%.
 `best_flip`/`best_delta` identical (monotonicity); p-arrays bit-identical
 (branchless). All tests green; covr 100% on the new code (157/157 C++, 42/42 R).
 
-## Area 7 — MaxEntropy — AFTER round 20 (partial eigendecomposition)
+## Area 7 — MaxEntropy — AFTER round 21 (round-off certificate, complement truncate, compacted greedy)
 
 Median of 3, `system.time`, reference BLAS/LAPACK (R-devel, Windows), n = 1200
 unless stated. `dev/profiling/drivers/maxentropy.R` (A/B via `CORESET_LIB`).
 
 | instance | kernel | negative eigen | prepare (clip) s | clip k=20 s | clip k=n/2 s | shift k=20 s | truncate k=20 s |
 |----------|--------|---------------:|-----------------:|------------:|-------------:|-------------:|----------------:|
-| euclid8 n=500 | PD (Cholesky path) | 0 | 0.02 | 0.03 | 0.03 | 0.03 | 0.06 |
-| euclid8 | PD (Cholesky path) | 0 | 0.25 | 0.31 | 0.42 | 0.30 | 0.63 |
-| euclid2 | round-off indefinite | 43% (negative side) | 1.14 | 1.18 | 1.19 | 0.55 | 0.55 |
-| pow12 (Euclid^1.2, 3-D) | indefinite | 97% (positive side, p=31) | 0.53 | 0.58 | 0.58 | 0.54 | 0.56 |
-| cid (CID, 40-leaf trees) | indefinite | 14% (negative side) | 0.84 | 0.90 | 1.02 | 0.65 | 1.76 |
+| euclid8 n=500 | PD (certificate) | 0 | 0.01 | 0.01 | 0.03 | 0.02 | 0.06 |
+| euclid8 | PD (certificate) | 0 | 0.16 | 0.21 | 0.30 | 0.20 | 0.64 |
+| euclid2 | round-off indefinite (certified for clip) | 43% | 0.17 | 0.21 | 0.22 | 0.56 | 0.57 |
+| pow12 (Euclid^1.2, 3-D) | indefinite | 97% (positive side, p=31) | 0.56 | 0.59 | 0.59 | 0.56 | 0.58 |
+| cid (CID, 40-leaf trees) | indefinite | 14% (negative side) | 0.83 | 0.87 | 0.98 | 0.64 | 1.23 |
 
-(1.0.0 figures, same cells: euclid8 2.22 / 2.41 / 2.71 / 1.94 / 2.98; euclid2
-1.99 / 2.12 / 2.14 / 1.83 / 2.74; pow12 1.94 / 2.05 / 2.08 / 2.04 / 2.91; cid
-2.16 / 2.31 / 2.47 / 1.91 / 2.81; euclid8 n=500 0.17 / 0.19 / 0.19 / 0.14 / 0.21.)
+(Round 20, same cells: euclid8 0.25 / 0.31 / 0.42 / 0.30 / 0.63; euclid2 1.14 /
+1.18 / 1.19 / 0.55 / 0.55; pow12 0.53 / 0.58 / 0.58 / 0.54 / 0.56; cid 0.84 /
+0.90 / 1.02 / 0.65 / 1.76; euclid8 n=500 0.02 / 0.03 / 0.03 / 0.03 / 0.06.
+1.0.0: euclid8 2.22 / 2.41 / 2.71 / 1.94 / 2.98; euclid2 1.99 / 2.12 / 2.14 /
+1.83 / 2.74; pow12 1.94 / 2.05 / 2.08 / 2.04 / 2.91; cid 2.16 / 2.31 / 2.47 /
+1.91 / 2.81; euclid8 n=500 0.17 / 0.19 / 0.19 / 0.14 / 0.21.)

@@ -1,13 +1,8 @@
 # Coreset 1.0.0.9000 (development)
 
-- `MaxEntropy()` is roughly 2-8x faster at large `n`.
-- `MaxEntropy(repair = "clip")` certifies a kernel as positive-definite to
-  within round-off (a Cholesky factorisation of `K + delta I`,
-  `delta = min(4 n eps ||K||, tol)`), so a Euclidean kernel whose negative
-  eigenvalues are round-off no longer pays for an eigendecomposition;
-  `repair = "truncate"` subtracts the dropped components when they are the
-  smaller set; and the greedy selector and its log-determinant sweep only the
-  rows they can still change.
+- `MaxEntropy()` is roughly 3-12x faster at large `n`; `repair = "clip"` now
+  treats a kernel that is positive-definite to within round-off as needing no
+  repair.
 
 
 # Coreset 1.0.0 (2026-09-09)

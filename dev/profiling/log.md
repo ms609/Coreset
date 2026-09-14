@@ -2436,4 +2436,77 @@ scratchpad. `last_focus` unchanged (targeted round).
 
 ---
 
+## Round 21 — 2026-09-14 — Area 7: MaxEntropy, second pass (background agent, reviewed)  [user: "what else can we eke out"]
+
+**Method:** an independent agent in its own worktree hunted the remaining
+cost after round 20 (min-of-N interleaved A/B across processes, n = 1200 and
+3000, the round-20 instance families); its six commits were reviewed line by
+line, cherry-picked, re-measured with the round-20 driver, and checked
+(312/312 local, 7225 under `R CMD check --as-cran`, covr 100% on the three
+files).
+
+**Shipped:**
+1. *Round-off certificate for clip* (`CholCertificate_cpp`): factorise
+   ks + δI, δ = min(4 n ε ‖ks‖∞, tol). Success bounds λ_min ≥ −δ − O(n ε ‖ks‖),
+   below any dense eigen-solver's resolution, so the clip would only have
+   removed round-off components and negMass is 0 by definition (its
+   threshold is tol ≥ δ). Low-dimensional Euclidean kernels are indefinite
+   only by round-off (euclid2 λ_min = −5.7e−13 against ‖K‖ ≈ 1e3) and were
+   paying the full eigen path for it: euclid2 clip 1.18 → 0.21 s; the agent's
+   n = 3000 5-D cell 11.0 → 3.25 s. Genuinely indefinite kernels fail at the
+   same pivot with or without the margin (pow12 7, CID 558). *shift keeps
+   δ = 0*: its repair of a round-off-indefinite kernel is a ridge of tol, not
+   round-off, and the agent's first prototype with δ on shift changed 207
+   picks at k = 400 on euclid2. Output bits: kp differs from round 20 by
+   ≤ 3e−13 on certified kernels; selections identical within the numerical
+   rank; one flagged cell (euclid3, k = 400 of 1200) keeps its selection but
+   its −6012.74 score moves in the fifth digit because the last pivots are
+   round-off.
+2. *Lower-triangle `dpotrf` for the certificate*: under reference BLAS the
+   'L' form's trailing update is an axpy-form dgemm that vectorises, the 'U'
+   form's (R's `chol()`) is a dot-product form that does not: 0.25 → 0.16 s
+   at n = 1200, 3.92 → 3.19 at 3000. Verdict-only, no output bits. The agent
+   used `dpotrf2` (0.14 / 2.80 s) — declined by review: LAPACK ≥ 3.6, above
+   the 3.2 floor R-admin accepts for an external LAPACK; `dstemr` (3.1) is
+   inside it.
+3. *Complement-side truncate*: when the kept set is the majority (flat
+   spectra: CID r = 794 of 1200) the dropped n − r components are computed and
+   subtracted instead (`RankUpdate_cpp` now takes signed λ, two `dsyrk`s).
+   CID truncate 1.76 → 1.23 s; kp within 1e−13; selections identical.
+4. *Compacted greedy + column-major `SubLogDet`*: available rows live in slots
+   0..nAvail−1 (pivot swapped to the last slot; ties on original index, as
+   `which.max`), so each sweep touches only rows it can change; the log-det
+   keeps the per-entry operation order but advances a column at a time. Bit-
+   identical (`identical()` incl. exact-tie fixtures). n = 3000, k = 1500:
+   greedy 2.36 → 1.57 s, log-det 0.55 → 0.30; n = 1200 PD k = 600 0.42 → 0.30.
+5. *No symmetrisation of the package's own kernel* (`symmetric = TRUE`):
+   `RbfKernel_cpp` output is exactly symmetric and `(k + t(k))/2` of it is `k`
+   bit for bit; saves 7 ms (1200) / 90 ms (3000). kp then carries the kernel's
+   attributes on the certified path (harmless; the eigen path stays bare).
+
+**Refuted / at the floor (agent measurements, kept so nobody repeats them):**
+2-stage tridiagonalisation — Rlapack.dll exports no `*_2stage` symbol, dead
+on CRAN Windows/macOS. `dsytrd` uplo L vs U — equal. `RbfKernel_cpp` is the
+`exp` call itself (~44 ns each; an exp-only loop is as slow); a faster exp
+cannot be bit-identical. Lanczos indefiniteness pre-check — rigorous and
+cheap (4–6 steps), but with the 'L' certificate the failed-probe penalty it
+would remove is 0.04 s and it taxes every PD call. R-level lines at n = 1200 /
+3000: kernel 0.04 / 0.26, symmetrise 0.007 / 0.09 (now skipped), median
+0.005 / 0.04, `all(is.finite)` 0.004 / 0.024, `DistinctRows_cpp` 0.001 / 0.008,
+`rowSums` 0.002 / 0.015 — nothing above 2%. `SubLogDet` via `dpotrf` or the
+greedy's own diagonal would change score bits — not done.
+
+**Verified (this box, medians of 3, n = 1200; 1.0.0 → round 20 → round 21):**
+euclid8 clip k=20 2.41 → 0.31 → 0.21 s; k=n/2 2.71 → 0.42 → 0.30; euclid2
+2.12 → 1.18 → 0.21; pow12 2.05 → 0.58 → 0.59; cid 2.31 → 0.90 → 0.87; cid
+truncate 2.81 → 1.76 → 1.23; shift unchanged from round 20.
+
+**Status:** AT-LIMIT. What remains is `dpotrf` (n³/3, 0.15 of the 0.21 s PD
+call) and `dsytrd` (4/3 n³, 0.55 of the 0.87 s CID call), both level-2/3
+LAPACK floors under a single-threaded reference BLAS; an optimised BLAS is
+the next lever and is the user's environment, not the package's.
+`last_focus` unchanged (targeted round).
+
+---
+
 last_focus: 19

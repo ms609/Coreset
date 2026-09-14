@@ -182,13 +182,12 @@ test_that("CholCertificate_cpp certifies positive-definiteness to round-off", {
   expect_true(CholCertificate_cpp(A, 1e-9))
   expect_false(CholCertificate_cpp(A, 1e-10))
   # End to end: a 2-D Euclidean kernel at this size is indefinite by round-off
-  # only (Cholesky itself fails), negMass is 0 and nothing is repaired; the
-  # shift repair, which would add a ridge of `tol`, still selects the same
-  # points within the numerical rank.
+  # only (on this platform's BLAS a plain Cholesky fails), negMass is 0 and
+  # nothing is repaired; the shift repair, which would add a ridge of `tol`,
+  # still selects the same points within the numerical rank.
   set.seed(2)
   d <- as.matrix(dist(matrix(rnorm(1000), ncol = 2)))
   kern <- .MaxEntropyKernel(d)
-  expect_error(chol(.Sym(kern)), "not positive")
   expect_identical(.MaxEntropyPrepare(kern, "clip", symmetric = TRUE)$kp, kern)
   sel <- MaxEntropy(5L, d)
   expect_identical(attr(sel, "negMass"), 0)
