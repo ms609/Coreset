@@ -136,6 +136,9 @@
 #' the point of largest residual conditional variance.
 #' Ties are broken by selecting the more peripheral point.
 #'
+#' Large instances run faster when \R is linked to an optimised BLAS, such as
+#' OpenBLAS, Intel MKL or Apple Accelerate.
+#'
 #' @param k Integer specifying target selection size, \eqn{1 \le k \le n}.
 #' @param d `dist` object or square numeric distance matrix over the \eqn{n}
 #'   points.
