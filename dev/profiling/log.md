@@ -2509,4 +2509,49 @@ the next lever and is the user's environment, not the package's.
 
 ---
 
+## Round 22 — 2026-09-15 — Area 7: MaxEntropy certificate, recursive Cholesky  [user: "implement your own recursion ... drop dpotrf"]
+
+**Change:** `CholCertificate_cpp` factorises with a recursive lower Cholesky
+written over BLAS `dtrsm` + `dsyrk` (LAPACK dpotrf2's algorithm: factor the
+leading half, solve the off-diagonal block, downdate and factor the trailing
+half; base case n = 1). `dpotrf2` itself was not called: it needs LAPACK ≥ 3.6,
+R accepts an external LAPACK down to 3.2 (`--with-lapack` against e.g. legacy
+Accelerate, 3.2.1), and a missing symbol stops the package loading rather than
+falling back; runtime detection would need a configure test. R-devel's own
+`R_ext/Lapack.h` declares dpotrf2, and a default configure only accepts an
+external LAPACK ≥ 3.9.0, so the exposure was small but the failure total.
+The copy, row-sum norm and δ shift now take one column-order pass over the
+lower triangle (the row-order norm loop strode across columns: 85 → 34 ms at
+n = 3000); only the lower triangle is allocated-and-written, read or factorised.
+
+**Measured** (installed builds, interleaved across processes, hires clock,
+median / min): PD 8-D n = 1200 155 / 148 → 147 / 140 ms; PD 5-D n = 3000
+3.39 / 3.20 → 2.86 / 2.82 s (one of three B runs spiked to 3.35); CID
+n = 1200, which fails, 60 → **21 ms** — the recursion factors the leading
+block before any update to its right, so a failure at pivot 558 of 1200 costs
+about the leading 600-block, where blocked `dpotrf` had already applied most
+trailing updates. Driver: cid prepare 0.92 / 0.84 → 0.81 / 0.80 s, clip20
+0.92 / 0.87 → 0.86 / 0.85; PD cells below the driver's 10 ms resolution.
+Verdict agrees with dpotrf/dpotrf2 on every fixture; a failing pivot at each
+of 37 positions is caught (test); covr 100% on the three files.
+
+**Base-case size** (scratch, sourceCpp -O2): n = 1, 8, 16, 32, 64, 128, an
+unblocked right-looking kernel, and dpotrf2 as the base all equal within
+noise (n = 3000 min 2.69–2.73 s) — kept n = 1, the shortest code.
+
+**Declined — hand-fused update loops.** Replacing `dtrsm`/`dsyrk` by C++ loops
+that fuse four columns per pass (register blocking that reference BLAS lacks)
+gives n = 1200 142 → 82 ms, n = 3000 3.12 → 1.76 s (trsm 1.58 → 0.87, syrk
+1.53 → 0.90), factor within 6e−12 relative, verdicts equal. Not shipped: it
+wins only against reference BLAS; OpenBLAS / MKL / Accelerate block and
+thread these calls and would be several times faster than the hand loop, so
+it regresses exactly the users who take round 21's advice to use an optimised
+BLAS, and it would make the certificate the one kernel-repair step not on
+BLAS. A runtime pick (time both once per session) would recover it for
+reference-BLAS users; left as the user's call.
+
+**Status:** AT-LIMIT on BLAS-backed code. `last_focus` unchanged.
+
+---
+
 last_focus: 19

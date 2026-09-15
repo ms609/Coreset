@@ -387,6 +387,12 @@ Inner-loop self-time split (VTune, n=500): scan ~69%, P-array update ~31%.
 
 ## Area 7 — MaxEntropy — AFTER round 21 (round-off certificate, complement truncate, compacted greedy)
 
+Round 22 (recursive Cholesky certificate) changes only the certificate; the
+driver's 10 ms resolution shows it on cid alone (prepare 0.92 / 0.84 → 0.81 /
+0.80 s, two interleaved runs). Certificate alone, hires clock, installed
+builds, median of 15 (5 at n = 3000): PD n = 1200 155 → 147 ms; PD 5-D
+n = 3000 3.39 → 2.86 s; cid n = 1200 (fails) 60 → 21 ms.
+
 Median of 3, `system.time`, reference BLAS/LAPACK (R-devel, Windows), n = 1200
 unless stated. `dev/profiling/drivers/maxentropy.R` (A/B via `CORESET_LIB`).
 

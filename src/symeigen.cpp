@@ -19,10 +19,12 @@
 #define USE_FC_LEN_T
 #include <Rcpp.h>
 #include <R_ext/Lapack.h>
+#include <R_ext/BLAS.h>
 #ifndef FCONE
 # define FCONE
 #endif
 #include <vector>
+#include <memory>
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
@@ -39,37 +41,73 @@ extern "C" void F77_NAME(dstemr)(const char* jobz, const char* range,
                                  double* work, const int* lwork, int* iwork,
                                  const int* liwork, int* info FCLEN FCLEN);
 
-// Positive-definiteness certificate: TRUE when the Cholesky factorisation
-// (dpotrf) of A + delta I succeeds, delta = min(4 n eps ||A||_inf, tol). Every
-// eigenvalue of A is then above -delta up to dpotrf's own backward error
+// Recursive lower Cholesky factorisation of the n x n block at `a` (leading
+// dimension lda), the algorithm of LAPACK's dpotrf2: factor the leading half,
+// solve for the off-diagonal block (dtrsm), downdate the trailing half (dsyrk),
+// factor it. Every update is a level-3 BLAS call on a block that halves at
+// each level, which keeps the work cache-sized under reference BLAS and hands
+// it whole to an optimised one; it is ~10% faster than the blocked dpotrf.
+// Implemented here rather than called because dpotrf2 needs LAPACK >= 3.6,
+// above the 3.2 floor R accepts for an external LAPACK, and a missing symbol
+// would stop the package loading; dtrsm and dsyrk are in every BLAS. Only the
+// lower triangle is read or written. Returns false at the first pivot that is
+// not positive (or NaN), before any work to its right.
+static bool CholeskyLower(double* a, int n, int lda) {
+  if (n == 1) {
+    if (!(a[0] > 0.0)) return false;
+    a[0] = std::sqrt(a[0]);
+    return true;
+  }
+  const int n1 = n / 2, n2 = n - n1;
+  if (!CholeskyLower(a, n1, lda)) return false;
+  const double one = 1.0, minusOne = -1.0;
+  const char right = 'R', lower = 'L', trans = 'T', noTrans = 'N';
+  double* a21 = a + n1;
+  double* a22 = a21 + static_cast<size_t>(n1) * lda;
+  F77_CALL(dtrsm)(&right, &lower, &trans, &noTrans, &n2, &n1, &one, a, &lda,
+                  a21, &lda FCONE FCONE FCONE FCONE);
+  F77_CALL(dsyrk)(&lower, &noTrans, &n2, &n1, &minusOne, a21, &lda, &one, a22,
+                  &lda FCONE FCONE);
+  return CholeskyLower(a22, n2, lda);
+}
+
+// Positive-definiteness certificate: TRUE when the Cholesky factorisation of
+// A + delta I succeeds, delta = min(4 n eps ||A||_inf, tol). Every eigenvalue
+// of A is then above -delta up to the factorisation's own backward error
 // (~n eps ||A||), the resolution of any dense eigen-solver as well, so a
 // negative one is round-off, below `tol`, and the clip would remove only
 // round-off components (negMass is 0 by its definition); tol = 0 is the plain
-// positive-definite test. The lower-triangle form is the faster one under
-// reference BLAS: its trailing updates are axpy-form dgemm calls, which
-// vectorise, where the upper form's (chol()'s) dot-product dgemm does not.
-// (The recursive dpotrf2 is ~10% faster again but needs LAPACK >= 3.6, above
-// the 3.2 floor R accepts for an external LAPACK.) The pass/fail verdict is
+// positive-definite test. A is taken as the symmetric matrix defined by its
+// lower triangle, which is all that is copied, normed and factorised; the norm
+// is accumulated column by column in the same pass. The pass/fail verdict is
 // the only output; no factor bits are kept.
 // [[Rcpp::export]]
 bool CholCertificate_cpp(const NumericMatrix& A, double tol) {
   const int n = A.nrow();
   if (A.ncol() != n) stop("`A` must be square");
   if (n == 0) return true;
-  std::vector<double> a(A.begin(), A.end());        // dpotrf overwrites its input
-  double normInf = 0.0;
-  for (int i = 0; i < n; ++i) {
-    double s = 0.0;
-    for (int j = 0; j < n; ++j) s += std::fabs(a[static_cast<size_t>(j) * n + i]);
-    if (s > normInf) normInf = s;
+  const double* src = A.begin();
+  std::unique_ptr<double[]> a(new double[static_cast<size_t>(n) * n]);
+  std::vector<double> rowSum(n, 0.0);
+  for (int j = 0; j < n; ++j) {
+    const size_t off = static_cast<size_t>(j) * n;
+    const double* sj = src + off;
+    double* aj = a.get() + off;
+    double below = 0.0;
+    aj[j] = sj[j];
+    for (int i = j + 1; i < n; ++i) {
+      const double v = sj[i];
+      aj[i] = v;
+      const double av = std::fabs(v);
+      rowSum[i] += av;
+      below += av;
+    }
+    rowSum[j] += std::fabs(sj[j]) + below;
   }
+  const double normInf = *std::max_element(rowSum.begin(), rowSum.end());
   const double delta = std::min(4.0 * n * DBL_EPSILON * normInf, tol);
   for (int i = 0; i < n; ++i) a[static_cast<size_t>(i) * n + i] += delta;
-  const char uplo = 'L';
-  int info = 0;
-  F77_CALL(dpotrf)(&uplo, &n, a.data(), &n, &info FCONE);
-  if (info < 0) stop("LAPACK dpotrf failed (info = %d)", info);  // # nocov
-  return info == 0;
+  return CholeskyLower(a.get(), n, n);
 }
 
 // Number of leading positive eigenvalues (of `vals`, ascending) needed to hold

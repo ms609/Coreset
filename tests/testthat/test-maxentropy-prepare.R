@@ -195,8 +195,24 @@ test_that("CholCertificate_cpp certifies positive-definiteness to round-off", {
   ref <- .RefPrepare(.RefKernel(d), "clip")$kp
   expect_identical(as.integer(sel),
                    sort(MaxEntropyGreedy_cpp(ref, 5L, which.min(rowSums(ref)))))
+  # A failing pivot is caught wherever it falls in the recursive split; only
+  # the lower triangle is read.
+  set.seed(5)
+  P <- crossprod(matrix(rnorm(40 * 37), 40))
+  expect_true(CholCertificate_cpp(P, 0))
+  expect_true(all(vapply(seq_len(37), function(p) {
+    B <- P
+    B[p, p] <- -1
+    !CholCertificate_cpp(B, 1e-9)
+  }, TRUE)))
+  U <- P
+  U[upper.tri(U)] <- -1e10
+  expect_true(CholCertificate_cpp(U, 0))
   # Edge cases.
   expect_true(CholCertificate_cpp(matrix(0, 0, 0), 1e-9))
+  expect_true(CholCertificate_cpp(matrix(2), 0))
+  expect_false(CholCertificate_cpp(matrix(-1), 1e-9))
+  expect_false(CholCertificate_cpp(matrix(NaN), 1e-9))
   expect_error(CholCertificate_cpp(matrix(1, 2, 3), 1e-9), "square")
 })
 
