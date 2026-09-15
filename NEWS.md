@@ -1,3 +1,10 @@
+# Coreset (development version)
+
+- `DrawDistinctSeeds()` exposes the distinct random-furthest seeds that
+  `FarFirst()` restarts from, so a restart can be assembled from separate
+  passes where `FarFirst()` cannot draw them itself, as when distances are
+  supplied one column at a time.
+
 # Coreset 1.0.0 (2026-09-09)
 
 `Coreset` selects a representative subset of a fixed candidate set under an
