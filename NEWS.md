@@ -1,8 +1,6 @@
 # Coreset 1.0.0.9000 (development)
 
-- `MaxEntropy()` is roughly 3-12x faster at large `n`; `repair = "clip"` now
-  treats a kernel that is positive-definite to within round-off as needing no
-  repair.
+- `MaxEntropy()` is roughly 3-12x faster at large `n`.
 
 
 # Coreset 1.0.0 (2026-09-09)
