@@ -365,14 +365,17 @@ test_that("grasp_local_search non-witness critical branch covered (grasp.cpp:193
   expect_identical(ker, ref)
 })
 
-# 15c. Grasp_cpp countdown covers checkUserInterrupt block (grasp.cpp:393-394) -
-# check_every = 256; a run long enough to exceed 256 iterations exercises the block.
+# 15c. Grasp_cpp Phase B batch loop (checkUserInterrupt + budget-gated slots)
+# runs under a finite budget. The budget must not bind: Phase A alone can
+# outlast a short budget under valgrind/ASan, legitimately leaving iters == 0.
+# A generous budget keeps `gated` true while the plateau ends the search, so
+# at least `plateau` iterations are guaranteed.
 
-test_that("Grasp_cpp countdown block is exercised (grasp.cpp:393-394)", {
+test_that("Grasp_cpp Phase B loop is exercised under a finite budget", {
   set.seed(1)
-  res <- Grasp(d = d30m, k = 6L, plateau = .Machine$integer.max,
-               eliteSize = 4L, maxSeconds = 0.05)
-  expect_gte(attr(res, "iters"), 1L)
+  res <- Grasp(d = d30m, k = 6L, plateau = 300L,
+               eliteSize = 4L, maxSeconds = 600)
+  expect_gte(attr(res, "iters"), 300L)
 })
 
 test_that(".Grasp_R time budget halts execution (grasp.R line 397)", {
