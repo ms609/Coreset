@@ -63,6 +63,9 @@ The exact argmax is NP-hard \insertCite{Kulesza2012}{Coreset}.
 A greedy approximation is built by pivoted Cholesky, adding at each step
 the point of largest residual conditional variance.
 Ties are broken by selecting the more peripheral point.
+
+Large instances run faster when \R is linked to an optimised BLAS, such as
+OpenBLAS, Intel MKL or Apple Accelerate.
 }
 \examples{
 set.seed(1)
