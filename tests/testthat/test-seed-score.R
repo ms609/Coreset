@@ -280,3 +280,68 @@ test_that("fused row-aggregate sweep equals the dedicated kernels", {
   expect_identical(attr(ensP, "winning_strategy"),
                    attr(ensM, "winning_strategy"))
 })
+
+# ---- distance-column functions and distinct random-furthest seeds ---------
+
+test_that("PickPoint on a distance-column function matches the matrix path", {
+  dat <- MakeData()
+  N <- nrow(dat$d)
+  Column <- function(i) dat$d[, i]
+  NoSelf <- function(i) dat$d[-i, i]
+  expect_identical(PickPoint(Column, N = N), PickPoint(dat$d))
+  expect_identical(PickPoint(NoSelf, N = N), PickPoint(dat$d))
+  set.seed(4); col <- PickPoint(Column, strategy = "random_furthest", N = N)
+  set.seed(4); mat <- PickPoint(dat$d, strategy = "random_furthest")
+  expect_identical(col, mat)
+})
+
+test_that("nSeeds draws distinct seeds, identically on every input", {
+  dat <- MakeData()
+  N <- nrow(dat$d)
+  Column <- function(i) dat$d[, i]
+  Draw <- function(...) {
+    set.seed(3)
+    PickPoint(..., strategy = "random_furthest", nSeeds = 4)
+  }
+  seeds <- Draw(dat$d)
+  expect_type(seeds, "integer")
+  expect_false(anyDuplicated(seeds) > 0)
+  expect_false(is.unsorted(seeds))
+  expect_true(all(seeds %in% apply(dat$d, 2, which.max)))
+  expect_identical(Draw(as.dist(dat$d)), seeds)
+  expect_identical(Draw(points = dat$pts), seeds)
+  expect_identical(Draw(Column, N = N), seeds)
+})
+
+test_that("nSeeds gives the seeds a FarFirst() restart starts from", {
+  dat <- MakeData()
+  for (nSeeds in c(1L, 3L, 7L)) {
+    set.seed(11)
+    ff <- FarFirst(8L, dat$d, nSeeds = nSeeds)
+    set.seed(11)
+    seeds <- PickPoint(dat$d, strategy = "random_furthest", nSeeds = nSeeds)
+    started <- vapply(attr(ff, "strategy_results"), `[[`, integer(1), "s1")
+    expect_identical(unname(started), seeds)
+  }
+})
+
+test_that("a pool smaller than nSeeds returns every reachable seed", {
+  # On a line every pivot's furthest point is one of the two ends.
+  pts <- matrix(c(1, 2, 3, 5, 8), ncol = 1)
+  set.seed(1)
+  expect_identical(
+    PickPoint(points = pts, strategy = "random_furthest", nSeeds = 4),
+    c(1L, 5L))
+})
+
+test_that("PickPoint validates nSeeds, N and column-function strategies", {
+  dat <- MakeData()
+  Column <- function(i) dat$d[, i]
+  expect_error(PickPoint(dat$d, strategy = "random_furthest", nSeeds = 0), "nSeeds")
+  expect_error(PickPoint(dat$d, strategy = "random_furthest", nSeeds = NA), "nSeeds")
+  expect_error(PickPoint(dat$d, strategy = "diameter", nSeeds = 2), "random_furthest")
+  expect_error(PickPoint(Column), "`N`")
+  expect_error(PickPoint(Column, N = 0), "`N`")
+  expect_error(PickPoint(Column, strategy = "medoid", N = nrow(dat$d)),
+               "full distance matrix")
+})

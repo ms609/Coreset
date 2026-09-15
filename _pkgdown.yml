@@ -17,7 +17,6 @@ reference:
     contents:
       - FarFirst
       - PickPoint
-      - DrawDistinctSeeds
   - title: Max-Min diversity problem solvers
     contents:
       - DropAdd

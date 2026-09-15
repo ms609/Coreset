@@ -235,7 +235,11 @@
 #' @param strategy Integer or character defining how to seed the greedy pass.
 #' Pass the name of one or more seeding strategies described in [`PickPoint()`]
 #' to run each strategy and return the best solution.
-#' @param nSeeds Integer: number of distinct seeds to draw under the (default)
+#' When `d` is a distance-column function, only an integer, `"peripheral"` and
+#' `"random_furthest"` can be honoured, as the other strategies need the full
+#' matrix; if `strategy` is not supplied, the deterministic `"peripheral"` seed
+#' is used.
+#' @param nSeeds Integer: number of distinct seeds to draw under the
 #' `"random_furthest"` strategy. Beyond ~3, [DropAdd()] will tend to return
 #' higher quality results faster.
 #' @return `FarFirst()` returns an integer vector with class `MaxMinSelection`,
@@ -337,19 +341,26 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
   # Distance-column oracle path: `d` is a closure returning one matrix column
   # at a time, for metrics with neither a stored matrix nor a coordinate
   # embedding (e.g. on-demand tree-to-tree distances). The selection is
-  # identical to the matrix path given the same `first`; only an integer
-  # `strategy` (a `first` index) or the deterministic peripheral seed is reachable
-  # here, since the richer anchors need O(N^2) work (see Details).
+  # identical to the matrix path given the same seeds. An integer `strategy`,
+  # the peripheral seed and random-furthest seeds are reachable here; the other
+  # anchors need O(N^2) work. Left unsupplied, `strategy` means the
+  # deterministic peripheral seed rather than a random restart.
   if (is.function(d)) {
-    # A named/character `strategy` is unreachable from an oracle (it would need
-    # the whole matrix); warn rather than silently substituting the peripheral
-    # seed. `first` is non-NULL only for an integer `strategy`, which *is* honoured.
-    if (!strategyMissing && is.null(first)) {
-      warning("distance-column oracle path: only an integer `strategy` (a `first` ",
-              "index) is honoured; using the deterministic peripheral seed")
+    Single <- function(first) {
+      Classify(.GonzalezColumn(colFn = d, N = N, k = k, first = first,
+                               progress = progress))
     }
-    return(Classify(.GonzalezColumn(colFn = d, N = N, k = k, first = first,
-                                    progress = progress)))
+    if (!is.null(first) || strategyMissing) return(Single(first))
+    anchors <- intersect(strategy, c("peripheral", "random_furthest"))
+    if (length(anchors) < length(strategy)) {
+      warning("distance-column oracle path: only an integer `strategy`, ",
+              "\"peripheral\" and \"random_furthest\" are honoured; ",
+              if (length(anchors)) "the others are dropped"
+              else "using the deterministic peripheral seed")
+    }
+    if (identical(anchors, "peripheral") || !length(anchors)) return(Single(NULL))
+    return(Classify(.GonzEnsembleColumn(d, N, k, anchors, .CheckNSeeds(nSeeds),
+                                        progress = progress)))
   }
 
   if (!is.null(N)) {
@@ -405,10 +416,7 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
               "distance-matrix path, where `peripheral` covers the same role")
     }
 
-    nSeeds <- as.integer(nSeeds)
-    if (length(nSeeds) != 1L || is.na(nSeeds) || nSeeds < 1L) {
-      stop("`nSeeds` must be a single positive integer")
-    }
+    nSeeds <- .CheckNSeeds(nSeeds)
 
     if (usePoints) {
       return(Classify(.GonzEnsembleFromPoints(points, k, anchors, nSeeds = nSeeds)))
@@ -486,15 +494,8 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
   if (!is.function(colFn)) {
     stop("`colFn` must be a function of one index returning numeric(N)")
   }
-  if (is.null(N)) {
-    stop("`N` (the element count) must be supplied when `d` is a ",
-         "distance-column function")
-  }
-  N <- as.integer(N)
+  N <- .CheckColumnN(N)
   k <- as.integer(k)
-  if (length(N) != 1L || is.na(N) || N < 1L) {
-    stop("`N` must be a single positive integer")
-  }
   if (length(k) != 1L || is.na(k) || k < 0L) {
     stop("`k` must be a single non-negative integer")
   }
@@ -511,6 +512,72 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
   # matrix/coordinate kernels' k < 2 behaviour.
   if (k == 1L) return(structure(first, score = NA_real_))
   .MaximinFromColumn(colFn, N, k, first, progress = progress)
+}
+
+#' Validate the element count of a distance-column function
+#'
+#' @param N The `N` argument as supplied.
+#' @return `.CheckColumnN()` returns `N` as a single positive integer, or stops.
+#' @keywords internal
+.CheckColumnN <- function(N) {
+  if (is.null(N)) {
+    stop("`N` (the element count) must be supplied when `d` is a ",
+         "distance-column function")
+  }
+  N <- as.integer(N)
+  if (length(N) != 1L || is.na(N) || N < 1L) {
+    stop("`N` must be a single positive integer")
+  }
+  N
+}
+
+#' Validate a number of random-furthest seeds
+#'
+#' @param nSeeds The `nSeeds` argument as supplied.
+#' @return `.CheckNSeeds()` returns `nSeeds` as a single positive integer, or
+#'   stops.
+#' @keywords internal
+.CheckNSeeds <- function(nSeeds) {
+  nSeeds <- as.integer(nSeeds)
+  if (length(nSeeds) != 1L || is.na(nSeeds) || nSeeds < 1L) {
+    stop("`nSeeds` must be a single positive integer")
+  }
+  nSeeds
+}
+
+#' Seed ensemble from a distance-column oracle
+#'
+#' The distance-column counterpart of [.GonzEnsemble()], over the anchors an
+#' oracle can reach: the peripheral seed and `nSeeds` distinct random-furthest
+#' seeds, drawn exactly as the matrix path draws them. Each distinct seed runs
+#' one [.GonzalezColumn()] pass, serially.
+#' @inheritParams .GonzalezColumn
+#' @param anchors `"random_furthest"`, optionally with `"peripheral"`.
+#' @param nSeeds Integer number of distinct random-furthest seeds.
+#' @return `.GonzEnsembleColumn()` returns an integer vector of selected
+#'   indices with the attributes of [.ResolveEnsemble()].
+#' @keywords internal
+.GonzEnsembleColumn <- function(colFn, N, k, anchors, nSeeds,
+                                progress = FALSE) {
+  N <- .CheckColumnN(N)
+  if (length(k) != 1L || !is.finite(k) || k < 0L) {
+    stop("`k` must be a single non-negative integer")
+  }
+  k <- as.integer(k)
+  if (k >= N) return(structure(seq_len(N), score = NA_real_))
+  if (k == 0L) return(integer(0))
+
+  RunPasses <- function(seeds) lapply(seeds, function(s) {
+    pass <- .GonzalezColumn(colFn, N, k, first = s, progress = progress)
+    list(idx = as.integer(pass), tK = attr(pass, "score"))
+  })
+  AnchorSeed <- function(name) .PeripheralSeedColumn(colFn, N)
+  # Only a request including random-furthest seeds reaches this ensemble.
+  rfSeeds <- .DrawDistinctSeeds(function(r) which.max(.DropAddColumn(colFn, r, N)),
+                                N, nSeeds)
+  expanded <- .ExpandAnchors(anchors, rfSeeds, AnchorSeed)
+  labels   <- vapply(expanded, `[[`, character(1L), "label")
+  .ResolveEnsemble(expanded, labels, RunPasses)
 }
 
 #' Gonzalez maximin from a distance-column oracle (worker)

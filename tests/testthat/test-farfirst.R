@@ -239,6 +239,55 @@ test_that("column-oracle warns on an unreachable named strategy but not the defa
   expect_silent(FarFirst(4L, colFn, N = 12L, strategy = 1L))
 })
 
+test_that("column-oracle honours random_furthest and peripheral as the matrix path does", {
+  dat <- MakeData()
+  N <- nrow(dat$d)
+  colFn <- function(i) dat$d[, i]
+  Run <- function(d, ...) {
+    set.seed(9)
+    FarFirst(8L, d, ...)
+  }
+  for (strategy in list("random_furthest", c("peripheral", "random_furthest"))) {
+    for (nSeeds in c(1L, 4L)) {
+      col <- Run(colFn, N = N, strategy = strategy, nSeeds = nSeeds)
+      mat <- Run(dat$d, strategy = strategy, nSeeds = nSeeds)
+      expect_identical(as.integer(col), as.integer(mat))
+      expect_identical(attr(col, "score"), attr(mat, "score"))
+      expect_identical(attr(col, "winning_strategy"), attr(mat, "winning_strategy"))
+      expect_identical(attr(col, "strategy_results"), attr(mat, "strategy_results"))
+    }
+  }
+  expect_silent(peri <- FarFirst(8L, colFn, N = N, strategy = "peripheral"))
+  expect_identical(peri, FarFirst(8L, dat$d, strategy = "peripheral"))
+})
+
+test_that("column-oracle drops unreachable anchors from an ensemble", {
+  dat <- MakeData()
+  N <- nrow(dat$d)
+  colFn <- function(i) dat$d[, i]
+  set.seed(2)
+  expect_warning(
+    mixed <- FarFirst(6L, colFn, N = N, strategy = c("diameter", "random_furthest")),
+    "dropped")
+  set.seed(2)
+  expect_identical(mixed, FarFirst(6L, colFn, N = N, strategy = "random_furthest"))
+  expect_error(FarFirst(6L, colFn, N = N, strategy = "random_furthest", nSeeds = 0),
+               "nSeeds")
+})
+
+test_that("column-oracle ensemble handles degenerate k", {
+  dat <- MakeData(N = 12)
+  colFn <- function(i) dat$d[, i]
+  expect_identical(FarFirst(0L, colFn, N = 12L, strategy = "random_furthest"),
+                   integer(0))
+  all12 <- FarFirst(20L, colFn, N = 12L, strategy = "random_furthest")
+  expect_identical(as.integer(all12), seq_len(12L))
+  expect_error(FarFirst(NA, colFn, N = 12L, strategy = "random_furthest"), "`k`")
+  expect_error(FarFirst(3L, colFn, strategy = "random_furthest"), "`N`")
+  one <- FarFirst(1L, colFn, N = 12L, strategy = "random_furthest", nSeeds = 2L)
+  expect_length(one, 1L)
+})
+
 # ---- .AsPointsMatrix validation (lines 40, 43, 46, 49-50) ------------------
 
 test_that(".AsPointsMatrix coerces non-matrix, converts integer, and rejects bad input", {

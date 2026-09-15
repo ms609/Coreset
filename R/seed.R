@@ -45,97 +45,6 @@
   which(seen)
 }
 
-#' Distinct random-furthest seeds
-#'
-#' `DrawDistinctSeeds()` draws the seeds that the `"random_furthest"` strategy
-#' of [FarFirst()] starts from, so that a restart can be assembled from
-#' separate farthest-first passes. This is needed where `FarFirst()` cannot
-#' draw the seeds itself: when distances are supplied one column at a time,
-#' `FarFirst()` honours only an explicit start index.
-#'
-#' A random-furthest seed is the element furthest from a random pivot. Pivots
-#' are visited in a random order without replacement; each pivot's furthest
-#' element is kept if it has not already been found, until `nSeeds` distinct
-#' seeds are found or `maxDraws` pivots have been tried. Distinct pivots often
-#' share a furthest element -- on low-dimensional data a handful of extreme
-#' elements are furthest from almost everything -- so the pool of reachable
-#' seeds can be smaller than `nSeeds`, and fewer seeds are then returned.
-#'
-#' Each pivot costs one column of distances: \eqn{O(N)} distance evaluations
-#' from `d`, or \eqn{O(N \cdot dim)}{O(N * dim)} arithmetic from `points`.
-#'
-#' The draw uses R's random number generator, and consumes it exactly as
-#' `FarFirst(strategy = "random_furthest", nSeeds = nSeeds)` does, so from the
-#' same `set.seed()` state both use the same seeds.
-#'
-#' @inheritParams FarFirst
-#' @param nSeeds Integer: the number of distinct seeds to draw.
-#' @param maxDraws Integer: the most pivots to try before returning however many
-#'   distinct seeds have been found. The default, `max(40 * nSeeds, 100)`,
-#'   bounds the search when the reachable pool is smaller than `nSeeds`. At
-#'   most `N` pivots are ever tried.
-#' @return `DrawDistinctSeeds()` returns an integer vector of between 1 and
-#'   `nSeeds` distinct element indices, in ascending order rather than the
-#'   order in which they were drawn. Pass each to [FarFirst()] as `strategy`.
-#' @examples
-#' set.seed(1)
-#' pts <- matrix(rnorm(60), ncol = 2)
-#' d <- dist(pts)
-#'
-#' set.seed(2)
-#' seeds <- DrawDistinctSeeds(d, nSeeds = 3)
-#' seeds
-#'
-#' # One farthest-first pass from each seed, keeping the best, reproduces
-#' # the default strategy of FarFirst():
-#' passes <- lapply(seeds, function(s) FarFirst(5, d, strategy = s))
-#' best <- passes[[which.max(vapply(passes, attr, numeric(1), "score"))]]
-#' set.seed(2)
-#' attr(FarFirst(5, d, nSeeds = 3), "score") == attr(best, "score")
-#'
-#' # The same restart where distances are computed one column at a time:
-#' Column <- function(i) sqrt(colSums((t(pts) - pts[i, ]) ^ 2))
-#' set.seed(2)
-#' colSeeds <- DrawDistinctSeeds(Column, N = nrow(pts), nSeeds = 3)
-#' identical(colSeeds, seeds)
-#' @seealso [FarFirst()], which draws these seeds and runs the passes in one
-#'   call where the full matrix or coordinates are available; [PickPoint()]
-#'   for a single seed.
-#' @export
-DrawDistinctSeeds <- function(d = NULL, points = NULL, N = NULL, nSeeds = 3L,
-                              maxDraws = NULL) {
-  nSeeds <- as.integer(nSeeds)
-  if (length(nSeeds) != 1L || is.na(nSeeds) || nSeeds < 1L) {
-    stop("`nSeeds` must be a single positive integer")
-  }
-  if (!is.null(maxDraws)) {
-    maxDraws <- as.integer(maxDraws)
-    if (length(maxDraws) != 1L || is.na(maxDraws) || maxDraws < 1L) {
-      stop("`maxDraws` must be NULL or a single positive integer")
-    }
-  }
-  if (!is.null(points)) {
-    points <- .AsPointsMatrix(points)
-    return(.DrawDistinctSeeds(
-      function(r) which.max(EuclidColFromPoints_cpp(points, r)),
-      nrow(points), nSeeds, maxDraws))
-  }
-  if (is.function(d)) {
-    N <- as.integer(N)
-    if (length(N) != 1L || is.na(N) || N < 1L) {
-      stop("`N` (the element count) must be supplied when `d` is a ",
-           "distance-column function")
-    }
-    # The self-distance reads as 0, as on a matrix diagonal, so both paths
-    # break ties identically.
-    return(.DrawDistinctSeeds(function(r) which.max(.DropAddColumn(d, r, N)),
-                              N, nSeeds, maxDraws))
-  }
-  if (is.null(d)) stop("supply `d` or `points`")
-  d <- .AsDistMatrix(d, symmetric = FALSE)
-  .DrawDistinctSeeds(function(r) which.max(d[, r]), nrow(d), nSeeds, maxDraws)
-}
-
 #' Squared distance of every point to the coordinate anti_centroid
 #'
 #' The `O(N * dim)` basis of the `"anti_centroid"` seed: its argmax is the point
@@ -323,8 +232,10 @@ DrawDistinctSeeds <- function(d = NULL, points = NULL, N = NULL, nSeeds = 3L,
 #' farthest-first selection. Propitious seeds yield better solutions.
 #'
 #'
-#' @param d A `dist` object or square symmetric numeric matrix. Ignored when
-#'   `points` is supplied.
+#' @param d A `dist` object, a square symmetric numeric matrix, or a
+#'   distance-column function as accepted by [FarFirst()]. A distance-column
+#'   function supports only the `"peripheral"` and `"random_furthest"`
+#'   strategies. Ignored when `points` is supplied.
 #' @param points Optional `N x dim` numeric coordinate matrix; when supplied the
 #'   seed is computed from coordinates in `O(N)` memory. Required for the
 #'   `"anti_centroid"` anchor, which has no distance-matrix form.
@@ -338,7 +249,7 @@ DrawDistinctSeeds <- function(d = NULL, points = NULL, N = NULL, nSeeds = 3L,
 #'     (\eqn{\arg\max \|x - \bar{x}\|}{argmax ||x - x_bar||}).
 #'      \eqn{O(N * dim)}. Requires `points`.}
 #'   \item{`"random_furthest"`}{The point furthest from a random pivot.
-#'   \eqn{O(N)}.}
+#'   \eqn{O(N)} per pivot. See `nSeeds`.}
 #'   \item{`"diameter"`}{A row endpoint of the diameter pair (the maximum
 #'     pairwise distance).}
 #'   \item{`"medoid"`}{The 1-median (medoid): the point minimising the sum of
@@ -350,27 +261,72 @@ DrawDistinctSeeds <- function(d = NULL, points = NULL, N = NULL, nSeeds = 3L,
 #'    counterpart of `"rowsum"`.}
 #' }
 #'
+#' @param N Integer: the number of elements. Required only when `d` is a
+#'   distance-column function.
+#' @param nSeeds Integer: the number of distinct seeds to draw under
+#'   `"random_furthest"`, as [FarFirst()] draws them for a restart. Pivots are
+#'   tried in a random order without replacement until `nSeeds` distinct
+#'   seeds are found. Distinct pivots often share a furthest point, so fewer
+#'   seeds are returned if the search gives up after `max(40 * nSeeds, 100)`
+#'   pivots, or exhausts all `N`. From the same [set.seed()] state,
+#'   `FarFirst(strategy = "random_furthest", nSeeds = nSeeds)` starts from the
+#'   same seeds.
 #' @return `PickPoint()` returns an integer that identifies the index of a
-#' proposed seed in `d` or `points`.
+#' proposed seed in `d` or `points`; under `"random_furthest"` with
+#' `nSeeds > 1`, up to `nSeeds` distinct indices, in ascending order.
 #' @examples
 #' set.seed(1)
 #' pts <- matrix(rnorm(60), ncol = 2)
 #' d <- dist(pts)
 #' PickPoint(d, strategy = "diameter")
 #' FarFirst(5L, d, strategy = PickPoint(d, strategy = "diameter"))
+#'
+#' # Seeds for a three-start restart, from distances computed one column at a
+#' # time; FarFirst() runs the same restart when given the same function:
+#' Column <- function(i) sqrt(colSums((t(pts) - pts[i, ]) ^ 2))
+#' set.seed(2)
+#' PickPoint(Column, strategy = "random_furthest", N = nrow(pts), nSeeds = 3)
+#' set.seed(2)
+#' FarFirst(5L, Column, N = nrow(pts), strategy = "random_furthest", nSeeds = 3)
 #' @seealso [FarFirst()], which seeds and runs the greedy pass in one call.
 #' @export
 PickPoint <- function(d = NULL, points = NULL,
                        strategy = c("peripheral", "anti_centroid",
                                     "random_furthest", "diameter",
                                     "anti_medoid", "medoid", "rowsum",
-                                    "rownorm")) {
+                                    "rownorm"),
+                       N = NULL, nSeeds = 1L) {
   strategy <- match.arg(strategy)
+  nSeeds <- .CheckNSeeds(nSeeds)
+  if (nSeeds > 1L && strategy != "random_furthest") {
+    stop("`nSeeds` applies only to the \"random_furthest\" strategy")
+  }
+  # A single random-furthest seed keeps its one-pivot draw; several are drawn
+  # as FarFirst() draws them.
+  Distinct <- function(Furthest, n) .DrawDistinctSeeds(Furthest, n, nSeeds)
   if (!is.null(points)) {
     points <- .AsPointsMatrix(points)
+    if (nSeeds > 1L) {
+      return(Distinct(function(r) which.max(EuclidColFromPoints_cpp(points, r)),
+                      nrow(points)))
+    }
     return(.PickPoints(points, strategy))
   }
+  if (is.function(d)) {
+    N <- .CheckColumnN(N)
+    # The self-distance reads as 0, as on a matrix diagonal, so both paths
+    # break ties identically.
+    Furthest <- function(r) as.integer(which.max(.DropAddColumn(d, r, N)))
+    return(switch(strategy,
+      peripheral = as.integer(.PeripheralSeedColumn(d, N)),
+      random_furthest = if (nSeeds > 1L) Distinct(Furthest, N)
+                        else Furthest(sample.int(N, 1L)),
+      stop("the \"", strategy, "\" strategy needs the full distance matrix; ",
+           "supply `d` as a matrix or `dist`, or supply `points`")
+    ))
+  }
   d <- .AsDistMatrix(d, symmetric = FALSE)   # every strategy scans in full
+  if (nSeeds > 1L) return(Distinct(function(r) which.max(d[, r]), nrow(d)))
   .PickPoint(d, strategy)
 }
 

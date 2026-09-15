@@ -1,9 +1,13 @@
 # Coreset (development version)
 
-- `DrawDistinctSeeds()` exposes the distinct random-furthest seeds that
-  `FarFirst()` restarts from, so a restart can be assembled from separate
-  passes where `FarFirst()` cannot draw them itself, as when distances are
-  supplied one column at a time.
+- `PickPoint()` accepts a distance-column function (with `N`) for the
+  `"peripheral"` and `"random_furthest"` strategies, and `nSeeds` draws that
+  many distinct random-furthest seeds -- the seeds a `FarFirst()` restart
+  starts from.
+- On a distance-column function, `FarFirst()` now honours
+  `strategy = "random_furthest"` (with `nSeeds`) and `"peripheral"`, alone or
+  together, rather than substituting the peripheral seed with a warning. Left
+  unsupplied, `strategy` still means the deterministic peripheral seed there.
 
 # Coreset 1.0.0 (2026-09-09)
 
