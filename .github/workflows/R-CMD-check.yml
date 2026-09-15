@@ -348,12 +348,17 @@ jobs:
         uses: r-lib/actions/setup-r@v2
         timeout-minutes: 15
 
+      # A cache of its own: the default key prefix is shared with every
+      # ubuntu/R-release job, so a partial restore can bring back a library
+      # where mem-check installed the package, and benchmark-step then refuses
+      # to run.
       - name: Install R dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
           working-directory: pr
           dependencies: '"hard"'
           needs: benchmark
+          cache-version: benchmark
 
       - name: Benchmark PR
         uses: ms609/actions/benchmark-step@main
