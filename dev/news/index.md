@@ -1,7 +1,12 @@
 # Changelog
 
-## Coreset 1.0.0.9000 (development)
+## Coreset 1.0.0.9001 (development)
 
+- [`PickPoint()`](https://ms609.github.io/Coreset/dev/reference/PickPoint.md)
+  supports the `"peripheral"` and `"random_furthest"` strategies,
+  including where `d` is a function, returning `nSeeds` seeds.
+- [`FarFirst()`](https://ms609.github.io/Coreset/dev/reference/FarFirst.md)
+  supports `strategy = "random_furthest"` when `d` is a function.
 - [`MaxEntropy()`](https://ms609.github.io/Coreset/dev/reference/MaxEntropy.md)
   is roughly 3-12x faster at large `n`.
 

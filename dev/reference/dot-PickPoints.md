@@ -21,7 +21,6 @@ bit-identical to the matrix path on Euclidean data.
 
   Anchor name; see
   [`PickPoint()`](https://ms609.github.io/Coreset/dev/reference/PickPoint.md).
-  Also accepts `"first"` (1).
 
 ## Value
 

@@ -46,14 +46,17 @@ FarFirst(
 
 - strategy:
 
-  Integer or character defining how to seed the greedy pass. Pass the
-  name of one or more seeding strategies described in
-  [`PickPoint()`](https://ms609.github.io/Coreset/dev/reference/PickPoint.md)
-  to run each strategy and return the best solution.
+  Optional integer or character identifying one or more of the seeding
+  strategies described in
+  [`PickPoint()`](https://ms609.github.io/Coreset/dev/reference/PickPoint.md).
+  A number, or a string holding one, starts a pass from that element, so
+  `c(17, "random_furthest")` adds a pass from element 17 to the random
+  starts. Only integers, `"peripheral"` and `"random_furthest"` are
+  supported when `d` is a distance function. Defaults to `"peripheral"`.
 
 - nSeeds:
 
-  Integer: number of distinct seeds to draw under the (default)
+  Integer: number of distinct seeds to draw under the
   `"random_furthest"` strategy. Beyond ~3,
   [`DropAdd()`](https://ms609.github.io/Coreset/dev/reference/DropAdd.md)
   will tend to return higher quality results faster.

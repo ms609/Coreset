@@ -18,7 +18,6 @@ Peripheral seed index for Gonzalez selection (distance matrix)
 
   Anchor name; see
   [`PickPoint()`](https://ms609.github.io/Coreset/dev/reference/PickPoint.md).
-  Also accepts `"first"` (1).
 
 ## Value
 

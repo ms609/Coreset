@@ -95,13 +95,16 @@ closure; ignored for the matrix and coordinate paths.</p></dd>
 
 
 <dt id="arg-strategy">strategy<a class="anchor" aria-label="anchor" href="#arg-strategy"></a></dt>
-<dd><p>Integer or character defining how to seed the greedy pass.
-Pass the name of one or more seeding strategies described in <code><a href="PickPoint.html">PickPoint()</a></code>
-to run each strategy and return the best solution.</p></dd>
+<dd><p>Optional integer or character identifying one or more
+of the seeding strategies described in <code><a href="PickPoint.html">PickPoint()</a></code>.
+A number, or a string holding one, starts a pass from that element, so
+<code>c(17, "random_furthest")</code> adds a pass from element 17 to the random starts.
+Only integers, <code>"peripheral"</code> and <code>"random_furthest"</code> are supported when <code>d</code>
+is a distance function.  Defaults to <code>"peripheral"</code>.</p></dd>
 
 
 <dt id="arg-nseeds">nSeeds<a class="anchor" aria-label="anchor" href="#arg-nseeds"></a></dt>
-<dd><p>Integer: number of distinct seeds to draw under the (default)
+<dd><p>Integer: number of distinct seeds to draw under the
 <code>"random_furthest"</code> strategy. Beyond ~3, <code><a href="DropAdd.html">DropAdd()</a></code> will tend to return
 higher quality results faster.</p></dd>
 
