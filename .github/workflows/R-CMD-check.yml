@@ -151,10 +151,13 @@ jobs:
   # PR branch and fails, holding back later waves: the push moves the PR head,
   # so their results would attach to a superseded commit anyway.
   #
-  # The push uses a write-enabled deploy key, not GITHUB_TOKEN: pushes made with
-  # GITHUB_TOKEN trigger no workflow runs, which would leave the new head with
-  # no checks and the PR unmergeable. Fork PRs cannot receive the secret, so
-  # there the job fails and codemeta.json must be updated by hand.
+  # The push uses a short-lived token for the codemeta-writer GitHub App
+  # (vars.CODEMETA_APP_ID, secrets.CODEMETA_APP_KEY; Contents: write), not
+  # GITHUB_TOKEN: pushes made with GITHUB_TOKEN trigger no workflow runs, which
+  # would leave the new head with no checks and the PR unmergeable. The token
+  # is minted only when the file is stale. Fork and Dependabot PRs cannot read
+  # the secret, so there the job fails and codemeta.json must be committed by
+  # hand.
   #
   # No R needed: .github/scripts/codemeta.py (stdlib Python, preinstalled on the
   # runner) reproduces codemeta::write_codemeta() from DESCRIPTION and
@@ -164,31 +167,55 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 5  # healthy run is ~15 s
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout PR branch
         uses: actions/checkout@v6
         with:
           ref: ${{ github.head_ref }}
-          ssh-key: ${{ secrets.CODEMETA_DEPLOY_KEY }}
+          persist-credentials: false  # push with the app token, not GITHUB_TOKEN
 
       - name: Build metadata
-        run: python3 .github/scripts/codemeta.py
-
-      - name: Push metadata if stale
+        id: build
         shell: bash
         run: |
+          python3 .github/scripts/codemeta.py
           if git diff --quiet -- codemeta.json; then
             echo "codemeta.json is up to date."
-            exit 0
+          else
+            git diff -- codemeta.json
+            echo "stale=true" >> "$GITHUB_OUTPUT"
           fi
-          git diff -- codemeta.json
-          git config --local user.name "github-actions[bot]"
-          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Mint app token
+        id: app
+        if: steps.build.outputs.stale == 'true'
+        continue-on-error: true  # no secret on fork PRs; reported below
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.CODEMETA_APP_ID }}
+          private-key: ${{ secrets.CODEMETA_APP_KEY }}
+          permission-contents: write
+
+      - name: Push metadata
+        if: steps.build.outputs.stale == 'true'
+        shell: bash
+        env:
+          TOKEN: ${{ steps.app.outputs.token }}
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::codemeta.json is stale and no app token is available (fork PR?). Run python3 .github/scripts/codemeta.py and commit the result."
+            exit 1
+          fi
+          git config --local user.name "codemeta-writer[bot]"
+          git config --local user.email "329940020+codemeta-writer[bot]@users.noreply.github.com"
           git add codemeta.json
           git commit -m "Update codemeta.json"
-          if ! git push; then
-            echo "::error::codemeta.json is stale and could not be pushed (fork PR, missing CODEMETA_DEPLOY_KEY, or the branch moved). Run python3 .github/scripts/codemeta.py and commit the result."
+          if ! git push "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/${BRANCH}"; then
+            echo "::error::codemeta.json is stale and could not be pushed (the branch may have moved). Run python3 .github/scripts/codemeta.py and commit the result."
             exit 1
           fi
           echo "::error::codemeta.json was stale; pushed an update, which starts a fresh run."
