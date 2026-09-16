@@ -3,7 +3,7 @@
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/ms609/Coreset/actions/workflows/R-CMD-check.yml/badge.svg)](https://github.com/ms609/Coreset/actions/workflows/R-CMD-check.yml)
 [![codecov](https://codecov.io/gh/ms609/Coreset/branch/main/graph/badge.svg)](https://app.codecov.io/gh/ms609/Coreset)
-[![Project Status: WIP](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 <!-- badges: end -->
 
 `Coreset` implements algorithms for discrete diversity, dispersion, and coverage
