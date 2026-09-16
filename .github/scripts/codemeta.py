@@ -412,10 +412,11 @@ def people_with_roles(people, roles):
 
 
 class Providers:
-    # Providers already recorded in the previous codemeta.json are reused, so
-    # the package lists are only downloaded when a new dependency appears.
-    # Delete an entry from codemeta.json to force a fresh lookup.
-    def __init__(self, previous=None):
+    # Providers recorded in the previous codemeta.json are reused, so package
+    # lists are downloaded only for new dependencies. A recorded absence (not
+    # yet on CRAN/Bioconductor) is trusted only while Version is unchanged, so
+    # it is re-checked at the next version bump.
+    def __init__(self, previous=None, version=None):
         self.cache = {}
         self.known = {}
         try:
@@ -427,9 +428,9 @@ class Providers:
             entries = [old] + [e for key in ("softwareSuggestions", "softwareRequirements")
                                for e in old.get(key) or [] if isinstance(e, dict)]
             for e in entries:
-                if e.get("identifier"):
-                    self.known[e["identifier"]] = next(
-                        (p for p in (CRAN, BIOC) if p == e.get("provider")), None)
+                provider = next((p for p in (CRAN, BIOC) if p == e.get("provider")), None)
+                if e.get("identifier") and (provider or old.get("version") == version):
+                    self.known[e["identifier"]] = provider
 
     def packages(self, url):
         if url not in self.cache:
@@ -518,7 +519,8 @@ def codemeta(root, previous=None):
     d = read_dcf(os.path.join(root, "DESCRIPTION"))
     meta = {k: clean_str(v) for k, v in d.items()}
     pkg = d["Package"]
-    providers = Providers(previous)
+    version = ".".join(str(int(x)) for x in re.split(r"[.-]", d["Version"]))
+    providers = Providers(previous, version)
 
     cm = {
         "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
@@ -539,7 +541,7 @@ def codemeta(root, previous=None):
     if meta.get("License"):
         cm["license"] = spdx_license(meta["License"])
     # As package_version(): components as integers, separated by dots.
-    cm["version"] = ".".join(str(int(x)) for x in re.split(r"[.-]", d["Version"]))
+    cm["version"] = version
     cm["programmingLanguage"] = {"@type": "ComputerLanguage", "name": "R",
                                  "url": "https://r-project.org"}
     provider = providers.guess(pkg)
