@@ -3,6 +3,7 @@
 - `PickPoint()` supports the `"peripheral"` and `"random_furthest"` strategies,
   including where `d` is a function, returning `nSeeds` seeds.
 - `FarFirst()` supports `strategy = "random_furthest"` when `d` is a function.
+- `FarFirst()` accepts `"first"` as one anchor of a multi-strategy ensemble.
 
 # Coreset 1.0.0 (2026-09-09)
 
