@@ -12,7 +12,8 @@ ExactMaxMin(
   nStart = 1L,
   graspPlateau = 50L,
   dropPlateau = 512L,
-  boundSeconds = 0
+  boundSeconds = 0,
+  upper = Inf
 )
 }
 \arguments{
@@ -35,6 +36,10 @@ more, but raise the lower bound the exact search starts from.}
 
 \item{boundSeconds}{Numeric: seconds to spend bracketing the optimum from above
 before the main search, in addition to \code{maxSeconds}.}
+
+\item{upper}{Numeric: a proven upper bound on the optimum, such as the
+\code{upper} attribute of an earlier call. With that call's selection as
+\code{warmStart}, a search resumes where the earlier one stopped.}
 }
 \value{
 \code{ExactMaxMin()} returns an integer vector of length \code{k} (sorted
@@ -46,7 +51,8 @@ a lower bound.}
 \item{proven}{Logical: \code{TRUE} if the search certified optimality within
 the budget, \code{FALSE} if it returned an unproven incumbent.}
 \item{upper}{An upper bound on the optimum: the largest distance below
-the smallest threshold proven infeasible. Equals \code{score} when
+the smallest threshold proven infeasible, and no greater than the
+\code{upper} argument. Equals \code{score} when
 \code{proven} is \code{TRUE}.}
 \item{seconds}{Wall-clock seconds elapsed.}
 \item{N, k}{Instance size and target subset size.}
