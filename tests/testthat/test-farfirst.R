@@ -126,7 +126,16 @@ test_that("input validation", {
   dat <- MakeData(N = 10)
   expect_error(FarFirst(-1L, dat$d), "non-negative")
   expect_error(FarFirst(c(1L, 2L), dat$d), "single")
-  expect_error(FarFirst(3L, dat$d, strategy = "nope"), "arg")
+  expect_error(FarFirst(3L, dat$d, strategy = "nope"), "unknown strategy: nope")
+  # Names may be abbreviated to a unique prefix, alone or in an ensemble.
+  set.seed(1); abbr <- FarFirst(3L, dat$d, strategy = c("random", "peri"))
+  set.seed(1); full <- FarFirst(3L, dat$d,
+                                strategy = c("random_furthest", "peripheral"))
+  expect_identical(abbr, full)
+  expect_identical(FarFirst(3L, dat$d, strategy = "diam"),
+                   FarFirst(3L, dat$d, strategy = "diameter"))
+  expect_error(FarFirst(3L, dat$d, strategy = c("r", "peripheral")),
+               "unknown strategy: r")
   expect_error(FarFirst(3L, "not a matrix"), "dist|matrix")
   # An integer `strategy` must be a single finite value (FF-002, FF-003).
   expect_error(FarFirst(3L, dat$d, strategy = NA_integer_), "single finite")

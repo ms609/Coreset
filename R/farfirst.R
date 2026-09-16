@@ -319,21 +319,21 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
     # vector beside strategy names -- as R puts it in `c(17, "random_furthest")`.
     strategy <- .NormaliseStrategy(strategy)
     isIndex <- .IsIndexStrategy(strategy)
-    first <- NULL
-    if (length(strategy) > 1L) {
-      # A multi-element `strategy` requests an ensemble. Validate the names
-      # here: the drivers drop names they cannot run (anti_centroid on the
-      # matrix path, with a warning) rather than erroring.
-      bad <- setdiff(strategy[!isIndex], .kPointEnsembleSeeds)
-      if (length(bad)) {
-        stop("unknown strateg", if (length(bad) > 1L) "ies: " else "y: ",
-             paste(bad, collapse = ", "))
-      }
-    } else if (isIndex) {
-      first <- as.integer(strategy)
-    } else {
-      strategy <- match.arg(strategy, choices = .kPointEnsembleSeeds)
+    # Names match as match.arg() matches them -- exactly, or by a unique
+    # prefix -- but element by element, so an ensemble may abbreviate too.
+    # Validate here: the drivers drop names they cannot run (anti_centroid on
+    # the matrix path, with a warning) rather than erroring.
+    named <- strategy[!isIndex]
+    matched <- .kPointEnsembleSeeds[
+      pmatch(named, .kPointEnsembleSeeds, duplicates.ok = TRUE)]
+    if (anyNA(matched)) {
+      bad <- named[is.na(matched)]
+      stop("unknown strateg", if (length(bad) > 1L) "ies: " else "y: ",
+           paste(bad, collapse = ", "), "; choose from ",
+           paste(.kPointEnsembleSeeds, collapse = ", "))
     }
+    strategy[!isIndex] <- matched
+    first <- if (length(strategy) == 1L && isIndex) as.integer(strategy)
   }
 
   # Distance-column oracle path: `d` is a closure returning one matrix column
