@@ -171,7 +171,23 @@ jobs:
           ref: ${{ github.head_ref }}
           ssh-key: ${{ secrets.CODEMETA_DEPLOY_KEY }}
 
+      # codemeta.json derives only from DESCRIPTION and inst/CITATION. If the PR
+      # touches none of those (nor the file itself) it inherits the base's
+      # already-gated copy, and R need not be installed at all.
+      - name: Check whether codemeta inputs changed
+        id: inputs
+        shell: bash
+        run: |
+          git fetch -q --depth=1 origin "${{ github.base_ref }}"
+          if git diff --quiet FETCH_HEAD HEAD -- DESCRIPTION inst/CITATION codemeta.json; then
+            echo "No codemeta inputs changed; nothing to check."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Make apt fail fast on a stalled mirror
+        if: steps.inputs.outputs.changed == 'true'
         shell: bash
         run: |
           sudo tee /etc/apt/apt.conf.d/99-ci-timeouts > /dev/null <<'EOF'
@@ -182,22 +198,22 @@ jobs:
           EOF
 
       - name: Set up R
+        if: steps.inputs.outputs.changed == 'true'
         uses: r-lib/actions/setup-r@v2
         timeout-minutes: 15
         with:
           r-version: release
-
-      - name: Install codemeta
-        uses: r-lib/actions/setup-r-dependencies@v2
-        with:
-          packages: codemeta
-          dependencies: '"none"'
+          use-public-rspm: true
 
       - name: Build metadata
-        run: codemeta::write_codemeta()
+        if: steps.inputs.outputs.changed == 'true'
+        run: |
+          install.packages("codemeta")
+          codemeta::write_codemeta()
         shell: Rscript {0}
 
       - name: Push metadata if stale
+        if: steps.inputs.outputs.changed == 'true'
         shell: bash
         run: |
           sed -i '/^  "fileSize": /d' codemeta.json
