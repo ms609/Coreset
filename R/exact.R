@@ -177,6 +177,9 @@
 #'  more, but raise the lower bound the exact search starts from.
 #' @param boundSeconds Numeric: seconds to spend bracketing the optimum from above
 #'  before the main search, in addition to `maxSeconds`.
+#' @param upper Numeric: a proven upper bound on the optimum, such as the
+#'  `upper` attribute of an earlier call. With that call's selection as
+#'  `warmStart`, a search resumes where the earlier one stopped.
 #' @templateVar progress_shows a progress indicator is shown
 #' @template progress
 #' @return `ExactMaxMin()` returns an integer vector of length `k` (sorted
@@ -188,7 +191,8 @@
 #'     \item{proven}{Logical: `TRUE` if the search certified optimality within
 #'       the budget, `FALSE` if it returned an unproven incumbent.}
 #'     \item{upper}{An upper bound on the optimum: the largest distance below
-#'       the smallest threshold proven infeasible. Equals `score` when
+#'       the smallest threshold proven infeasible, and no greater than the
+#'       `upper` argument. Equals `score` when
 #'       `proven` is `TRUE`.}
 #'     \item{seconds}{Wall-clock seconds elapsed.}
 #'     \item{N, k}{Instance size and target subset size.}
@@ -202,7 +206,7 @@
 #' @export
 ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
                         nStart = 1L, graspPlateau = 50L, dropPlateau = 512L,
-                        boundSeconds = 0) {
+                        boundSeconds = 0, upper = Inf) {
   progress <- getOption("Coreset.progress", interactive())
   t0 <- proc.time()[[3L]]
   d <- .ExactAsMatrix(d)
@@ -214,6 +218,9 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
   if (length(boundSeconds) != 1L || !is.numeric(boundSeconds) ||
       is.na(boundSeconds) || boundSeconds < 0) {
     stop("`boundSeconds` must be a single non-negative number")
+  }
+  if (length(upper) != 1L || !is.numeric(upper) || is.na(upper)) {
+    stop("`upper` must be a single number")
   }
   nThreads <- .NThreads()
 
@@ -317,7 +324,13 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
   inconclusive <- FALSE
   # The smallest candidate index proven infeasible; nCand + 1 until one is.
   # The optimum is a realised distance below it, so never above cand[top - 1].
-  top <- nCand + 1L
+  # A caller's `upper` counts as proven, so every candidate above it is
+  # infeasible from the start.
+  top <- sum(cand <= upper) + 1L
+  if (top < 2L) {
+    stop("`upper` (", upper, ") is below the score of a selection in hand (",
+         cand[1L], "), so cannot bound the optimum")
+  }
 
   # Bracketing pass. Bisect (bestIdx, top) under a per-probe budget that grows
   # fourfold each round. An infeasible probe lowers `top`, a feasible one raises
