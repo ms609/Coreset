@@ -1,13 +1,8 @@
-# Coreset (development version)
+# Coreset 1.0.0.9001 (development)
 
-- `PickPoint()` accepts a distance-column function (with `N`) for the
-  `"peripheral"` and `"random_furthest"` strategies, and `nSeeds` draws that
-  many distinct random-furthest seeds -- the seeds a `FarFirst()` restart
-  starts from.
-- On a distance-column function, `FarFirst()` now honours
-  `strategy = "random_furthest"` (with `nSeeds`) and `"peripheral"`, alone or
-  together, rather than substituting the peripheral seed with a warning. Left
-  unsupplied, `strategy` still means the deterministic peripheral seed there.
+- `PickPoint()` supports the `"peripheral"` and `"random_furthest"` strategies,
+  including where `d` is a function, returning `nSeeds` seeds.
+- `FarFirst()` supports `strategy = "random_furthest"` when `d` is a function.
 
 # Coreset 1.0.0 (2026-09-09)
 
