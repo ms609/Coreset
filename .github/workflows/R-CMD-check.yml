@@ -46,6 +46,8 @@ name: R-CMD-check
 
 # Waves:
 #   sense-check -> arm (cheapest), always runs, never cancelled. Fast signal.
+#   codemeta    -> PRs only, beside sense-check; pushes a stale codemeta.json
+#                  to the PR branch and holds back later waves.
 #   core        -> Windows (+codecov) / R 4.1 / R devel; only if sense-check passed.
 #   benchmark   -> PR-vs-base timings; also only if sense-check passed, and only
 #                  on pull_request / workflow_dispatch.
@@ -144,11 +146,87 @@ jobs:
             });
 
   # ---------------------------------------------------------------------------
+  # Also wave 1: is codemeta.json current? Runs beside sense-check, so a clean
+  # result costs no wall-clock. If stale, it pushes the regenerated file to the
+  # PR branch and fails, holding back later waves: the push moves the PR head,
+  # so their results would attach to a superseded commit anyway.
+  #
+  # The push uses a write-enabled deploy key, not GITHUB_TOKEN: pushes made with
+  # GITHUB_TOKEN trigger no workflow runs, which would leave the new head with
+  # no checks and the PR unmergeable. Fork PRs cannot receive the secret, so
+  # there the job fails and codemeta.json must be updated by hand.
+  #
+  # `fileSize` is stripped: it tracks the size of the working tree, so keeping
+  # it would mark nearly every PR stale.
+  # ---------------------------------------------------------------------------
+  codemeta:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15  # healthy run is ~1 min
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref }}
+          ssh-key: ${{ secrets.CODEMETA_DEPLOY_KEY }}
+
+      - name: Make apt fail fast on a stalled mirror
+        shell: bash
+        run: |
+          sudo tee /etc/apt/apt.conf.d/99-ci-timeouts > /dev/null <<'EOF'
+          Acquire::Retries "3";
+          Acquire::http::Timeout "20";
+          Acquire::https::Timeout "20";
+          Acquire::ftp::Timeout "20";
+          EOF
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        timeout-minutes: 15
+        with:
+          r-version: release
+
+      - name: Install codemeta
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: codemeta
+          dependencies: '"none"'
+
+      - name: Build metadata
+        run: codemeta::write_codemeta()
+        shell: Rscript {0}
+
+      - name: Push metadata if stale
+        shell: bash
+        run: |
+          sed -i '/^  "fileSize": /d' codemeta.json
+          if git diff --quiet -- codemeta.json; then
+            echo "codemeta.json is up to date."
+            exit 0
+          fi
+          git diff -- codemeta.json
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add codemeta.json
+          git commit -m "Update codemeta.json"
+          if ! git push; then
+            echo "::error::codemeta.json is stale and could not be pushed (fork PR, missing CODEMETA_DEPLOY_KEY, or the branch moved). Run codemeta::write_codemeta() and commit the result."
+            exit 1
+          fi
+          echo "::error::codemeta.json was stale; pushed an update, which starts a fresh run."
+          exit 1
+
+  # ---------------------------------------------------------------------------
   # Wave 2: Windows (+codecov), R 4.1, R devel. Runs only if the sense-check
-  # passed. Per-leg concurrency so a superseding push cancels in-flight legs.
+  # passed and codemeta.json is current (or not checked, outside PRs).
+  # Per-leg concurrency so a superseding push cancels in-flight legs.
   # ---------------------------------------------------------------------------
   core:
-    needs: sense-check
+    needs: [sense-check, codemeta]
+    if: >-
+      !cancelled() && needs.sense-check.result == 'success' &&
+      contains(fromJSON('["success", "skipped"]'), needs.codemeta.result)
     runs-on: ${{ matrix.config.os }}
     timeout-minutes: 45  # healthy run is ~11 min
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
@@ -288,8 +366,11 @@ jobs:
   # ref to compare against.
   # ---------------------------------------------------------------------------
   benchmark:
-    needs: sense-check
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    needs: [sense-check, codemeta]
+    if: >-
+      !cancelled() && needs.sense-check.result == 'success' &&
+      contains(fromJSON('["success", "skipped"]'), needs.codemeta.result) &&
+      (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     # Healthy run is ~8 min. A hung setup or a wedged benchmark otherwise
     # runs to the 6-hour default, holding a runner the whole time.
