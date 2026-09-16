@@ -268,7 +268,7 @@ test_that("column-oracle drops unreachable anchors from an ensemble", {
   set.seed(2)
   expect_warning(
     mixed <- FarFirst(6L, colFn, N = N, strategy = c("diameter", "random_furthest")),
-    "dropped")
+    "ignored")
   set.seed(2)
   expect_identical(mixed, FarFirst(6L, colFn, N = N, strategy = "random_furthest"))
   expect_error(FarFirst(6L, colFn, N = N, strategy = "random_furthest", nSeeds = 0),
@@ -822,4 +822,48 @@ test_that("an ensemble whose anchors share a seed keeps one record per label", {
   expect_identical(sr[[dup[[1L]]]]$idx, sr[[dup[[2L]]]]$idx)
   expect_true(all(dup %in% attr(r, "winning_strategy")) ||
                 !any(dup %in% attr(r, "winning_strategy")))
+})
+
+test_that("`first` is an ensemble anchor on every input path", {
+  # An integer cannot ride in a character `strategy`, so `"first"` is the only
+  # way to ask for the index-1 pass alongside other anchors. All three input
+  # paths must agree, and the `"first"` record must match a bare `strategy = 1L`.
+  set.seed(31)
+  pts <- matrix(rnorm(60L * 3L), ncol = 3L)
+  d <- as.matrix(dist(pts))
+  Column <- function(i) as.numeric(d[, i])
+  anchors <- c("first", "random_furthest")
+
+  set.seed(4); rMat <- FarFirst(5L, d, strategy = anchors)
+  set.seed(4); rPts <- FarFirst(5L, points = pts, strategy = anchors)
+  set.seed(4); rCol <- FarFirst(5L, Column, N = nrow(pts), strategy = anchors)
+  expect_identical(as.integer(rPts), as.integer(rMat))
+  expect_identical(as.integer(rCol), as.integer(rMat))
+
+  bare <- FarFirst(5L, d, strategy = 1L)
+  for (r in list(rMat, rPts, rCol)) {
+    sr <- attr(r, "strategy_results")
+    expect_identical(names(sr)[[1L]], "first")
+    expect_identical(sr[["first"]]$s1, 1L)
+    expect_identical(sr[["first"]]$idx, as.integer(bare))
+    expect_equal(sr[["first"]]$t_k, attr(bare, "score"))
+  }
+
+  # `"first"` also combines with the other column-reachable anchor, and a lone
+  # `"first"` is the bare pass on the oracle path too.
+  set.seed(5); cPair <- FarFirst(5L, Column, N = nrow(pts),
+                                 strategy = c("first", "peripheral"))
+  set.seed(5); mPair <- FarFirst(5L, d, strategy = c("first", "peripheral"))
+  expect_identical(as.integer(cPair), as.integer(mPair))
+  expect_identical(as.integer(FarFirst(5L, Column, N = nrow(pts),
+                                       strategy = "first")),
+                   as.integer(bare))
+
+  # Unreachable anchors are still dropped with a warning, naming `"first"`.
+  expect_warning(FarFirst(5L, Column, N = nrow(pts),
+                          strategy = c("first", "medoid")),
+                 "\"first\"")
+  # An unknown name is still an error, and `"first"` is not one.
+  expect_error(FarFirst(5L, d, strategy = c("first", "nonesuch")),
+               "unknown strategy: nonesuch")
 })

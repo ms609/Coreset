@@ -31,13 +31,11 @@ supported.}
 the distance-column oracle path, where it cannot be inferred from the
 closure; ignored for the matrix and coordinate paths.}
 
-\item{strategy}{Integer or character defining how to seed the greedy pass.
-Pass the name of one or more seeding strategies described in \code{\link[=PickPoint]{PickPoint()}}
-to run each strategy and return the best solution.
-When \code{d} is a distance-column function, only an integer, \code{"peripheral"} and
-\code{"random_furthest"} can be honoured, as the other strategies need the full
-matrix; if \code{strategy} is not supplied, the deterministic \code{"peripheral"} seed
-is used.}
+\item{strategy}{Optional integer or character identifying one or more
+of the seeding strategies described in \code{\link[=PickPoint]{PickPoint()}}, or \code{"first"} (start
+from element 1, as \code{strategy = 1L}).
+Only integer, \code{"first"}, \code{"peripheral"} and \code{"random_furthest"} are supported
+when \code{d} is a distance function.  Defaults to \code{"peripheral"}.}
 
 \item{nSeeds}{Integer: number of distinct seeds to draw under the
 \code{"random_furthest"} strategy. Beyond ~3, \code{\link[=DropAdd]{DropAdd()}} will tend to return

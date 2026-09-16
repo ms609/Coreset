@@ -16,7 +16,8 @@ including \code{i}; or (ii) every other element. See \code{\link[=.DistColumn]{.
 \item{k}{Integer: number of elements to select. If \code{k > N}, all \code{N} indices
 are returned in Gonzalez (farthest-first) order.}
 
-\item{anchors}{\code{"random_furthest"}, optionally with \code{"peripheral"}.}
+\item{anchors}{\code{"random_furthest"}, optionally with \code{"first"} and/or
+\code{"peripheral"}.}
 
 \item{nSeeds}{Integer number of distinct random-furthest seeds.}
 
@@ -28,8 +29,8 @@ indices with the attributes of \code{\link[=.ResolveEnsemble]{.ResolveEnsemble()
 }
 \description{
 The distance-column counterpart of \code{\link[=.GonzEnsemble]{.GonzEnsemble()}}, over the anchors an
-oracle can reach: the peripheral seed and \code{nSeeds} distinct random-furthest
-seeds, drawn exactly as the matrix path draws them. Each distinct seed runs
-one \code{\link[=.GonzalezColumn]{.GonzalezColumn()}} pass, serially.
+oracle can reach: element 1, the peripheral seed, and \code{nSeeds} distinct
+random-furthest seeds, drawn exactly as the matrix path draws them. Each
+distinct seed runs one \code{\link[=.GonzalezColumn]{.GonzalezColumn()}} pass, serially.
 }
 \keyword{internal}

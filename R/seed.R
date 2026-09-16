@@ -11,6 +11,13 @@
                            "anti_medoid", "medoid", "rowsum", "rownorm")
 .kPointEnsembleSeeds  <- c("anti_centroid", .kMatrixEnsembleSeeds)
 
+# `"first"` (start at index 1) is a FarFirst() strategy but not a PickPoint()
+# anchor: it names no property of the data, so it belongs with the solver, not
+# the seeding vocabulary. FarFirst() takes it wherever it takes a strategy name
+# -- alone, or as one anchor of an ensemble -- so the drivers accept it too.
+.kMatrixSeeds <- c(.kMatrixEnsembleSeeds, "first")
+.kPointSeeds  <- c(.kPointEnsembleSeeds, "first")
+
 #' Draw distinct furthest-point seeds from random pivots
 #'
 #' Used by [.GonzEnsemble()] and [.GonzEnsembleFromPoints()] to expand the
@@ -231,11 +238,9 @@
 #' `PickPoint()` implements a range of strategies to select a seed for greedy
 #' farthest-first selection. Propitious seeds yield better solutions.
 #'
-#'
 #' @param d A `dist` object, a square symmetric numeric matrix, or a
-#'   distance-column function as accepted by [FarFirst()]. A distance-column
-#'   function supports only the `"peripheral"` and `"random_furthest"`
-#'   strategies. Ignored when `points` is supplied.
+#'   distance function as accepted by [FarFirst()].
+#'   Ignored when `points` is supplied.
 #' @param points Optional `N x dim` numeric coordinate matrix; when supplied the
 #'   seed is computed from coordinates in `O(N)` memory. Required for the
 #'   `"anti_centroid"` anchor, which has no distance-matrix form.
@@ -249,7 +254,7 @@
 #'     (\eqn{\arg\max \|x - \bar{x}\|}{argmax ||x - x_bar||}).
 #'      \eqn{O(N * dim)}. Requires `points`.}
 #'   \item{`"random_furthest"`}{The point furthest from a random pivot.
-#'   \eqn{O(N)} per pivot. See `nSeeds`.}
+#'   \eqn{O(N)} per pivot.}
 #'   \item{`"diameter"`}{A row endpoint of the diameter pair (the maximum
 #'     pairwise distance).}
 #'   \item{`"medoid"`}{The 1-median (medoid): the point minimising the sum of
@@ -261,16 +266,14 @@
 #'    counterpart of `"rowsum"`.}
 #' }
 #'
-#' @param N Integer: the number of elements. Required only when `d` is a
-#'   distance-column function.
-#' @param nSeeds Integer: the number of distinct seeds to draw under
-#'   `"random_furthest"`, as [FarFirst()] draws them for a restart. Pivots are
-#'   tried in a random order without replacement until `nSeeds` distinct
-#'   seeds are found. Distinct pivots often share a furthest point, so fewer
-#'   seeds are returned if the search gives up after `max(40 * nSeeds, 100)`
-#'   pivots, or exhausts all `N`. From the same [set.seed()] state,
-#'   `FarFirst(strategy = "random_furthest", nSeeds = nSeeds)` starts from the
-#'   same seeds.
+#' Only `"peripheral"` and `"random_furthest"` are supported when `d` is a
+#'  function.
+#'
+#' @inheritParams FarFirst
+#' @param nSeeds Integer specifying how many distinct seeds to obtain under
+#'   `"random_furthest"`; more pivots are evaluated until `nSeeds` distinct
+#'   seeds are found.
+#'
 #' @return `PickPoint()` returns an integer that identifies the index of a
 #' proposed seed in `d` or `points`; under `"random_furthest"` with
 #' `nSeeds > 1`, up to `nSeeds` distinct indices, in ascending order.
@@ -281,8 +284,8 @@
 #' PickPoint(d, strategy = "diameter")
 #' FarFirst(5L, d, strategy = PickPoint(d, strategy = "diameter"))
 #'
-#' # Seeds for a three-start restart, from distances computed one column at a
-#' # time; FarFirst() runs the same restart when given the same function:
+#' # Seeds for three starts, from distances computed one column at a time.
+#' # The seeds drawn are identical to those selected by FarFirst().
 #' Column <- function(i) sqrt(colSums((t(pts) - pts[i, ]) ^ 2))
 #' set.seed(2)
 #' PickPoint(Column, strategy = "random_furthest", N = nrow(pts), nSeeds = 3)
@@ -358,7 +361,7 @@ PickPoint <- function(d = NULL, points = NULL,
   }
   anchors <- unique(match.arg(
     anchors,
-    choices = .kMatrixEnsembleSeeds,
+    choices = .kMatrixSeeds,
     several.ok = TRUE
   ))
   nPts <- nrow(d)
@@ -387,6 +390,7 @@ PickPoint <- function(d = NULL, points = NULL,
 
   AnchorSeed <- function(name) {
     switch(name,
+      first = 1L,
       diameter = {
         # C++ off-diagonal first-max scan; see .PickPoint's diameter branch.
         dm <- MatrixOffDiagMax_cpp(d, .NThreads())
@@ -444,7 +448,7 @@ PickPoint <- function(d = NULL, points = NULL,
   }
   anchors <- unique(match.arg(
     anchors,
-    choices = .kPointEnsembleSeeds,
+    choices = .kPointSeeds,
     several.ok = TRUE
   ))
   nPts <- nrow(points)
@@ -490,6 +494,7 @@ PickPoint <- function(d = NULL, points = NULL,
 
   AnchorSeed <- function(name) {
     switch(name,
+      first = 1L,
       diameter = {
         diam <- GetDiameter()
         if (!is.finite(diam[1L]) || diam[1L] <= 0) {
