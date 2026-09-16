@@ -11,12 +11,62 @@
                            "anti_medoid", "medoid", "rowsum", "rownorm")
 .kPointEnsembleSeeds  <- c("anti_centroid", .kMatrixEnsembleSeeds)
 
-# `"first"` (start at index 1) is a FarFirst() strategy but not a PickPoint()
-# anchor: it names no property of the data, so it belongs with the solver, not
-# the seeding vocabulary. FarFirst() takes it wherever it takes a strategy name
-# -- alone, or as one anchor of an ensemble -- so the drivers accept it too.
-.kMatrixSeeds <- c(.kMatrixEnsembleSeeds, "first")
-.kPointSeeds  <- c(.kPointEnsembleSeeds, "first")
+#' Read start indices out of a character `strategy`
+#'
+#' [FarFirst()] takes a start index wherever it takes a strategy name, so an
+#' index can share a vector with names: R coerces `c(17, "random_furthest")` to
+#' `c("17", "random_furthest")`. Each element that reads as a number is
+#' rewritten in canonical integer form (`"1e+05"` becomes `"100000"`), and
+#' `"first"` is a synonym for `"1"`. Names are left for the caller to validate.
+#' @param strategy A character (or multi-element numeric) `strategy`.
+#' @return `.NormaliseStrategy()` returns `strategy` as a character vector with
+#'   every start index written as a positive integer string, or stops.
+#' @keywords internal
+.NormaliseStrategy <- function(strategy) {
+  strategy <- as.character(strategy)
+  strategy[strategy %in% "first"] <- "1"
+  num <- suppressWarnings(as.numeric(strategy))
+  isNum <- !is.na(num)
+  bad <- isNum & (num < 1 | num != round(num) | num > .Machine$integer.max)
+  if (any(bad)) {
+    stop("a start index in `strategy` must be a whole number from 1; got ",
+         paste(strategy[bad], collapse = ", "))
+  }
+  strategy[isNum] <- as.character(as.integer(num[isNum]))
+  strategy
+}
+
+#' Is a strategy element a start index?
+#'
+#' @param x Character vector, as returned by [.NormaliseStrategy()].
+#' @return `.IsIndexStrategy()` returns a logical vector.
+#' @keywords internal
+.IsIndexStrategy <- function(x) grepl("^[1-9][0-9]*$", x)
+
+#' Seed for a start-index anchor
+#'
+#' @param name A start index as a string (see [.NormaliseStrategy()]).
+#' @param nPts Integer number of elements.
+#' @return `.IndexSeed()` returns the index as an integer, or stops if it
+#'   exceeds `nPts`.
+#' @keywords internal
+.IndexSeed <- function(name, nPts) {
+  i <- as.integer(name)
+  if (i > nPts) {
+    stop("start index ", i, " in `strategy` exceeds the ", nPts, " elements")
+  }
+  i
+}
+
+#' Anchors an ensemble driver can run
+#'
+#' @param anchors Character vector of anchor names and start indices.
+#' @param choices The named anchors the driver supports.
+#' @return `.EnsembleAnchors()` returns the distinct runnable anchors, in order.
+#' @keywords internal
+.EnsembleAnchors <- function(anchors, choices) {
+  unique(anchors[.IsIndexStrategy(anchors) | anchors %in% choices])
+}
 
 #' Draw distinct furthest-point seeds from random pivots
 #'
@@ -151,12 +201,11 @@
 #' Peripheral seed index for Gonzalez selection (distance matrix)
 #'
 #' @param d Square numeric distance matrix.
-#' @param strategy Anchor name; see [PickPoint()]. Also accepts `"first"` (1).
+#' @param strategy Anchor name; see [PickPoint()].
 #' @return `.PickPoint()` returns an integer seed index.
 #' @keywords internal
 .PickPoint <- function(d, strategy) {
   switch(strategy,
-    first   = 1L,
     anti_centroid = stop("`anti_centroid` strategy requires coordinates; supply `points=` ",
                     "or use `peripheral` on the distance-matrix path"),
     medoid  = as.integer(which.min(rowSums(d))),
@@ -197,12 +246,11 @@
 #' `…FromPoints_cpp` primitives, bit-identical to the matrix path on Euclidean
 #' data.
 #' @param points A `double` `N x dim` coordinate matrix.
-#' @param strategy Anchor name; see [PickPoint()]. Also accepts `"first"` (1).
+#' @param strategy Anchor name; see [PickPoint()].
 #' @return `.PickPoints()` returns an integer seed index.
 #' @keywords internal
 .PickPoints <- function(points, strategy) {
   switch(strategy,
-    first   = 1L,
     anti_centroid = as.integer(which.max(.CentroidSqDist(points))),
     medoid  = as.integer(which.min(RowSumsFromPoints_cpp(points, .NThreads()))),
     rowsum  = as.integer(which.max(RowSumsFromPoints_cpp(points, .NThreads()))),
@@ -359,11 +407,7 @@ PickPoint <- function(d = NULL, points = NULL,
   if (is.null(anchors) || length(anchors) == 0L) {
     stop("`anchors` must name at least one strategy")
   }
-  anchors <- unique(match.arg(
-    anchors,
-    choices = .kMatrixSeeds,
-    several.ok = TRUE
-  ))
+  anchors <- .EnsembleAnchors(anchors, .kMatrixEnsembleSeeds)
   nPts <- nrow(d)
   if (m >= nPts) return(structure(seq_len(nPts), score = NA_real_))
   if (m == 0L)   return(integer(0))
@@ -389,8 +433,8 @@ PickPoint <- function(d = NULL, points = NULL,
   RunPasses <- function(seeds) .MaximinMulti(m, seeds, d = d)
 
   AnchorSeed <- function(name) {
+    if (.IsIndexStrategy(name)) return(.IndexSeed(name, nPts))
     switch(name,
-      first = 1L,
       diameter = {
         # C++ off-diagonal first-max scan; see .PickPoint's diameter branch.
         dm <- MatrixOffDiagMax_cpp(d, .NThreads())
@@ -446,11 +490,7 @@ PickPoint <- function(d = NULL, points = NULL,
   if (is.null(anchors) || length(anchors) == 0L) {
     stop("`anchors` must name at least one strategy")
   }
-  anchors <- unique(match.arg(
-    anchors,
-    choices = .kPointSeeds,
-    several.ok = TRUE
-  ))
+  anchors <- .EnsembleAnchors(anchors, .kPointEnsembleSeeds)
   nPts <- nrow(points)
   if (m >= nPts) return(structure(seq_len(nPts), score = NA_real_))
   if (m == 0L)   return(integer(0))
@@ -493,8 +533,8 @@ PickPoint <- function(d = NULL, points = NULL,
   RunPasses <- function(seeds) .MaximinMulti(m, seeds, points = points)
 
   AnchorSeed <- function(name) {
+    if (.IsIndexStrategy(name)) return(.IndexSeed(name, nPts))
     switch(name,
-      first = 1L,
       diameter = {
         diam <- GetDiameter()
         if (!is.finite(diam[1L]) || diam[1L] <= 0) {

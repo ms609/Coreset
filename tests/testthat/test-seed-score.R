@@ -87,7 +87,7 @@ test_that("MinDist rejects NA and duplicate idx (F-604/F-605)", {
   expect_error(MinDist(idx = c(1L, 1L), points = dat$pts), "duplicate")
 })
 
-# ---- "first" seed (.PickPoint line 16; .PickPoints line 55) ---------
+# ---- "first" seed: a synonym for start index 1 ----------------------
 
 test_that("Gonzalez strategy='first' uses index 1 as anchor (both paths)", {
   dat <- MakeData()

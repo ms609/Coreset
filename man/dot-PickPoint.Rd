@@ -9,7 +9,7 @@
 \arguments{
 \item{d}{Square numeric distance matrix.}
 
-\item{strategy}{Anchor name; see \code{\link[=PickPoint]{PickPoint()}}. Also accepts \code{"first"} (1).}
+\item{strategy}{Anchor name; see \code{\link[=PickPoint]{PickPoint()}}.}
 }
 \value{
 \code{.PickPoint()} returns an integer seed index.

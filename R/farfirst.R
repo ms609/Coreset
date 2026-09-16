@@ -233,10 +233,11 @@
 #'   the distance-column oracle path, where it cannot be inferred from the
 #'   closure; ignored for the matrix and coordinate paths.
 #' @param strategy Optional integer or character identifying one or more
-#' of the seeding strategies described in [`PickPoint()`], or `"first"` (start
-#' from element 1, as `strategy = 1L`).
-#' Only integer, `"first"`, `"peripheral"` and `"random_furthest"` are supported
-#' when `d` is a distance function.  Defaults to `"peripheral"`.
+#' of the seeding strategies described in [`PickPoint()`].
+#' A number, or a string holding one, starts a pass from that element, so
+#' `c(17, "random_furthest")` adds a pass from element 17 to the random starts.
+#' Only integers, `"peripheral"` and `"random_furthest"` are supported when `d`
+#' is a distance function.  Defaults to `"peripheral"`.
 #' @param nSeeds Integer: number of distinct seeds to draw under the
 #' `"random_furthest"` strategy. Beyond ~3, [DropAdd()] will tend to return
 #' higher quality results faster.
@@ -306,50 +307,53 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
   # exit keeps the matrix, coordinate and oracle paths byte-identical.
   Classify <- function(x) .AsMaxMinSelection(x, "FarFirst")
 
-  # Every strategy name FarFirst() takes: the PickPoint() anchors plus `"first"`.
-  validMethods <- .kPointSeeds
-
-  if (is.numeric(strategy)) {
-    # An integer `strategy` is the explicit 1-based first index (a single bare
-    # Gonzalez pass). Guard it here: NA/NaN would otherwise reach the C++
-    # kernel as INT_MIN, and a zero-length or multi-element value as an opaque
-    # Rcpp "Expecting a single value" error.
+  if (is.numeric(strategy) && length(strategy) < 2L) {
+    # A lone integer `strategy` is the explicit 1-based first index (a single
+    # bare Gonzalez pass). Guard it here: NA/NaN would otherwise reach the C++
+    # kernel as INT_MIN, and a zero-length value as an opaque Rcpp "Expecting a
+    # single value" error.
     if (length(strategy) != 1L || !is.finite(strategy)) {
       stop("an integer `strategy` (the first index) must be a single finite value")
     }
-    first    <- as.integer(strategy)
-    strategy <- "first"
-  } else if (length(strategy) > 1L) {
-    # A multi-element `strategy` requests an ensemble. The downstream
-    # match.arg(several.ok = TRUE) silently *drops* names that fail to match,
-    # so validate explicitly here against every name (anti_centroid included --
-    # the matrix path drops it later with a warning, not an error).
-    bad <- setdiff(strategy, validMethods)
-    if (length(bad)) {
-      stop("unknown strateg", if (length(bad) > 1L) "ies: " else "y: ",
-           paste(bad, collapse = ", "))
-    }
-    first  <- NULL
+    first <- as.integer(strategy)
   } else {
-    first    <- NULL
-    strategy <- match.arg(strategy, choices = validMethods)
+    # Start indices travel as strings, so an index can sit in a character
+    # vector beside strategy names -- as R puts it in `c(17, "random_furthest")`.
+    strategy <- .NormaliseStrategy(strategy)
+    isIndex <- .IsIndexStrategy(strategy)
+    first <- NULL
+    if (length(strategy) > 1L) {
+      # A multi-element `strategy` requests an ensemble. Validate the names
+      # here: the drivers drop names they cannot run (anti_centroid on the
+      # matrix path, with a warning) rather than erroring.
+      bad <- setdiff(strategy[!isIndex], .kPointEnsembleSeeds)
+      if (length(bad)) {
+        stop("unknown strateg", if (length(bad) > 1L) "ies: " else "y: ",
+             paste(bad, collapse = ", "))
+      }
+    } else if (isIndex) {
+      first <- as.integer(strategy)
+    } else {
+      strategy <- match.arg(strategy, choices = .kPointEnsembleSeeds)
+    }
   }
 
   # Distance-column oracle path: `d` is a closure returning one matrix column
   # at a time, for metrics with neither a stored matrix nor a coordinate
   # embedding (e.g. on-demand tree-to-tree distances). The selection is
-  # identical to the matrix path given the same seeds. An integer `strategy`,
-  # `"first"`, the peripheral seed and random-furthest seeds are reachable here;
-  # the other anchors need O(N^2) work. `strategy` defaults to a peripheral seed.
+  # identical to the matrix path given the same seeds. Start indices, the
+  # peripheral seed and random-furthest seeds are reachable here; the other
+  # anchors need O(N^2) work. `strategy` defaults to a peripheral seed.
   if (is.function(d)) {
     Single <- function(first) {
       Classify(.GonzalezColumn(colFn = d, N = N, k = k, first = first,
                                progress = progress))
     }
     if (!is.null(first) || strategyMissing) return(Single(first))
-    anchors <- intersect(strategy, c("first", "peripheral", "random_furthest"))
-    if (length(anchors) < length(strategy)) {
-      warning("`strategy` must be an integer, \"first\", \"peripheral\" or ",
+    reachable <- isIndex | strategy %in% c("peripheral", "random_furthest")
+    anchors <- unique(strategy[reachable])
+    if (!all(reachable)) {
+      warning("`strategy` must be an integer, \"peripheral\" or ",
               "\"random_furthest\" when `d` is a function.",
               if (length(anchors)) " Other strategies ignored"
               else " Using \"peripheral\"")
@@ -357,7 +361,9 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
     # A lone anchor is one bare pass, so it skips the ensemble machinery;
     # .GonzalezColumn() resolves the peripheral seed itself given `first = NULL`.
     if (!length(anchors) || identical(anchors, "peripheral")) return(Single(NULL))
-    if (identical(anchors, "first")) return(Single(1L))
+    if (length(anchors) == 1L && .IsIndexStrategy(anchors)) {
+      return(Single(as.integer(anchors)))
+    }
     return(Classify(.GonzEnsembleColumn(d, N, k, anchors, .CheckNSeeds(nSeeds),
                                         progress = progress)))
   }
@@ -547,12 +553,12 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
 #' Seed ensemble from a distance-column oracle
 #'
 #' The distance-column counterpart of [.GonzEnsemble()], over the anchors an
-#' oracle can reach: element 1, the peripheral seed, and `nSeeds` distinct
+#' oracle can reach: start indices, the peripheral seed, and `nSeeds` distinct
 #' random-furthest seeds, drawn exactly as the matrix path draws them. Each
 #' distinct seed runs one [.GonzalezColumn()] pass, serially.
 #' @inheritParams .GonzalezColumn
-#' @param anchors `"random_furthest"`, optionally with `"first"` and/or
-#'   `"peripheral"`.
+#' @param anchors Any of `"random_furthest"`, `"peripheral"` and start indices
+#'   as strings (see [.NormaliseStrategy()]).
 #' @param nSeeds Integer number of distinct random-furthest seeds.
 #' @return `.GonzEnsembleColumn()` returns an integer vector of selected
 #'   indices with the attributes of [.ResolveEnsemble()].
@@ -572,10 +578,7 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
     list(idx = as.integer(pass), tK = attr(pass, "score"))
   })
   AnchorSeed <- function(name) {
-    switch(name,
-      first = 1L,
-      peripheral = .PeripheralSeedColumn(colFn, N)
-    )
+    if (.IsIndexStrategy(name)) .IndexSeed(name, N) else .PeripheralSeedColumn(colFn, N)
   }
   rfSeeds <- if ("random_furthest" %in% anchors) {
     .DrawDistinctSeeds(function(r) which.max(.DropAddColumn(colFn, r, N)), N,

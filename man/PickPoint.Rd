@@ -47,12 +47,13 @@ counterpart of \code{"rowsum"}.}
 Only \code{"peripheral"} and \code{"random_furthest"} are supported when \code{d} is a
 function.}
 
-\item{N}{Integer: the number of elements. Required only when \code{d} is a
-distance-column function.}
+\item{N}{Integer: the total number of elements. Required (and used) only on
+the distance-column oracle path, where it cannot be inferred from the
+closure; ignored for the matrix and coordinate paths.}
 
-\item{nSeeds}{Integer specifying how many distinct seeds to draw under
-\code{"random_furthest"}. Pivots are tried in a random order without replacement
-until \code{nSeeds} distinct seeds are found.}
+\item{nSeeds}{Integer specifying how many distinct seeds to obtain under
+\code{"random_furthest"}; more pivots are evaluated until \code{nSeeds} distinct
+seeds are found.}
 }
 \value{
 \code{PickPoint()} returns an integer that identifies the index of a
