@@ -175,8 +175,8 @@
 #' @param graspPlateau,dropPlateau Integer: the stopping plateaus given to the
 #'  pool's [Grasp()] restarts and its [DropAdd()] pass. Deeper searches cost
 #'  more, but raise the lower bound the exact search starts from.
-#' @param boundShare Numeric between 0 and 1: the share of `maxSeconds` to spend
-#'  bracketing the optimum from above before the main search.
+#' @param boundSeconds Numeric: seconds to spend bracketing the optimum from above
+#'  before the main search, in addition to `maxSeconds`.
 #' @templateVar progress_shows a progress indicator is shown
 #' @template progress
 #' @return `ExactMaxMin()` returns an integer vector of length `k` (sorted
@@ -202,7 +202,7 @@
 #' @export
 ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
                         nStart = 1L, graspPlateau = 50L, dropPlateau = 512L,
-                        boundShare = 0) {
+                        boundSeconds = 0) {
   progress <- getOption("Coreset.progress", interactive())
   t0 <- proc.time()[[3L]]
   d <- .ExactAsMatrix(d)
@@ -211,9 +211,9 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
   if (is.na(k) || k < 2L || k > n) {
     stop("`k` must satisfy 2 <= k <= nrow(d)")
   }
-  if (length(boundShare) != 1L || !is.numeric(boundShare) ||
-      is.na(boundShare) || boundShare < 0 || boundShare > 1) {
-    stop("`boundShare` must be a single number between 0 and 1")
+  if (length(boundSeconds) != 1L || !is.numeric(boundSeconds) ||
+      is.na(boundSeconds) || boundSeconds < 0) {
+    stop("`boundSeconds` must be a single non-negative number")
   }
   nThreads <- .NThreads()
 
@@ -323,9 +323,13 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
   # fourfold each round. An infeasible probe lowers `top`, a feasible one raises
   # the incumbent, and an inconclusive one decides nothing, so the next probe
   # goes halfway to `top`, where infeasibility is cheaper to prove.
-  boundEnd <- boundShare * maxSeconds
-  if (boundEnd > 0) {
-    budget <- min(1, boundEnd / 64)
+  # Time spent here extends the main search's deadline, so maxSeconds stays
+  # the main search's own budget.
+  deadline <- maxSeconds
+  if (boundSeconds > 0) {
+    boundStart <- Elapsed()
+    boundEnd <- boundStart + boundSeconds
+    budget <- min(1, boundSeconds / 64)
     while (top - bestIdx > 1L && Elapsed() < boundEnd) {
       lo <- bestIdx
       while (top - lo > 1L) {
@@ -344,6 +348,7 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
       budget <- budget * 4
     }
     i0 <- bestIdx
+    deadline <- deadline + Elapsed() - boundStart
   }
 
   # Gallop up from i0 to the first infeasible threshold. Feasibility is
@@ -352,7 +357,7 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
   # step finds the boundary in O(log gap) when the warm start is near-optimal.
   loF <- i0; hiX <- NA_integer_; step <- 1L; probe <- i0 + 1L
   while (probe < top) {
-    rem <- maxSeconds - Elapsed()
+    rem <- deadline - Elapsed()
     if (rem <= 0) { inconclusive <- TRUE; break } # nocov
     v <- Feasible(probe, rem); tick()
     if (identical(v$verdict, "feasible")) {
@@ -372,7 +377,7 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
     lo <- loF + 1L
     hi <- min(hiX - 1L, nCand)
     while (lo <= hi) {
-      rem <- maxSeconds - Elapsed()
+      rem <- deadline - Elapsed()
       if (rem <= 0) { inconclusive <- TRUE; break } # nocov
       mid <- (lo + hi) %/% 2L
       v <- Feasible(mid, rem); tick()

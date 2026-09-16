@@ -314,7 +314,7 @@ test_that("the bracketing pass still certifies the optimum", {
   set.seed(20)
   plain <- ExactMaxMin(k = 30L, d = d, maxSeconds = 60)
   set.seed(20)
-  bracketed <- ExactMaxMin(k = 30L, d = d, maxSeconds = 60, boundShare = 0.5)
+  bracketed <- ExactMaxMin(k = 30L, d = d, maxSeconds = 60, boundSeconds = 5)
   expect_true(attr(bracketed, "proven"))
   expect_equal(attr(bracketed, "score"), attr(plain, "score"))
   expect_equal(attr(bracketed, "upper"), attr(plain, "score"))
@@ -322,7 +322,7 @@ test_that("the bracketing pass still certifies the optimum", {
   set.seed(11L)
   dmat <- as.matrix(dist(matrix(rnorm(28L), ncol = 2L)))
   set.seed(1L)
-  sel <- ExactMaxMin(4L, dmat, boundShare = 1)
+  sel <- ExactMaxMin(4L, dmat, boundSeconds = 5)
   expect_true(attr(sel, "proven"))
   expect_equal(attr(sel, "score"), .BruteMaxmin(dmat, 4L)$objective)
 })
@@ -359,7 +359,7 @@ test_that("an unproven search reports a valid upper bound", {
   expect_equal(attr(plain, "upper"), max(cand))
 
   set.seed(1L)
-  bracketed <- ExactMaxMin(4L, dmat, maxSeconds = 1, boundShare = 0.5)
+  bracketed <- ExactMaxMin(4L, dmat, maxSeconds = 0.5, boundSeconds = 0.5)
   expect_false(attr(bracketed, "proven"))
   expect_equal(attr(bracketed, "score"), truth)
   # The bracket descends until only the unsettled thresholds remain above the
@@ -377,20 +377,19 @@ test_that("the bracketing pass raises the incumbent through feasible probes", {
   # the optimum from the short warm start by feasible probes alone.
   local_mocked_bindings(.MaxISVerdict = .Undecided(truth, Inf))
   set.seed(20)
-  sel <- ExactMaxMin(k = 30L, d = d, maxSeconds = 2, boundShare = 0.5)
+  sel <- ExactMaxMin(k = 30L, d = d, maxSeconds = 1, boundSeconds = 1)
   expect_false(attr(sel, "proven"))
   expect_equal(attr(sel, "score"), truth)
   expect_equal(attr(sel, "upper"), max(cand))
 })
 
-test_that("ExactMaxMin validates boundShare", {
+test_that("ExactMaxMin validates boundSeconds", {
   d <- as.matrix(stats::dist(matrix(stats::rnorm(20), ncol = 2)))
-  msg <- "`boundShare` must be a single number between 0 and 1"
-  expect_error(ExactMaxMin(3L, d, boundShare = -0.1), msg)
-  expect_error(ExactMaxMin(3L, d, boundShare = 1.5), msg)
-  expect_error(ExactMaxMin(3L, d, boundShare = NA_real_), msg)
-  expect_error(ExactMaxMin(3L, d, boundShare = c(0.1, 0.2)), msg)
-  expect_error(ExactMaxMin(3L, d, boundShare = "half"), msg)
+  msg <- "`boundSeconds` must be a single non-negative number"
+  expect_error(ExactMaxMin(3L, d, boundSeconds = -0.1), msg)
+  expect_error(ExactMaxMin(3L, d, boundSeconds = NA_real_), msg)
+  expect_error(ExactMaxMin(3L, d, boundSeconds = c(1, 2)), msg)
+  expect_error(ExactMaxMin(3L, d, boundSeconds = "half"), msg)
 })
 
 test_that("mc.cores changes neither the selection nor the score", {
