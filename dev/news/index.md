@@ -1,12 +1,19 @@
 # Changelog
 
-## Coreset 1.0.0.9001 (development)
+## Coreset 1.0.0.9002 (development)
+
+- [`ExactMaxMin()`](https://ms609.github.io/Coreset/dev/reference/ExactMaxMin.md)
+  reports an `upper` bound on the optimum, and can spend `boundSeconds`
+  bracketing the optimum from above before its search, so an unproven
+  result still bounds its distance from the optimum.
 
 - [`PickPoint()`](https://ms609.github.io/Coreset/dev/reference/PickPoint.md)
   supports the `"peripheral"` and `"random_furthest"` strategies,
   including where `d` is a function, returning `nSeeds` seeds.
+
 - [`FarFirst()`](https://ms609.github.io/Coreset/dev/reference/FarFirst.md)
   supports `strategy = "random_furthest"` when `d` is a function.
+
 - [`MaxEntropy()`](https://ms609.github.io/Coreset/dev/reference/MaxEntropy.md)
   is roughly 3-12x faster at large `n`.
 

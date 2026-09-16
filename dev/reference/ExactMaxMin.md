@@ -14,7 +14,8 @@ ExactMaxMin(
   warmStart = NULL,
   nStart = 1L,
   graspPlateau = 50L,
-  dropPlateau = 512L
+  dropPlateau = 512L,
+  boundSeconds = 0
 )
 ```
 
@@ -53,6 +54,11 @@ ExactMaxMin(
   pass. Deeper searches cost more, but raise the lower bound the exact
   search starts from.
 
+- boundSeconds:
+
+  Numeric: seconds to spend bracketing the optimum from above before the
+  main search, in addition to `maxSeconds`.
+
 ## Value
 
 `ExactMaxMin()` returns an integer vector of length `k` (sorted
@@ -67,6 +73,11 @@ ascending) with class `"MaxMinSelection"`, carrying attributes:
 
   Logical: `TRUE` if the search certified optimality within the budget,
   `FALSE` if it returned an unproven incumbent.
+
+- upper:
+
+  An upper bound on the optimum: the largest distance below the smallest
+  threshold proven infeasible. Equals `score` when `proven` is `TRUE`.
 
 - seconds:
 

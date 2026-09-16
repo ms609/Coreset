@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">Coreset</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.0.0.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.0.0.9002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,13 +40,11 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="1.0.0.9001" id="coreset-1009001-development">Coreset 1.0.0.9001 (development)<a class="anchor" aria-label="anchor" href="#coreset-1009001-development"></a></h2>
-<ul><li>
-<code><a href="../reference/PickPoint.html">PickPoint()</a></code> supports the <code>"peripheral"</code> and <code>"random_furthest"</code> strategies, including where <code>d</code> is a function, returning <code>nSeeds</code> seeds.</li>
-<li>
-<code><a href="../reference/FarFirst.html">FarFirst()</a></code> supports <code>strategy = "random_furthest"</code> when <code>d</code> is a function.</li>
-<li>
-<code><a href="../reference/MaxEntropy.html">MaxEntropy()</a></code> is roughly 3-12x faster at large <code>n</code>.</li>
+<h2 class="pkg-version" data-toc-text="1.0.0.9002" id="coreset-1009002-development">Coreset 1.0.0.9002 (development)<a class="anchor" aria-label="anchor" href="#coreset-1009002-development"></a></h2>
+<ul><li><p><code><a href="../reference/ExactMaxMin.html">ExactMaxMin()</a></code> reports an <code>upper</code> bound on the optimum, and can spend <code>boundSeconds</code> bracketing the optimum from above before its search, so an unproven result still bounds its distance from the optimum.</p></li>
+<li><p><code><a href="../reference/PickPoint.html">PickPoint()</a></code> supports the <code>"peripheral"</code> and <code>"random_furthest"</code> strategies, including where <code>d</code> is a function, returning <code>nSeeds</code> seeds.</p></li>
+<li><p><code><a href="../reference/FarFirst.html">FarFirst()</a></code> supports <code>strategy = "random_furthest"</code> when <code>d</code> is a function.</p></li>
+<li><p><code><a href="../reference/MaxEntropy.html">MaxEntropy()</a></code> is roughly 3-12x faster at large <code>n</code>.</p></li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.0" id="coreset-100-2026-09-09">Coreset 1.0.0 (2026-09-09)<a class="anchor" aria-label="anchor" href="#coreset-100-2026-09-09"></a></h2>
