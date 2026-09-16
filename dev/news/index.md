@@ -1,11 +1,13 @@
 # Changelog
 
-## Coreset 1.0.0.9002 (development)
+## Coreset 1.0.0.9003 (development)
 
 - [`ExactMaxMin()`](https://ms609.github.io/Coreset/dev/reference/ExactMaxMin.md)
   reports an `upper` bound on the optimum, and can spend `boundSeconds`
   bracketing the optimum from above before its search, so an unproven
-  result still bounds its distance from the optimum.
+  result still bounds its distance from the optimum. Passing that bound
+  back as `upper`, with the selection as `warmStart`, resumes the
+  search.
 
 - [`PickPoint()`](https://ms609.github.io/Coreset/dev/reference/PickPoint.md)
   supports the `"peripheral"` and `"random_furthest"` strategies,

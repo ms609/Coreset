@@ -21,7 +21,7 @@ sets)."><meta name="robots" content="noindex"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">Coreset</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.0.0.9002</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.0.0.9003</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -66,7 +66,8 @@ sets).</p>
 <span>  nStart <span class="op">=</span> <span class="fl">1L</span>,</span>
 <span>  graspPlateau <span class="op">=</span> <span class="fl">50L</span>,</span>
 <span>  dropPlateau <span class="op">=</span> <span class="fl">512L</span>,</span>
-<span>  boundSeconds <span class="op">=</span> <span class="fl">0</span></span>
+<span>  boundSeconds <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  upper <span class="op">=</span> <span class="cn">Inf</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -107,6 +108,12 @@ more, but raise the lower bound the exact search starts from.</p></dd>
 <dd><p>Numeric: seconds to spend bracketing the optimum from above
 before the main search, in addition to <code>maxSeconds</code>.</p></dd>
 
+
+<dt id="arg-upper">upper<a class="anchor" aria-label="anchor" href="#arg-upper"></a></dt>
+<dd><p>Numeric: a proven upper bound on the optimum, such as the
+<code>upper</code> attribute of an earlier call. With that call's selection as
+<code>warmStart</code>, a search resumes where the earlier one stopped.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -122,7 +129,8 @@ the budget, <code>FALSE</code> if it returned an unproven incumbent.</p></dd>
 
 <dt>upper</dt>
 <dd><p>An upper bound on the optimum: the largest distance below
-the smallest threshold proven infeasible. Equals <code>score</code> when
+the smallest threshold proven infeasible, and no greater than the
+<code>upper</code> argument. Equals <code>score</code> when
 <code>proven</code> is <code>TRUE</code>.</p></dd>
 
 <dt>seconds</dt>
