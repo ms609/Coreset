@@ -1,4 +1,8 @@
-# Coreset 1.0.0.9001 (development)
+# Coreset 1.0.0.9002 (development)
+
+- `ExactMaxMin()` reports an `upper` bound on the optimum, and can spend a share
+  of its budget (`boundShare`) bracketing the optimum from above, so an unproven
+  result still bounds its distance from the optimum.
 
 - `PickPoint()` supports the `"peripheral"` and `"random_furthest"` strategies,
   including where `d` is a function, returning `nSeeds` seeds.

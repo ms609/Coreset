@@ -11,7 +11,8 @@ ExactMaxMin(
   warmStart = NULL,
   nStart = 1L,
   graspPlateau = 50L,
-  dropPlateau = 512L
+  dropPlateau = 512L,
+  boundShare = 0
 )
 }
 \arguments{
@@ -31,6 +32,10 @@ pool.}
 \item{graspPlateau, dropPlateau}{Integer: the stopping plateaus given to the
 pool's \code{\link[=Grasp]{Grasp()}} restarts and its \code{\link[=DropAdd]{DropAdd()}} pass. Deeper searches cost
 more, but raise the lower bound the exact search starts from.}
+
+\item{boundShare}{Numeric between 0 and 1: the share of \code{maxSeconds} to spend
+bracketing the optimum from above before the main search. \code{0} skips the
+bracketing pass.}
 }
 \value{
 \code{ExactMaxMin()} returns an integer vector of length \code{k} (sorted
@@ -41,6 +46,9 @@ When \code{proven} is \code{TRUE} this is the optimum; otherwise
 a lower bound.}
 \item{proven}{Logical: \code{TRUE} if the search certified optimality within
 the budget, \code{FALSE} if it returned an unproven incumbent.}
+\item{upper}{An upper bound on the optimum: the largest distance below
+the smallest threshold proven infeasible. Equals \code{score} when
+\code{proven} is \code{TRUE}.}
 \item{seconds}{Wall-clock seconds elapsed.}
 \item{N, k}{Instance size and target subset size.}
 }
@@ -56,6 +64,14 @@ sets).
 The search is warm-started from a heuristic lower bound (the best of
 \code{nStart} \code{\link[=Grasp]{Grasp()}} restarts and a \code{\link[=DropAdd]{DropAdd()}} pass), then gallops upward from that
 bound to the first infeasible threshold and bisects the resulting bracket.
+
+Where the budget may not suffice to prove optimality, \code{boundShare} spends
+part of it first on bracketing the optimum from above. Proving a threshold
+infeasible is cheap far above the optimum and grows harder towards it, so
+the bracket is bisected under a small per-probe budget that grows fourfold
+each round; an inconclusive probe moves the next one upward. The bracket
+then confines the main search, and the \code{upper} attribute reports the bound
+it reached.
 
 To parallelize computation when OpenMP is available, set the \code{"mc.cores"}
 option:

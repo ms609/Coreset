@@ -298,6 +298,101 @@ test_that("a deeper pool reaches at least as far as a shallower one", {
   expect_length(deep$witness, 6L)
 })
 
+# ---------------------------------------------------------------------------
+# Upper bound and the bracketing pass
+# ---------------------------------------------------------------------------
+test_that("a proven result reports its optimum as the upper bound", {
+  d <- .GraphMetric(120L, 360L, 20L)
+  set.seed(20)
+  sel <- ExactMaxMin(k = 30L, d = d, maxSeconds = 60)
+  expect_true(attr(sel, "proven"))
+  expect_identical(attr(sel, "upper"), attr(sel, "score"))
+})
+
+test_that("the bracketing pass still certifies the optimum", {
+  d <- .GraphMetric(120L, 360L, 20L)
+  set.seed(20)
+  plain <- ExactMaxMin(k = 30L, d = d, maxSeconds = 60)
+  set.seed(20)
+  bracketed <- ExactMaxMin(k = 30L, d = d, maxSeconds = 60, boundShare = 0.5)
+  expect_true(attr(bracketed, "proven"))
+  expect_equal(attr(bracketed, "score"), attr(plain, "score"))
+  expect_equal(attr(bracketed, "upper"), attr(plain, "score"))
+
+  set.seed(11L)
+  dmat <- as.matrix(dist(matrix(rnorm(28L), ncol = 2L)))
+  set.seed(1L)
+  sel <- ExactMaxMin(4L, dmat, boundShare = 1)
+  expect_true(attr(sel, "proven"))
+  expect_equal(attr(sel, "score"), .BruteMaxmin(dmat, 4L)$objective)
+})
+
+# Probes the budget cannot settle are simulated, so the unproven paths run
+# deterministically: every threshold in `(from, to]` comes back inconclusive.
+.Undecided <- function(from, to) {
+  real <- .MaxISVerdict
+  function(d, n, hi, hj, lambda, k, timeLimit, threads = 1L) {
+    if (lambda > from && lambda <= to) {
+      list(verdict = "inconclusive", witness = integer(0))
+    } else {
+      real(d, n, hi, hj, lambda, k, timeLimit, threads)
+    }
+  }
+}
+
+test_that("an unproven search reports a valid upper bound", {
+  set.seed(11L)
+  dmat <- as.matrix(dist(matrix(rnorm(40L), ncol = 2L)))
+  truth <- .BruteMaxmin(dmat, 4L)$objective
+  cand <- sort(unique(dmat[upper.tri(dmat)]))
+  above <- cand[cand > truth]
+  # The two thresholds just above the optimum cannot be settled; everything
+  # higher can, and is infeasible.
+  local_mocked_bindings(.MaxISVerdict = .Undecided(truth, above[2L]))
+
+  set.seed(1L)
+  plain <- ExactMaxMin(4L, dmat)
+  expect_false(attr(plain, "proven"))
+  expect_equal(attr(plain, "score"), truth)
+  # The gallop stops at its first inconclusive probe, before any infeasibility
+  # is proven, so only the diameter bounds the optimum.
+  expect_equal(attr(plain, "upper"), max(cand))
+
+  set.seed(1L)
+  bracketed <- ExactMaxMin(4L, dmat, maxSeconds = 1, boundShare = 0.5)
+  expect_false(attr(bracketed, "proven"))
+  expect_equal(attr(bracketed, "score"), truth)
+  # The bracket descends until only the unsettled thresholds remain above the
+  # optimum: the first one proven infeasible is above[3].
+  expect_equal(attr(bracketed, "upper"), above[2L])
+  expect_gte(attr(bracketed, "upper"), truth)
+})
+
+test_that("the bracketing pass raises the incumbent through feasible probes", {
+  d <- .GraphMetric(120L, 360L, 20L)
+  set.seed(20)
+  truth <- attr(ExactMaxMin(k = 30L, d = d, maxSeconds = 60), "score")
+  cand <- sort(unique(d[upper.tri(d)]))
+  # Everything strictly above the optimum is unsettled, so the pass must reach
+  # the optimum from the short warm start by feasible probes alone.
+  local_mocked_bindings(.MaxISVerdict = .Undecided(truth, Inf))
+  set.seed(20)
+  sel <- ExactMaxMin(k = 30L, d = d, maxSeconds = 2, boundShare = 0.5)
+  expect_false(attr(sel, "proven"))
+  expect_equal(attr(sel, "score"), truth)
+  expect_equal(attr(sel, "upper"), max(cand))
+})
+
+test_that("ExactMaxMin validates boundShare", {
+  d <- as.matrix(stats::dist(matrix(stats::rnorm(20), ncol = 2)))
+  msg <- "`boundShare` must be a single number between 0 and 1"
+  expect_error(ExactMaxMin(3L, d, boundShare = -0.1), msg)
+  expect_error(ExactMaxMin(3L, d, boundShare = 1.5), msg)
+  expect_error(ExactMaxMin(3L, d, boundShare = NA_real_), msg)
+  expect_error(ExactMaxMin(3L, d, boundShare = c(0.1, 0.2)), msg)
+  expect_error(ExactMaxMin(3L, d, boundShare = "half"), msg)
+})
+
 test_that("mc.cores changes neither the selection nor the score", {
   set.seed(88)
   pts <- matrix(stats::rnorm(60 * 3), ncol = 3)
