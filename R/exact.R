@@ -156,14 +156,6 @@
 #' `nStart` [Grasp()] restarts and a [DropAdd()] pass), then gallops upward from that
 #' bound to the first infeasible threshold and bisects the resulting bracket.
 #'
-#' Where the budget may not suffice to prove optimality, `boundShare` spends
-#' part of it first on bracketing the optimum from above. Proving a threshold
-#' infeasible is cheap far above the optimum and grows harder towards it, so
-#' the bracket is bisected under a small per-probe budget that grows fourfold
-#' each round; an inconclusive probe moves the next one upward. The bracket
-#' then confines the main search, and the `upper` attribute reports the bound
-#' it reached.
-#'
 #' To parallelize computation when OpenMP is available, set the `"mc.cores"`
 #' option:
 #' \preformatted{
@@ -184,8 +176,7 @@
 #'  pool's [Grasp()] restarts and its [DropAdd()] pass. Deeper searches cost
 #'  more, but raise the lower bound the exact search starts from.
 #' @param boundShare Numeric between 0 and 1: the share of `maxSeconds` to spend
-#'  bracketing the optimum from above before the main search. `0` skips the
-#'  bracketing pass.
+#'  bracketing the optimum from above before the main search.
 #' @templateVar progress_shows a progress indicator is shown
 #' @template progress
 #' @return `ExactMaxMin()` returns an integer vector of length `k` (sorted
