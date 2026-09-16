@@ -26,6 +26,7 @@ revdep/
 
 # /profile skill throwaway artifacts
 dev/profiling/.vtune-lib-*/
+dev/profiling/.scratch-*/
 dev/profiling/result_*/
 dev/profiling/verify-*.rds
 dev/profiling/.libdir

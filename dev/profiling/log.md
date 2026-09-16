@@ -2357,4 +2357,201 @@ re-measure of the exact rows on the frozen bundle is the remaining step;
 tc17_vehicle k100 / tc18_vowel k100 verdicts at the 160000 s cap
 (18482321) fold into it.
 
+## Round 20 — 2026-09-14 — Area 7: MaxEntropy kernel repair  [user: /profile MaxEntropy; #28, #29]
+
+**Task:** profile `MaxEntropy()` and optimise until nothing is left; assess
+#29 (Cholesky-first, "may be a bad idea?!"). Closes #28.
+
+**Triage (step timing, `dev/profiling/drivers/maxentropy.R`; VTune skipped —
+the hotspot is LAPACK called from R):** at n=1200 the 1.0.0 call was 2.4–3.0 s,
+of which `eigen(symmetric = TRUE)` 1.87 s and the `tcrossprod` reconstruction
+0.58 s; kernel construction 0.12 s, `duplicated(d)` 0.03 s; greedy at k=n/2
+0.13 s. The June round's AT-LIMIT verdict ("the full spectrum is required")
+was wrong in one word: the repair needs every eigen*value* but only the
+eigen*vectors* on one side of zero — `eigen(only.values = TRUE)` is 0.52 s, so
+~1.35 s of the 1.87 s was the back-transformation of n eigenvectors the clip
+never used, and the n³ reconstruction rebuilt a matrix that a rank-m update
+would have perturbed.
+
+**Instance families** (the spectrum decides the cost, so the driver carries
+four): Euclidean 8-D (numerically PD); Euclidean 2-D (PSD in exact arithmetic,
+43% of computed eigenvalues negative round-off); Euclidean^1.2 (97% negative —
+the *positive* side is the small one); CID between random 40-leaf trees
+(TreeDist; 14% negative at n=1200, PD at n=500 and for 80-leaf trees). RF and
+CID-40/80 kernels were PD in every instance tried; CID-20 and low-dimensional
+Euclidean at n >= 200 were not.
+
+**Levers shipped (one PR, supersedes #29):**
+1. *Cholesky certificate* (#29's idea, kept): `chol(ks)` succeeding proves the
+   kernel numerically PD, so clip and shift return `ks` (n³/3 vs 4.3 n³).
+   Penalty when it fails: 0.11 s of 0.9 s at CID-1200 (fails at pivot 558 —
+   blocked `dpotrf` has done most of the trailing update by then); ~0 for
+   euclid2/pow12 (fails at pivots 59/7). Under an optimised BLAS the level-3
+   probe gets cheaper faster than the level-2-bound tridiagonalisation, so
+   the trade only improves on Hamilton/OpenBLAS. #29 as filed had two
+   defects: its bench file sat at the repo root (the harness globs
+   `benchmark/bench-*.R`, hence the PR's benchmark comment had no MaxEntropy
+   row) and it left the eigen path as the full `eigen()`.
+2. *Partial eigendecomposition* (`src/symeigen.cpp`): `dsytrd` once, `dsterf`
+   for all eigenvalues (bit-for-bit what `eigen(only.values = TRUE)` returns),
+   then `dstemr` (MRRR, RANGE='I') + `dormtr` for the p vectors on the smaller
+   side of zero (clip), none (shift), or the top r by cumulative mass
+   (truncate), and `dsyrk` rank-p reconstruction (`RankUpdate_cpp`). The
+   dsyevr-style subset path (`dstebz` + `dstein`) was tried first and lost on
+   the 43%-negative family (1.86 s vs 1.03 s partial-eig) to `dstein`'s O(n p²)
+   cluster reorthogonalisation; `dstemr` is declared locally (not in
+   `R_ext/Lapack.h`, exported by Rlapack and every external LAPACK).
+   `PKG_LIBS` gains `$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)`.
+3. *O(n²) R overhead*: default bandwidth via `nth_element` on the upper
+   triangle (median of a doubled multiset = median of the multiset; long
+   double mean as R's), kernel `exp` over one triangle mirrored, distinct-row
+   count by hashed exact comparison (`==`, so -0 == 0 as `duplicated()`).
+   All three bit-identical to the R expressions (test-asserted).
+4. *Greedy* (k = n/2): `L` stored column-major with the pivot-row dot products
+   accumulated as column sweeps in the same s-order — bit-identical picks,
+   vectorisable inner loop. 0.17 → 0.11 s (k=600 incl. the 0.04 s log-det).
+
+**Verified (A/B, installed builds, medians of 3, n=1200):** euclid8 2.41 →
+0.31 s (7.8×), k=n/2 2.71 → 0.42 (6.5×); euclid2 2.12 → 1.18 (1.8×); pow12
+2.05 → 0.58 (3.5×); cid 2.31 → 0.90 (2.6×); shift 1.9 → 0.30–0.65; truncate
+3.0 → 0.55–1.76. n=500 PD 0.19 → 0.03. Repaired kernels agree with 1.0.0 to
+<= 7e-13 (max abs), negMass to 8 digits; selections identical across a
+504-cell sweep (dims 2/3/8, n 12–160, Euclidean and ^1.2, greedy and exact,
+k in {2, 4, n/3}) except 40 greedy cells at k = n/3 on ^1.2 kernels, every one
+of which picks at a residual variance of ~5e-16, i.e. past the numerical rank
+of the repaired kernel, where 1.0.0's pick was equally arbitrary (both
+log-dets -Inf or ~e^-49). Full suite 311/311; covr 100% on the three files.
+
+**Declined / floor:** `dsytrd` (4/3 n³, half level-2) is the floor of any
+dense symmetric route — 0.5 s of the 0.9 s CID call. `SubLogDet` via
+`dpotrf` would save 0.04 s at k=600 but changes the reported score's bits;
+not worth it. The `chol` probe (0.25 s) has no O(n²) replacement: no
+certificate of positive-definiteness is cheaper than a factorisation.
+Exact enumeration is bounded by `maxCombos` and untouched. Single BLAS
+thread here; `mc.cores` does not apply (no package-side parallelism on this
+path).
+
+**Cleanup:** no VTune result dirs; scratch builds lived in the session
+scratchpad. `last_focus` unchanged (targeted round).
+
+---
+
+## Round 21 — 2026-09-14 — Area 7: MaxEntropy, second pass (background agent, reviewed)  [user: "what else can we eke out"]
+
+**Method:** an independent agent in its own worktree hunted the remaining
+cost after round 20 (min-of-N interleaved A/B across processes, n = 1200 and
+3000, the round-20 instance families); its six commits were reviewed line by
+line, cherry-picked, re-measured with the round-20 driver, and checked
+(312/312 local, 7225 under `R CMD check --as-cran`, covr 100% on the three
+files).
+
+**Shipped:**
+1. *Round-off certificate for clip* (`CholCertificate_cpp`): factorise
+   ks + δI, δ = min(4 n ε ‖ks‖∞, tol). Success bounds λ_min ≥ −δ − O(n ε ‖ks‖),
+   below any dense eigen-solver's resolution, so the clip would only have
+   removed round-off components and negMass is 0 by definition (its
+   threshold is tol ≥ δ). Low-dimensional Euclidean kernels are indefinite
+   only by round-off (euclid2 λ_min = −5.7e−13 against ‖K‖ ≈ 1e3) and were
+   paying the full eigen path for it: euclid2 clip 1.18 → 0.21 s; the agent's
+   n = 3000 5-D cell 11.0 → 3.25 s. Genuinely indefinite kernels fail at the
+   same pivot with or without the margin (pow12 7, CID 558). *shift keeps
+   δ = 0*: its repair of a round-off-indefinite kernel is a ridge of tol, not
+   round-off, and the agent's first prototype with δ on shift changed 207
+   picks at k = 400 on euclid2. Output bits: kp differs from round 20 by
+   ≤ 3e−13 on certified kernels; selections identical within the numerical
+   rank; one flagged cell (euclid3, k = 400 of 1200) keeps its selection but
+   its −6012.74 score moves in the fifth digit because the last pivots are
+   round-off.
+2. *Lower-triangle `dpotrf` for the certificate*: under reference BLAS the
+   'L' form's trailing update is an axpy-form dgemm that vectorises, the 'U'
+   form's (R's `chol()`) is a dot-product form that does not: 0.25 → 0.16 s
+   at n = 1200, 3.92 → 3.19 at 3000. Verdict-only, no output bits. The agent
+   used `dpotrf2` (0.14 / 2.80 s) — declined by review: LAPACK ≥ 3.6, above
+   the 3.2 floor R-admin accepts for an external LAPACK; `dstemr` (3.1) is
+   inside it.
+3. *Complement-side truncate*: when the kept set is the majority (flat
+   spectra: CID r = 794 of 1200) the dropped n − r components are computed and
+   subtracted instead (`RankUpdate_cpp` now takes signed λ, two `dsyrk`s).
+   CID truncate 1.76 → 1.23 s; kp within 1e−13; selections identical.
+4. *Compacted greedy + column-major `SubLogDet`*: available rows live in slots
+   0..nAvail−1 (pivot swapped to the last slot; ties on original index, as
+   `which.max`), so each sweep touches only rows it can change; the log-det
+   keeps the per-entry operation order but advances a column at a time. Bit-
+   identical (`identical()` incl. exact-tie fixtures). n = 3000, k = 1500:
+   greedy 2.36 → 1.57 s, log-det 0.55 → 0.30; n = 1200 PD k = 600 0.42 → 0.30.
+5. *No symmetrisation of the package's own kernel* (`symmetric = TRUE`):
+   `RbfKernel_cpp` output is exactly symmetric and `(k + t(k))/2` of it is `k`
+   bit for bit; saves 7 ms (1200) / 90 ms (3000). kp then carries the kernel's
+   attributes on the certified path (harmless; the eigen path stays bare).
+
+**Refuted / at the floor (agent measurements, kept so nobody repeats them):**
+2-stage tridiagonalisation — Rlapack.dll exports no `*_2stage` symbol, dead
+on CRAN Windows/macOS. `dsytrd` uplo L vs U — equal. `RbfKernel_cpp` is the
+`exp` call itself (~44 ns each; an exp-only loop is as slow); a faster exp
+cannot be bit-identical. Lanczos indefiniteness pre-check — rigorous and
+cheap (4–6 steps), but with the 'L' certificate the failed-probe penalty it
+would remove is 0.04 s and it taxes every PD call. R-level lines at n = 1200 /
+3000: kernel 0.04 / 0.26, symmetrise 0.007 / 0.09 (now skipped), median
+0.005 / 0.04, `all(is.finite)` 0.004 / 0.024, `DistinctRows_cpp` 0.001 / 0.008,
+`rowSums` 0.002 / 0.015 — nothing above 2%. `SubLogDet` via `dpotrf` or the
+greedy's own diagonal would change score bits — not done.
+
+**Verified (this box, medians of 3, n = 1200; 1.0.0 → round 20 → round 21):**
+euclid8 clip k=20 2.41 → 0.31 → 0.21 s; k=n/2 2.71 → 0.42 → 0.30; euclid2
+2.12 → 1.18 → 0.21; pow12 2.05 → 0.58 → 0.59; cid 2.31 → 0.90 → 0.87; cid
+truncate 2.81 → 1.76 → 1.23; shift unchanged from round 20.
+
+**Status:** AT-LIMIT. What remains is `dpotrf` (n³/3, 0.15 of the 0.21 s PD
+call) and `dsytrd` (4/3 n³, 0.55 of the 0.87 s CID call), both level-2/3
+LAPACK floors under a single-threaded reference BLAS; an optimised BLAS is
+the next lever and is the user's environment, not the package's.
+`last_focus` unchanged (targeted round).
+
+---
+
+## Round 22 — 2026-09-15 — Area 7: MaxEntropy certificate, recursive Cholesky  [user: "implement your own recursion ... drop dpotrf"]
+
+**Change:** `CholCertificate_cpp` factorises with a recursive lower Cholesky
+written over BLAS `dtrsm` + `dsyrk` (LAPACK dpotrf2's algorithm: factor the
+leading half, solve the off-diagonal block, downdate and factor the trailing
+half; base case n = 1). `dpotrf2` itself was not called: it needs LAPACK ≥ 3.6,
+R accepts an external LAPACK down to 3.2 (`--with-lapack` against e.g. legacy
+Accelerate, 3.2.1), and a missing symbol stops the package loading rather than
+falling back; runtime detection would need a configure test. R-devel's own
+`R_ext/Lapack.h` declares dpotrf2, and a default configure only accepts an
+external LAPACK ≥ 3.9.0, so the exposure was small but the failure total.
+The copy, row-sum norm and δ shift now take one column-order pass over the
+lower triangle (the row-order norm loop strode across columns: 85 → 34 ms at
+n = 3000); only the lower triangle is allocated-and-written, read or factorised.
+
+**Measured** (installed builds, interleaved across processes, hires clock,
+median / min): PD 8-D n = 1200 155 / 148 → 147 / 140 ms; PD 5-D n = 3000
+3.39 / 3.20 → 2.86 / 2.82 s (one of three B runs spiked to 3.35); CID
+n = 1200, which fails, 60 → **21 ms** — the recursion factors the leading
+block before any update to its right, so a failure at pivot 558 of 1200 costs
+about the leading 600-block, where blocked `dpotrf` had already applied most
+trailing updates. Driver: cid prepare 0.92 / 0.84 → 0.81 / 0.80 s, clip20
+0.92 / 0.87 → 0.86 / 0.85; PD cells below the driver's 10 ms resolution.
+Verdict agrees with dpotrf/dpotrf2 on every fixture; a failing pivot at each
+of 37 positions is caught (test); covr 100% on the three files.
+
+**Base-case size** (scratch, sourceCpp -O2): n = 1, 8, 16, 32, 64, 128, an
+unblocked right-looking kernel, and dpotrf2 as the base all equal within
+noise (n = 3000 min 2.69–2.73 s) — kept n = 1, the shortest code.
+
+**Declined — hand-fused update loops.** Replacing `dtrsm`/`dsyrk` by C++ loops
+that fuse four columns per pass (register blocking that reference BLAS lacks)
+gives n = 1200 142 → 82 ms, n = 3000 3.12 → 1.76 s (trsm 1.58 → 0.87, syrk
+1.53 → 0.90), factor within 6e−12 relative, verdicts equal. Not shipped: it
+wins only against reference BLAS; OpenBLAS / MKL / Accelerate block and
+thread these calls and would be several times faster than the hand loop, so
+it regresses exactly the users who take round 21's advice to use an optimised
+BLAS, and it would make the certificate the one kernel-repair step not on
+BLAS. A runtime pick (time both once per session) would recover it for
+reference-BLAS users; left as the user's call.
+
+**Status:** AT-LIMIT on BLAS-backed code. `last_focus` unchanged.
+
+---
+
 last_focus: 19

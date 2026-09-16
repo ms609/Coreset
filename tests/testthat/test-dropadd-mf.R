@@ -96,7 +96,10 @@ test_that("DropAdd points path is within tolerance when seeds diverge", {
 # ---------------------------------------------------------------------------
 test_that("DropAdd points path respects maxSeconds within reasonable slack", {
   set.seed(99)
-  pts <- matrix(runif(2000 * 8), ncol = 8)
+  # The clock is polled every 256 iterations of two O(n * dim) passes, so the
+  # overshoot scales with n; a small n keeps one window inside the slack
+  # below even under valgrind's slowdown.
+  pts <- matrix(runif(400 * 8), ncol = 8)
   t0 <- Sys.time()
   # Disable stagnation so the wall-clock ceiling is the binding criterion.
   res <- DropAdd(20L, maxSeconds = 0.05, plateau = 100000000L,

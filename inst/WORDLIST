@@ -2,6 +2,7 @@ antimedoid
 argmax
 Arthur
 binom
+BLAS
 CDSh
 cf
 Cholesky
@@ -42,9 +43,11 @@ memoized
 metaheuristic
 MGC
 MILP
+MKL
 MMDP
 MMDPo
 Nijimbere
+OpenBLAS
 OpenMP
 ORCID
 ORLIB

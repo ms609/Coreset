@@ -49,6 +49,18 @@ MaxEntropyLogDet_cpp <- function(K, idx) {
     .Call(`_Coreset_MaxEntropyLogDet_cpp`, K, idx)
 }
 
+MedianPositiveUpper_cpp <- function(d) {
+    .Call(`_Coreset_MedianPositiveUpper_cpp`, d)
+}
+
+RbfKernel_cpp <- function(d, sigma) {
+    .Call(`_Coreset_RbfKernel_cpp`, d, sigma)
+}
+
+DistinctRows_cpp <- function(d) {
+    .Call(`_Coreset_DistinctRows_cpp`, d)
+}
+
 MaximinFrom_cpp <- function(d, n, first, n_threads = 1L) {
     .Call(`_Coreset_MaximinFrom_cpp`, d, n, first, n_threads)
 }
@@ -95,6 +107,18 @@ DiameterFromPoints_cpp <- function(points, n_threads = 1L) {
 
 MaxMean_cpp <- function(dmat, time_budget_s, iter_budget, alpha_depth, T_min, T_max, epsilon, alpha_rl, gamma_rl, use_rl) {
     .Call(`_Coreset_MaxMean_cpp`, dmat, time_budget_s, iter_budget, alpha_depth, T_min, T_max, epsilon, alpha_rl, gamma_rl, use_rl)
+}
+
+CholCertificate_cpp <- function(A, tol) {
+    .Call(`_Coreset_CholCertificate_cpp`, A, tol)
+}
+
+SymEigenPartial_cpp <- function(A, mode, keep) {
+    .Call(`_Coreset_SymEigenPartial_cpp`, A, mode, keep)
+}
+
+RankUpdate_cpp <- function(base, V, lam) {
+    .Call(`_Coreset_RankUpdate_cpp`, base, V, lam)
 }
 
 AllFinite_cpp <- function(x, n_threads = 1L) {

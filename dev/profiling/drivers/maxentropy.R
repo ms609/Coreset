@@ -1,33 +1,63 @@
-# Driver: MaxEntropy() maxdet selector internal-step breakdown.
-# The one O(n^3) cost is the eigendecomposition(s) in the R wrapper; everything
-# else is O(n^2) / O(n^2 k). The wrapper does TWO eigens (negMass values-only +
-# repair full). We measure the cost and the gain from merging them into one.
-# Distance matrix is a synthetic non-Euclidean one: eigen FLOPs depend on SIZE
-# not values, and a random symmetric "distance" makes the RBF kernel non-PSD so
-# the clip-repair path is genuinely exercised (negMass > 0).
-.libPaths(c("C:/Users/pjjg18/GitHub/Coreset/.agent-lib", .libPaths()))
+# Driver: MaxEntropy() maxdet selector -- step breakdown and end-to-end timing.
+#
+# The one O(n^3) cost is the kernel's PSD repair (R/maxentropy.R ->
+# src/symeigen.cpp); everything else is O(n^2) or O(n^2 k). Runs against
+# whichever Coreset is first on .libPaths(): set CORESET_LIB to A/B an
+# installed build against the default library, e.g.
+#   CORESET_LIB=dev/profiling/.vtune-lib-<stamp> Rscript dev/profiling/drivers/maxentropy.R
+#
+# Instance families (deterministic), all of which a user can hit:
+#   euclid8  -- Euclidean, 8-D: numerically positive-definite kernel (the
+#               Cholesky fast path; no eigendecomposition at all)
+#   euclid2  -- Euclidean, 2-D: PSD in exact arithmetic but ~40% of the
+#               computed eigenvalues are negative round-off (partial eigen,
+#               negative side, p ~ 0.4 n)
+#   pow12    -- Euclidean^1.2, 3-D: indefinite, ~97% negative (positive side,
+#               p ~ 0.03 n)
+#   cid      -- Clustering-information distance between random 40-leaf trees
+#               (TreeDist): indefinite, ~14% negative at n = 1200; skipped if
+#               TreeDist is not installed
+# bare: ~75 s on 2026-09-14.
+lib <- Sys.getenv("CORESET_LIB", unset = NA)
+if (!is.na(lib) && nzchar(lib)) .libPaths(c(lib, .libPaths()))
 suppressMessages(library(Coreset))
+cat("Coreset", as.character(packageVersion("Coreset")), "from", find.package("Coreset"), "\n")
 set.seed(5813)
-tmN <- function(expr, R) { e <- new.env(); median(replicate(3, system.time(for (i in seq_len(R)) eval(expr, e))[["elapsed"]] / R)) }
-
-mergedPrep <- function(K, tol = 1e-9) {
-  ks <- (K + t(K)) / 2
-  e <- eigen(ks, symmetric = TRUE)
-  lam <- e$values; neg <- lam[lam < -tol]
-  negMass <- if (length(lam)) sum(abs(neg)) / sum(abs(lam)) else 0
-  lam[lam < 0] <- 0
-  list(kp = e$vectors %*% (lam * t(e$vectors)), negMass = negMass)
+tm <- function(expr, R = 3L) {
+  e <- parent.frame()
+  median(replicate(R, system.time(eval(expr, e))[["elapsed"]]))
 }
+BenchDist <- function(n, dim, seed = 1L) {
+  set.seed(seed)
+  as.matrix(dist(matrix(rnorm(n * dim), ncol = dim)))
+}
+CidDist <- function(n, leaves = 40L) {
+  if (!requireNamespace("TreeDist", quietly = TRUE)) return(NULL)
+  set.seed(1)
+  as.matrix(TreeDist::ClusteringInfoDistance(ape::rmtree(n, leaves)))
+}
+instances <- list(
+  euclid8_500 = BenchDist(500L, 8L),
+  euclid8_1200 = BenchDist(1200L, 8L),
+  euclid2_1200 = BenchDist(1200L, 2L),
+  pow12_1200 = BenchDist(1200L, 3L) ^ 1.2,
+  cid_1200 = CidDist(1200L)
+)
+instances <- Filter(Negate(is.null), instances)
 
-for (n in c(1000L, 1500L, 2000L)) {
-  M <- matrix(runif(n * n), n); D <- (M + t(M)); diag(D) <- 0     # non-Euclidean
-  K <- Coreset:::.MaxEntropyKernel(D)
-  R <- if (n <= 1000) 4L else 2L
-  t_neg    <- tmN(quote(Coreset:::.MaxEntropyNegMass(K)), R)
-  t_repair <- tmN(quote(Coreset:::.MaxEntropyRepair(K, "clip")), R)
-  t_merged <- tmN(quote(mergedPrep(K)), R)
-  t_full   <- tmN(quote(MaxEntropy(10L, D)), R)
-  cur <- t_neg + t_repair
-  cat(sprintf("n=%4d | negMass %.3f + repair %.3f = %.3f s  ->  merged %.3f s  | prep gain %4.1f%% | full=%.3f s, est full gain %4.1f%%\n",
-              n, t_neg, t_repair, cur, t_merged, 100*(cur - t_merged)/cur, t_full, 100*(cur - t_merged)/t_full))
+cat(sprintf("%-13s %5s %8s %8s %8s %8s %8s %8s\n", "instance", "n", "kernel", "prepare",
+            "clip20", "cliphalf", "shift20", "trunc20"))
+for (nm in names(instances)) {
+  d <- instances[[nm]]
+  n <- nrow(d)
+  kern <- Coreset:::.MaxEntropyKernel(d)
+  tKern <- tm(quote(Coreset:::.MaxEntropyKernel(d)))
+  tPrep <- tm(quote(Coreset:::.MaxEntropyPrepare(kern, "clip")))
+  kHalf <- n %/% 2L
+  t20 <- tm(quote(MaxEntropy(20L, d)))
+  tHalf <- tm(quote(MaxEntropy(kHalf, d)))
+  tShift <- tm(quote(MaxEntropy(20L, d, repair = "shift")))
+  tTrunc <- tm(quote(MaxEntropy(20L, d, repair = "truncate")))
+  cat(sprintf("%-13s %5d %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", nm, n, tKern, tPrep,
+              t20, tHalf, tShift, tTrunc))
 }
