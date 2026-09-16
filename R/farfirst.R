@@ -577,9 +577,12 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
       peripheral = .PeripheralSeedColumn(colFn, N)
     )
   }
-  # Only a request including random-furthest seeds reaches this ensemble.
-  rfSeeds <- .DrawDistinctSeeds(function(r) which.max(.DropAddColumn(colFn, r, N)),
-                                N, nSeeds)
+  rfSeeds <- if ("random_furthest" %in% anchors) {
+    .DrawDistinctSeeds(function(r) which.max(.DropAddColumn(colFn, r, N)), N,
+                       nSeeds)
+  } else {
+    integer(0)   # as .GonzEnsemble(): draw nothing, and consume no RNG
+  }
   expanded <- .ExpandAnchors(anchors, rfSeeds, AnchorSeed)
   labels   <- vapply(expanded, `[[`, character(1L), "label")
   .ResolveEnsemble(expanded, labels, RunPasses)
