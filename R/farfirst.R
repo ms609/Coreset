@@ -232,13 +232,10 @@
 #' @param N Integer: the total number of elements. Required (and used) only on
 #'   the distance-column oracle path, where it cannot be inferred from the
 #'   closure; ignored for the matrix and coordinate paths.
-#' @param strategy Integer or character defining how to seed the greedy pass.
-#' Pass the name of one or more seeding strategies described in [`PickPoint()`]
-#' to run each strategy and return the best solution.
-#' When `d` is a distance-column function, only an integer, `"peripheral"` and
-#' `"random_furthest"` can be honoured, as the other strategies need the full
-#' matrix; if `strategy` is not supplied, the deterministic `"peripheral"` seed
-#' is used.
+#' @param strategy Optional integer or character identifying one or more
+#' of the seeding strategies described in [`PickPoint()`].
+#' Only integer, `"peripheral"` and `"random_furthest"` are supported when `d`
+#' is a distance function.  Defaults to `"peripheral"`.
 #' @param nSeeds Integer: number of distinct seeds to draw under the
 #' `"random_furthest"` strategy. Beyond ~3, [DropAdd()] will tend to return
 #' higher quality results faster.
@@ -343,8 +340,7 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
   # embedding (e.g. on-demand tree-to-tree distances). The selection is
   # identical to the matrix path given the same seeds. An integer `strategy`,
   # the peripheral seed and random-furthest seeds are reachable here; the other
-  # anchors need O(N^2) work. Left unsupplied, `strategy` means the
-  # deterministic peripheral seed rather than a random restart.
+  # anchors need O(N^2) work. `strategy` defaults to a peripheral seed.
   if (is.function(d)) {
     Single <- function(first) {
       Classify(.GonzalezColumn(colFn = d, N = N, k = k, first = first,
@@ -353,10 +349,10 @@ FarFirst <- function(k, d = NULL, points = NULL, N = NULL,
     if (!is.null(first) || strategyMissing) return(Single(first))
     anchors <- intersect(strategy, c("peripheral", "random_furthest"))
     if (length(anchors) < length(strategy)) {
-      warning("distance-column oracle path: only an integer `strategy`, ",
-              "\"peripheral\" and \"random_furthest\" are honoured; ",
-              if (length(anchors)) "the others are dropped"
-              else "using the deterministic peripheral seed")
+      warning("`strategy` must be an integer, \"peripheral\" or ",
+              "\"random_furthest\" when `d` is a function.",
+              if (length(anchors)) " Other strategies ignored"
+              else " Using \"peripheral\"")
     }
     if (identical(anchors, "peripheral") || !length(anchors)) return(Single(NULL))
     return(Classify(.GonzEnsembleColumn(d, N, k, anchors, .CheckNSeeds(nSeeds),
