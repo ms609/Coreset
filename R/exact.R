@@ -175,6 +175,8 @@
 #' @param graspPlateau,dropPlateau Integer: the stopping plateaus given to the
 #'  pool's [Grasp()] restarts and its [DropAdd()] pass. Deeper searches cost
 #'  more, but raise the lower bound the exact search starts from.
+#' @param boundSeconds Numeric: seconds to spend bracketing the optimum from above
+#'  before the main search, in addition to `maxSeconds`.
 #' @templateVar progress_shows a progress indicator is shown
 #' @template progress
 #' @return `ExactMaxMin()` returns an integer vector of length `k` (sorted
@@ -185,6 +187,9 @@
 #'       a lower bound.}
 #'     \item{proven}{Logical: `TRUE` if the search certified optimality within
 #'       the budget, `FALSE` if it returned an unproven incumbent.}
+#'     \item{upper}{An upper bound on the optimum: the largest distance below
+#'       the smallest threshold proven infeasible. Equals `score` when
+#'       `proven` is `TRUE`.}
 #'     \item{seconds}{Wall-clock seconds elapsed.}
 #'     \item{N, k}{Instance size and target subset size.}
 #'   }
@@ -196,7 +201,8 @@
 #' ExactMaxMin(3L, dist(pts))
 #' @export
 ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
-                        nStart = 1L, graspPlateau = 50L, dropPlateau = 512L) {
+                        nStart = 1L, graspPlateau = 50L, dropPlateau = 512L,
+                        boundSeconds = 0) {
   progress <- getOption("Coreset.progress", interactive())
   t0 <- proc.time()[[3L]]
   d <- .ExactAsMatrix(d)
@@ -204,6 +210,10 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
   k <- as.integer(k)
   if (is.na(k) || k < 2L || k > n) {
     stop("`k` must satisfy 2 <= k <= nrow(d)")
+  }
+  if (length(boundSeconds) != 1L || !is.numeric(boundSeconds) ||
+      is.na(boundSeconds) || boundSeconds < 0) {
+    stop("`boundSeconds` must be a single non-negative number")
   }
   nThreads <- .NThreads()
 
@@ -240,7 +250,7 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
   }
 
   # Helper to package a result for a proven-feasible candidate index.
-  Recover <- function(witness, lambda, proven) {
+  Recover <- function(witness, lambda, proven, upper) {
     idx <- sort(witness[seq_len(k)])
     sub <- d[idx, idx]
     diag(sub) <- Inf
@@ -260,6 +270,7 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
         idx,
         score  = obj,
         proven = proven,
+        upper  = if (proven) obj else upper,
         seconds = Elapsed(),
         N      = n,
         k      = as.integer(k)
@@ -304,14 +315,49 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
     best$obj <- ws$value
   }
   inconclusive <- FALSE
+  # The smallest candidate index proven infeasible; nCand + 1 until one is.
+  # The optimum is a realised distance below it, so never above cand[top - 1].
+  top <- nCand + 1L
+
+  # Bracketing pass. Bisect (bestIdx, top) under a per-probe budget that grows
+  # fourfold each round. An infeasible probe lowers `top`, a feasible one raises
+  # the incumbent, and an inconclusive one decides nothing, so the next probe
+  # goes halfway to `top`, where infeasibility is cheaper to prove.
+  # Time spent here extends the main search's deadline, so maxSeconds stays
+  # the main search's own budget.
+  deadline <- maxSeconds
+  if (boundSeconds > 0) {
+    boundStart <- Elapsed()
+    boundEnd <- boundStart + boundSeconds
+    budget <- min(1, boundSeconds / 64)
+    while (top - bestIdx > 1L && Elapsed() < boundEnd) {
+      lo <- bestIdx
+      while (top - lo > 1L) {
+        rem <- boundEnd - Elapsed()
+        if (rem <= 0) break
+        mid <- (lo + top) %/% 2L
+        v <- Feasible(mid, min(budget, rem)); tick()
+        if (identical(v$verdict, "feasible")) {
+          bestIdx <- mid; bestWitness <- v$witness; lo <- mid
+        } else if (identical(v$verdict, "infeasible")) {
+          top <- mid
+        } else {
+          lo <- mid
+        }
+      }
+      budget <- budget * 4
+    }
+    i0 <- bestIdx
+    deadline <- deadline + Elapsed() - boundStart
+  }
 
   # Gallop up from i0 to the first infeasible threshold. Feasibility is
   # monotone (raising lambda only adds edges, never grows the independence
   # number), so the feasible indices form a prefix [1 .. best]; doubling the
   # step finds the boundary in O(log gap) when the warm start is near-optimal.
   loF <- i0; hiX <- NA_integer_; step <- 1L; probe <- i0 + 1L
-  while (probe <= nCand) {
-    rem <- maxSeconds - Elapsed()
+  while (probe < top) {
+    rem <- deadline - Elapsed()
     if (rem <= 0) { inconclusive <- TRUE; break } # nocov
     v <- Feasible(probe, rem); tick()
     if (identical(v$verdict, "feasible")) {
@@ -323,21 +369,22 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
       inconclusive <- TRUE; break
     } # nocov end
   }
-  if (is.na(hiX)) hiX <- nCand + 1L           # nothing above proven infeasible
+  if (is.na(hiX)) hiX <- top                  # nothing above proven infeasible
+  top <- hiX
 
   # Bisect the bracket (loF, hiX): the largest feasible index in between.
   if (!inconclusive) {
     lo <- loF + 1L
     hi <- min(hiX - 1L, nCand)
     while (lo <= hi) {
-      rem <- maxSeconds - Elapsed()
+      rem <- deadline - Elapsed()
       if (rem <= 0) { inconclusive <- TRUE; break } # nocov
       mid <- (lo + hi) %/% 2L
       v <- Feasible(mid, rem); tick()
       if (identical(v$verdict, "feasible")) {
         bestIdx <- mid; bestWitness <- v$witness; lo <- mid + 1L
       } else if (identical(v$verdict, "infeasible")) {
-        hi <- mid - 1L
+        hi <- mid - 1L; top <- mid
       } else { # nocov start
         inconclusive <- TRUE; break
       } # nocov end
@@ -354,5 +401,5 @@ ExactMaxMin <- function(k, d, maxSeconds = 60, warmStart = NULL,
   # certified it -- probed there, or carried down from a higher threshold it
   # already attained -- realises exactly that threshold: any more would
   # contradict the infeasibility proven just above it. Recover() checks that.
-  Recover(bestWitness, cand[bestIdx], proven)
+  Recover(bestWitness, cand[bestIdx], proven, cand[top - 1L])
 }
