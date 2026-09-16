@@ -156,13 +156,14 @@ jobs:
   # no checks and the PR unmergeable. Fork PRs cannot receive the secret, so
   # there the job fails and codemeta.json must be updated by hand.
   #
-  # `fileSize` is stripped: it tracks the size of the working tree, so keeping
-  # it would mark nearly every PR stale.
+  # No R needed: .github/scripts/codemeta.py (stdlib Python, preinstalled on the
+  # runner) reproduces codemeta::write_codemeta() from DESCRIPTION and
+  # inst/CITATION, so the whole job takes seconds.
   # ---------------------------------------------------------------------------
   codemeta:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04-arm
-    timeout-minutes: 15  # healthy run is ~1 min
+    timeout-minutes: 5  # healthy run is ~15 s
 
     steps:
       - name: Checkout PR branch
@@ -171,52 +172,12 @@ jobs:
           ref: ${{ github.head_ref }}
           ssh-key: ${{ secrets.CODEMETA_DEPLOY_KEY }}
 
-      # codemeta.json derives only from DESCRIPTION and inst/CITATION. If the PR
-      # touches none of those (nor the file itself) it inherits the base's
-      # already-gated copy, and R need not be installed at all.
-      - name: Check whether codemeta inputs changed
-        id: inputs
-        shell: bash
-        run: |
-          git fetch -q --depth=1 origin "${{ github.base_ref }}"
-          if git diff --quiet FETCH_HEAD HEAD -- DESCRIPTION inst/CITATION codemeta.json; then
-            echo "No codemeta inputs changed; nothing to check."
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Make apt fail fast on a stalled mirror
-        if: steps.inputs.outputs.changed == 'true'
-        shell: bash
-        run: |
-          sudo tee /etc/apt/apt.conf.d/99-ci-timeouts > /dev/null <<'EOF'
-          Acquire::Retries "3";
-          Acquire::http::Timeout "20";
-          Acquire::https::Timeout "20";
-          Acquire::ftp::Timeout "20";
-          EOF
-
-      - name: Set up R
-        if: steps.inputs.outputs.changed == 'true'
-        uses: r-lib/actions/setup-r@v2
-        timeout-minutes: 15
-        with:
-          r-version: release
-          use-public-rspm: true
-
       - name: Build metadata
-        if: steps.inputs.outputs.changed == 'true'
-        run: |
-          install.packages("codemeta")
-          codemeta::write_codemeta()
-        shell: Rscript {0}
+        run: python3 .github/scripts/codemeta.py
 
       - name: Push metadata if stale
-        if: steps.inputs.outputs.changed == 'true'
         shell: bash
         run: |
-          sed -i '/^  "fileSize": /d' codemeta.json
           if git diff --quiet -- codemeta.json; then
             echo "codemeta.json is up to date."
             exit 0
@@ -227,7 +188,7 @@ jobs:
           git add codemeta.json
           git commit -m "Update codemeta.json"
           if ! git push; then
-            echo "::error::codemeta.json is stale and could not be pushed (fork PR, missing CODEMETA_DEPLOY_KEY, or the branch moved). Run codemeta::write_codemeta() and commit the result."
+            echo "::error::codemeta.json is stale and could not be pushed (fork PR, missing CODEMETA_DEPLOY_KEY, or the branch moved). Run python3 .github/scripts/codemeta.py and commit the result."
             exit 1
           fi
           echo "::error::codemeta.json was stale; pushed an update, which starts a fresh run."

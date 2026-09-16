@@ -13,7 +13,6 @@
     "name": "R",
     "url": "https://r-project.org"
   },
-  "runtimePlatform": "R Under development (unstable) (2026-06-29 r90199 ucrt)",
   "author": [
     {
       "@type": "Person",
@@ -128,14 +127,14 @@
       "sameAs": "https://CRAN.R-project.org/package=testthat"
     }
   ],
-  "softwareRequirements": {
-    "1": {
+  "softwareRequirements": [
+    {
       "@type": "SoftwareApplication",
       "identifier": "R",
       "name": "R",
       "version": ">= 4.1"
     },
-    "2": {
+    {
       "@type": "SoftwareApplication",
       "identifier": "cli",
       "name": "cli",
@@ -148,7 +147,7 @@
       },
       "sameAs": "https://CRAN.R-project.org/package=cli"
     },
-    "3": {
+    {
       "@type": "SoftwareApplication",
       "identifier": "Rcpp",
       "name": "Rcpp",
@@ -160,7 +159,7 @@
       },
       "sameAs": "https://CRAN.R-project.org/package=Rcpp"
     },
-    "4": {
+    {
       "@type": "SoftwareApplication",
       "identifier": "Rdpack",
       "name": "Rdpack",
@@ -173,13 +172,12 @@
       },
       "sameAs": "https://CRAN.R-project.org/package=Rdpack"
     },
-    "5": {
+    {
       "@type": "SoftwareApplication",
       "identifier": "stats",
       "name": "stats"
-    },
-    "SystemRequirements": null
-  },
+    }
+  ],
   "citation": [
     {
       "@type": "SoftwareSourceCode",
@@ -187,7 +185,10 @@
       "author": [
         {
           "@type": "Person",
-          "givenName": ["Martin", "R."],
+          "givenName": [
+            "Martin",
+            "R."
+          ],
           "familyName": "Smith",
           "email": "martin.smith@durham.ac.uk"
         }
