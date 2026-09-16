@@ -234,8 +234,6 @@
 #'   closure; ignored for the matrix and coordinate paths.
 #' @param strategy Optional integer or character identifying one or more
 #' of the seeding strategies described in [`PickPoint()`].
-#' A number, or a string holding one, starts a pass from that element, so
-#' `c(17, "random_furthest")` adds a pass from element 17 to the random starts.
 #' Only integers, `"peripheral"` and `"random_furthest"` are supported when `d`
 #' is a distance function.  Defaults to `"peripheral"`.
 #' @param nSeeds Integer: number of distinct seeds to draw under the
