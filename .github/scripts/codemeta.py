@@ -412,8 +412,24 @@ def people_with_roles(people, roles):
 
 
 class Providers:
-    def __init__(self):
+    # Providers already recorded in the previous codemeta.json are reused, so
+    # the package lists are only downloaded when a new dependency appears.
+    # Delete an entry from codemeta.json to force a fresh lookup.
+    def __init__(self, previous=None):
         self.cache = {}
+        self.known = {}
+        try:
+            with open(previous, encoding="utf-8") as f:
+                old = json.load(f)
+        except (OSError, TypeError, ValueError):
+            return
+        if isinstance(old, dict):
+            entries = [old] + [e for key in ("softwareSuggestions", "softwareRequirements")
+                               for e in old.get(key) or [] if isinstance(e, dict)]
+            for e in entries:
+                if e.get("identifier"):
+                    self.known[e["identifier"]] = next(
+                        (p for p in (CRAN, BIOC) if p == e.get("provider")), None)
 
     def packages(self, url):
         if url not in self.cache:
@@ -433,6 +449,8 @@ class Providers:
     def guess(self, pkg):
         if pkg in BASE_PACKAGES:
             return None
+        if pkg in self.known:
+            return self.known[pkg]
         if pkg in self.packages("https://cloud.r-project.org"):
             return CRAN
         if pkg in self.packages("https://www.bioconductor.org/packages/release/bioc"):
@@ -496,11 +514,11 @@ def citation_to_schema(bib):
     return out
 
 
-def codemeta(root):
+def codemeta(root, previous=None):
     d = read_dcf(os.path.join(root, "DESCRIPTION"))
     meta = {k: clean_str(v) for k, v in d.items()}
     pkg = d["Package"]
-    providers = Providers()
+    providers = Providers(previous)
 
     cm = {
         "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
@@ -573,7 +591,7 @@ if __name__ == "__main__":
     root = sys.argv[1] if len(sys.argv) > 1 else "."
     out = sys.argv[2] if len(sys.argv) > 2 else os.path.join(root, "codemeta.json")
     try:
-        cm = codemeta(root)
+        cm = codemeta(root, previous=out)
     except Unsupported as e:
         sys.exit(f"codemeta.py: {e}.")
     with open(out, "w", encoding="utf-8", newline="\n") as f:
