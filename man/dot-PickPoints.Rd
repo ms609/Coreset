@@ -9,7 +9,7 @@
 \arguments{
 \item{points}{A \code{double} \verb{N x dim} coordinate matrix.}
 
-\item{strategy}{Anchor name; see \code{\link[=PickPoint]{PickPoint()}}. Also accepts \code{"first"} (1).}
+\item{strategy}{Anchor name; see \code{\link[=PickPoint]{PickPoint()}}.}
 }
 \value{
 \code{.PickPoints()} returns an integer seed index.

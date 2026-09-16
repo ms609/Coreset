@@ -8,12 +8,15 @@ PickPoint(
   d = NULL,
   points = NULL,
   strategy = c("peripheral", "anti_centroid", "random_furthest", "diameter",
-    "anti_medoid", "medoid", "rowsum", "rownorm")
+    "anti_medoid", "medoid", "rowsum", "rownorm"),
+  N = NULL,
+  nSeeds = 1L
 )
 }
 \arguments{
-\item{d}{A \code{dist} object or square symmetric numeric matrix. Ignored when
-\code{points} is supplied.}
+\item{d}{A \code{dist} object, a square symmetric numeric matrix, or a
+distance function as accepted by \code{\link[=FarFirst]{FarFirst()}}.
+Ignored when \code{points} is supplied.}
 
 \item{points}{Optional \verb{N x dim} numeric coordinate matrix; when supplied the
 seed is computed from coordinates in \code{O(N)} memory. Required for the
@@ -29,7 +32,7 @@ then the point furthest from that (a diameter-endpoint approximation).
 (\eqn{\arg\max \|x - \bar{x}\|}{argmax ||x - x_bar||}).
 \eqn{O(N * dim)}. Requires \code{points}.}
 \item{\code{"random_furthest"}}{The point furthest from a random pivot.
-\eqn{O(N)}.}
+\eqn{O(N)} per pivot.}
 \item{\code{"diameter"}}{A row endpoint of the diameter pair (the maximum
 pairwise distance).}
 \item{\code{"medoid"}}{The 1-median (medoid): the point minimising the sum of
@@ -39,11 +42,23 @@ distances to all others.}
 (the 1-anti-median).}
 \item{\code{"rownorm"}}{The point maximising \eqn{\sqrt(\sum{d^2})}, the L2
 counterpart of \code{"rowsum"}.}
-}}
+}
+
+Only \code{"peripheral"} and \code{"random_furthest"} are supported when \code{d} is a
+function.}
+
+\item{N}{Integer: the total number of elements. Required (and used) only on
+the distance-column oracle path, where it cannot be inferred from the
+closure; ignored for the matrix and coordinate paths.}
+
+\item{nSeeds}{Integer specifying how many distinct seeds to obtain under
+\code{"random_furthest"}; more pivots are evaluated until \code{nSeeds} distinct
+seeds are found.}
 }
 \value{
 \code{PickPoint()} returns an integer that identifies the index of a
-proposed seed in \code{d} or \code{points}.
+proposed seed in \code{d} or \code{points}; under \code{"random_furthest"} with
+\code{nSeeds > 1}, up to \code{nSeeds} distinct indices, in ascending order.
 }
 \description{
 \code{PickPoint()} implements a range of strategies to select a seed for greedy
@@ -55,6 +70,14 @@ pts <- matrix(rnorm(60), ncol = 2)
 d <- dist(pts)
 PickPoint(d, strategy = "diameter")
 FarFirst(5L, d, strategy = PickPoint(d, strategy = "diameter"))
+
+# Seeds for three starts, from distances computed one column at a time.
+# The seeds drawn are identical to those selected by FarFirst().
+Column <- function(i) sqrt(colSums((t(pts) - pts[i, ]) ^ 2))
+set.seed(2)
+PickPoint(Column, strategy = "random_furthest", N = nrow(pts), nSeeds = 3)
+set.seed(2)
+FarFirst(5L, Column, N = nrow(pts), strategy = "random_furthest", nSeeds = 3)
 }
 \seealso{
 \code{\link[=FarFirst]{FarFirst()}}, which seeds and runs the greedy pass in one call.

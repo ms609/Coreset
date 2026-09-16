@@ -1,7 +1,9 @@
-# Coreset 1.0.0.9000 (development)
+# Coreset 1.0.0.9001 (development)
 
+- `PickPoint()` supports the `"peripheral"` and `"random_furthest"` strategies,
+  including where `d` is a function, returning `nSeeds` seeds.
+- `FarFirst()` supports `strategy = "random_furthest"` when `d` is a function.
 - `MaxEntropy()` is roughly 3-12x faster at large `n`.
-
 
 # Coreset 1.0.0 (2026-09-09)
 
