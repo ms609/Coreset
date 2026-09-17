@@ -2,6 +2,8 @@
 
 ## Coreset 1.0.0 (2026-09-09)
 
+CRAN release: 2026-09-17
+
 `Coreset` selects a representative subset of a fixed candidate set under
 an arbitrary distance, solving four discrete location objectives on a
 distance matrix, a coordinate matrix, or an on-demand distance-column

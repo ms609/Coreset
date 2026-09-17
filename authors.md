@@ -9,7 +9,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/ms609/Coreset/blob/main/inst/CITATION)
+[`inst/CITATION`](https://github.com/ms609/Coreset/blob/1.0.0/inst/CITATION)
 
 Smith (2026). Coreset: discrete diversity, dispersion, and coverage
 subset selection. Comprehensive R Archive Network, Vienna. doi:
