@@ -405,6 +405,66 @@ test_that("ExactMaxMin validates boundSeconds", {
   expect_error(ExactMaxMin(3L, d, boundSeconds = "half"), msg)
 })
 
+test_that("a search resumes from an earlier call's selection and bound", {
+  set.seed(11L)
+  dmat <- as.matrix(dist(matrix(rnorm(40L), ncol = 2L)))
+  truth <- .BruteMaxmin(dmat, 4L)$objective
+  cand <- sort(unique(dmat[upper.tri(dmat)]))
+  above <- cand[cand > truth]
+
+  # The first call cannot settle the thresholds just above the optimum, so
+  # stops with a bound and no proof.
+  first <- with_mocked_bindings(
+    { set.seed(1L); ExactMaxMin(4L, dmat, maxSeconds = 0.5, boundSeconds = 0.5) },
+    .MaxISVerdict = .Undecided(truth, above[2L])
+  )
+  expect_false(attr(first, "proven"))
+  expect_equal(attr(first, "upper"), above[2L])
+
+  # Resumed with the budget to settle them, it probes only below that bound.
+  probed <- new.env(parent = emptyenv())
+  probed$lambda <- numeric(0)
+  real <- .MaxISVerdict
+  local_mocked_bindings(.MaxISVerdict = function(d, n, hi, hj, lambda, k,
+                                                 timeLimit, threads = 1L) {
+    probed$lambda <- c(probed$lambda, lambda)
+    real(d, n, hi, hj, lambda, k, timeLimit, threads)
+  })
+  set.seed(1L)
+  resumed <- ExactMaxMin(4L, dmat, warmStart = as.integer(first),
+                         upper = attr(first, "upper"))
+  expect_true(attr(resumed, "proven"))
+  expect_equal(attr(resumed, "score"), truth)
+  expect_gt(length(probed$lambda), 0L)
+  expect_true(all(probed$lambda <= attr(first, "upper")))
+})
+
+test_that("an upper bound the incumbent attains certifies it unprobed", {
+  set.seed(11L)
+  dmat <- as.matrix(dist(matrix(rnorm(28L), ncol = 2L)))
+  truth <- .BruteMaxmin(dmat, 4L)
+  local_mocked_bindings(.MaxISVerdict = function(...) stop("probed"))
+  set.seed(1L)
+  sel <- ExactMaxMin(4L, dmat, warmStart = truth$best, upper = truth$objective)
+  expect_true(attr(sel, "proven"))
+  expect_equal(attr(sel, "score"), truth$objective)
+  expect_equal(attr(sel, "upper"), truth$objective)
+})
+
+test_that("ExactMaxMin validates upper", {
+  set.seed(11L)
+  dmat <- as.matrix(dist(matrix(rnorm(28L), ncol = 2L)))
+  truth <- .BruteMaxmin(dmat, 4L)
+  msg <- "`upper` must be a single number"
+  expect_error(ExactMaxMin(4L, dmat, upper = NA_real_), msg)
+  expect_error(ExactMaxMin(4L, dmat, upper = c(1, 2)), msg)
+  expect_error(ExactMaxMin(4L, dmat, upper = "high"), msg)
+  # A bound below a selection already in hand cannot be a bound.
+  expect_error(ExactMaxMin(4L, dmat, warmStart = truth$best,
+                           upper = truth$objective / 2),
+               "is below the score of a selection in hand")
+})
+
 test_that("mc.cores changes neither the selection nor the score", {
   set.seed(88)
   pts <- matrix(stats::rnorm(60 * 3), ncol = 3)
