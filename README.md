@@ -69,7 +69,7 @@ amount of information about the original set: a minimally redundant pick.
 
 ## Installation
 
-Install from CRAN (anticipated Oct 2026) with:
+Install from CRAN with:
 
 ```r
 install.packages("Coreset")
