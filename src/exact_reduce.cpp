@@ -96,6 +96,12 @@ struct CliqueSearch {
   std::vector<int> clsUnit, unitV, unitCls;
   std::vector<char> needU;
   int fullDepth;                               // hybrid: full propagation to here
+  int unitCap;                                 // most forced vertices per attempt
+  int failStop;                                // failed attempts before giving up
+  // Instrumentation: [0] Absorb calls, [1] candidates tried, [2] re-coloured,
+  // [3] conflicts, [4] failures, [5] propagation passes, [6..16] conflicts
+  // by forced-vertex count (last bin 10+), [17..27] failures likewise.
+  std::vector<double> stats;
 
   inline void SetBit(BitWord* s, int v) const {
     s[v >> 6] |= (BitWord(1) << (v & 63));
@@ -126,7 +132,8 @@ struct CliqueSearch {
       clsStore(static_cast<size_t>(k_) * nw, 0),
       curStore(static_cast<size_t>(k_) * nw, 0),
       clsUsed(k_, 0), clsProp(k_, 0), clsUnit(k_, -1), unitV(k_, 0),
-      unitCls(k_, 0), needU(k_, 0), fullDepth(k_) {
+      unitCls(k_, 0), needU(k_, 0), fullDepth(k_), unitCap(k_),
+      failStop(nv_ + 1), stats(28, 0) {
     cur.reserve(k_ + 1);
   }
 
@@ -149,7 +156,8 @@ struct CliqueSearch {
       curStore(static_cast<size_t>(master.k) * master.nw, 0),
       clsUsed(master.k, 0), clsProp(master.k, 0), clsUnit(master.k, -1),
       unitV(master.k, 0), unitCls(master.k, 0), needU(master.k, 0),
-      fullDepth(master.fullDepth) {
+      fullDepth(master.fullDepth), unitCap(master.unitCap),
+      failStop(master.failStop), stats(28, 0) {
     cur.reserve(master.k + 1);
   }
 
@@ -332,6 +340,7 @@ struct CliqueSearch {
       }
       if (first && conflict >= 0) {
         SetBit(&clsStore[static_cast<size_t>(conflict) * nw], v);
+        stats[2] += 1;
         return true;
       }
       if (first && mode == 1) {
@@ -366,7 +375,8 @@ struct CliqueSearch {
         return false;
       }
       first = false;
-      if (conflict >= 0 || unitClass < 0) {
+      stats[5] += 1;
+      if (conflict >= 0 || unitClass < 0 || nu >= unitCap) {
         break;
       }
       clsProp[unitClass] = 1;
@@ -376,8 +386,12 @@ struct CliqueSearch {
       by = &adj[static_cast<size_t>(unitVertex) * nw];
     }
     if (conflict < 0) {
+      stats[4] += 1;
+      stats[17 + (nu < 10 ? nu : 10)] += 1;
       return false;
     }
+    stats[3] += 1;
+    stats[6 + (nu < 10 ? nu : 10)] += 1;
     clsUsed[conflict] = 1;
     if (!trim) {
       for (int t = 0; t < nu; ++t) {
@@ -458,9 +472,13 @@ struct CliqueSearch {
       SetBit(&clsStore[static_cast<size_t>(col[i] - 1) * nw], ord[i]);
     }
     std::fill(clsUsed.begin(), clsUsed.begin() + r, 0);
+    stats[0] += 1;
     if (bound < 3) {
-      for (int j = iB; j < m; ++j) {
+      int fails = 0;
+      for (int j = iB; j < m && fails < failStop; ++j) {
+        stats[1] += 1;
         abs[j] = TryAbsorb(ord[j], r, bound, false);
+        fails += !abs[j];
       }
       return;
     }
@@ -805,9 +823,11 @@ List EdgesAtLeast_cpp(NumericMatrix d, double lambda) {
 // [[Rcpp::export]]
 List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
                          int n, int k, double maxSeconds, int threads = 1,
-                         int bound = 2, int fullDepth = -1) {
+                         int bound = 2, int fullDepth = -1,
+                         int unitCap = -1, int failStop = -1) {
   const R_xlen_t nE = hi.size();
   double nodes = 0;                            // search nodes, all components
+  std::vector<double> stats(28, 0);
   const int need = k - 1;
 #ifdef _OPENMP
   const int nT = threads < 1 ? 1 : threads;
@@ -972,6 +992,12 @@ List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
     if (fullDepth >= 0) {
       cs.fullDepth = fullDepth;
     }
+    if (unitCap >= 0) {
+      cs.unitCap = unitCap;
+    }
+    if (failStop >= 0) {
+      cs.failStop = failStop;
+    }
     for (int t = 0; t < nv; ++t) {
       const int u = vars[t];
       BitWord* row = &cs.adjStore[static_cast<size_t>(t) * cs.nw];
@@ -1020,11 +1046,15 @@ List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
       loc[vars[t]] = -1;
     }
     nodes += static_cast<double>(cs.nodes);
+    for (int t = 0; t < 28; ++t) {
+      stats[t] += cs.stats[t];
+    }
 
     if (cs.expired) {
       return List::create(_["status"] = "inconclusive",
                           _["witness"] = IntegerVector(0),
-                          _["nodes"] = nodes);
+                          _["nodes"] = nodes,
+                          _["stats"] = NumericVector(stats.begin(), stats.end()));
     }
     if (cs.found) {
       std::vector<int> w(cs.best.size());
@@ -1034,10 +1064,12 @@ List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
       std::sort(w.begin(), w.end());
       return List::create(_["status"] = "feasible",
                           _["witness"] = IntegerVector(w.begin(), w.end()),
-                          _["nodes"] = nodes);
+                          _["nodes"] = nodes,
+                          _["stats"] = NumericVector(stats.begin(), stats.end()));
     }
   }
   return List::create(_["status"] = "infeasible",
                       _["witness"] = IntegerVector(0),
-                      _["nodes"] = nodes);
+                      _["nodes"] = nodes,
+                          _["stats"] = NumericVector(stats.begin(), stats.end()));
 }
