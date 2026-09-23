@@ -87,13 +87,15 @@ struct CliqueSearch {
   std::atomic<bool>* interrupted;
   bool pollInterrupt;
   // Branching-set reduction (see Absorb): 0 = colour bound only, 1 =
-  // infra-chromatic, 2 = full MaxSAT propagation. Per-depth flags for the
+  // infra-chromatic, 2 = full MaxSAT propagation, 3 = hybrid of the two. Per-depth flags for the
   // candidates it removes from branching, and colour-class scratch.
   int bound;
   std::vector<std::vector<char> > absorbed;
   std::vector<BitWord> clsStore, curStore;
   std::vector<char> clsUsed, clsProp;
-  std::vector<int> clsUnit;
+  std::vector<int> clsUnit, unitV, unitCls;
+  std::vector<char> needU;
+  int fullDepth;                               // hybrid: full propagation to here
 
   inline void SetBit(BitWord* s, int v) const {
     s[v >> 6] |= (BitWord(1) << (v & 63));
@@ -123,7 +125,8 @@ struct CliqueSearch {
       absorbed(k_ + 1, std::vector<char>(nv_, 0)),
       clsStore(static_cast<size_t>(k_) * nw, 0),
       curStore(static_cast<size_t>(k_) * nw, 0),
-      clsUsed(k_, 0), clsProp(k_, 0), clsUnit(k_, -1) {
+      clsUsed(k_, 0), clsProp(k_, 0), clsUnit(k_, -1), unitV(k_, 0),
+      unitCls(k_, 0), needU(k_, 0), fullDepth(k_) {
     cur.reserve(k_ + 1);
   }
 
@@ -144,7 +147,9 @@ struct CliqueSearch {
       absorbed(master.k + 1, std::vector<char>(master.nv, 0)),
       clsStore(static_cast<size_t>(master.k) * master.nw, 0),
       curStore(static_cast<size_t>(master.k) * master.nw, 0),
-      clsUsed(master.k, 0), clsProp(master.k, 0), clsUnit(master.k, -1) {
+      clsUsed(master.k, 0), clsProp(master.k, 0), clsUnit(master.k, -1),
+      unitV(master.k, 0), unitCls(master.k, 0), needU(master.k, 0),
+      fullDepth(master.fullDepth) {
     cur.reserve(master.k + 1);
   }
 
@@ -256,6 +261,184 @@ struct CliqueSearch {
   // enlarged), so the absorbed candidates and the r classes still yield at
   // most r clique members, and the absorbed candidates need not be branched
   // on: every k-clique below this node contains a candidate that remains.
+  // Does `x` lie outside N(e)? Such an `e` has eliminated `x` from a class.
+  inline bool Misses(int e, int x) const {
+    return !(adj[static_cast<size_t>(e) * nw + (x >> 6)] &
+             (BitWord(1) << (x & 63)));
+  }
+
+  // The first eliminator of `x` among v and the first `limit` forced
+  // vertices: -1 for v, t for unitV[t], -2 if none (never, for a vertex
+  // that a completed propagation left out of its class).
+  int FirstEliminator(int v, int x, int limit) const {
+    if (Misses(v, x)) {
+      return -1;
+    }
+    for (int t = 0; t < limit; ++t) {
+      if (Misses(unitV[t], x)) {
+        return t;
+      }
+    }
+    return -2;                                   // # nocov
+  }
+
+  // Try to take branching candidate v into the bounded pool, against the
+  // classes not yet used. mode 1: re-colour or infra-chromatic only; mode
+  // 2: re-colour or full unit propagation, trimming the conflict to the
+  // classes that caused it when `trim` is set. Returns true if v is taken.
+  bool TryAbsorb(int v, int r, int mode, bool trim) {
+    std::fill(clsProp.begin(), clsProp.begin() + r, 0);
+    // Each pass intersects the live classes with one forced vertex's
+    // neighbourhood and, in the same sweep, counts what survives (capped at
+    // two: empty, unit or more), so a pass costs one read of the classes.
+    // The first pass intersects with N(v) itself: a class it empties holds
+    // no neighbour of v, so v re-colours into it.
+    const BitWord* by = &adj[static_cast<size_t>(v) * nw];
+    int conflict = -1;
+    int nu = 0;
+    bool first = true;
+    for (;;) {
+      int unitClass = -1;
+      int unitVertex = -1;
+      for (int c = 0; c < r; ++c) {
+        if (clsUsed[c] || clsProp[c]) {
+          continue;
+        }
+        BitWord* cu = &curStore[static_cast<size_t>(c) * nw];
+        const BitWord* src = first ? &clsStore[static_cast<size_t>(c) * nw]
+                                   : cu;
+        int pc = 0;
+        int at = -1;
+        for (int w = 0; w < nw; ++w) {
+          const BitWord x = src[w] & by[w];
+          cu[w] = x;
+          if (x && pc < 2) {
+            if (at < 0) {
+              at = (w << 6) + static_cast<int>(__builtin_ctzll(x));
+            }
+            pc += static_cast<int>(__builtin_popcountll(x));
+          }
+        }
+        clsUnit[c] = pc == 1 ? at : -1;
+        if (pc == 0) {
+          conflict = c;
+          if (first) {
+            break;
+          }
+        } else if (pc == 1 && unitClass < 0) {
+          unitClass = c;
+          unitVertex = at;
+        }
+      }
+      if (first && conflict >= 0) {
+        SetBit(&clsStore[static_cast<size_t>(conflict) * nw], v);
+        return true;
+      }
+      if (first && mode == 1) {
+        // Infra-chromatic (San Segundo et al. 2015): one forced vertex u
+        // at a time, from each class holding a single neighbour of v; a
+        // second class with no common neighbour of u and v makes the
+        // three soft clauses {v}, u's class and that class inconsistent.
+        for (int i = 0; i < r; ++i) {
+          if (clsUsed[i] || clsUnit[i] < 0) {
+            continue;
+          }
+          const BitWord* au = &adj[static_cast<size_t>(clsUnit[i]) * nw];
+          for (int c = 0; c < r; ++c) {
+            if (c == i || clsUsed[c]) {
+              continue;
+            }
+            const BitWord* cu = &curStore[static_cast<size_t>(c) * nw];
+            bool empty = true;
+            for (int w = 0; w < nw; ++w) {
+              if (cu[w] & au[w]) {
+                empty = false;
+                break;
+              }
+            }
+            if (empty) {
+              clsUsed[i] = 1;
+              clsUsed[c] = 1;
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+      first = false;
+      if (conflict >= 0 || unitClass < 0) {
+        break;
+      }
+      clsProp[unitClass] = 1;
+      unitV[nu] = unitVertex;
+      unitCls[nu] = unitClass;
+      ++nu;
+      by = &adj[static_cast<size_t>(unitVertex) * nw];
+    }
+    if (conflict < 0) {
+      return false;
+    }
+    clsUsed[conflict] = 1;
+    if (!trim) {
+      for (int t = 0; t < nu; ++t) {
+        clsUsed[unitCls[t]] = 1;
+      }
+      return true;
+    }
+    // Keep only the forced vertices the conflict depends on: each member
+    // of the emptied class was eliminated by v or by some forced vertex,
+    // and each needed forced vertex's own class was reduced to it by
+    // earlier eliminators. Their classes, the emptied one and {v} are
+    // inconsistent on their own; the other classes stay free.
+    std::fill(needU.begin(), needU.begin() + nu, 0);
+    bool ok = true;
+    const BitWord* cs = &clsStore[static_cast<size_t>(conflict) * nw];
+    for (int x = FirstBit(cs, 0); x >= 0 && ok; ) {
+      const int e = FirstEliminator(v, x, nu);
+      if (e >= 0) {
+        needU[e] = 1;
+      } else if (e == -2) {
+        ok = false;                              // # nocov
+      }
+      const int nx = x + 1;
+      x = nx < nv ? FirstBitFrom(cs, nx) : -1;
+    }
+    for (int t = nu - 1; t >= 0 && ok; --t) {
+      if (!needU[t]) {
+        continue;
+      }
+      const BitWord* ct = &clsStore[static_cast<size_t>(unitCls[t]) * nw];
+      for (int x = FirstBit(ct, 0); x >= 0 && ok; ) {
+        if (x != unitV[t]) {
+          const int e = FirstEliminator(v, x, t);
+          if (e >= 0) {
+            needU[e] = 1;
+          } else if (e == -2) {
+            ok = false;                          // # nocov
+          }
+        }
+        const int nx = x + 1;
+        x = nx < nv ? FirstBitFrom(ct, nx) : -1;
+      }
+    }
+    for (int t = 0; t < nu; ++t) {
+      if (needU[t] || !ok) {
+        clsUsed[unitCls[t]] = 1;
+      }
+    }
+    return true;
+  }
+
+  // First set bit at or after bit `from`.
+  inline int FirstBitFrom(const BitWord* s, int from) const {
+    int w = from >> 6;
+    const BitWord head = s[w] & (~BitWord(0) << (from & 63));
+    if (head) {
+      return (w << 6) + static_cast<int>(__builtin_ctzll(head));
+    }
+    return FirstBit(s, w + 1);
+  }
+
   void Absorb(int depth, int m) {
     const std::vector<int>& ord = order[depth];
     const std::vector<int>& col = colour[depth];
@@ -275,104 +458,27 @@ struct CliqueSearch {
       SetBit(&clsStore[static_cast<size_t>(col[i] - 1) * nw], ord[i]);
     }
     std::fill(clsUsed.begin(), clsUsed.begin() + r, 0);
-    for (int j = iB; j < m; ++j) {
-      const int v = ord[j];
-      std::fill(clsProp.begin(), clsProp.begin() + r, 0);
-      // Each pass intersects the live classes with one forced vertex's
-      // neighbourhood and, in the same sweep, counts what survives (capped at
-      // two: empty, unit or more), so a pass costs one read of the classes.
-      // The first pass intersects with N(v) itself: a class it empties holds
-      // no neighbour of v, so v re-colours into it.
-      const BitWord* by = &adj[static_cast<size_t>(v) * nw];
-      int conflict = -1;
-      bool first = true;
-      bool placed = false;
-      for (;;) {
-        int unitClass = -1;
-        int unitVertex = -1;
-        for (int c = 0; c < r; ++c) {
-          if (clsUsed[c] || clsProp[c]) {
-            continue;
-          }
-          BitWord* cu = &curStore[static_cast<size_t>(c) * nw];
-          const BitWord* src = first ? &clsStore[static_cast<size_t>(c) * nw]
-                                     : cu;
-          int pc = 0;
-          int at = -1;
-          for (int w = 0; w < nw; ++w) {
-            const BitWord x = src[w] & by[w];
-            cu[w] = x;
-            if (x && pc < 2) {
-              if (at < 0) {
-                at = (w << 6) + static_cast<int>(__builtin_ctzll(x));
-              }
-              pc += static_cast<int>(__builtin_popcountll(x));
-            }
-          }
-          clsUnit[c] = pc == 1 ? at : -1;
-          if (pc == 0) {
-            conflict = c;
-            if (first) {
-              break;
-            }
-          } else if (pc == 1 && unitClass < 0) {
-            unitClass = c;
-            unitVertex = at;
-          }
-        }
-        if (first && conflict >= 0) {
-          SetBit(&clsStore[static_cast<size_t>(conflict) * nw], v);
-          placed = true;
-          break;
-        }
-        if (first && bound == 1) {
-          // Infra-chromatic (San Segundo et al. 2015): one forced vertex u
-          // at a time, from each class holding a single neighbour of v; a
-          // second class with no common neighbour of u and v makes the
-          // three soft clauses {v}, u's class and that class inconsistent.
-          for (int i = 0; i < r && conflict < 0; ++i) {
-            if (clsUsed[i] || clsUnit[i] < 0) {
-              continue;
-            }
-            const BitWord* au = &adj[static_cast<size_t>(clsUnit[i]) * nw];
-            for (int c = 0; c < r; ++c) {
-              if (c == i || clsUsed[c]) {
-                continue;
-              }
-              const BitWord* cu = &curStore[static_cast<size_t>(c) * nw];
-              bool empty = true;
-              for (int w = 0; w < nw; ++w) {
-                if (cu[w] & au[w]) {
-                  empty = false;
-                  break;
-                }
-              }
-              if (empty) {
-                clsProp[i] = 1;
-                conflict = c;
-                break;
-              }
-            }
-          }
-          break;
-        }
-        first = false;
-        if (conflict >= 0 || unitClass < 0) {
-          break;
-        }
-        clsProp[unitClass] = 1;
-        by = &adj[static_cast<size_t>(unitVertex) * nw];
+    if (bound < 3) {
+      for (int j = iB; j < m; ++j) {
+        abs[j] = TryAbsorb(ord[j], r, bound, false);
       }
-      if (placed) {
-        abs[j] = 1;
-      } else if (conflict >= 0) {
-        clsUsed[conflict] = 1;
-        for (int c = 0; c < r; ++c) {
-          if (clsProp[c]) {
-            clsUsed[c] = 1;
-          }
-        }
-        abs[j] = 1;
+      return;
+    }
+    // Hybrid: every candidate first meets the cheap infra-chromatic test,
+    // whose conflicts spend exactly two classes; the full propagation then
+    // works through what is left with the classes still free, and trims
+    // each conflict to its causes so it spends no more than it needs.
+    // Shallow nodes only: the subtree an absorption saves shrinks with depth
+    // while the propagation's cost does not.
+    for (int j = iB; j < m; ++j) {
+      abs[j] = TryAbsorb(ord[j], r, 1, false);
+    }
+    if (depth > fullDepth) {
+      return;
+    }
+    for (int j = iB; j < m; ++j) {
+      if (!abs[j]) {
+        abs[j] = TryAbsorb(ord[j], r, 2, true);
       }
     }
   }
@@ -699,7 +805,7 @@ List EdgesAtLeast_cpp(NumericMatrix d, double lambda) {
 // [[Rcpp::export]]
 List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
                          int n, int k, double maxSeconds, int threads = 1,
-                         int bound = 2) {
+                         int bound = 2, int fullDepth = -1) {
   const R_xlen_t nE = hi.size();
   double nodes = 0;                            // search nodes, all components
   const int need = k - 1;
@@ -863,6 +969,9 @@ List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
 
     CliqueSearch cs(nv, k, deadline);
     cs.bound = bound;
+    if (fullDepth >= 0) {
+      cs.fullDepth = fullDepth;
+    }
     for (int t = 0; t < nv; ++t) {
       const int u = vars[t];
       BitWord* row = &cs.adjStore[static_cast<size_t>(t) * cs.nw];

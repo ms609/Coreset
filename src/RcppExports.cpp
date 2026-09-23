@@ -70,8 +70,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // ThresholdDecide_cpp
-List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj, int n, int k, double maxSeconds, int threads, int bound);
-RcppExport SEXP _Coreset_ThresholdDecide_cpp(SEXP hiSEXP, SEXP hjSEXP, SEXP nSEXP, SEXP kSEXP, SEXP maxSecondsSEXP, SEXP threadsSEXP, SEXP boundSEXP) {
+List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj, int n, int k, double maxSeconds, int threads, int bound, int fullDepth);
+RcppExport SEXP _Coreset_ThresholdDecide_cpp(SEXP hiSEXP, SEXP hjSEXP, SEXP nSEXP, SEXP kSEXP, SEXP maxSecondsSEXP, SEXP threadsSEXP, SEXP boundSEXP, SEXP fullDepthSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -82,7 +82,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type maxSeconds(maxSecondsSEXP);
     Rcpp::traits::input_parameter< int >::type threads(threadsSEXP);
     Rcpp::traits::input_parameter< int >::type bound(boundSEXP);
-    rcpp_result_gen = Rcpp::wrap(ThresholdDecide_cpp(hi, hj, n, k, maxSeconds, threads, bound));
+    Rcpp::traits::input_parameter< int >::type fullDepth(fullDepthSEXP);
+    rcpp_result_gen = Rcpp::wrap(ThresholdDecide_cpp(hi, hj, n, k, maxSeconds, threads, bound, fullDepth));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -456,7 +457,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_Coreset_DropAdd_points_cpp", (DL_FUNC) &_Coreset_DropAdd_points_cpp, 8},
     {"_Coreset_TriangleAtLeast_cpp", (DL_FUNC) &_Coreset_TriangleAtLeast_cpp, 2},
     {"_Coreset_EdgesAtLeast_cpp", (DL_FUNC) &_Coreset_EdgesAtLeast_cpp, 2},
-    {"_Coreset_ThresholdDecide_cpp", (DL_FUNC) &_Coreset_ThresholdDecide_cpp, 7},
+    {"_Coreset_ThresholdDecide_cpp", (DL_FUNC) &_Coreset_ThresholdDecide_cpp, 8},
     {"_Coreset_Grasp_cpp", (DL_FUNC) &_Coreset_Grasp_cpp, 9},
     {"_Coreset_KCentreCandidates_cpp", (DL_FUNC) &_Coreset_KCentreCandidates_cpp, 1},
     {"_Coreset_KCentreCDSh_cpp", (DL_FUNC) &_Coreset_KCentreCDSh_cpp, 5},
