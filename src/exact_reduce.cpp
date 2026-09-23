@@ -87,7 +87,8 @@ struct CliqueSearch {
   std::atomic<bool>* interrupted;
   bool pollInterrupt;
   // Branching-set reduction (see Absorb): 0 = colour bound only, 1 =
-  // infra-chromatic, 2 = full MaxSAT propagation, 3 = hybrid of the two. Per-depth flags for the
+  // infra-chromatic, 2 = full MaxSAT propagation, 3 = hybrid of the two,
+  // 4 = 2 over class lists, 5 = 4 with trimmed conflicts. Per-depth flags for the
   // candidates it removes from branching, and colour-class scratch.
   int bound;
   std::vector<std::vector<char> > absorbed;
@@ -102,6 +103,7 @@ struct CliqueSearch {
   // [3] conflicts, [4] failures, [5] propagation passes, [6..16] conflicts
   // by forced-vertex count (last bin 10+), [17..27] failures likewise.
   std::vector<double> stats;
+  std::vector<int> listBuf, segStart, segLen, cnt;  // list-form classes
 
   inline void SetBit(BitWord* s, int v) const {
     s[v >> 6] |= (BitWord(1) << (v & 63));
@@ -133,7 +135,8 @@ struct CliqueSearch {
       curStore(static_cast<size_t>(k_) * nw, 0),
       clsUsed(k_, 0), clsProp(k_, 0), clsUnit(k_, -1), unitV(k_, 0),
       unitCls(k_, 0), needU(k_, 0), fullDepth(k_), unitCap(k_),
-      failStop(nv_ + 1), stats(28, 0) {
+      failStop(nv_ + 1), stats(28, 0), listBuf(nv_, 0), segStart(k_, 0),
+      segLen(k_, 0), cnt(k_, 0) {
     cur.reserve(k_ + 1);
   }
 
@@ -157,7 +160,8 @@ struct CliqueSearch {
       clsUsed(master.k, 0), clsProp(master.k, 0), clsUnit(master.k, -1),
       unitV(master.k, 0), unitCls(master.k, 0), needU(master.k, 0),
       fullDepth(master.fullDepth), unitCap(master.unitCap),
-      failStop(master.failStop), stats(28, 0) {
+      failStop(master.failStop), stats(28, 0), listBuf(master.nv, 0),
+      segStart(master.k, 0), segLen(master.k, 0), cnt(master.k, 0) {
     cur.reserve(master.k + 1);
   }
 
@@ -453,6 +457,106 @@ struct CliqueSearch {
     return FirstBit(s, w + 1);
   }
 
+  // The propagation of TryAbsorb(mode 2) over class member lists instead of
+  // full-width bitsets. A node's classes are small -- a handful of vertices
+  // each -- so filtering each class's survivors through one adjacency row
+  // costs the class's size rather than the graph's word width. The classes
+  // are the contiguous colour runs of `ord`; survivors are compacted in
+  // place in `listBuf`, class c occupying [segStart[c], segStart[c] +
+  // cnt[c]).
+  bool TryAbsorbList(int v, int r, const int* ord, bool trim) {
+    std::fill(clsProp.begin(), clsProp.begin() + r, 0);
+    const BitWord* row = &adj[static_cast<size_t>(v) * nw];
+    int conflict = -1;
+    int nu = 0;
+    bool first = true;
+    for (;;) {
+      int unitClass = -1;
+      int unitVertex = -1;
+      for (int c = 0; c < r; ++c) {
+        if (clsUsed[c] || clsProp[c]) {
+          continue;
+        }
+        int* dst = &listBuf[segStart[c]];
+        const int* src = first ? ord + segStart[c] : dst;
+        const int n0 = first ? segLen[c] : cnt[c];
+        int kept = 0;
+        for (int i = 0; i < n0; ++i) {
+          const int x = src[i];
+          if (row[x >> 6] & (BitWord(1) << (x & 63))) {
+            dst[kept++] = x;
+          }
+        }
+        cnt[c] = kept;
+        if (kept == 0) {
+          conflict = c;
+        } else if (kept == 1 && unitClass < 0) {
+          unitClass = c;
+          unitVertex = dst[0];
+        }
+      }
+      first = false;
+      stats[5] += 1;
+      if (conflict >= 0 || unitClass < 0 || nu >= unitCap) {
+        break;
+      }
+      clsProp[unitClass] = 1;
+      unitV[nu] = unitVertex;
+      unitCls[nu] = unitClass;
+      ++nu;
+      row = &adj[static_cast<size_t>(unitVertex) * nw];
+    }
+    if (conflict < 0) {
+      stats[4] += 1;
+      stats[17 + (nu < 10 ? nu : 10)] += 1;
+      return false;
+    }
+    stats[3] += 1;
+    stats[6 + (nu < 10 ? nu : 10)] += 1;
+    clsUsed[conflict] = 1;
+    if (!trim) {
+      for (int t = 0; t < nu; ++t) {
+        clsUsed[unitCls[t]] = 1;
+      }
+      return true;
+    }
+    // As in TryAbsorb: keep only the forced vertices the conflict needs.
+    std::fill(needU.begin(), needU.begin() + nu, 0);
+    bool ok = true;
+    for (int i = 0; i < segLen[conflict] && ok; ++i) {
+      const int e = FirstEliminator(v, ord[segStart[conflict] + i], nu);
+      if (e >= 0) {
+        needU[e] = 1;
+      } else if (e == -2) {
+        ok = false;                              // # nocov
+      }
+    }
+    for (int t = nu - 1; t >= 0 && ok; --t) {
+      if (!needU[t]) {
+        continue;
+      }
+      const int c = unitCls[t];
+      for (int i = 0; i < segLen[c] && ok; ++i) {
+        const int x = ord[segStart[c] + i];
+        if (x == unitV[t]) {
+          continue;
+        }
+        const int e = FirstEliminator(v, x, t);
+        if (e >= 0) {
+          needU[e] = 1;
+        } else if (e == -2) {
+          ok = false;                            // # nocov
+        }
+      }
+    }
+    for (int t = 0; t < nu; ++t) {
+      if (needU[t] || !ok) {
+        clsUsed[unitCls[t]] = 1;
+      }
+    }
+    return true;
+  }
+
   void Absorb(int depth, int m) {
     const std::vector<int>& ord = order[depth];
     const std::vector<int>& col = colour[depth];
@@ -464,6 +568,28 @@ struct CliqueSearch {
       ++iB;
     }
     if (r < 1 || iB >= m) {
+      return;
+    }
+    if (bound >= 4) {
+      // List form (4), optionally with trimmed conflicts (5).
+      for (int c = 0; c < r; ++c) {
+        segLen[c] = 0;
+      }
+      for (int i = 0; i < iB; ++i) {
+        ++segLen[col[i] - 1];
+      }
+      segStart[0] = 0;
+      for (int c = 1; c < r; ++c) {
+        segStart[c] = segStart[c - 1] + segLen[c - 1];
+      }
+      std::fill(clsUsed.begin(), clsUsed.begin() + r, 0);
+      stats[0] += 1;
+      int fails = 0;
+      for (int j = iB; j < m && fails < failStop; ++j) {
+        stats[1] += 1;
+        abs[j] = TryAbsorbList(ord[j], r, ord.data(), bound == 5);
+        fails += !abs[j];
+      }
       return;
     }
     std::fill(clsStore.begin(), clsStore.begin() + static_cast<size_t>(r) * nw,
