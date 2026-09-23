@@ -86,6 +86,14 @@ struct CliqueSearch {
   std::atomic<bool>* stop;
   std::atomic<bool>* interrupted;
   bool pollInterrupt;
+  // Branching-set reduction (see Absorb): 0 = colour bound only, 1 =
+  // infra-chromatic, 2 = full MaxSAT propagation. Per-depth flags for the
+  // candidates it removes from branching, and colour-class scratch.
+  int bound;
+  std::vector<std::vector<char> > absorbed;
+  std::vector<BitWord> clsStore, curStore;
+  std::vector<char> clsUsed, clsProp;
+  std::vector<int> clsUnit;
 
   inline void SetBit(BitWord* s, int v) const {
     s[v >> 6] |= (BitWord(1) << (v & 63));
@@ -111,7 +119,11 @@ struct CliqueSearch {
       colour(k_ + 1, std::vector<int>(nv_, 0)),
       uncoloured(nw, 0), sameColour(nw, 0),
       found(false), expired(false), nodes(0), deadline(end),
-      stop(NULL), interrupted(NULL), pollInterrupt(false) {
+      stop(NULL), interrupted(NULL), pollInterrupt(false), bound(0),
+      absorbed(k_ + 1, std::vector<char>(nv_, 0)),
+      clsStore(static_cast<size_t>(k_) * nw, 0),
+      curStore(static_cast<size_t>(k_) * nw, 0),
+      clsUsed(k_, 0), clsProp(k_, 0), clsUnit(k_, -1) {
     cur.reserve(k_ + 1);
   }
 
@@ -127,7 +139,12 @@ struct CliqueSearch {
       colour(master.k + 1, std::vector<int>(master.nv, 0)),
       uncoloured(master.nw, 0), sameColour(master.nw, 0),
       found(false), expired(false), nodes(0), deadline(master.deadline),
-      stop(stop_), interrupted(interrupted_), pollInterrupt(false) {
+      stop(stop_), interrupted(interrupted_), pollInterrupt(false),
+      bound(master.bound),
+      absorbed(master.k + 1, std::vector<char>(master.nv, 0)),
+      clsStore(static_cast<size_t>(master.k) * master.nw, 0),
+      curStore(static_cast<size_t>(master.k) * master.nw, 0),
+      clsUsed(master.k, 0), clsProp(master.k, 0), clsUnit(master.k, -1) {
     cur.reserve(master.k + 1);
   }
 
@@ -219,6 +236,147 @@ struct CliqueSearch {
     return chi;
   }
 
+  // Shrink the branching set by MaxSAT reasoning (Li & Quan 2010; Li, Jiang
+  // & Manya 2017). The node's colour classes C_1..C_r, r = k - depth - 1,
+  // are soft clauses "the clique meets C_c", and a clique meets each at most
+  // once, so a clique drawn from them has at most r members -- one short of
+  // what the node needs. A branching candidate v (colour > r) can join that
+  // bounded pool without lifting the bound past r in either of two ways:
+  //
+  //   * v has no neighbour in some class, so it joins that class, which
+  //     stays an independent set (re-colouring);
+  //   * unit propagation from {v} empties a class: each class left with a
+  //     single neighbour of everything chosen so far forces that vertex, and
+  //     once some class holds no common neighbour, no clique contains v and
+  //     meets every class involved. Those classes plus {v} form an
+  //     inconsistent set of soft clauses, which together contribute at most
+  //     one fewer member than their count.
+  //
+  // Inconsistent sets are kept disjoint (a class in one is never reused or
+  // enlarged), so the absorbed candidates and the r classes still yield at
+  // most r clique members, and the absorbed candidates need not be branched
+  // on: every k-clique below this node contains a candidate that remains.
+  void Absorb(int depth, int m) {
+    const std::vector<int>& ord = order[depth];
+    const std::vector<int>& col = colour[depth];
+    std::vector<char>& abs = absorbed[depth];
+    std::fill(abs.begin(), abs.begin() + m, 0);
+    const int r = k - depth - 1;
+    int iB = 0;
+    while (iB < m && col[iB] <= r) {
+      ++iB;
+    }
+    if (r < 1 || iB >= m) {
+      return;
+    }
+    std::fill(clsStore.begin(), clsStore.begin() + static_cast<size_t>(r) * nw,
+              BitWord(0));
+    for (int i = 0; i < iB; ++i) {
+      SetBit(&clsStore[static_cast<size_t>(col[i] - 1) * nw], ord[i]);
+    }
+    std::fill(clsUsed.begin(), clsUsed.begin() + r, 0);
+    for (int j = iB; j < m; ++j) {
+      const int v = ord[j];
+      std::fill(clsProp.begin(), clsProp.begin() + r, 0);
+      // Each pass intersects the live classes with one forced vertex's
+      // neighbourhood and, in the same sweep, counts what survives (capped at
+      // two: empty, unit or more), so a pass costs one read of the classes.
+      // The first pass intersects with N(v) itself: a class it empties holds
+      // no neighbour of v, so v re-colours into it.
+      const BitWord* by = &adj[static_cast<size_t>(v) * nw];
+      int conflict = -1;
+      bool first = true;
+      bool placed = false;
+      for (;;) {
+        int unitClass = -1;
+        int unitVertex = -1;
+        for (int c = 0; c < r; ++c) {
+          if (clsUsed[c] || clsProp[c]) {
+            continue;
+          }
+          BitWord* cu = &curStore[static_cast<size_t>(c) * nw];
+          const BitWord* src = first ? &clsStore[static_cast<size_t>(c) * nw]
+                                     : cu;
+          int pc = 0;
+          int at = -1;
+          for (int w = 0; w < nw; ++w) {
+            const BitWord x = src[w] & by[w];
+            cu[w] = x;
+            if (x && pc < 2) {
+              if (at < 0) {
+                at = (w << 6) + static_cast<int>(__builtin_ctzll(x));
+              }
+              pc += static_cast<int>(__builtin_popcountll(x));
+            }
+          }
+          clsUnit[c] = pc == 1 ? at : -1;
+          if (pc == 0) {
+            conflict = c;
+            if (first) {
+              break;
+            }
+          } else if (pc == 1 && unitClass < 0) {
+            unitClass = c;
+            unitVertex = at;
+          }
+        }
+        if (first && conflict >= 0) {
+          SetBit(&clsStore[static_cast<size_t>(conflict) * nw], v);
+          placed = true;
+          break;
+        }
+        if (first && bound == 1) {
+          // Infra-chromatic (San Segundo et al. 2015): one forced vertex u
+          // at a time, from each class holding a single neighbour of v; a
+          // second class with no common neighbour of u and v makes the
+          // three soft clauses {v}, u's class and that class inconsistent.
+          for (int i = 0; i < r && conflict < 0; ++i) {
+            if (clsUsed[i] || clsUnit[i] < 0) {
+              continue;
+            }
+            const BitWord* au = &adj[static_cast<size_t>(clsUnit[i]) * nw];
+            for (int c = 0; c < r; ++c) {
+              if (c == i || clsUsed[c]) {
+                continue;
+              }
+              const BitWord* cu = &curStore[static_cast<size_t>(c) * nw];
+              bool empty = true;
+              for (int w = 0; w < nw; ++w) {
+                if (cu[w] & au[w]) {
+                  empty = false;
+                  break;
+                }
+              }
+              if (empty) {
+                clsProp[i] = 1;
+                conflict = c;
+                break;
+              }
+            }
+          }
+          break;
+        }
+        first = false;
+        if (conflict >= 0 || unitClass < 0) {
+          break;
+        }
+        clsProp[unitClass] = 1;
+        by = &adj[static_cast<size_t>(unitVertex) * nw];
+      }
+      if (placed) {
+        abs[j] = 1;
+      } else if (conflict >= 0) {
+        clsUsed[conflict] = 1;
+        for (int c = 0; c < r; ++c) {
+          if (clsProp[c]) {
+            clsUsed[c] = 1;
+          }
+        }
+        abs[j] = 1;
+      }
+    }
+  }
+
   void Expand(int depth) {
     if (((++nodes) & 1023LL) == 0) {
       if (std::chrono::steady_clock::now() > deadline) {
@@ -244,9 +402,15 @@ struct CliqueSearch {
     std::vector<int>& ord = order[depth];
     std::vector<int>& col = colour[depth];
     const int m = ColourSort(set.data(), ord, col);
+    if (bound > 0 && m > 0 && depth + col[m - 1] >= k) {
+      Absorb(depth, m);
+    }
     for (int i = m - 1; i >= 0; --i) {
       if (depth + col[i] < k) {
         return;                     // colour bound: no k-clique below here
+      }
+      if (bound > 0 && absorbed[depth][i]) {
+        continue;                   // bounded with the classes; not a branch
       }
       const int v = ord[i];
       cur.push_back(v);
@@ -534,8 +698,10 @@ List EdgesAtLeast_cpp(NumericMatrix d, double lambda) {
 // shift is where the deadline falls, and that was never deterministic.
 // [[Rcpp::export]]
 List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
-                         int n, int k, double maxSeconds, int threads = 1) {
+                         int n, int k, double maxSeconds, int threads = 1,
+                         int bound = 2) {
   const R_xlen_t nE = hi.size();
+  double nodes = 0;                            // search nodes, all components
   const int need = k - 1;
 #ifdef _OPENMP
   const int nT = threads < 1 ? 1 : threads;
@@ -696,6 +862,7 @@ List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
     }
 
     CliqueSearch cs(nv, k, deadline);
+    cs.bound = bound;
     for (int t = 0; t < nv; ++t) {
       const int u = vars[t];
       BitWord* row = &cs.adjStore[static_cast<size_t>(t) * cs.nw];
@@ -743,10 +910,12 @@ List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
     for (int t = 0; t < nv; ++t) {
       loc[vars[t]] = -1;
     }
+    nodes += static_cast<double>(cs.nodes);
 
     if (cs.expired) {
       return List::create(_["status"] = "inconclusive",
-                          _["witness"] = IntegerVector(0));
+                          _["witness"] = IntegerVector(0),
+                          _["nodes"] = nodes);
     }
     if (cs.found) {
       std::vector<int> w(cs.best.size());
@@ -755,9 +924,11 @@ List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
       }
       std::sort(w.begin(), w.end());
       return List::create(_["status"] = "feasible",
-                          _["witness"] = IntegerVector(w.begin(), w.end()));
+                          _["witness"] = IntegerVector(w.begin(), w.end()),
+                          _["nodes"] = nodes);
     }
   }
   return List::create(_["status"] = "infeasible",
-                      _["witness"] = IntegerVector(0));
+                      _["witness"] = IntegerVector(0),
+                      _["nodes"] = nodes);
 }

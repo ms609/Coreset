@@ -130,7 +130,8 @@
     return(list(verdict = "feasible", witness = seq_len(n)))
   }
 
-  res <- ThresholdDecide_cpp(hi, hj, n, k, timeLimit, threads)
+  res <- ThresholdDecide_cpp(hi, hj, n, k, timeLimit, threads,
+                             getOption("Coreset.exactBound", 2L))
   witness <- res[["witness"]]
   if (identical(res[["status"]], "feasible")) {
     sub <- d[witness, witness, drop = FALSE]
