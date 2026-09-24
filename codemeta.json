@@ -7,11 +7,17 @@
   "codeRepository": "https://ms609.github.io/Coreset/",
   "issueTracker": "https://github.com/ms609/Coreset/issues",
   "license": "https://spdx.org/licenses/GPL-3.0",
-  "version": "1.0.0.9003",
+  "version": "1.0.0.9004",
   "programmingLanguage": {
     "@type": "ComputerLanguage",
     "name": "R",
     "url": "https://r-project.org"
+  },
+  "provider": {
+    "@id": "https://cran.r-project.org",
+    "@type": "Organization",
+    "name": "Comprehensive R Archive Network (CRAN)",
+    "url": "https://cran.r-project.org"
   },
   "author": [
     {
@@ -196,7 +202,7 @@
       "name": "{Coreset}: Discrete Diversity, Dispersion, and Coverage Subset Selection",
       "identifier": "10.32614/CRAN.package.Coreset",
       "url": "https://ms609.github.io/Coreset/",
-      "description": "R package version 1.0.0.9003",
+      "description": "R package version 1.0.0.9004",
       "@id": "https://doi.org/10.32614/CRAN.package.Coreset",
       "sameAs": "https://doi.org/10.32614/CRAN.package.Coreset"
     }
