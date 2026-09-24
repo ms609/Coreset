@@ -1,15 +1,9 @@
 # Coreset 1.0.0.9004 (development)
 
-- `ExactMaxMin()` refutes and finds solutions with fewer search nodes: MaxSAT
-  reasoning over the colour classes of each node of its clique search bounds
-  candidates that would otherwise be branched on (Li & Quan 2010). The largest
-  measured gain is 3.4x on a 990-point, k = 48 instance; small instances are
-  unchanged.
+- Improve `ExactMaxMin()` performance.
 
-- `ExactMaxMin()` reports an `upper` bound on the optimum, and can spend
-  `boundSeconds` bracketing the optimum from above before its search, so an
-  unproven result still bounds its distance from the optimum. Passing that bound
-  back as `upper`, with the selection as `warmStart`, resumes the search.
+- `ExactMaxMin()` reports an `upper` bound on the optimum, and supports
+  continuation from a timed-out state.
 
 - `PickPoint()` supports the `"peripheral"` and `"random_furthest"` strategies,
   including where `d` is a function, returning `nSeeds` seeds.
