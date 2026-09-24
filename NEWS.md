@@ -1,4 +1,10 @@
-# Coreset 1.0.0.9003 (development)
+# Coreset 1.0.0.9004 (development)
+
+- `ExactMaxMin()` refutes and finds solutions with fewer search nodes: MaxSAT
+  reasoning over the colour classes of each node of its clique search bounds
+  candidates that would otherwise be branched on (Li & Quan 2010). The largest
+  measured gain is 3.4x on a 990-point, k = 48 instance; small instances are
+  unchanged.
 
 - `ExactMaxMin()` reports an `upper` bound on the optimum, and can spend
   `boundSeconds` bracketing the optimum from above before its search, so an

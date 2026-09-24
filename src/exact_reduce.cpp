@@ -22,6 +22,8 @@
 // at the root: a node's surviving candidates are greedily coloured and
 // visited in descending colour order, so the first candidate whose colour
 // cannot lift the current clique to size k prunes every candidate before it.
+// MaxSAT reasoning over the same colour classes then removes candidates from
+// the branching set that the colour bound alone would branch on (Absorb).
 // The search is exhaustive, so finding no clique proves that none exists.
 //
 // Candidate sets are 64-bit word bitmaps, making the intersection with a
@@ -86,6 +88,20 @@ struct CliqueSearch {
   std::atomic<bool>* stop;
   std::atomic<bool>* interrupted;
   bool pollInterrupt;
+  // MaxSAT reduction of the branching set (see Absorb). `absorbed` flags,
+  // per depth, the candidates it bounds instead of branching on; the rest is
+  // scratch: each colour class as a run {start, len, cnt} of the node's
+  // colour order, its surviving members in `survivors`, the classes still
+  // free to join an inconsistent set, and those an attempt has not forced.
+  bool maxsat;
+  std::vector<std::vector<char> > absorbed;
+  struct ClassRun {
+    int start, len, cnt;
+  };
+  std::vector<ClassRun> runs;
+  std::vector<int> survivors, freeCls, liveCls, forcedCls;
+  std::vector<char> clsUsed;
+  int nFree;
 
   inline void SetBit(BitWord* s, int v) const {
     s[v >> 6] |= (BitWord(1) << (v & 63));
@@ -111,7 +127,10 @@ struct CliqueSearch {
       colour(k_ + 1, std::vector<int>(nv_, 0)),
       uncoloured(nw, 0), sameColour(nw, 0),
       found(false), expired(false), nodes(0), deadline(end),
-      stop(NULL), interrupted(NULL), pollInterrupt(false) {
+      stop(NULL), interrupted(NULL), pollInterrupt(false), maxsat(true),
+      absorbed(k_ + 1, std::vector<char>(nv_, 0)), runs(k_),
+      survivors(nv_, 0), freeCls(k_, 0), liveCls(k_, 0), forcedCls(k_, 0),
+      clsUsed(k_, 0), nFree(0) {
     cur.reserve(k_ + 1);
   }
 
@@ -127,7 +146,12 @@ struct CliqueSearch {
       colour(master.k + 1, std::vector<int>(master.nv, 0)),
       uncoloured(master.nw, 0), sameColour(master.nw, 0),
       found(false), expired(false), nodes(0), deadline(master.deadline),
-      stop(stop_), interrupted(interrupted_), pollInterrupt(false) {
+      stop(stop_), interrupted(interrupted_), pollInterrupt(false),
+      maxsat(master.maxsat),
+      absorbed(master.k + 1, std::vector<char>(master.nv, 0)),
+      runs(master.k), survivors(master.nv, 0), freeCls(master.k, 0),
+      liveCls(master.k, 0), forcedCls(master.k, 0), clsUsed(master.k, 0),
+      nFree(0) {
     cur.reserve(master.k + 1);
   }
 
@@ -219,6 +243,138 @@ struct CliqueSearch {
     return chi;
   }
 
+  // Can branching candidate v be bounded with the colour classes instead of
+  // branched on? Unit propagation from {v} over the free classes: each class
+  // is filtered to v's neighbours; a class left with a single member forces
+  // that member, whose neighbourhood filters the classes still live; and a
+  // class left empty means no clique contains v and meets every class used.
+  // Those classes and {v} are then an inconsistent set of soft clauses and
+  // are spent; otherwise nothing is spent and v stays a branch.
+  //
+  // Each class is a run of the node's colour order, and survivors are
+  // compacted in place, so a pass costs the live classes' sizes, not the
+  // graph's word width -- a node's classes hold a handful of vertices each.
+  // Live classes keep their colour order as forced ones leave the list:
+  // which unit is propagated first shapes which conflicts are found, and
+  // colour order finds them with the fewest nodes (measured against
+  // swap-removal and against smallest-class-first).
+  bool Absorbable(int v, const int* ord) {
+    int nl = nFree;
+    int* live = liveCls.data();
+    std::copy(freeCls.begin(), freeCls.begin() + nFree, live);
+    int* sv = survivors.data();
+    ClassRun* rn = runs.data();
+    const BitWord* row = &adj[static_cast<size_t>(v) * nw];
+    int nForced = 0;
+    int conflict = -1;
+    bool first = true;
+    for (;;) {
+      int unitAt = -1;
+      for (int at = 0; at < nl; ++at) {
+        const int c = live[at];
+        ClassRun& run = rn[c];
+        int* out = sv + run.start;
+        const int* in = first ? ord + run.start : out;
+        const int n0 = first ? run.len : run.cnt;
+        int kept;
+        if (n0 == 1) {                           // the common cases, unrolled
+          const int x = in[0];
+          out[0] = x;
+          kept = static_cast<int>((row[x >> 6] >> (x & 63)) & BitWord(1));
+        } else if (n0 == 2) {
+          const int x0 = in[0];
+          const int x1 = in[1];
+          const int b0 = static_cast<int>((row[x0 >> 6] >> (x0 & 63)) & BitWord(1));
+          const int b1 = static_cast<int>((row[x1 >> 6] >> (x1 & 63)) & BitWord(1));
+          out[0] = b0 ? x0 : x1;
+          out[1] = x1;
+          kept = b0 + b1;
+        } else {
+          kept = 0;
+          for (int i = 0; i < n0; ++i) {         // branch-free compaction
+            const int x = in[i];
+            out[kept] = x;
+            kept += static_cast<int>((row[x >> 6] >> (x & 63)) & BitWord(1));
+          }
+        }
+        run.cnt = kept;
+        if (kept == 0) {
+          conflict = c;
+          break;
+        }
+        if (kept == 1 && unitAt < 0) {
+          unitAt = at;
+        }
+      }
+      first = false;
+      if (conflict >= 0 || unitAt < 0) {
+        break;
+      }
+      const int c = live[unitAt];
+      forcedCls[nForced++] = c;
+      row = &adj[static_cast<size_t>(sv[rn[c].start]) * nw];
+      std::copy(live + unitAt + 1, live + nl, live + unitAt);
+      --nl;
+    }
+    if (conflict < 0) {
+      return false;
+    }
+    clsUsed[conflict] = 1;
+    for (int t = 0; t < nForced; ++t) {
+      clsUsed[forcedCls[t]] = 1;
+    }
+    int kept = 0;
+    for (int i = 0; i < nFree; ++i) {
+      if (!clsUsed[freeCls[i]]) {
+        freeCls[kept++] = freeCls[i];
+      }
+    }
+    nFree = kept;
+    return true;
+  }
+
+  // Shrink the branching set by MaxSAT reasoning (Li & Quan 2010; Li, Jiang
+  // & Manya 2017). The node's colour classes C_1..C_r, r = k - depth - 1,
+  // are soft clauses "the clique meets C_c", and a clique meets each at most
+  // once, so a clique drawn from them has at most r members -- one short of
+  // what the node needs. Every candidate coloured above r would be a branch.
+  // One that Absorbable() ties to an inconsistent set of classes joins the
+  // bounded pool instead: those classes and it contribute at most one fewer
+  // member than their count. The sets are kept disjoint, so the pool still
+  // yields at most r members, and every k-clique below this node contains a
+  // candidate left to branch on. Flags land in absorbed[depth].
+  void Absorb(int depth, int m) {
+    const std::vector<int>& ord = order[depth];
+    const std::vector<int>& col = colour[depth];
+    std::vector<char>& abs = absorbed[depth];
+    std::fill(abs.begin(), abs.begin() + m, 0);
+    const int r = k - depth - 1;
+    int iB = 0;
+    while (iB < m && col[iB] <= r) {
+      ++iB;
+    }
+    if (r < 1 || iB >= m) {
+      return;
+    }
+    for (int c = 0; c < r; ++c) {
+      runs[c].len = 0;
+    }
+    for (int i = 0; i < iB; ++i) {
+      ++runs[col[i] - 1].len;
+    }
+    int at = 0;
+    for (int c = 0; c < r; ++c) {
+      runs[c].start = at;
+      at += runs[c].len;
+      freeCls[c] = c;
+      clsUsed[c] = 0;
+    }
+    nFree = r;
+    for (int j = iB; j < m; ++j) {
+      abs[j] = Absorbable(ord[j], ord.data());
+    }
+  }
+
   void Expand(int depth) {
     if (((++nodes) & 1023LL) == 0) {
       if (std::chrono::steady_clock::now() > deadline) {
@@ -244,9 +400,15 @@ struct CliqueSearch {
     std::vector<int>& ord = order[depth];
     std::vector<int>& col = colour[depth];
     const int m = ColourSort(set.data(), ord, col);
+    if (maxsat && m > 0 && depth + col[m - 1] >= k) {
+      Absorb(depth, m);
+    }
     for (int i = m - 1; i >= 0; --i) {
       if (depth + col[i] < k) {
         return;                     // colour bound: no k-clique below here
+      }
+      if (maxsat && absorbed[depth][i]) {
+        continue;                   // bounded with the classes; still a candidate
       }
       const int v = ord[i];
       cur.push_back(v);
@@ -306,10 +468,21 @@ static int RootParallel(CliqueSearch& cs, int threads, bool* interrupted) {
   if (nBranch <= 0) {
     return 0;
   }
+  // The serial loop skips absorbed roots but keeps them as candidates of the
+  // roots after them, so each branch's pool adds the absorbed roots above it.
+  const int nw = cs.nw;
+  std::vector<BitWord> absorbedSet(nw, 0);
+  if (cs.maxsat) {
+    cs.Absorb(0, m);
+    for (int i = iLo; i < m; ++i) {
+      if (cs.absorbed[0][i]) {
+        cs.SetBit(absorbedSet.data(), ord[i]);
+      }
+    }
+  }
 
   // prefix[i] holds {ord[0..i-1]}: branch i's candidate pool before the
   // neighbourhood intersection.
-  const int nw = cs.nw;
   std::vector<BitWord> prefix(static_cast<size_t>(m) * nw, 0);
   for (int i = 1; i < m; ++i) {
     const BitWord* prev = &prefix[static_cast<size_t>(i - 1) * nw];
@@ -339,6 +512,9 @@ static int RootParallel(CliqueSearch& cs, int threads, bool* interrupted) {
       // Visit in the serial loop's order, colour descending, so the branch
       // likeliest to hold a witness under the colouring heuristic goes first.
       const int i = m - 1 - j;
+      if (cs.maxsat && cs.absorbed[0][i]) {
+        continue;
+      }
       const int v = ord[i];
       w.cur.clear();
       w.cur.push_back(v);
@@ -353,7 +529,7 @@ static int RootParallel(CliqueSearch& cs, int threads, bool* interrupted) {
       std::vector<BitWord>& next = w.cand[1];
       bool any = false;
       for (int t = 0; t < nw; ++t) {
-        next[t] = pv[t] & av[t];
+        next[t] = (pv[t] | absorbedSet[t]) & av[t];
         any = any || next[t];
       }
       if (any) {
@@ -534,8 +710,10 @@ List EdgesAtLeast_cpp(NumericMatrix d, double lambda) {
 // shift is where the deadline falls, and that was never deterministic.
 // [[Rcpp::export]]
 List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
-                         int n, int k, double maxSeconds, int threads = 1) {
+                         int n, int k, double maxSeconds, int threads = 1,
+                         bool maxsat = true) {
   const R_xlen_t nE = hi.size();
+  double nodes = 0;                            // search nodes, all components
   const int need = k - 1;
 #ifdef _OPENMP
   const int nT = threads < 1 ? 1 : threads;
@@ -696,6 +874,7 @@ List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
     }
 
     CliqueSearch cs(nv, k, deadline);
+    cs.maxsat = maxsat;
     for (int t = 0; t < nv; ++t) {
       const int u = vars[t];
       BitWord* row = &cs.adjStore[static_cast<size_t>(t) * cs.nw];
@@ -743,10 +922,12 @@ List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
     for (int t = 0; t < nv; ++t) {
       loc[vars[t]] = -1;
     }
+    nodes += static_cast<double>(cs.nodes);
 
     if (cs.expired) {
       return List::create(_["status"] = "inconclusive",
-                          _["witness"] = IntegerVector(0));
+                          _["witness"] = IntegerVector(0),
+                          _["nodes"] = nodes);
     }
     if (cs.found) {
       std::vector<int> w(cs.best.size());
@@ -755,9 +936,11 @@ List ThresholdDecide_cpp(IntegerVector hi, IntegerVector hj,
       }
       std::sort(w.begin(), w.end());
       return List::create(_["status"] = "feasible",
-                          _["witness"] = IntegerVector(w.begin(), w.end()));
+                          _["witness"] = IntegerVector(w.begin(), w.end()),
+                          _["nodes"] = nodes);
     }
   }
   return List::create(_["status"] = "infeasible",
-                      _["witness"] = IntegerVector(0));
+                      _["witness"] = IntegerVector(0),
+                      _["nodes"] = nodes);
 }

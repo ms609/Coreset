@@ -37,9 +37,20 @@
   d
 }
 
-.Decide <- function(hi, hj, n, k, maxSeconds = 60, threads = 1L) {
+.Decide <- function(hi, hj, n, k, maxSeconds = 60, threads = 1L,
+                    maxsat = TRUE) {
   Coreset:::ThresholdDecide_cpp(as.integer(hi), as.integer(hj), n, k,
-                                maxSeconds, threads)
+                                maxSeconds, threads, maxsat)
+}
+
+# A random symmetric graph of density ~p, with its upper-triangle edge list.
+.RandomH <- function(n, p) {
+  m <- matrix(stats::runif(n * n), n, n)
+  hAdj <- m < p
+  hAdj[lower.tri(hAdj, diag = TRUE)] <- FALSE
+  hAdj <- hAdj | t(hAdj)
+  list(adj = hAdj, hi = row(hAdj)[upper.tri(hAdj) & hAdj],
+       hj = col(hAdj)[upper.tri(hAdj) & hAdj])
 }
 
 # Is `cl` a clique of hAdj?
@@ -86,21 +97,73 @@ test_that("ThresholdDecide_cpp agrees with brute force on random probes", {
         hAdj[cbind(hi, hj)] <- TRUE
         hAdj[cbind(hj, hi)] <- TRUE
         expected <- .HasKClique(hAdj, k)
-        got <- .Decide(hi, hj, n, k)
-        info <- sprintf("seed=%d n=%d k=%d p=%.1f", seed, n, k, p)
+        for (maxsat in c(TRUE, FALSE)) {
+          got <- .Decide(hi, hj, n, k, maxsat = maxsat)
+          info <- sprintf("seed=%d n=%d k=%d p=%.1f maxsat=%s",
+                          seed, n, k, p, maxsat)
 
-        expect_identical(got$status,
-                         if (expected) "feasible" else "infeasible",
-                         info = info)
-        if (expected) {
-          cl <- got$witness
-          expect_length(cl, k)
-          expect_false(is.unsorted(cl, strictly = TRUE), info = info)
-          expect_true(.IsClique(hAdj, cl), info = info)
-        } else {
-          expect_identical(got$witness, integer(0), info = info)
+          expect_identical(got$status,
+                           if (expected) "feasible" else "infeasible",
+                           info = info)
+          if (expected) {
+            cl <- got$witness
+            expect_length(cl, k)
+            expect_false(is.unsorted(cl, strictly = TRUE), info = info)
+            expect_true(.IsClique(hAdj, cl), info = info)
+          } else {
+            expect_identical(got$witness, integer(0), info = info)
+          }
         }
       }
+    }
+  }
+})
+
+test_that("MaxSAT absorption keeps every verdict and prunes the search", {
+  # Dense graphs sized so the colour bound leaves several branching
+  # candidates per node, probed at and around the clique number: the regime
+  # where unit propagation finds inconsistent sets of classes.
+  set.seed(4242)
+  nodesPlain <- 0
+  nodesMaxSat <- 0
+  for (rep in 1:40) {
+    n <- sample(30:90, 1)
+    h <- .RandomH(n, stats::runif(1, 0.5, 0.9))
+    omega <- 1L
+    while (omega < n && .Decide(h$hi, h$hj, n, omega + 1L,
+                                maxsat = FALSE)$status == "feasible") {
+      omega <- omega + 1L
+    }
+    for (k in unique(pmax(2L, omega + (-2):1))) {
+      plain <- .Decide(h$hi, h$hj, n, k, maxsat = FALSE)
+      ms <- .Decide(h$hi, h$hj, n, k)
+      info <- sprintf("rep=%d n=%d k=%d", rep, n, k)
+      expect_identical(ms$status, plain$status, info = info)
+      if (ms$status == "feasible") {
+        expect_length(ms$witness, k)
+        expect_true(.IsClique(h$adj, ms$witness), info = info)
+      }
+      nodesPlain <- nodesPlain + plain$nodes
+      nodesMaxSat <- nodesMaxSat + ms$nodes
+    }
+  }
+  expect_lt(nodesMaxSat, nodesPlain / 2)
+})
+
+test_that("threaded roots absorb like the serial search", {
+  # Root absorption under threads must keep each absorbed root a candidate of
+  # the roots after it, or a clique through it would be missed: verdict and
+  # witness match the serial search exactly.
+  set.seed(77)
+  for (rep in 1:25) {
+    n <- sample(40:90, 1)
+    h <- .RandomH(n, stats::runif(1, 0.55, 0.9))
+    for (k in 5:12) {
+      serial <- .Decide(h$hi, h$hj, n, k)
+      threaded <- .Decide(h$hi, h$hj, n, k, threads = 3L)
+      info <- sprintf("rep=%d n=%d k=%d", rep, n, k)
+      expect_identical(threaded$status, serial$status, info = info)
+      expect_identical(threaded$witness, serial$witness, info = info)
     }
   }
 })
@@ -273,13 +336,18 @@ test_that("threads leave every verdict and witness at the serial answer", {
   hi <- row(hAdj)[upper.tri(hAdj) & hAdj]
   hj <- col(hAdj)[upper.tri(hAdj) & hAdj]
 
+  # Node counts are left out: the threaded root is driven outside Expand(),
+  # and a found witness adds the serial re-run's nodes.
+  Verdict <- function(x) x[c("status", "witness")]
   serialNo <- .Decide(hi, hj, n, 16L)
   expect_identical(serialNo$status, "infeasible")
-  expect_identical(.Decide(hi, hj, n, 16L, threads = 2L), serialNo)
+  expect_identical(Verdict(.Decide(hi, hj, n, 16L, threads = 2L)),
+                   Verdict(serialNo))
 
   serialYes <- .Decide(hi, hj, n, 6L)
   expect_identical(serialYes$status, "feasible")
-  expect_identical(.Decide(hi, hj, n, 6L, threads = 2L), serialYes)
+  expect_identical(Verdict(.Decide(hi, hj, n, 6L, threads = 2L)),
+                   Verdict(serialYes))
 
   # Expiry with threads: no witness exists at k = 16, so a zero budget leaves
   # the probe undecided however many workers were looking.

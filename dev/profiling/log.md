@@ -2554,4 +2554,49 @@ reference-BLAS users; left as the user's call.
 
 ---
 
-last_focus: 19
+## Round 23 — 2026-09-24 — Area 4 (ExactMaxMin): MaxSAT absorption in the clique kernel  [user: profile the new bound before the canon re-timing]
+
+**Lever (new, from the literature):** after each node's greedy colouring,
+unit-propagation MaxSAT reasoning (Li & Quan 2010; Li, Jiang & Manyà 2017)
+absorbs branching candidates into the colour bound when {v} and a set of
+colour classes are inconsistent. Prototyped alongside infra-chromatic (San
+Segundo et al. 2015), a hybrid of the two, conflict trimming and depth
+gating; all of those lost on Hamilton at 1T (infra-chromatic slower on every
+cell, e.g. vowel k48's certifying probe 1802 -> 2643 s; trimming and gating
+spent more than they saved; capping the propagation chain killed the pruning,
+since conflicts need 10+ forced vertices on breast cancer and pima). Verdicts:
+0 mismatches against the colour-bound search over 2,400 random probes;
+threaded == serial.
+
+**Profile** (VTune hotspots, symboled -O2 build, real-probe driver
+`drivers/exact_maxsat.R`): the propagation owns ~70 % of kernel time, all in
+the per-class filter; ColourSort ~10 % (pre-existing, AT-LIMIT).
+
+**Shipped levers, each verified by interleaved A/B (`drivers/exact_maxsat_ab.R`):**
+1. Classes as runs of the node's colour order with survivors compacted in
+   place, instead of full-width bitsets: identical nodes, 1.6-2.5x cheaper per
+   node.
+2. A compact live-class list, an early exit on the first emptied class, and
+   branch-free compaction: nodes/s +45 % on pima k=100.
+3. Forced classes leave the list in stable (colour) order: swap-removal cost
+   +15-60 % nodes, stable order recovers them (slightly below the bitset
+   tree). Net 15-30 % faster per probe than lever 1 alone.
+4. One- and two-member classes unrolled: +3-5 %.
+5. Root absorption under threads, with absorbed roots kept in later roots'
+   candidate pools (the serial invariant).
+
+**Rejected, measured:** ping-pong survivor buffers (neutral: the filter is not
+bound by store-to-load aliasing); smallest-class-first order (cheaper nodes,
+more of them, net slower).
+
+**Whole cells** (Hamilton, 1T, lever 1 only): vowel k48 7624 -> 2238 s (3.4x),
+vehicle k48 1769 -> 1538 s, pima k100 661 -> 713 s, pima k48 0.7 -> 1.1 s. The
+final kernel is re-timed by the canon re-run.
+
+**Status:** Area 4 OPTIMISED (round 23). The class filter is load-latency
+bound on classes of a handful of vertices; further gains need fewer
+attempts, not cheaper ones.
+
+---
+
+last_focus: 4
