@@ -1,6 +1,6 @@
 # Coreset 1.0.0.9004 (development)
 
-- Improve `ExactMaxMin()` performance.
+- Improve `ExactMaxMin()` performance and support >46k points.
 
 - `ExactMaxMin()` reports an `upper` bound on the optimum, and supports
   continuation from a timed-out state.
