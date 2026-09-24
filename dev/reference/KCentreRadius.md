@@ -3,7 +3,7 @@
 `KCentreRadius()` computes the covering radius of a set of centres: the
 largest distance from any of the `N` points to its nearest centre, \\R =
 \max_p \min\_{c \in \mathrm{idx}} d(p, c)\\. This is the min-max
-*k*-centre objective (González 1985) minimized by
+*k*-centre objective (Gonz\<U+00E1\>lez 1985) minimized by
 [`KCentre()`](https://ms609.github.io/Coreset/dev/reference/KCentre.md)
 and
 [`ExactKCentre()`](https://ms609.github.io/Coreset/dev/reference/ExactKCentre.md).
@@ -40,8 +40,8 @@ KCenterRadius(d = NULL, idx, points = NULL)
 
 ## References
 
-González TF (1985). “Clustering to minimize the maximum intercluster
-distance.” *Theoretical Computer Science*, **38**, 293–306.
+Gonz\<U+00E1\>lez TF (1985). “Clustering to minimize the maximum
+intercluster distance.” *Theoretical Computer Science*, **38**, 293–306.
 [doi:10.1016/0304-3975(85)90224-5](https://doi.org/10.1016/0304-3975%2885%2990224-5)
 .
 

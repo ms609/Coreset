@@ -114,9 +114,9 @@ is found. To toggle, set `options("Coreset.progress" = FALSE)` (or
 
 ## References
 
-Resende MGC, Martí R, Gallego M, Duarte A (2010). “GRASP and path
-relinking for the max-min diversity problem.” *Computers & Operations
-Research*, **37**(3), 498–508.
+Resende MGC, Mart\<U+00ED\> R, Gallego M, Duarte A (2010). “GRASP and
+path relinking for the max-min diversity problem.” *Computers &
+Operations Research*, **37**(3), 498–508.
 [doi:10.1016/j.cor.2008.05.011](https://doi.org/10.1016/j.cor.2008.05.011)
 .
 

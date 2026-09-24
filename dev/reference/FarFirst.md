@@ -1,9 +1,9 @@
 # Greedy farthest-first point selection
 
-Greedy farthest-first selection (González 1985; Hochbaum and Shmoys
-1985) iteratively selects the point furthest from the current selection
-to yield a 2-approximation to the *k*-centre and Max Min Diversity
-problems.
+Greedy farthest-first selection (Gonz\<U+00E1\>lez 1985; Hochbaum and
+Shmoys 1985) iteratively selects the point furthest from the current
+selection to yield a 2-approximation to the *k*-centre and Max Min
+Diversity problems.
 
 ## Usage
 
@@ -92,8 +92,8 @@ The main use case for parallelization is when `nSeeds` is a multiple of
 
 ## References
 
-González TF (1985). “Clustering to minimize the maximum intercluster
-distance.” *Theoretical Computer Science*, **38**, 293–306.
+Gonz\<U+00E1\>lez TF (1985). “Clustering to minimize the maximum
+intercluster distance.” *Theoretical Computer Science*, **38**, 293–306.
 [doi:10.1016/0304-3975(85)90224-5](https://doi.org/10.1016/0304-3975%2885%2990224-5)
 .  
   

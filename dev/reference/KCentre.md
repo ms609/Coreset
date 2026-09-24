@@ -2,8 +2,9 @@
 
 `KCentre()` selects \\k\\ elements (centres) so as to minimize the
 largest distance from any point to its nearest centre (the covering
-radius), using the Critical Dominating Set heuristic (CDSh) (García-Díaz
-et al. 2017; García-Díaz et al. 2019) .
+radius), using the Critical Dominating Set heuristic (CDSh)
+(Garc\<U+00ED\>a-D\<U+00ED\>az et al. 2017;
+Garc\<U+00ED\>a-D\<U+00ED\>az et al. 2019) .
 
 ## Usage
 
@@ -44,9 +45,9 @@ attached as attribute `radius`. The vector has class
 
 ## Details
 
-On the benchmark instances of García-Díaz et al. (2019) , the CDS
-heuristic reaches roughly 1–3.5% of the optimum at \\O(N^2 \log N)\\,
-far tighter than
+On the benchmark instances of Garc\<U+00ED\>a-D\<U+00ED\>az et al.
+(2019) , the CDS heuristic reaches roughly 1–3.5% of the optimum at
+\\O(N^2 \log N)\\, far tighter than
 [`FarFirst()`](https://ms609.github.io/Coreset/dev/reference/FarFirst.md).
 
 Despite this good performance in practice, the CDSh is a
@@ -59,22 +60,24 @@ that `KCentre()` always returns at least a 2-approximation.
 
 ## References
 
-García-Díaz J, Menchaca-Méndez R, Menchaca-Méndez R, Pomares Hernández
-S, Pérez-Sansalvador JC, Lakouari N (2019). “Approximation algorithms
-for the vertex \\k\\-center problem: survey and experimental
+Garc\<U+00ED\>a-D\<U+00ED\>az J, Menchaca-M\<U+00E9\>ndez R,
+Menchaca-M\<U+00E9\>ndez R, Pomares Hern\<U+00E1\>ndez S,
+P\<U+00E9\>rez-Sansalvador JC, Lakouari N (2019). “Approximation
+algorithms for the vertex \\k\\-center problem: survey and experimental
 evaluation.” *IEEE Access*, **7**, 109228–109245.
 [doi:10.1109/ACCESS.2019.2933875](https://doi.org/10.1109/ACCESS.2019.2933875)
 .  
   
-García-Díaz J, Sánchez-Hernández J, Menchaca-Méndez R, Menchaca-Méndez R
-(2017). “When a worse approximation factor gives better performance: a
-3-approximation algorithm for the vertex \\k\\-center problem.” *Journal
-of Heuristics*, **23**(5), 349–366.
+Garc\<U+00ED\>a-D\<U+00ED\>az J, S\<U+00E1\>nchez-Hern\<U+00E1\>ndez J,
+Menchaca-M\<U+00E9\>ndez R, Menchaca-M\<U+00E9\>ndez R (2017). “When a
+worse approximation factor gives better performance: a 3-approximation
+algorithm for the vertex \\k\\-center problem.” *Journal of Heuristics*,
+**23**(5), 349–366.
 [doi:10.1007/s10732-017-9345-x](https://doi.org/10.1007/s10732-017-9345-x)
 .  
   
-González TF (1985). “Clustering to minimize the maximum intercluster
-distance.” *Theoretical Computer Science*, **38**, 293–306.
+Gonz\<U+00E1\>lez TF (1985). “Clustering to minimize the maximum
+intercluster distance.” *Theoretical Computer Science*, **38**, 293–306.
 [doi:10.1016/0304-3975(85)90224-5](https://doi.org/10.1016/0304-3975%2885%2990224-5)
 .
 
@@ -85,7 +88,7 @@ for the proven optimum;
 [`KCentreRadius()`](https://ms609.github.io/Coreset/dev/reference/KCentreRadius.md)
 for a selection's score;
 [`FarFirst()`](https://ms609.github.io/Coreset/dev/reference/FarFirst.md)
-for the González (1985) 2-approximation baseline.
+for the Gonz\<U+00E1\>lez (1985) 2-approximation baseline.
 
 ## Examples
 
