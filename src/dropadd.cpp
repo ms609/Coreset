@@ -32,7 +32,8 @@ List DropAdd_cpp(NumericMatrix dmat, int m, double time_budget_s,
   const double *dp = REAL(dmat);          // raw pointer; column-major
 
   // dmat(i, j) == dp[i + j * n]
-  auto D = [&](int i, int j) { return dp[i + j * n]; };
+  // Offsets in std::size_t: j * n overflows an int once n exceeds 46,340.
+  auto D = [&](int i, int j) { return dp[i + (std::size_t)j * n]; };
 
   const double eps = 1e-9;
 
@@ -90,7 +91,7 @@ List DropAdd_cpp(NumericMatrix dmat, int m, double time_budget_s,
     in_S[x_new] = 1;
 
     // Update records for ADD. dmat(:, x_new) is a contiguous column.
-    const double *col = dp + x_new * n;
+    const double *col = dp + (std::size_t)x_new * n;
     for (int i = 0; i < n; ++i) {
       double dv = col[i];
       sum_dist[i] += dv;
@@ -176,7 +177,7 @@ List DropAdd_cpp(NumericMatrix dmat, int m, double time_budget_s,
     // a nearest peer). Cache the column for the x_hash row recompute below.
     need_recompute.clear();
     {
-      const double *col = dp + x_hash * n;
+      const double *col = dp + (std::size_t)x_hash * n;
       for (int i = 0; i < n; ++i) {
         double dv = col[i];
         d_xhash[i] = dv;
@@ -288,7 +289,7 @@ List DropAdd_cpp(NumericMatrix dmat, int m, double time_budget_s,
 
     // Add pass: full column scan. Same case logic as ADD in construction.
     {
-      const double *col = dp + x_new * n;
+      const double *col = dp + (std::size_t)x_new * n;
       for (int i = 0; i < n; ++i) {
         double dv = col[i];
         sum_dist[i] += dv;

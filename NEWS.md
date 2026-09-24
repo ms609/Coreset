@@ -1,4 +1,8 @@
-# Coreset 1.0.0.9003 (development)
+# Coreset 1.0.0.9004 (development)
+
+- `DropAdd()` on a distance matrix no longer crashes beyond 46,340 points,
+  where its column offsets overflowed an `int`; `ExactMaxMin()`'s warm start
+  calls it, so this also affected the exact solver at that size.
 
 - `ExactMaxMin()` reports an `upper` bound on the optimum, and can spend
   `boundSeconds` bracketing the optimum from above before its search, so an
