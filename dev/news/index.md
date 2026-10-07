@@ -2,19 +2,13 @@
 
 ## Coreset 1.0.0.9004 (development)
 
-- [`DropAdd()`](https://ms609.github.io/Coreset/dev/reference/DropAdd.md)
-  on a distance matrix no longer crashes beyond 46,340 points, where its
-  column offsets overflowed an `int`;
-  [`ExactMaxMin()`](https://ms609.github.io/Coreset/dev/reference/ExactMaxMin.md)’s
-  warm start calls it, so this also affected the exact solver at that
-  size.
+- Improve
+  [`ExactMaxMin()`](https://ms609.github.io/Coreset/dev/reference/ExactMaxMin.md)
+  performance and support \>46k points.
 
 - [`ExactMaxMin()`](https://ms609.github.io/Coreset/dev/reference/ExactMaxMin.md)
-  reports an `upper` bound on the optimum, and can spend `boundSeconds`
-  bracketing the optimum from above before its search, so an unproven
-  result still bounds its distance from the optimum. Passing that bound
-  back as `upper`, with the selection as `warmStart`, resumes the
-  search.
+  reports an `upper` bound on the optimum, and supports continuation
+  from a timed-out state.
 
 - [`PickPoint()`](https://ms609.github.io/Coreset/dev/reference/PickPoint.md)
   supports the `"peripheral"` and `"random_furthest"` strategies,
