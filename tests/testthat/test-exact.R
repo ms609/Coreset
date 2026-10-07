@@ -378,17 +378,20 @@ test_that("the bracketing pass raises the incumbent through feasible probes", {
   # Everything strictly above the optimum is unsettled, so the pass must reach
   # the optimum from the short warm start by feasible probes alone.
   local_mocked_bindings(.MaxISVerdict = .Undecided(truth, Inf))
+  # Under valgrind/ASan each real feasibility probe (ThresholdDecide_cpp) can
+  # be an order of magnitude slower, and the pass's first per-probe budget is
+  # boundSeconds / 64: at one second, too little for even one probe to land.
+  # The slow environment gets a budget the first probes can resolve in.
+  budget <- if (.SlowSearchEnv()) 30 else 1
   set.seed(20)
-  sel <- ExactMaxMin(k = 30L, d = d, maxSeconds = 1, boundSeconds = 1)
+  sel <- ExactMaxMin(k = 30L, d = d, maxSeconds = budget, boundSeconds = budget)
   expect_false(attr(sel, "proven"))
   expect_equal(attr(sel, "upper"), max(cand))
   if (.SlowSearchEnv()) {
-    # Under valgrind/ASan each real feasibility probe (ThresholdDecide_cpp) can
-    # be an order of magnitude slower, so the per-probe budget -- deliberately
-    # tiny, and only quadrupled a handful of times within this 1s+1s ceiling --
-    # may not resolve enough of them to fully climb from the warm start to
-    # `truth`. That is a legitimate budget shortfall, not a regression; only
-    # require that a feasible probe actually landed.
+    # Even then the budget, quadrupled only a handful of times, may not resolve
+    # enough probes to climb all the way from the warm start to `truth`. That
+    # is a legitimate budget shortfall, not a regression; only require that a
+    # feasible probe actually landed.
     expect_gt(attr(sel, "score"), ws$value)
     expect_lte(attr(sel, "score"), truth)
   } else {
