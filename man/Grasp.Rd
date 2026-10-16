@@ -73,8 +73,8 @@ too large to fit into memory.
 To parallelize computation when OpenMP is available, set the \code{"mc.cores"}
 option:
 
-\if{html}{\out{<div class="sourceCode r">}}\preformatted{options(mc.cores = 2L)                       # use a fixed number of cores
-options(mc.cores = parallel::detectCores())  # or all available cores
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{options(mc.cores = 2L)                            # use a fixed number of cores
+options(mc.cores = parallelly::availableCores())  # or all available cores
 }\if{html}{\out{</div>}}
 }
 
