@@ -159,8 +159,8 @@
 #' To parallelize computation when OpenMP is available, set the `"mc.cores"`
 #' option:
 #' \preformatted{
-#' options(mc.cores = 2L)                       # use a fixed number of cores
-#' options(mc.cores = parallel::detectCores())  # or all available cores
+#' options(mc.cores = 2L)                            # use a fixed number of cores
+#' options(mc.cores = parallelly::availableCores())  # or all available cores
 #' }
 #' Parallelization returns identical results under a given seed.
 #'

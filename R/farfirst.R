@@ -252,8 +252,8 @@
 #' option:
 #'
 #' ```r
-#' options(mc.cores = 2L)                       # use a fixed number of cores
-#' options(mc.cores = parallel::detectCores())  # or all available cores
+#' options(mc.cores = 2L)                            # use a fixed number of cores
+#' options(mc.cores = parallelly::availableCores())  # or all available cores
 #' ```
 #'
 #' The main use case for parallelization is when `nSeeds` is a multiple of
