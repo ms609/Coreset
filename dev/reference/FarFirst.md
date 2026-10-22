@@ -84,8 +84,8 @@ To toggle, set `options("Coreset.progress" = FALSE)` (or `TRUE`).
 To parallelize computation when OpenMP is available, set the
 `"mc.cores"` option:
 
-    options(mc.cores = 2L)                       # use a fixed number of cores
-    options(mc.cores = parallel::detectCores())  # or all available cores
+    options(mc.cores = 2L)                            # use a fixed number of cores
+    options(mc.cores = parallelly::availableCores())  # or all available cores
 
 The main use case for parallelization is when `nSeeds` is a multiple of
 `mc.cores`, so each seed point can be evaluated in parallel.

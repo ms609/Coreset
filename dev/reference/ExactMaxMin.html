@@ -149,8 +149,8 @@ the smallest threshold proven infeasible, and no greater than the
 bound to the first infeasible threshold and bisects the resulting bracket.</p>
 <p>To parallelize computation when OpenMP is available, set the <code>"mc.cores"</code>
 option:</p><div class="sourceCode"><pre><code><span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>mc.cores <span class="op">=</span> <span class="fl">2L</span><span class="op">)</span>                       <span class="co"># use a fixed number of cores</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>mc.cores <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>  <span class="co"># or all available cores</span></span></code></pre></div><p>Parallelization returns identical results under a given seed.</p>
+<span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>mc.cores <span class="op">=</span> <span class="fl">2L</span><span class="op">)</span>                            <span class="co"># use a fixed number of cores</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>mc.cores <span class="op">=</span> <span class="fu">parallelly</span><span class="fu">::</span><span class="fu">availableCores</span><span class="op">(</span><span class="op">)</span><span class="op">)</span>  <span class="co"># or all available cores</span></span></code></pre></div><p>Parallelization returns identical results under a given seed.</p>
     </div>
     <div class="section level2">
     <h2 id="progress-bar">Progress bar<a class="anchor" aria-label="anchor" href="#progress-bar"></a></h2>

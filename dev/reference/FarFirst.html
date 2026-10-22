@@ -131,8 +131,8 @@ To toggle, set <code>options("Coreset.progress" = FALSE)</code> (or <code>TRUE</
 
 <p>To parallelize computation when OpenMP is available, set the <code>"mc.cores"</code>
 option:</p>
-<p></p><div class="sourceCode r"><pre><code><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>mc.cores <span class="op">=</span> <span class="fl">2L</span><span class="op">)</span>                       <span class="co"># use a fixed number of cores</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>mc.cores <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>  <span class="co"># or all available cores</span></span></code></pre><p></p></div>
+<p></p><div class="sourceCode r"><pre><code><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>mc.cores <span class="op">=</span> <span class="fl">2L</span><span class="op">)</span>                            <span class="co"># use a fixed number of cores</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>mc.cores <span class="op">=</span> <span class="fu">parallelly</span><span class="fu">::</span><span class="fu">availableCores</span><span class="op">(</span><span class="op">)</span><span class="op">)</span>  <span class="co"># or all available cores</span></span></code></pre><p></p></div>
 <p>The main use case for parallelization is when <code>nSeeds</code> is a multiple of
 <code>mc.cores</code>, so each seed point can be evaluated in parallel.</p>
     </div>
